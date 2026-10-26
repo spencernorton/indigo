@@ -174,18 +174,21 @@ for advanced in ('"Z  AUTOLOAD"', '"R  VERIFY"', '"L+A  CLEAN BOOT"'):
 saves_line = extract_function(detail_source, "static void buildSavesPresentation(")
 require("UISaves_FormatUpdated(" in saves_line and "snapshot->saveStats = *stats;" in saves_line,
         "save snapshot or shared date formatter missing")
-# SAVES shows for two or more copies, or for fewer while a memory card changes
-# to the game's card or was given up on, and says when the scan was partial.
-require("if(stats == NULL || (stats->saves < 2u && !waiting && !cardFailed)) {\n\t\treturn;" in saves_line and
+# SAVES needs a scan, and below two copies needs Always or card news. The
+# behavioral tests cover each state; keep the retained presentation wired to
+# that preference without moving work into the renderer.
+require("if(stats == NULL || (stats->saves < 2u && !always && !waiting && !cardFailed)) {\n\t\treturn;" in saves_line and
         "snapshot->flags |= UI_GAMEFLOW_DETAIL_HAS_SAVES;" in saves_line,
-        "SAVES shows for fewer than two save copies with no card news")
+        "SAVES ignores its scan, visibility preference or card state")
+require("buildSavesPresentation(snapshot, source->saveStats, source->savesAlways," in build,
+        "the retained SAVES presentation ignores the Always preference")
 require('waiting ? "Memory card loading" : "Memory card didn\'t load"' in saves_line,
         "fewer than two copies hide a card that is loading or was given up on")
 require("stats->partial" in saves_line and "stats->checkedSources == 0u" in saves_line and
         '"Partial scan | "' in saves_line,
         "a partial save scan would look complete")
 require("UI_GAMEFLOW_DETAIL_HAS_SAVES | UI_GAMEFLOW_DETAIL_SAVE_CHOICE)) |" in build,
-        "a caller's flags could show SAVES or its choice without two or more copies")
+        "a caller's flags could show SAVES or its choice without a scan")
 require(renderer.index('"SAVES"') < renderer.index('"SETTINGS"') < renderer.index('"CHEATS"'),
         "save copies are not above the settings and cheats insets")
 require("if(hasSaves) {\n\t\t\t_GameflowPutDetailPanel(260, layout->saves, 330,\n"
@@ -195,7 +198,7 @@ require("if(detail->flags & UI_GAMEFLOW_DETAIL_HAS_SAVES) {\n" in renderer and
         "drawStringMedium(576, layout->savesLine[0],\n"
         "\t\t\t(detail->flags & UI_GAMEFLOW_DETAIL_SAVE_CHOICE) ?\n"
         "\t\t\t\"\\253 SAVES \\273\" : \"SAVES\"" in renderer,
-        "the SAVES inset draws without two or more copies, or hides its choice")
+        "the SAVES inset ignores its visibility flag, or hides its choice")
 # The Manual row: only for a game with a manual (Build sets the flag from the
 # pages it is given), above Settings, and a panel only then.
 require("UI_GAMEFLOW_DETAIL_HAS_MANUAL |\n" in build and
