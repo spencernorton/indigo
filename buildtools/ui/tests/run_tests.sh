@@ -105,6 +105,7 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_save_choice.py; else python3 ./test_save_choice.py --sanitize; fi
 	echo "== memory card slots$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_card_slots.py; else python3 ./test_card_slots.py --sanitize; fi
+	if [ -z "$suffix" ]; then python3 ./test_card_trace_export.py; else python3 ./test_card_trace_export.py --sanitize; fi
 	echo "== manual MP3 player$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_mp3_player.py; else python3 ./test_mp3_player.py --sanitize; fi
 	echo "== uploads: exact stream and safe handoff$suffix =="

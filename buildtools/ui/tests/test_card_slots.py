@@ -33,6 +33,7 @@ typedef int32_t s32;
 typedef volatile uint32_t vu32;
 #define EXI_CHANNEL_0 0
 #define EXI_CHANNEL_1 1
+#define EXI_CHANNEL_2 2
 #define EXI_CHANNEL_MAX 3
 #define EXI_DEVICE_0 0
 #define EXI_SPEED16MHZ 4
@@ -48,6 +49,8 @@ typedef volatile uint32_t vu32;
 #define CARD_ERROR_WRONGDEVICE (-2)
 #define CARD_ERROR_NOCARD (-3)
 #define CARD_ERROR_BROKEN (-6)
+#define GIT_COMMIT "host-test"
+#define _V_STRING "stub-sdk"
 #define LOC_MEMCARD_SLOT_A 1u
 #define LOC_MEMCARD_SLOT_B 2u
 #define DEVICE_CUR 0
@@ -59,7 +62,7 @@ typedef struct device {
 	file_handle *initial; u32 location;
 	s32 (*init)(file_handle *); s32 (*deinit)(file_handle *);
 } DEVICEHANDLER_INTERFACE;
-static struct { unsigned disableMCPGameID; int emulateMemoryCard; } swissSettings;
+static struct { unsigned disableMCPGameID; int emulateMemoryCard, hideDetailSaves; } swissSettings;
 static DEVICEHANDLER_INTERFACE __device_card_a, __device_card_b;
 static DEVICEHANDLER_INTERFACE *devices[2];
 static file_handle initial[2];
@@ -77,18 +80,24 @@ static void print_debug(const char *format, ...) { (void)format; }
 static u32 fakeCsr[3];
 #define CARD_SLOTS_EXI_CSR(chan) (fakeCsr[chan])
 static bool emulator[2], busyForever[2];
-static s32 setIdResult[2], setInfoResult[2], cardProbe[2], cardInit[2];
+static s32 setIdResult[2], setInfoResult[2], cardProbe[2], cardInit[2], deviceIdResult[2];
 static u8 status[2];
 static unsigned setIdCalls[2], inits[2], resets, statusReads[2];
+static unsigned probeCalls[2], deviceIdCalls[2];
 static void present(int slot, bool on) { fakeCsr[slot] = on ? 0x1000u : 0u; }
 static s32 MMCE_ProbeEx(s32 chan)
 {
 	if(chan > 1) return MMCE_RESULT_NOCARD;
+	probeCalls[chan]++;
 	if(busyForever[chan]) return MMCE_RESULT_BUSY;
 	if(!(fakeCsr[chan] & 0x1000u)) return MMCE_RESULT_NOCARD;
 	return MMCE_RESULT_READY;
 }
-static s32 MMCE_GetDeviceID(s32 chan, u32 *id) { *id = 0x38420101u; return emulator[chan] ? MMCE_RESULT_READY : MMCE_RESULT_WRONGDEVICE; }
+static s32 MMCE_GetDeviceID(s32 chan, u32 *id) {
+	deviceIdCalls[chan]++;
+	if(deviceIdResult[chan] != MMCE_RESULT_BUSY) *id = 0x38420101u;
+	return emulator[chan] ? deviceIdResult[chan] : MMCE_RESULT_WRONGDEVICE;
+}
 static s32 MMCE_SetDiskID(s32 chan, const dvddiskid *disk) { (void)disk; setIdCalls[chan]++; return setIdResult[chan]; }
 static s32 MMCE_SetDiskInfo(s32 chan, const char *name) { (void)name; return setInfoResult[chan]; }
 static bool MMCE_IsAttached(s32 chan) { (void)chan; return false; }
@@ -112,6 +121,11 @@ static DiskHeader gameA, gameB;
 static void reset(void)
 {
 	memset(slots, 0, sizeof(slots));
+	memset(&swissSettings, 0, sizeof(swissSettings));
+	memset(devices, 0, sizeof(devices));
+	memset(probeCalls, 0, sizeof(probeCalls));
+	memset(deviceIdCalls, 0, sizeof(deviceIdCalls));
+	traceText[0] = '\0'; traceLength = 0u;
 	memset(setIdCalls, 0, sizeof(setIdCalls));
 	memset(inits, 0, sizeof(inits));
 	memset(statusReads, 0, sizeof(statusReads));
@@ -119,6 +133,7 @@ static void reset(void)
 	for(int i = 0; i < 2; i++) {
 		emulator[i] = false; busyForever[i] = false;
 		setIdResult[i] = setInfoResult[i] = MMCE_RESULT_READY;
+		deviceIdResult[i] = MMCE_RESULT_READY;
 		cardProbe[i] = CARD_ERROR_READY; cardInit[i] = CARD_ERROR_READY;
 		status[i] = 0x41u; present(i, i == 0);
 	}
@@ -155,6 +170,30 @@ int main(void)
 	__device_card_a.initial = &initial[0]; __device_card_b.initial = &initial[1];
 	__device_card_a.init = __device_card_b.init = cardInitStub;
 	__device_card_a.deinit = __device_card_b.deinit = cardDeinitStub;
+
+	/* Capture the previously silent exits without extra bus transactions or
+	 * changing their classification. A busy first identity read remains a
+	 * candidate explanation, not a claimed hardware fix. */
+	reset(); present(0, false);
+	CardSlots_RequestGame(&gameA);
+	assert(strstr(CardSlots_Trace(), "probe=-3") != NULL);
+	assert(probeCalls[0] == 1u && deviceIdCalls[0] == 0u && setIdCalls[0] == 0u);
+	reset(); swissSettings.disableMCPGameID = 1u;
+	CardSlots_RequestGame(&gameA);
+	assert(strstr(CardSlots_Trace(), "A GACZ01 skipped: GameID disabled") != NULL);
+	assert(probeCalls[0] == 0u && deviceIdCalls[0] == 0u && setIdCalls[0] == 0u);
+	reset(); deviceIdResult[0] = MMCE_RESULT_BUSY;
+	CardSlots_RequestGame(&gameA);
+	assert(strstr(CardSlots_Trace(), "device=-1 id=00000000") != NULL);
+	assert(probeCalls[0] == 1u && deviceIdCalls[0] == 1u && setIdCalls[0] == 0u);
+	assert(slots[0].state.phase == UI_CARD_SLOT_IDLE && !CardSlots_IdWaiting());
+	reset(); deviceIdResult[0] = MMCE_RESULT_VERSION;
+	CardSlots_RequestGame(&gameA);
+	assert(strstr(CardSlots_Trace(), "device=-4 id=38420101") != NULL);
+	assert(deviceIdCalls[0] == 1u && setIdCalls[0] == 1u && CardSlots_WaitingFor(A));
+	assert(strstr(CardSlots_Trace(), "build host-test stub-sdk") != NULL);
+	CardSlots_TraceScan(2u, 0u, false);
+	assert(strstr(CardSlots_Trace(), "save scan slots=2 copies=0 partial=0") != NULL);
 
 	/* The card takes the ID, the name doesn't go out: it is switching, not a
 	 * plain card (review finding: it was IDLE, readable and writable). */

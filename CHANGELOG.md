@@ -4,6 +4,17 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+### Diagnostic build
+
+- A test build for the MemCard PRO GC report in #102 records GameID skips,
+  probe and command results, the build and SDK, and save-scan counts in
+  `swiss/settings/card-trace.txt` when Game Detail closes. It does not change
+  card detection, switching, retries or the Saves row's visibility rules.
+  The settings device must be outside the memory-card slots. See
+  [the diagnostic test steps](docs/validation/memcard-pro-diagnostic.md).
+
 ## v2.5.0 — Manuals, disc art and a connected cube
 
 ### New

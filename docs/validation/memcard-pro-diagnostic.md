@@ -1,0 +1,51 @@
+# MemCard PRO GC diagnostic test
+
+This test branch investigates the new report on
+[issue #102](https://github.com/spencernorton/indigo/issues/102#issuecomment-6409292360).
+It is based on v2.5.0 and adds tracing. It is not a confirmed fix.
+
+The trace records the requested game ID, GameID-disable setting, storage
+locations, SDK and build revision, probe/identity/command results, presence
+changes and save-scan counts. It contains no save contents. Card detection,
+switching, retry intervals and Game Detail visibility are the release's.
+
+## Collecting a trace
+
+1. Keep the installed release's boot files so it can be restored. Install
+   this test build the same way as that release, including its matching
+   `swiss/patches/apploader.img`. Keep the existing settings and saves.
+2. Start Indigo again. Open a game whose virtual card already exists and
+   differs from the card currently displayed on the MemCard PRO. Wait on
+   Game Detail for about 15 seconds. Record whether the card's own display
+   changes, whether the Saves row appears/disappears and approximately when.
+3. Press B to return to the Library. This writes
+   `swiss/settings/card-trace.txt` to the settings device. Copy that file
+   before another restart. If no file appears, note the settings device:
+   export deliberately skips SD/MMCE devices in either memory-card slot.
+   FlippyDrive, GC Loader and SD2SP2 settings devices are supported.
+4. Separately, repeat with a game with no virtual card, then try quick
+   Details changes between games. Return to the Library and retain each
+   trace before restarting. Do not erase any existing saves to make a test.
+5. Include the exact release that failed, whether stock v2.4.0 still works
+   with the same settings, the card firmware version, slot and loader, and
+   the observed card-display result with the trace.
+
+## Reading the evidence
+
+- A request marked `skipped: GameID disabled` made no probe or ID request
+  on that slot. A storage-slot bypass is recorded as `not followed`.
+- `probe` and `device` record the SDK's numeric results. In this SDK,
+  0 is ready, -1 busy, -2 wrong device, -3 no card and -4 an older protocol.
+  The release accepts -4 from the identity command. A transient initial
+  probe or identity failure can currently be classified as no emulator;
+  this branch records that decision without changing it.
+- `set ID=0` means the transfer completed. It does not prove the hardware
+  selected the requested virtual card; compare its own display and subsequent
+  presence/read events.
+- `save scan slots` is a bit mask: 1 includes Slot A, 2 Slot B, 3 both and
+  0 neither. The Saves row hides after a settled scan with fewer than two
+  copies in both v2.4.0 and v2.5.0. That rule is unchanged here.
+
+The model runs are emulator evidence only. The diagnostic build and returned
+trace must not be recorded as a real-card pass until someone actually tests
+the three switching cases on the card and the results are reviewed.

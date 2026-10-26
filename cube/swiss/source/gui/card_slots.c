@@ -8,6 +8,7 @@
 #include <ogc/card.h>
 #include <ogc/dvd.h>
 #include <ogc/exi.h>
+#include <ogc/libversion.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/mmce.h>
 #include <stdarg.h>
@@ -140,8 +141,9 @@ typedef enum {
  * whatever the name (Set Disc Info, for the card's screen) does after it. */
 static sendResult_t sendId(s32 chan, const dvddiskid *disk, const char name[64])
 {
-	u32 id;
+	u32 id = 0;
 	s32 ret = probeMmce(chan);
+	trace(chan, "probe=%ld", (long)ret);
 
 	/* A card that took our ID doesn't turn into another device: that is the
 	 * ID libogc2 read while it switched, kept until it leaves the bus. Read
@@ -149,15 +151,21 @@ static sendResult_t sendId(s32 chan, const dvddiskid *disk, const char name[64])
 	if(ret == MMCE_RESULT_WRONGDEVICE && chan <= EXI_CHANNEL_1 && slots[chan].state.mmce) {
 		EXI_ProbeReset();
 		ret = probeMmce(chan);
+		trace(chan, "probe after reset=%ld", (long)ret);
 	}
 	/* Only an emulator that said so (Get Device ID) and then didn't take the
 	 * ID is SEND_FAILED; a slot known to hold one is tried again either way
 	 * (sendDone), and anything else is no emulator. */
 	if(ret < 0) return SEND_NO_EMULATOR;
-	if((ret = MMCE_GetDeviceID(chan, &id)) == MMCE_RESULT_VERSION) ret = MMCE_RESULT_READY;
+	ret = MMCE_GetDeviceID(chan, &id);
+	trace(chan, "device=%ld id=%08lx", (long)ret, (unsigned long)id);
+	if(ret == MMCE_RESULT_VERSION) ret = MMCE_RESULT_READY;
 	if(ret < 0) return SEND_NO_EMULATOR;
-	if(MMCE_SetDiskID(chan, disk) != MMCE_RESULT_READY) return SEND_FAILED;
-	if(MMCE_SetDiskInfo(chan, name) != MMCE_RESULT_READY) trace(chan, "name not sent");
+	ret = MMCE_SetDiskID(chan, disk);
+	trace(chan, "set ID=%ld", (long)ret);
+	if(ret != MMCE_RESULT_READY) return SEND_FAILED;
+	ret = MMCE_SetDiskInfo(chan, name);
+	if(ret != MMCE_RESULT_READY) trace(chan, "name not sent=%ld", (long)ret);
 	return SEND_OK;
 }
 
@@ -236,13 +244,24 @@ void CardSlots_RequestGame(const DiskHeader *header)
 
 	memcpy(id, header, sizeof(id));
 	traceId(name, header);
+	/* This branch diagnoses #102: log existing decisions, without adding
+	 * probes, changing retries, or changing what a result means. */
+	trace(EXI_CHANNEL_2, "build %s %s", GIT_COMMIT, _V_STRING);
+	trace(EXI_CHANNEL_2, "%s request disabled=%u saves=%u source=%lx config=%lx", name,
+		(unsigned)swissSettings.disableMCPGameID, (unsigned)!swissSettings.hideDetailSaves,
+		(unsigned long)(devices[DEVICE_CUR] != NULL ? devices[DEVICE_CUR]->location : 0u),
+		(unsigned long)(devices[DEVICE_CONFIG] != NULL ? devices[DEVICE_CONFIG]->location : 0u));
 	for(chan = EXI_CHANNEL_0; chan < EXI_CHANNEL_MAX; chan++) {
 		cardSlot_t *slot;
 
-		if(swissSettings.disableMCPGameID & (1 << chan)) continue;
+		if(swissSettings.disableMCPGameID & (1 << chan)) {
+			trace(chan, "%s skipped: GameID disabled", name);
+			continue;
+		}
 		/* Serial Port 2, or a slot used as a storage device: sent as before,
 		 * nothing there to read as a memory card. */
 		if(chan > EXI_CHANNEL_1 || slotInUse(chan)) {
+			trace(chan, "%s not followed: storage slot or SP2", name);
 			if(sendId(chan, disk, header->GameName) == SEND_OK) {
 				trace(chan, "%s sent (not followed)", name);
 				if(chan == EXI_CHANNEL_0) swissSettings.emulateMemoryCard = 0;
@@ -365,4 +384,10 @@ bool CardSlots_IdWaiting(void)
 const char *CardSlots_Trace(void)
 {
 	return traceText;
+}
+
+void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial)
+{
+	trace(EXI_CHANNEL_2, "save scan slots=%u copies=%u partial=%u", slotsRead, copies,
+		(unsigned)partial);
 }

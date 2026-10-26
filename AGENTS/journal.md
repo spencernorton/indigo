@@ -1,3 +1,23 @@
+## 2026-10-26 — MemCard PRO regression investigation and diagnostic branch
+
+The #102 reporter says the latest release no longer switches the card and
+the Game Detail entry disappears. The four slot-service files, memory-card
+device handler and SDK MMCE/CARD implementation are unchanged between v2.4.0
+and v2.5.0. Initial paired runs of the literal release ZIPs switch both an
+existing and a new virtual card in the parameterized Dolphin model, with
+protocol 0100 and 0101. This does not reproduce or disprove the hardware
+report. A settled Saves row with fewer than two copies is deliberately
+hidden in both releases; disappearance alone does not prove a failed switch.
+
+This test branch adds metadata tracing for the previously silent initial
+probe/identity failures, disabled GameID and storage-slot bypass, plus scan
+counts. It exports the trace after Detail closes or before handoff, using
+the settings writer. Export refuses all memory-card-slot settings devices.
+Host regressions check the unchanged command counts and failure decisions,
+and exporter isolation/retry behavior. Detection, retry timings, state
+machine and save-choice behavior are unchanged. No hardware pass, release
+fix, stable promotion or reporter contact is represented by this branch.
+
 ## 2026-10-23 — Align agent instructions with the coverage policy
 
 Remove the obsolete real-card publication hold from AGENTS.md as well as

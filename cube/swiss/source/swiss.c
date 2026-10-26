@@ -2782,6 +2782,7 @@ static savesCopies_t gameflowSaveCopies;
 static void load_file_with_context(gameflowLaunchContext_t *context);
 static void load_game_with_context(gameflowLaunchContext_t *context);
 static void gameflowWaitForCardIds(void);
+static void gameflowWriteCardTrace(void);
 static int gameflow_info_game(ConfigEntry *config,
 	gameflowLaunchContext_t *context);
 static bool gameflowReadResolverHeader(file_handle *file,
@@ -6765,12 +6766,14 @@ static void load_game_with_context(gameflowLaunchContext_t *context) {
 	if(!(context != NULL ? gameflow_info_game(config, context) :
 		info_game(config))) {
 		free(config);
+		gameflowWriteCardTrace();
 		goto exit;
 	}
 	/* From here the launch times its waits and hands the game the clock, so
 	 * Sync Clock leaves the clock as it is (gui/time_sync.c). */
 	time_sync_close();
 	gameflowWaitForCardIds();
+	gameflowWriteCardTrace();
 	/* A Library launch shows the launch screen from here to the hand-off,
 	 * Boot without prompts included. */
 	if(context != NULL) {
@@ -7468,6 +7471,24 @@ static bool gameflowSaveAsk(const char *text)
 	return yes;
 }
 
+/* Diagnostic branch only: keep the trace on the settings device after Detail
+ * closes. Never write through a memory-card slot; the card being diagnosed
+ * must see exactly the release's traffic. No save data is included. */
+static void gameflowWriteCardTrace(void)
+{
+	static size_t written;
+	const char *text = CardSlots_Trace();
+	size_t length = strlen(text);
+
+	if(length == 0u || length == written || devices[DEVICE_CONFIG] == NULL ||
+		(devices[DEVICE_CONFIG]->location & (LOC_MEMCARD_SLOT_A | LOC_MEMCARD_SLOT_B)) != 0u ||
+		!config_set_device()) {
+		return;
+	}
+	if(config_file_write("swiss/settings/card-trace.txt", (char *)text)) written = length;
+	config_unset_device();
+}
+
 /* A launch with a game ID still waiting behind a memory card's switch sends
  * it first, once that switch is done, so the game starts with its own card on
  * the way. Bounded by the switch's own deadline; the box says why. */
@@ -7682,6 +7703,7 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 			context->savesCardFailed = CardSlots_FailedFor(0, context->gameId) ||
 				CardSlots_FailedFor(1, context->gameId);
 			if(context->savesCardFailed) context->saveStats.partial = true;
+			CardSlots_TraceScan(slots, context->saveStats.saves, context->saveStats.partial);
 			context->savesScanned = true;
 			context->saveSlot = gameflowSaveSlot(&gameflowSaveCopies);
 			/* The totals first: the card as it is. */

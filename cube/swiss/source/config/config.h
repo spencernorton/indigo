@@ -48,6 +48,8 @@ int config_update_game(ConfigEntry *entry, ConfigEntry *defaults, bool checkConf
 /* Mounts the settings device unless it's the source; config_unset_device
  * lets it go again. */
 bool config_set_device(void);
+/* Writes a whole file on the settings device (NAME.new, then renamed). */
+int config_file_write(char *filename, char *contents);
 void config_unset_device(void);
 int config_update_global(bool checkConfigDevice);
 /* Turns Library Folders on or off. While it is on, FlattenDir is its

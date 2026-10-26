@@ -43,4 +43,7 @@ bool CardSlots_IdWaiting(void);
  * the times, the IDs, the presence changes, the status bytes and the reads. */
 const char *CardSlots_Trace(void);
 
+/* Diagnostic branch: explain whether a completed scan hides the Saves row. */
+void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial);
+
 #endif
