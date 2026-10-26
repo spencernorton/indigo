@@ -1,3 +1,17 @@
+## 2026-10-26 — Always show saves on Game Details
+
+The reporter on #102 confirms stock 2.5.0 switches MemCard PRO cards and
+reads their saves correctly; the disappearing row was the two-copy
+visibility threshold. Add Always beside On (still the default) and Off
+under Setup › Library › Saves on Details. It shows a single save's blocks,
+date and game-written line, or a completed empty scan. An incomplete empty
+scan says so, and card loading/failure messages retain priority. The new
+Always Show Saves on Details key defaults to No; the old Hide key still
+disables scanning and takes precedence. No card protocol, scan timing or
+copy-selection behavior changes. Host coverage exercises zero/one/multiple
+copies, pending/failed/incomplete scans, both cycle directions and settings
+round trips. This is for a future release through beta.
+
 ## 2026-10-23 — Align agent instructions with the coverage policy
 
 Remove the obsolete real-card publication hold from AGENTS.md as well as

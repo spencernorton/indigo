@@ -15,7 +15,9 @@ screen also shows **Saves** above Settings and Cheats: its files or copies,
 total blocks and the latest recorded update date from memory cards and the
 Save Folder, including RAW images, and from `swiss/saves` on the games' card
 when your settings are on another. Incomplete scans are marked. Settings ›
-Setup › Library › **Saves on Details** turns it off. Open System ›
+Setup › Library › **Saves on Details** also offers **Always**, to keep the
+box visible with one copy or none, and **Off**, to stop reading the cards.
+Open System ›
 [Memory Cards](memory-cards.md) for an individual save’s size, date and
 actions.
 

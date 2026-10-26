@@ -37,7 +37,7 @@ typedef enum {
 	UI_GAMEFLOW_DETAIL_CLEAN_BOOT_DEFAULT = 1u << 10,
 	UI_GAMEFLOW_DETAIL_AUDIO_STREAMING = 1u << 11,
 	UI_GAMEFLOW_DETAIL_HAS_DISC_TWO = 1u << 12,
-	/* Set by Build: the SAVES inset shows, for two or more save copies. */
+	/* Set by Build: the SAVES inset shows (any count with Always selected). */
 	UI_GAMEFLOW_DETAIL_HAS_SAVES = 1u << 13,
 	/* Set by Build: Left and Right choose the copy to start the game with. */
 	UI_GAMEFLOW_DETAIL_SAVE_CHOICE = 1u << 14,
@@ -67,6 +67,9 @@ typedef struct {
 	bool playHistoryAvailable;
 	uiGameSaveStatus_t saveStatus;
 	const uiSavesGameStats_t *saveStats;
+	/* Show a settled scan even with one copy or none. No saveStats still
+	 * means no scan (Saves on Details off), so nothing shows. */
+	bool savesAlways;
 	/* A memory card is still changing to this game's card: its saves aren't
 	 * in saveStats yet, and no copy is chosen. */
 	bool savesWaiting;

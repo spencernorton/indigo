@@ -7689,6 +7689,7 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 		}
 		context->savesWaiting = CardSlots_WaitingFor(context->gameId);
 		source.saveStats = &context->saveStats;
+		source.savesAlways = swissSettings.alwaysShowDetailSaves;
 		source.saveLine = gameflowSaveNewestLine();
 		source.savesWaiting = context->savesWaiting;
 		source.savesCardFailed = context->savesCardFailed;

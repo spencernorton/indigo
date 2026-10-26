@@ -148,6 +148,7 @@ def check_save_publication(source: str) -> None:
     assert "if(context->savesCardFailed) context->saveStats.partial = true;" in collection
     assert "source.savesCardFailed = context->savesCardFailed;" in collection
     assert "source.saveStats = &context->saveStats;" in collection
+    assert "source.savesAlways = swissSettings.alwaysShowDetailSaves;" in collection
     assert source.count("Saves_CollectGameStats(") == 1
     assert "source.saveStats" not in publication[:publication.index(collection)]
     assert "UIGameflowDetail_Build(snapshot, &source)" in publication
@@ -159,6 +160,7 @@ for old, new in (
     ("valid_gcm_magic(&GCMDisk)", "true"),
     ("memcmp(context->gameId, &GCMDisk, UI_GAMEFLOW_DETAIL_ID_LENGTH) == 0", "true"),
     ("source.saveStats = &context->saveStats;", "source.saveStats = NULL;"),
+    ("source.savesAlways = swissSettings.alwaysShowDetailSaves;", "source.savesAlways = false;"),
     ("if(!context->savesScanned) {", "if(true) {"),
     ("CardSlots_ReadableFor(0, context->gameId) ? 1u : 0u", "1u"),
     ("CardSlots_ReadableFor(1, context->gameId) ? 2u : 0u", "2u"),

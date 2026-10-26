@@ -580,6 +580,7 @@ int config_update_global(bool checkConfigDevice) {
 	fprintf(fp, "Spin Discs=%s\r\n", swissSettings.stillDiscs ? "No":"Yes");
 	fprintf(fp, "Library Folders=%s\r\n", swissSettings.libraryFolders ? "Yes":"No");
 	fprintf(fp, "Hide Saves on Details=%s\r\n", swissSettings.hideDetailSaves ? "Yes":"No");
+	fprintf(fp, "Always Show Saves on Details=%s\r\n", swissSettings.alwaysShowDetailSaves ? "Yes":"No");
 	fprintf(fp, "Idle Animation=%s\r\n", swissSettings.idleAnimation ? "Sway":"Calm");
 	fprintf(fp, "Hide Waves=%s\r\n", swissSettings.hideWaves ? "Yes":"No");
 	fprintf(fp, "Hide On-screen Controls=%s\r\n", swissSettings.hideHomeControls ? "Yes":"No");
@@ -1641,6 +1642,9 @@ void config_parse_global(char *configData, bool settingsFile) {
 				}
 				else if(!strcmp("Hide Saves on Details", name)) {
 					swissSettings.hideDetailSaves = !strcmp("Yes", value);
+				}
+				else if(!strcmp("Always Show Saves on Details", name)) {
+					swissSettings.alwaysShowDetailSaves = !strcmp("Yes", value);
 				}
 				else if(!strcmp("Idle Animation", name)) {
 					swissSettings.idleAnimation = !strcmp("Sway", value);

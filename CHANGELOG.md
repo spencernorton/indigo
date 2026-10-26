@@ -4,6 +4,15 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+### New
+
+- Settings › Setup › Library › **Saves on Details** has an **Always** option:
+  the Saves box stays visible with one copy or none. **On** keeps the
+  existing two-copy threshold and **Off** leaves the memory cards alone.
+  Card loading and save scanning are unchanged.
+
 ## v2.5.0 — Manuals, disc art and a connected cube
 
 ### New

@@ -163,7 +163,7 @@ static char *tooltips_interface[PAGE_INTERFACE_MAX+1] = {
 	[SET_MENU_WIDESCREEN] = "Menu Widescreen:\n\nYes - Drawn for a TV set to 16:9: the background fills the\nscreen and the menus keep their shape.\nNo - Drawn for a 4:3 picture (default)\n\nSet your TV or HDMI adapter to 16:9 too. Games follow Force\nWidescreen in Game Defaults, not this.",
 	[SET_LIBRARY_LAYOUT] = "Library Layout:\n\nHorizontal - A row of covers; Left and Right move (default)\nVertical - A column of covers; Up and Down move\nGrid - Rows of five covers; every direction moves\nSpotlight - A gameplay still over banners; Left and Right move\nJewel Case - A CD case, its disc spinning; Left and Right move\n\nThe selected game's title and details show beside its cover in\nVertical and its still in Spotlight, and above the controls in Grid.\nEvery layout wraps round from the last game to the first; L and R\njump a page. Y opens the focused game's settings. In Jewel Case the\nC-stick turns the case.",
 	[SET_LIBRARY_FOLDERS] = "Library Folders:\n\nOff - The Library is one list of every game in /games, however\nthey sit in folders there (default)\nOn - The Library shows the folders in /games beside the games:\nA opens one, B goes back. A folder in a folder is the deepest;\nit lists every game below it.\n\nKeep a game's discs in the same folder.",
-	[SET_DETAIL_SAVES] = "Saves on Details:\n\nOn - A game's details show its saves on both memory cards and\nin the Save Folder when there are two or more copies, and Left\nand Right choose the one to start with (default)\nOff - A game's details leave the memory cards alone.",
+	[SET_DETAIL_SAVES] = "Saves on Details:\n\nOn - Show saves when there are two or more copies (default).\nAlways - Show saves even with one copy or none.\nOff - Leave the memory cards alone.\n\nOn and Always read both slots and the Save Folder.\nWith multiple copies, Left and Right choose one to start with.",
 	[SET_IDLE_ANIMATION] = "Idle Animation:\n\nHow the cube moves while Home rests.\nCalm - A slight drift, turned a little to the right (default)\nSway - It turns slowly left and right, so the faces beside\nthe one in front peek round its edges\n\nUI Motion Reduced or Off keeps the cube still.",
 	[SET_WAVES] = "Waves:\n\nOn - Waves drift behind the cube (default)\nOff - No waves: the backdrop and its rings only\n\nWave Color and Wave Speed apply while they are on.",
 	[SET_HOME_CONTROLS] = "On-screen Controls:\n\nOn - Home shows its button hints under the cube (default)\nOff - Home shows none\n\nOther screens, and Restart's question, keep theirs.\nY on Home always opens Settings.",
@@ -1142,7 +1142,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_FLATTEN_DIR: rowText(row, "Flatten directory:", swissSettings.flattenDir, !swissSettings.libraryFolders); break;
 			case SET_LIBRARY_LAYOUT: rowCycle(row, "Library Layout:", libraryLayoutStr[swissSettings.libraryLayout], true); break;
 			case SET_LIBRARY_FOLDERS: rowOnOff(row, "Library Folders:", swissSettings.libraryFolders, true); break;
-			case SET_DETAIL_SAVES: rowOnOff(row, "Saves on Details:", !swissSettings.hideDetailSaves, true); break;
+			case SET_DETAIL_SAVES: rowCycle(row, "Saves on Details:", swissSettings.hideDetailSaves ? "Off" : swissSettings.alwaysShowDetailSaves ? "Always" : "On", true); break;
 			case SET_MENU_WIDESCREEN: rowYesNo(row, "Menu Widescreen:", swissSettings.menuWidescreen, true); break;
 		}
 	}
@@ -1752,7 +1752,12 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 				config_set_library_folders(!swissSettings.libraryFolders);
 			break;
 			case SET_DETAIL_SAVES:
-				swissSettings.hideDetailSaves ^= 1;
+			{
+				int mode = swissSettings.hideDetailSaves ? 2 : swissSettings.alwaysShowDetailSaves ? 1 : 0;
+				mode = (mode + direction + 3) % 3;
+				swissSettings.hideDetailSaves = mode == 2;
+				swissSettings.alwaysShowDetailSaves = mode == 1;
+			}
 			break;
 			case SET_IDLE_ANIMATION:
 				swissSettings.idleAnimation ^= 1;

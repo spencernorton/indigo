@@ -23,8 +23,8 @@
 # swissSettings.cubeStyle between Infinite and Classic, the Library
 # Folders arm (SET_LIBRARY_FOLDERS) only turns Library Folders on or off
 # through config_set_library_folders, which swaps FlattenDir with it, and
-# the Saves on Details arm (SET_DETAIL_SAVES) only flips
-# swissSettings.hideDetailSaves, and the Idle Animation, Waves, On-screen
+# the Saves on Details arm (SET_DETAIL_SAVES) cycles On/Always/Off through
+# hideDetailSaves and alwaysShowDetailSaves, and the Idle Animation, Waves, On-screen
 # Controls and Face Labels arms (SET_IDLE_ANIMATION, SET_WAVES,
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
 # the clock sync arms only flip swissSettings.ntpSync (SET_NTP_SYNC) or take
@@ -215,10 +215,15 @@ normalized = re.sub(
     r"\t+swissSettings\.cubeStyle \^= 1;\n"
     r"\t+break;\n",
     "", normalized, count=1)
-# And the Saves on Details arm, a flip.
+# And Saves on Details: On/Always/Off, behaviorally exercised by test_settings_file.py.
 normalized = re.sub(
     r"(?ms)^\t+case SET_DETAIL_SAVES:\n"
-    r"\t+swissSettings\.hideDetailSaves \^= 1;\n"
+    r"\t+\{\n"
+    r"\t+int mode = swissSettings\.hideDetailSaves \? 2 : swissSettings\.alwaysShowDetailSaves \? 1 : 0;\n"
+    r"\t+mode = \(mode \+ direction \+ 3\) % 3;\n"
+    r"\t+swissSettings\.hideDetailSaves = mode == 2;\n"
+    r"\t+swissSettings\.alwaysShowDetailSaves = mode == 1;\n"
+    r"\t+\}\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # And Home's look: the Idle Animation, Waves, On-screen Controls and Face
