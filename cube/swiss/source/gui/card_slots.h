@@ -44,6 +44,7 @@ bool CardSlots_IdWaiting(void);
 const char *CardSlots_Trace(void);
 
 /* Diagnostic branch: explain whether a completed scan hides the Saves row. */
-void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial);
+void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial,
+	bool waiting, bool failed);
 
 #endif

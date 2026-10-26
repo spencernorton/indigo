@@ -8,10 +8,16 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Diagnostic build
 
+- Card-switch deadlines, insertion probes and the pending-GameID launch wait
+  use elapsed time, so Sync Clock corrections cannot expire or prolong them.
+- Initial card identification retries a BUSY bus-lock result within the
+  existing 600 ms insertion budget. Those failed lock attempts send no card
+  commands; wrong-device and no-card responses are not retried.
 - A test build for the MemCard PRO GC report in #102 records GameID skips,
-  probe and command results, the build and SDK, and save-scan counts in
-  `swiss/settings/card-trace.txt` when Game Detail closes. It does not change
-  card detection, switching, retries or the Saves row's visibility rules.
+  probe/identity retry counts and elapsed times, raw card probe/mount results,
+  Sync Clock state, build/SDK and save-scan counts/wait/failure flags in
+  `swiss/settings/card-trace.txt` when Game Detail closes. A full log is
+  explicitly marked. The Saves row's visibility rules are unchanged.
   The settings device must be outside the memory-card slots. See
   [the diagnostic test steps](docs/validation/memcard-pro-diagnostic.md).
 

@@ -394,7 +394,11 @@ def check_card_slots(source: str) -> None:
             "\t\t\t\tCardSlots_FailedFor(1, context->gameId);\n"
             "\t\t\tif(context->savesCardFailed) context->saveStats.partial = true;") in publication
     wait = definition("static void gameflowWaitForCardIds(")
-    assert "while(CardSlots_IdWaiting() && diff_msec(start, gettime()) < 65000u) {" in wait
+    # Sync Clock may adjust the console clock during a card switch. The
+    # executable launch-wait regression also exercises both step directions.
+    assert "u64 start = SYS_GetSystemTime();" in wait
+    assert "gettime()" not in wait
+    assert "while(CardSlots_IdWaiting() && diff_msec(start, SYS_GetSystemTime()) < 65000u) {" in wait
     assert "(void)CardSlots_Poll();" in wait
 
 
@@ -408,7 +412,8 @@ for old, new in (
      "\tif(!CardSlots_WritableFor(context->saveSlot, context->gameId)) {",
      "/* Never onto the card a memory card emulator is still changing from. */\n"
      "\tif(false) {"),
-    ("diff_msec(start, gettime()) < 65000u", "true"),
+    ("diff_msec(start, SYS_GetSystemTime()) < 65000u", "true"),
+    ("u64 start = SYS_GetSystemTime();\n\n\twhile(CardSlots_IdWaiting()", "u64 start = gettime();\n\n\twhile(CardSlots_IdWaiting()"),
     ("\tif(CardSlots_Poll() || gameflowSlotsChanged) {", "\tif(false) {"),
     ("\tif(CardSlots_Poll() || gameflowSlotsChanged) {", "\tif(CardSlots_Poll()) {"),
     ("\t\tif(CardSlots_Poll()) gameflowSlotsChanged = true;\n", ""),

@@ -7495,10 +7495,10 @@ static void gameflowWriteCardTrace(void)
 static void gameflowWaitForCardIds(void)
 {
 	uiDrawObj_t *box = NULL;
-	u64 start = gettime();
+	u64 start = SYS_GetSystemTime();
 
-	while(CardSlots_IdWaiting() && diff_msec(start, gettime()) < 65000u) {
-		if(box == NULL && diff_msec(start, gettime()) > 500u) {
+	while(CardSlots_IdWaiting() && diff_msec(start, SYS_GetSystemTime()) < 65000u) {
+		if(box == NULL && diff_msec(start, SYS_GetSystemTime()) > 500u) {
 			box = DrawPublish(DrawProgressBar(true, 0,
 				"Waiting for the memory card\205"));
 		}
@@ -7703,7 +7703,8 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 			context->savesCardFailed = CardSlots_FailedFor(0, context->gameId) ||
 				CardSlots_FailedFor(1, context->gameId);
 			if(context->savesCardFailed) context->saveStats.partial = true;
-			CardSlots_TraceScan(slots, context->saveStats.saves, context->saveStats.partial);
+			CardSlots_TraceScan(slots, context->saveStats.saves, context->saveStats.partial,
+				CardSlots_WaitingFor(context->gameId), context->savesCardFailed);
 			context->savesScanned = true;
 			context->saveSlot = gameflowSaveSlot(&gameflowSaveCopies);
 			/* The totals first: the card as it is. */

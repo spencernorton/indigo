@@ -1,3 +1,22 @@
+## 2026-10-26 — MemCard PRO recovery test candidate
+
+Build a new pinned test branch from the diagnostic candidate, preserving the
+earlier branch. Card-slot deadlines/probes and the pending-ID launch wait use
+SYS_GetSystemTime so Sync Clock cannot move their time base. Initial identity
+BUSY lock failures retry within the same600ms budget as the insertion probe;
+the SDK sends no command on that BUSY exit. Definitive negative responses,
+card-load backoff and save-choice guards are retained. The log adds Sync Clock
+state, steady timestamps, retry/elapsed information, raw probe/mount results,
+scan waiting/failure flags and an explicit capacity marker. Export still
+refuses all card-slot settings devices.
+
+Host regressions exercise positive and negative clock corrections, preserved
+switch deadlines, bounded identity retries with no extra identity commands,
+shared probe/identity budget and the65s launch bound. The structural audit now
+requires the steady clock and retains its bound mutation. Run native CI and
+the exact packaged binary in the MemCard model before giving it to #102's
+reporter. No real-card pass or stable fix is asserted by this candidate.
+
 ## 2026-10-26 — MemCard PRO regression investigation and diagnostic branch
 
 The #102 reporter says the latest release no longer switches the card and

@@ -11,6 +11,7 @@
 #include <ogc/libversion.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/mmce.h>
+#include <ogc/system.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +42,8 @@ static cardSlot_t slots[2];
  * console's, and Dolphin's log) and, while there is room, into traceText. */
 static char traceText[8192];
 static size_t traceLength;
+static bool traceFull;
+#define CARD_TRACE_FULL "[trace full; restart Indigo before another test]\n"
 static const char *const phaseNames[] = {
 	"idle", "sent", "away", "back", "loading", "ready", "failed"
 };
@@ -50,7 +53,9 @@ static const char *const readNames[] = {
 
 static u64 nowMs(void)
 {
-	return ticks_to_millisecs(gettime());
+	/* Sync Clock can step gettime() while Detail is open. Slot deadlines,
+	 * insertion waits and the diagnostic timestamps must keep advancing. */
+	return ticks_to_millisecs(SYS_GetSystemTime());
 }
 
 static void trace(s32 chan, const char *format, ...)
@@ -72,11 +77,16 @@ static void trace(s32 chan, const char *format, ...)
 	va_end(args);
 	print_debug("cards: %s\n", line);
 	length = strlen(line);
-	if(traceLength + length + 2u < sizeof(traceText)) {
+	if(!traceFull && traceLength + length + 2u + sizeof(CARD_TRACE_FULL) < sizeof(traceText)) {
 		memcpy(traceText + traceLength, line, length);
 		traceLength += length;
 		traceText[traceLength++] = '\n';
 		traceText[traceLength] = '\0';
+	}
+	else if(!traceFull) {
+		memcpy(traceText + traceLength, CARD_TRACE_FULL, sizeof(CARD_TRACE_FULL));
+		traceLength += sizeof(CARD_TRACE_FULL) - 1u;
+		traceFull = true;
 	}
 }
 
@@ -106,10 +116,14 @@ static bool slotInUse(s32 chan)
 	DEVICEHANDLER_INTERFACE *users[2] = {devices[DEVICE_CUR], devices[DEVICE_CONFIG]};
 	int i;
 
-	if(MMCE_IsAttached(chan)) return true;
+	if(MMCE_IsAttached(chan)) {
+		trace(chan, "storage: MMCE attached");
+		return true;
+	}
 	for(i = 0; i < 2; i++) {
 		if(users[i] != NULL && users[i] != &__device_card_a &&
 			users[i] != &__device_card_b && (users[i]->location & location) != 0u) {
+			trace(chan, "storage: %s", i == 0 ? "Source" : "settings device");
 			return true;
 		}
 	}
@@ -118,13 +132,29 @@ static bool slotInUse(s32 chan)
 
 /* Bounded: at most the insertion window, never the unbounded wait of
  * gameID_early_set. */
-static s32 probeMmce(s32 chan)
+static s32 probeMmce(s32 chan, u64 start)
 {
-	u64 start = gettime();
 	s32 ret;
 
 	while((ret = MMCE_ProbeEx(chan)) == MMCE_RESULT_BUSY &&
-		diff_msec(start, gettime()) < CARD_SLOTS_PROBE_MS) {
+		diff_msec(start, SYS_GetSystemTime()) < CARD_SLOTS_PROBE_MS) {
+		usleep(1000);
+	}
+	return ret;
+}
+
+/* MMCE_GetDeviceID returns BUSY only when EXI_LockEx failed, before it
+ * selected the card or sent a command. Give a temporary bus lock another
+ * chance within the SAME insertion budget; never retry a card's negative
+ * answer or extend the wait indefinitely. */
+static s32 identifyMmce(s32 chan, u32 *id, u64 start, unsigned *busyRetries)
+{
+	s32 ret;
+
+	*busyRetries = 0u;
+	while((ret = MMCE_GetDeviceID(chan, id)) == MMCE_RESULT_BUSY &&
+		diff_msec(start, SYS_GetSystemTime()) < CARD_SLOTS_PROBE_MS) {
+		(*busyRetries)++;
 		usleep(1000);
 	}
 	return ret;
@@ -142,23 +172,27 @@ typedef enum {
 static sendResult_t sendId(s32 chan, const dvddiskid *disk, const char name[64])
 {
 	u32 id = 0;
-	s32 ret = probeMmce(chan);
-	trace(chan, "probe=%ld", (long)ret);
+	u64 start = SYS_GetSystemTime();
+	unsigned busyRetries;
+	s32 ret = probeMmce(chan, start);
+	trace(chan, "probe=%ld after=%lums", (long)ret,
+		(unsigned long)diff_msec(start, SYS_GetSystemTime()));
 
 	/* A card that took our ID doesn't turn into another device: that is the
 	 * ID libogc2 read while it switched, kept until it leaves the bus. Read
 	 * it afresh instead of needing the card taken out and put back. */
 	if(ret == MMCE_RESULT_WRONGDEVICE && chan <= EXI_CHANNEL_1 && slots[chan].state.mmce) {
 		EXI_ProbeReset();
-		ret = probeMmce(chan);
+		ret = probeMmce(chan, start);
 		trace(chan, "probe after reset=%ld", (long)ret);
 	}
 	/* Only an emulator that said so (Get Device ID) and then didn't take the
 	 * ID is SEND_FAILED; a slot known to hold one is tried again either way
 	 * (sendDone), and anything else is no emulator. */
 	if(ret < 0) return SEND_NO_EMULATOR;
-	ret = MMCE_GetDeviceID(chan, &id);
-	trace(chan, "device=%ld id=%08lx", (long)ret, (unsigned long)id);
+	ret = identifyMmce(chan, &id, start, &busyRetries);
+	trace(chan, "device=%ld id=%08lx busy-retries=%u after=%lums", (long)ret,
+		(unsigned long)id, busyRetries, (unsigned long)diff_msec(start, SYS_GetSystemTime()));
 	if(ret == MMCE_RESULT_VERSION) ret = MMCE_RESULT_READY;
 	if(ret < 0) return SEND_NO_EMULATOR;
 	ret = MMCE_SetDiskID(chan, disk);
@@ -220,11 +254,19 @@ static uiCardReadResult_t readCard(s32 chan)
 {
 	DEVICEHANDLER_INTERFACE *device = chan == EXI_CHANNEL_0 ? &__device_card_a : &__device_card_b;
 	s32 result = CARD_ProbeEx(chan, NULL, NULL);
+	s32 initResult;
+	u64 start;
 
+	trace(chan, "CARD probe=%ld", (long)result);
 	if(result == CARD_ERROR_NOCARD) return UI_CARD_READ_NO_CARD;
 	if(result == CARD_ERROR_WRONGDEVICE) return UI_CARD_READ_NOT_A_CARD;
 	if(result != CARD_ERROR_READY) return UI_CARD_READ_BUSY;
-	result = device->init(device->initial) == 0 ? CARD_ERROR_READY : device->initial->status;
+	trace(chan, "mount starts");
+	start = SYS_GetSystemTime();
+	initResult = device->init(device->initial);
+	result = initResult == 0 ? CARD_ERROR_READY : device->initial->status;
+	trace(chan, "mount=%ld status=%ld after=%lums", (long)initResult, (long)result,
+		(unsigned long)diff_msec(start, SYS_GetSystemTime()));
 	device->deinit(device->initial);
 	switch(result) {
 	case CARD_ERROR_READY: return UI_CARD_READ_OK;
@@ -247,10 +289,13 @@ void CardSlots_RequestGame(const DiskHeader *header)
 	/* This branch diagnoses #102: log existing decisions, without adding
 	 * probes, changing retries, or changing what a result means. */
 	trace(EXI_CHANNEL_2, "build %s %s", GIT_COMMIT, _V_STRING);
-	trace(EXI_CHANNEL_2, "%s request disabled=%u saves=%u source=%lx config=%lx", name,
+	trace(EXI_CHANNEL_2, "%s request disabled=%u saves=%u ntp=%u source=%lx config=%lx", name,
 		(unsigned)swissSettings.disableMCPGameID, (unsigned)!swissSettings.hideDetailSaves,
+		(unsigned)swissSettings.ntpSync,
 		(unsigned long)(devices[DEVICE_CUR] != NULL ? devices[DEVICE_CUR]->location : 0u),
 		(unsigned long)(devices[DEVICE_CONFIG] != NULL ? devices[DEVICE_CONFIG]->location : 0u));
+	trace(EXI_CHANNEL_2, "console clock=%llums (trace uses steady time)",
+		(unsigned long long)ticks_to_millisecs(gettime()));
 	for(chan = EXI_CHANNEL_0; chan < EXI_CHANNEL_MAX; chan++) {
 		cardSlot_t *slot;
 
@@ -270,6 +315,8 @@ void CardSlots_RequestGame(const DiskHeader *header)
 		}
 		slot = &slots[chan];
 		(void)UICardSlot_Observe(&slot->state, slotPresent(chan), nowMs());
+		trace(chan, "present=%u prior=%s known-mmce=%u", (unsigned)slot->state.present,
+			phaseNames[slot->state.phase], (unsigned)slot->state.mmce);
 		/* Kept for a send later: behind a switch, or after a failed one. */
 		memcpy(&slot->pendingDisk, disk, sizeof(slot->pendingDisk));
 		memcpy(slot->pendingName, header->GameName, sizeof(slot->pendingName));
@@ -386,8 +433,9 @@ const char *CardSlots_Trace(void)
 	return traceText;
 }
 
-void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial)
+void CardSlots_TraceScan(unsigned slotsRead, unsigned copies, bool partial,
+	bool waiting, bool failed)
 {
-	trace(EXI_CHANNEL_2, "save scan slots=%u copies=%u partial=%u", slotsRead, copies,
-		(unsigned)partial);
+	trace(EXI_CHANNEL_2, "save scan slots=%u copies=%u partial=%u waiting=%u failed=%u",
+		slotsRead, copies, (unsigned)partial, (unsigned)waiting, (unsigned)failed);
 }

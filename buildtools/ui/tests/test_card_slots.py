@@ -62,14 +62,17 @@ typedef struct device {
 	file_handle *initial; u32 location;
 	s32 (*init)(file_handle *); s32 (*deinit)(file_handle *);
 } DEVICEHANDLER_INTERFACE;
-static struct { unsigned disableMCPGameID; int emulateMemoryCard, hideDetailSaves; } swissSettings;
+static struct { unsigned disableMCPGameID; int emulateMemoryCard, hideDetailSaves, ntpSync; } swissSettings;
 static DEVICEHANDLER_INTERFACE __device_card_a, __device_card_b;
 static DEVICEHANDLER_INTERFACE *devices[2];
 static file_handle initial[2];
 
-/* A fake clock: usleep moves it, as the bounded waits do on a console. */
+/* Steady elapsed time and the console clock can move independently. */
 static u64 fakeMs = 1000u;
-static u64 gettime(void) { return fakeMs; }
+static int64_t wallOffsetMs = 1000000;
+static int64_t probeWallJump, identityWallJump;
+static u64 SYS_GetSystemTime(void) { return fakeMs; }
+static u64 gettime(void) { return (u64)((int64_t)fakeMs + wallOffsetMs); }
 #define ticks_to_millisecs(t) (t)
 static u32 diff_msec(u64 a, u64 b) { return (u32)(b - a); }
 static int usleep_ms(unsigned us) { fakeMs += us >= 1000u ? us / 1000u : 1u; return 0; }
@@ -84,18 +87,26 @@ static s32 setIdResult[2], setInfoResult[2], cardProbe[2], cardInit[2], deviceId
 static u8 status[2];
 static unsigned setIdCalls[2], inits[2], resets, statusReads[2];
 static unsigned probeCalls[2], deviceIdCalls[2];
+static unsigned identityBusyLeft[2], identityCommands[2];
+static u64 probeReadyAt[2];
 static void present(int slot, bool on) { fakeCsr[slot] = on ? 0x1000u : 0u; }
 static s32 MMCE_ProbeEx(s32 chan)
 {
 	if(chan > 1) return MMCE_RESULT_NOCARD;
 	probeCalls[chan]++;
-	if(busyForever[chan]) return MMCE_RESULT_BUSY;
+	if(chan == 0 && probeCalls[chan] == 2u) wallOffsetMs += probeWallJump;
+	if(busyForever[chan] || fakeMs < probeReadyAt[chan]) return MMCE_RESULT_BUSY;
 	if(!(fakeCsr[chan] & 0x1000u)) return MMCE_RESULT_NOCARD;
 	return MMCE_RESULT_READY;
 }
 static s32 MMCE_GetDeviceID(s32 chan, u32 *id) {
 	deviceIdCalls[chan]++;
-	if(deviceIdResult[chan] != MMCE_RESULT_BUSY) *id = 0x38420101u;
+	if(chan == 0 && deviceIdCalls[chan] == 2u) wallOffsetMs += identityWallJump;
+	/* The SDK's BUSY exit precedes Select and all bus traffic. */
+	if(identityBusyLeft[chan] > 0u) { identityBusyLeft[chan]--; return MMCE_RESULT_BUSY; }
+	if(deviceIdResult[chan] == MMCE_RESULT_BUSY) return MMCE_RESULT_BUSY;
+	identityCommands[chan]++;
+	*id = 0x38420101u;
 	return emulator[chan] ? deviceIdResult[chan] : MMCE_RESULT_WRONGDEVICE;
 }
 static s32 MMCE_SetDiskID(s32 chan, const dvddiskid *disk) { (void)disk; setIdCalls[chan]++; return setIdResult[chan]; }
@@ -125,7 +136,12 @@ static void reset(void)
 	memset(devices, 0, sizeof(devices));
 	memset(probeCalls, 0, sizeof(probeCalls));
 	memset(deviceIdCalls, 0, sizeof(deviceIdCalls));
-	traceText[0] = '\0'; traceLength = 0u;
+	memset(identityBusyLeft, 0, sizeof(identityBusyLeft));
+	memset(identityCommands, 0, sizeof(identityCommands));
+	memset(probeReadyAt, 0, sizeof(probeReadyAt));
+	fakeMs = 1000u; wallOffsetMs = 1000000;
+	probeWallJump = identityWallJump = 0;
+	traceText[0] = '\0'; traceLength = 0u; traceFull = false;
 	memset(setIdCalls, 0, sizeof(setIdCalls));
 	memset(inits, 0, sizeof(inits));
 	memset(statusReads, 0, sizeof(statusReads));
@@ -171,9 +187,8 @@ int main(void)
 	__device_card_a.init = __device_card_b.init = cardInitStub;
 	__device_card_a.deinit = __device_card_b.deinit = cardDeinitStub;
 
-	/* Capture the previously silent exits without extra bus transactions or
-	 * changing their classification. A busy first identity read remains a
-	 * candidate explanation, not a claimed hardware fix. */
+	/* Capture the previously silent exits; definitive negative responses
+	 * still get no retry or additional identity command. */
 	reset(); present(0, false);
 	CardSlots_RequestGame(&gameA);
 	assert(strstr(CardSlots_Trace(), "probe=-3") != NULL);
@@ -185,15 +200,53 @@ int main(void)
 	reset(); deviceIdResult[0] = MMCE_RESULT_BUSY;
 	CardSlots_RequestGame(&gameA);
 	assert(strstr(CardSlots_Trace(), "device=-1 id=00000000") != NULL);
-	assert(probeCalls[0] == 1u && deviceIdCalls[0] == 1u && setIdCalls[0] == 0u);
+	assert(probeCalls[0] == 1u && deviceIdCalls[0] == 601u && setIdCalls[0] == 0u);
+	assert(identityCommands[0] == 0u && fakeMs == 1600u);
 	assert(slots[0].state.phase == UI_CARD_SLOT_IDLE && !CardSlots_IdWaiting());
 	reset(); deviceIdResult[0] = MMCE_RESULT_VERSION;
 	CardSlots_RequestGame(&gameA);
 	assert(strstr(CardSlots_Trace(), "device=-4 id=38420101") != NULL);
 	assert(deviceIdCalls[0] == 1u && setIdCalls[0] == 1u && CardSlots_WaitingFor(A));
 	assert(strstr(CardSlots_Trace(), "build host-test stub-sdk") != NULL);
-	CardSlots_TraceScan(2u, 0u, false);
+	CardSlots_TraceScan(2u, 0u, false, false, false);
 	assert(strstr(CardSlots_Trace(), "save scan slots=2 copies=0 partial=0") != NULL);
+
+	/* Clock corrections in either direction cannot shorten the insertion
+	 * wait, prevent an ID, expire an active switch, or extend its deadline. */
+	for(int direction = -1; direction <= 1; direction += 2) {
+		reset(); swissSettings.ntpSync = 1;
+		probeReadyAt[0] = fakeMs + 300u;
+		probeWallJump = (int64_t)direction * 120000;
+		CardSlots_RequestGame(&gameA);
+		assert(fakeMs == 1300u && setIdCalls[0] == 1u && CardSlots_WaitingFor(A));
+		assert(strstr(CardSlots_Trace(), "ntp=1") != NULL);
+		wallOffsetMs += (int64_t)direction * 120000;
+		switchCard();
+		assert(slots[0].state.phase == UI_CARD_SLOT_READY);
+		reset();
+		CardSlots_RequestGame(&gameA);
+		present(0, false);
+		wallOffsetMs += (int64_t)direction * 120000;
+		run(60016u);
+		assert(CardSlots_FailedFor(0, A));
+		assert(fakeMs >= 61000u && fakeMs <= 61032u);
+	}
+
+	/* A temporary identity lock failure sends only ONE identity command
+	 * once the lock is available, then exactly one GameID. */
+	reset(); identityBusyLeft[0] = 2u; identityWallJump = 120000;
+	CardSlots_RequestGame(&gameA);
+	assert(deviceIdCalls[0] == 3u && identityCommands[0] == 1u);
+	assert(fakeMs == 1002u && setIdCalls[0] == 1u && CardSlots_WaitingFor(A));
+	/* Probe and identity share one600ms budget; the identity retry cannot
+	 * start a fresh600ms wait after the insertion probe. */
+	reset(); probeReadyAt[0] = fakeMs + 590u; identityBusyLeft[0] = 100u;
+	CardSlots_RequestGame(&gameA);
+	assert(fakeMs == 1600u && deviceIdCalls[0] == 11u);
+	assert(identityCommands[0] == 0u && setIdCalls[0] == 0u);
+	reset(); deviceIdResult[0] = MMCE_RESULT_NOCARD;
+	CardSlots_RequestGame(&gameA);
+	assert(deviceIdCalls[0] == 1u && setIdCalls[0] == 0u);
 
 	/* The card takes the ID, the name doesn't go out: it is switching, not a
 	 * plain card (review finding: it was IDLE, readable and writable). */
@@ -299,6 +352,16 @@ int main(void)
 	run(3000u);
 	assert(slots[0].state.phase == UI_CARD_SLOT_READY);
 
+	/* A full diagnostic is explicitly marked, bounded, and keeps the early
+	 * events instead of silently pretending the later events are absent. */
+	reset();
+	CardSlots_RequestGame(&gameA);
+	for(unsigned i = 0u; i < 1000u; i++) CardSlots_TraceScan(3u, i, false, false, false);
+	assert(strstr(CardSlots_Trace(), "build host-test stub-sdk") != NULL);
+	assert(strstr(CardSlots_Trace(), CARD_TRACE_FULL) != NULL);
+	assert(strlen(CardSlots_Trace()) < sizeof(traceText));
+	assert(strstr(strstr(CardSlots_Trace(), CARD_TRACE_FULL) + 1, CARD_TRACE_FULL) == NULL);
+
 	/* A broken card while it loads is read again; turning fine, ready. */
 	reset(); cardInit[0] = CARD_ERROR_BROKEN;
 	CardSlots_RequestGame(&gameA);
@@ -308,7 +371,7 @@ int main(void)
 	run(5000u);
 	assert(slots[0].state.phase == UI_CARD_SLOT_READY);
 
-	puts("card slots glue: partial sends, kept and retried IDs, given up as FAILED, refresh on leaving the bus, plain cards, bounded probe, status-held mounts, stale ID reset PASS");
+	puts("card slots glue: independent clocks, bounded identity lock retries, partial sends, queued IDs, slot refresh, plain cards, status-held mounts, stale ID reset PASS");
 	return 0;
 }
 '''
