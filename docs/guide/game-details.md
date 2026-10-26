@@ -24,7 +24,8 @@ screen, and **B** there goes back to the File Browser, on the same row.
   game starts from, as with a single SD card. With no settings device to
   read it from, it says "History unavailable".
 - **Saves**, above Settings and Cheats, when the game has two or more save
-  copies. The first line counts them as the GameCube does: different files
+  copies, or at any count with **Saves on Details › Always**. The first line
+  counts them as the GameCube does: different files
   of the game are files (**5 files | 58 blocks** for a game that keeps its
   town, letters and options apart), one file in more than one place is
   copies (**2 copies | 11 blocks**), and each file's blocks count once, as
@@ -39,9 +40,10 @@ screen, and **B** there goes back to the File Browser, on the same row.
   keeps each game's card. It matches the full game and maker ID, not the
   title; this isn't a progress score. A scan that couldn't read everything
   says **Partial scan**. Settings › Setup › Library › **Saves on Details**
-  turns the box off, and then a game's details don't read your memory cards
-  at all. System › [Memory Cards](memory-cards.md) opens the individual
-  saves and their details.
+  offers **On** (the default, two or more copies), **Always** (any count) and
+  **Off** (the box is hidden and the details don't read your memory cards).
+  System › [Memory Cards](memory-cards.md) opens the individual saves and
+  their details.
 - **Manual**, at the top of the rows, for a game whose manual is on the
   card: its page count. A on it opens the manual, at the width of the
   screen; Up and Down scroll, Left and Right turn the page, Y shows the
@@ -63,10 +65,16 @@ never finishes says **Memory card didn't load**, or **Partial scan** under
 two or more copies. If the card's status remains unconfirmed for a minute,
 Indigo stops waiting. Remove and reinsert the card to try again.
 
-A game with one save copy shows no Saves box. Copying a save from a RAW
-image into the Save Folder makes a second copy of that file, and opening the
-game's details again shows it: **2 copies | 2 blocks**, with the recorded
-update and the save's own line.
+With **On**, a game with one save copy shows no Saves box. **Always** keeps
+it visible: **1 save | 2 blocks**, with the recorded update and the save's
+own line, or **No save copies found** when a completed scan finds none.
+An incomplete scan with no saves found says **Save scan incomplete** instead.
+This setting changes only what the box shows; card loading, scan timing and
+the rules for choosing a copy stay the same.
+
+Copying a save from a RAW image into the Save Folder makes a second copy of
+that file, and opening the game's details again shows it with On too:
+**2 copies | 2 blocks**, with the recorded update and the save's own line.
 
 <p align="center">
   <img alt="Astral Circuit’s details after exporting one GCI: the Saves box, labelled « SAVES » since Left and Right choose a copy, reads 2 copies | 2 blocks over Updated 2024-02-29 12:34 and the save's own line, SD card image." src="images/game-details-saves-after-copy.png" width="640">

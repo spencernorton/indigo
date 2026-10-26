@@ -73,6 +73,8 @@ SWISS_SETTINGS = typedef(SWISS_H, "SwissSettings")
 CONFIG_ENTRY = typedef(CONFIG_H, "ConfigEntry")
 DEFAULTS = between(MAIN_C, "// Sane defaults", "config_init_environ();")
 assert 'strcpy(swissSettings.flattenDir, "*/games");' in MAIN_C
+DETAIL_SAVES_TOGGLE = re.search(
+    r"case SET_DETAIL_SAVES:\n(.*?)\n\t+break;", SETTINGS_C, re.S).group(1)
 
 
 HARNESS = "\n".join([
@@ -196,6 +198,7 @@ static bool getRawDTVStatus(void) { return false; }
     + DEFAULTS + "}",
     "static void dump_settings(FILE *out)\n{\n" + dump(SWISS_SETTINGS, "swissSettings.") + "\n}",
     "static void dump_entry(FILE *out, const ConfigEntry *entry)\n{\n" + dump(CONFIG_ENTRY, "entry->") + "\n}",
+    "static void cycle_detail_saves(int direction)\n{\n" + DETAIL_SAVES_TOGGLE + "\n}",
     r"""
 static char *read_stream(FILE *in)
 {
@@ -370,6 +373,11 @@ int main(int argc, char **argv)
 		if(!strcmp(argv[1], "args")) write_global(stdout);
 		else dump_settings(stdout);
 	}
+	else if(argc >= 3 && !strcmp(argv[1], "detail-saves-cycle")) {
+		config_parse_global(input, true);
+		cycle_detail_saves(atoi(argv[2]));
+		write_global(stdout);
+	}
 	else if(!strcmp(argv[1], "global") || !strcmp(argv[1], "global-fields")) {
 		config_parse_global(input, true);
 		if(!strcmp(argv[1], "global")) write_global(stdout);
@@ -506,6 +514,23 @@ class SettingsFileTest(unittest.TestCase):
         self.assertEqual(written["AVECompat"], "GCVideo")
         # A game's details show two or more save copies unless this is Yes.
         self.assertEqual(written["Hide Saves on Details"], "No")
+        self.assertEqual(written["Always Show Saves on Details"], "No")
+
+    def test_detail_saves_cycles_and_persists_all_three_modes(self):
+        keys = ("Hide Saves on Details", "Always Show Saves on Details")
+        modes = (("No", "No"), ("No", "Yes"), ("Yes", "No"))
+        for index, mode in enumerate(modes):
+            initial = "\n".join(f"{key}={value}" for key, value in zip(keys, mode))
+            for direction in (-1, 1):
+                with self.subTest(mode=mode, direction=direction):
+                    written = pairs(self.run_harness("detail-saves-cycle", str(direction), stdin=initial))
+                    self.assertEqual(tuple(written[key] for key in keys), modes[(index + direction) % 3])
+                    saved = "\n".join(f"{key}={value}" for key, value in written.items())
+                    self.assertEqual(self.global_file(saved), written)
+        # Old settings files retain their existing On/Off behavior.
+        for hide in ("No", "Yes"):
+            written = self.global_file(f"Hide Saves on Details={hide}\n")
+            self.assertEqual(tuple(written[key] for key in keys), (hide, "No"))
 
     def test_every_listed_value_round_trips(self):
         known_exceptions = set()

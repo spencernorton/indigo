@@ -637,6 +637,78 @@ static void testSavesCardStates(void)
 	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_HAS_SAVES) == 0u);
 }
 
+/* Always shows settled zero/one-copy scans without changing the scan or
+ * offering a save choice; card loading/failure and Off keep their meaning. */
+static void testAlwaysShowSaves(void)
+{
+	uiSavesGameStats_t stats = {
+		.saves = 0u, .checkedSources = 4u
+	};
+	uiGameflowDetailSource_t source = {
+		.gameId = "GACZ01", .title = "Astral Circuit", .saveStats = &stats,
+		.savesAlways = true, .flags = UI_GAMEFLOW_DETAIL_CAN_SETTINGS
+	};
+	uiGameflowDetailSnapshot_t snapshot, normal;
+
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_HAS_SAVES) != 0u);
+	CHECK(strcmp(snapshot.savesSummary, "No save copies found") == 0);
+	CHECK(snapshot.savesUpdated[0] == '\0');
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_SAVE_CHOICE) == 0u);
+	/* An incomplete scan must not claim there are no saves. */
+	stats.partial = true;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "Save scan incomplete") == 0);
+	stats.partial = false;
+	stats.checkedSources = 0u;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "Save scan incomplete") == 0);
+	/* One save includes its blocks, date and the game's own line. */
+	stats.checkedSources = 4u;
+	stats.saves = 1u;
+	stats.files = 1u;
+	stats.blocks = 1u;
+	stats.updatedKnown = true;
+	stats.latestUpdated = 762525240u;
+	source.saveLine = "Last saved on 2/29";
+	source.saveCopies = 1u;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "1 save | 1 block") == 0);
+	CHECK(strcmp(snapshot.savesUpdated,
+		"Updated 2024-02-29 12:34 | Last saved on 2/29") == 0);
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_SAVE_CHOICE) == 0u);
+	stats.blocks = 2u;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "1 save | 2 blocks") == 0);
+	stats.partial = true;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strncmp(snapshot.savesUpdated, "Partial scan | ", 15u) == 0);
+	stats.partial = false;
+	/* Multiple copies are byte-identical to On, including copy selection. */
+	stats.saves = 2u;
+	source.saveCopies = 2u;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	source.savesAlways = false;
+	CHECK(UIGameflowDetail_Build(&normal, &source));
+	CHECK(memcmp(&snapshot, &normal, sizeof(snapshot)) == 0);
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_SAVE_CHOICE) != 0u);
+	/* Keep explicit card states ahead of any zero/one-copy result. */
+	source.savesAlways = true;
+	stats.saves = 0u;
+	source.savesWaiting = true;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "Memory card loading") == 0);
+	source.savesWaiting = false;
+	source.savesCardFailed = true;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.savesSummary, "Memory card didn't load") == 0);
+	/* With no scan (Off), Always cannot make a box or a choice appear. */
+	source.saveStats = NULL;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_HAS_SAVES) == 0u);
+	CHECK((snapshot.flags & UI_GAMEFLOW_DETAIL_SAVE_CHOICE) == 0u);
+}
+
 static void testSaveCopyChoice(void)
 {
 	uiSavesGameStats_t stats = {
@@ -774,6 +846,7 @@ int main(void)
 {
 	testReadOnlySaveCopies();
 	testSavesCardStates();
+	testAlwaysShowSaves();
 	testSaveCopyChoice();
 	testPointerFreeCopyAndMatch();
 	testCustomSettingsLine();
