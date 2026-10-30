@@ -59,15 +59,18 @@ INCLUDES	:=	include $(SOURCES) .. aesnd/libogc2/include
 
 # UI_PERF=1 builds the frame-time and GPU-counter overlay (gui/ui_perf.h).
 UI_PERF		?= 0
-# Application C is optimized for size without changing floating-point or aliasing
-# policy. It needs no unwind tables; crash reports walk the stack back chain.
+# Application C is optimized for size and linked with LTO, without changing
+# floating-point or aliasing policy. Hot renderers/audio opt out below.
+# C needs no unwind tables; crash reports walk the stack back chain.
 # Prebuilt dependencies retain their own exception metadata and compiler flags.
 # Source paths are relative so the DOL is the same wherever it is built.
-CFLAGS		= -g -Os -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
+CFLAGS		= -g -Os -flto -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
 CXXFLAGS	= $(CFLAGS)
 
 ASFLAGS		= $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY $(INCLUDE)
-LDFLAGS		= $(CFLAGS) -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
+# One LTO partition keeps the size policy independent of build parallelism.
+# A declaration mismatch must fail the link instead of being optimized through.
+LDFLAGS		= $(CFLAGS) -flto-partition=one -Werror=lto-type-mismatch -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -168,9 +171,9 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
-# Native comparisons retain the hot renderers' previous frame cost at -O2.
-# Keep the real-time audio mixer and decoder interface at that policy too.
-$(OFILES_AESND) IPLFontWrite.o indigo_background.o ui_jewel_case.o: CFLAGS += -O2
+# Keep the measured hot emitters and audio outside cross-file optimization:
+# their instructions and relocation records match the previous -O2 objects.
+$(OFILES_AESND) IPLFontWrite.o indigo_background.o ui_jewel_case.o: CFLAGS += -O2 -fno-lto
 
 $(OFILES_SOURCES) : $(HFILES)
 

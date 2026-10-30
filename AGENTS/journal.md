@@ -1,3 +1,21 @@
+## 2026-10-30 — Reduce cold-code size with isolated LTO
+
+The compiler/linker matrix finds no saving from relaxation, multiple-word
+loads/stores or tighter hot-code alignment; disabling called-once inlining
+grows the DOL. Size-mode LTO saves about 38 kB. Keep the three hot renderers
+and patched audio objects outside LTO so their instructions and relocations
+match the previous -O2 objects. A single LTO partition gives about 37 kB net
+saving and is checked across serial/parallel builds and distinct directories.
+
+Correct the fallback banner's mismatched BNR/byte-array declaration with one
+shared pixel-array header. Remove the unused BNR1 header/text and retain all
+6,144 RGB5A3 pixel bytes. The host regression pins the original pixel hash;
+a mutant that copies the old header instead of pixels must fail. LTO type
+mismatches now fail the target link. Music, encoding models, dependencies,
+exception metadata and uncompressed boot retain their contracts. Exact normal
+and performance artifacts, host/emulator routes and matched native timings
+remain the acceptance gates for this compiler policy.
+
 ## 2026-10-30 — Preserve hot-renderer timings in the size build
 
 Retain -O2 for the background, Jewel Case and font emitters as well as the

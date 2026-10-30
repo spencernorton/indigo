@@ -41,6 +41,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
   memory footprint while retaining the embedded music, supported character
   encodings and uncompressed boot format. Hot renderers and the audio mixer
   retain their existing optimization setting.
+- Link-time optimization further reduces the executable while keeping hot
+  renderers and audio on their measured code-generation path. The fallback
+  banner retains its pixels with a consistent shared declaration.
 
 ### Fixed
 
