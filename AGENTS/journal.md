@@ -1,3 +1,9 @@
+## 2026-10-30 — Show Home, Library and game details in compact GIFs
+
+The README explains the product with a real interaction recording or a source-grounded
+architecture diagram. Recordings retain their source attribution and offer still
+images for reduced-motion viewing. No runtime behaviour is changed.
+
 ## 2026-10-30 — Preserve mutation-test failure propagation
 
 Keep the long-text equivalence check's assertions visible to the mutation
