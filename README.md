@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img alt="The Indigo Home screen: a clear glass cube turning sideways and tipping up and down between its Library, Source, Settings and System faces over dark waves. Its far edges bend through the front glass, soft lights mirrored in the glass slide across it as it turns, the rounded edges show faint prism colours, and the icons sit sharp on the glass. The Library face shows a GameCube controller, only the face you are on is named underneath, and its controls are shown as GameCube buttons." src="docs/screenshots/home.png" width="640">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/home-still.png"><img src="docs/demos/home.gif" alt="The Indigo Home screen: a clear glass cube turning sideways and tipping up and down between its Library, Source, Settings and System faces over dark waves. Its far edges bend through the front glass, soft lights mirrored in the glass slide across it as it turns, the rounded edges show faint prism colours, and the icons sit sharp on the glass. The Library face shows a GameCube controller, only the face you are on is named underneath, and its controls are shown as GameCube buttons." width="640"></picture>
 </p>
 
 Captured in the Dolphin emulator. The library and game detail pictures show a real poster pack and cheat file in use; box art belongs to its publishers.
@@ -35,6 +35,8 @@ fork changes one thing: what you look at. Everything underneath — the device
 handlers, the patch engine, the loader — is upstream's work, and this fork
 does not try to improve it. It is for people who use Swiss daily on real
 hardware and want it to feel like it belongs on the console.
+
+[Recordings and still images](docs/demos/README.md).
 
 ## What it does
 
@@ -81,7 +83,7 @@ ready-made pack or one you build yourself (see [Posters](#posters)); without
 one, each game gets a card with its disc banner.
 
 <p align="center">
-  <img alt="The game library in its four layouts in turn. Horizontal: a row of GameCube box art, the selected cover raised between two covers either side, with its title and publisher below it; two steps right. Vertical: a column of covers down the left, the selected one large with its title, publisher and game ID beside it; three steps down. Grid: five covers across and three rows on screen, a lit frame moving right, right, down and down. Spotlight: the selected game's gameplay still fills a framed panel, with its title, publisher, a few sentences about it and its game ID beside it, over a row of disc banners; two steps right bring 007: Everything or Nothing's and From Russia With Love's stills and text." src="docs/screenshots/library.png" width="640">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/library-still.png"><img src="docs/demos/library.gif" alt="The game library in its four layouts in turn. Horizontal: a row of GameCube box art, the selected cover raised between two covers either side, with its title and publisher below it; two steps right. Vertical: a column of covers down the left, the selected one large with its title, publisher and game ID beside it; three steps down. Grid: five covers across and three rows on screen, a lit frame moving right, right, down and down. Spotlight: the selected game's gameplay still fills a framed panel, with its title, publisher, a few sentences about it and its game ID beside it, over a row of disc banners; two steps right bring 007: Everything or Nothing's and From Russia With Love's stills and text." width="640"></picture>
 </p>
 
 **Apps keeps your other programs apart.** Emulators, Game Boy Interface,
@@ -104,7 +106,7 @@ the D-pad or the stick moves it between Launch Game, Cheats and Settings, and
 A selects.
 
 <p align="center">
-  <img alt="The game detail screen for LEGO Star Wars II: Y opens the cheat browser, three cheats are switched on and one switched back off, and the detail screen then reads 2 of 130 enabled." src="docs/screenshots/game-detail.png" width="640">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/game-details-still.png"><img src="docs/demos/game-details.gif" alt="The game detail screen for LEGO Star Wars II: Y opens the cheat browser, three cheats are switched on and one switched back off, and the detail screen then reads 2 of 130 enabled." width="640"></picture>
 </p>
 
 **Starting a game from the Library shows its cover**, not Swiss's progress
