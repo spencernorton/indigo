@@ -27,6 +27,23 @@ tag on `beta`. The newest changes are at the top until their release is named.
   existing two-copy threshold and **Off** leaves the memory cards alone.
   Card loading and save scanning are unchanged.
 
+### Improved
+
+- Home reuses its icons' circle geometry between faces and frames, reducing
+  repeated calculations without changing their appearance.
+- Library artwork shares a bounded read budget between input checks.
+  Stills and disc art pause when their layout is hidden and resume when used.
+- Font and panel drawing preserve immutable textures in the GPU cache;
+  Jewel Case shares one cache invalidation across all its passes.
+- The Settings controller is compiled for size, keeping rendering and game
+  loading on their existing optimization settings.
+
+### Fixed
+
+- Jewel Case's sway stays continuous through long sessions. UI Motion Off
+  stops the disc immediately and follows the C-stick without coasting;
+  Z keeps its gradual spin stop when motion is enabled.
+
 ## v2.5.0 — Manuals, disc art and a connected cube
 
 ### New

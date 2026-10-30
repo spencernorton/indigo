@@ -1,3 +1,35 @@
+## 2026-10-30 — Reuse menu geometry and bound artwork work
+
+Cache the eight authored unit-circle sizes in a bounded 1,328-byte pool,
+reusing the original float calculations across frames and icon/shadow passes.
+Home Library's counted math calls drop from 1,061 to 653; Source drops from
+555 to 351. All 33 sampled frame hashes, vertices and EFB copy areas match.
+Font and box textures invalidate once per initialization, with repeated-draw
+and reinitialization tests. Jewel Case invalidates once before sampling its
+published prints and immutable studio textures, down from 5 at rest and 11
+in a two-case transition. The frame budget now enforces invalidation counts;
+EFB-copy synchronization remains in the background renderer.
+
+Pack artwork shares a single 16 KiB read per menu tick, fairly scheduled
+among visible packs. Hidden partial records pause and resume with their CRC;
+new tests cover the global budget, fairness, layout changes and final-range
+publication. The separate folder-art worker and Detail's one-poster priming
+keep their existing contracts. Compile only settings.o with -Os: the pinned
+SDK DOL shrinks 7,744 bytes against the same changes with -O2 everywhere.
+Renderers, loaders, SDK/library pins and the boot format retain their flags.
+Physical timing remains unmeasured while the console is unreachable.
+
+## 2026-10-30 — Continuous Jewel Case motion and immediate Off
+
+Wrap the Jewel Case's sway clock at the common period of its authored
+frequencies rather than at an unrelated hour. UI Motion Off freezes the
+disc and snaps manual inspection to the stick or neutral without inertia;
+the Z spin toggle keeps its intentional easing under enabled motion.
+Native-function regression checks in the frame harness exercise the phase
+boundary, immediate Off, manual control and Z easing at 50 and 60 Hz. The
+clock regression was observed failing before the fix. Existing Full-motion
+frame geometry and workload budgets remain the visual reference.
+
 ## 2026-10-29 — Qualify the exact packaged native browser
 
 Pin c98a0bfb after exact package checking exposed locale-sensitive TLS object

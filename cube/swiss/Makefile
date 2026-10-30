@@ -167,6 +167,10 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
+# Settings assembles pages on menu actions; it does no per-frame rendering.
+# Optimize this cold controller for size, keeping renderers and loaders at -O2.
+settings.o: CFLAGS += -Os
+
 $(OFILES_SOURCES) : $(HFILES)
 
 #---------------------------------------------------------------------------------

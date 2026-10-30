@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 GUI = ROOT / "cube/swiss/source/gui"
 BUDGET = HERE / "frame_budget.json"
-METRICS = ("sqrtf", "trig", "minmax", "vertices", "begins", "copy_pixels")
+METRICS = ("sqrtf", "trig", "minmax", "vertices", "begins", "copy_pixels", "invalidations")
 SOURCES = ("ui_scene.c", "ui_motion.c", "ui_home.c", "ui_cube_motif.c",
            "ui_color.c", "ui_stage.c", "ui_clock.c", "ui_saves.c", "ui_files.c", "ui_hint.c")
 

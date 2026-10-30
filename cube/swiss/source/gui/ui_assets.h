@@ -216,6 +216,12 @@ bool UIAssets_Poll(void);
 #define UI_ASSETS_READ_BYTES 16384u
 bool UIAssets_PollStep(void);
 
+/* Menu thread: at most one UI_ASSETS_READ_BYTES range TOTAL per call,
+ * fairly shared by posters and the active layout's stills/discs. Hidden
+ * packs are paused, including partial records. Returns whether any visible
+ * pack has work left; false may still have completed its final range. */
+bool UIAssets_PollVisible(bool includeStills, bool includeDiscs);
+
 /* Video thread, lock ALREADY HELD by the caller; never locks. Classifies
  * gameId (gameIdLen is the number of bytes readable at gameId; inputs
  * shorter than UI_ASSETS_ID_LEN are rejected before any read, and only

@@ -19,6 +19,7 @@
 static u8 fontData[SYS_FONTSIZE_ANSI] ATTRIBUTE_ALIGN (32);
 static sys_fontheader *font = (sys_fontheader *)fontData;
 static bool fontReady;
+static bool fontTexelsPending;
 
 GXTexObj fontTexObj;
 GXColor defaultColor = (GXColor) {255,255,255,255};
@@ -30,6 +31,7 @@ void init_font(void)
 	SYS_SetFontEncoding(SYS_FONTENC_ANSI);
 	if(SYS_InitFont(font)) {
 		fontReady = true;
+		fontTexelsPending = true;
 		GX_InitTexObj(&fontTexObj, NULL, font->sheet_width, font->sheet_height, font->sheet_format, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_TRUE, GX_TRUE, GX_ANISO_4);
 	}
@@ -120,7 +122,12 @@ void drawFontInit(void)
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_SetTexCoordScaleManually(GX_TEXCOORD0, GX_ENABLE, 1, 1);
 
-	GX_InvalidateTexAll();
+	/* The IPL sheets are immutable after init_font. Changing which sheet
+	 * is bound needs a load, not a global texture-cache invalidation. */
+	if(fontTexelsPending) {
+		GX_InvalidateTexAll();
+		fontTexelsPending = false;
+	}
 	GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 
 	GX_SetNumIndStages (0);

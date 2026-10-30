@@ -15,7 +15,7 @@ commit abe21df5165e9cfe8cdbb908f9f44e137fcfae98 (Swiss master, 2026-10-22 intake
 
 Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling
 cube/packer/Makefile                       compresses with xz: the build image has no 7z; links its files in byte order, whatever the locale
-cube/swiss/Makefile                        tags.h is empty (its reader, load_auto_dol, never runs in Indigo); links its files in byte order, names the commit in exactly 7 characters and no build path, so the DOL is the same in any locale, clone and folder; UI_PERF=1 builds the performance overlay; no unwind tables, which nothing reads; AESND is built from cube/swiss/aesnd, not -laesnd; libiconv-lite overlay precedes the SDK portlibs
+cube/swiss/Makefile                        tags.h is empty (its reader, load_auto_dol, never runs in Indigo); links its files in byte order, names the commit in exactly 7 characters and no build path, so the DOL is the same in any locale, clone and folder; UI_PERF=1 builds the performance overlay; no unwind tables, which nothing reads; AESND is built from cube/swiss/aesnd, not -laesnd; libiconv-lite overlay precedes the SDK portlibs; the Settings menu-action controller uses -Os while renderers and loaders keep -O2
 cube/swiss/aesnd/                          libogc2's AESND at the toolchain's commit, including its upstream AESND_Reset fix (its README.md)
 cube/swiss/include/gcm.h                   adjust_tgc_fst takes the file table's size
 cube/swiss/source/devices/deviceHandler.c  devices shut down on reset after the interface stops reading them (priority 1)
