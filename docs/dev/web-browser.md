@@ -102,7 +102,7 @@ CA bundle and mbed TLS's licence into `browser/` for `sd_package.sh`:
 
 - fork: https://github.com/spencernorton/cubebrowser (maintained by us, used
   with permission; its own README/NOTICE credit Arial-Bold)
-- pinned commit: `f3a7ca2ed92ae601d0f37251e5609fb7c4aeef89` — bump it in both
+- pinned commit: `c98a0bfb5dbac270035542d2d5313c57725dace2` — bump it in both
   workflows' `CUBEBROWSER_REF` to take browser changes.
 
 It builds with the same libogc2 toolchain the runner already carries, and
@@ -111,6 +111,8 @@ allows.
 
 ## Qualification
 
+The producer compares fresh builds across checkout paths, host locales and
+serial/parallel make, so Indigo packages the exact runtime-qualified bytes.
 The browser requires deterministic parser/engine sanitizer cases and two
 Dolphin routes: NTSC 4:3 and PAL interlaced widescreen on controller port 4.
 Each boots the produced DOL, fetches gzip HTML and PNG, drives menus,

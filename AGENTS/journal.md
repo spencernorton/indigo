@@ -1,3 +1,15 @@
+## 2026-10-29 — Qualify the exact packaged native browser
+
+Pin c98a0bfb after exact package checking exposed locale-sensitive TLS object
+order. The producer now sorts source inputs and compares the SDK default
+locale/serial build with Indigo's C.UTF-8/parallel build at a second path.
+Producer41002873917 passes all required routes. Its canonical DOL matches
+the Indigo package byte-for-byte. Six public HTTPS boots prove save80202,
+restart, change00501, restart, clear and restart empty on an actual emulated
+FAT card; live weather and cleared state were inspected. The public CA is
+unchanged. This replaces earlier binary qualification hashes, without changing
+the browser's native integration behavior or claiming physical return.
+
 ## 2026-10-29 — Inherit the native browser context
 
 The Web face passes versioned, named preferences to the separately built
