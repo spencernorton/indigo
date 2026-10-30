@@ -23,7 +23,7 @@ cube/swiss/source/devices/memcard/deviceHandler-CARD.c  save reads and erases ke
 cube/swiss/source/devices/memcard/deviceHandler-CARD.h  declares that mount count (card_mount_count)
 cube/swiss/source/bba.c                    once the network is up, its thread starts Sync Clock (Settings › Network, gui/time_sync.c), which sets the clock from an NTP server on a thread of its own; init_network() waits for it, so a network device never has the clock stepped under its timeouts
 cube/swiss/source/gcm.c                    every walk of a file table stays inside it (fst_entries, fst_name): a damaged image cannot crash the Library, a launch or a disc opened as a folder
-cube/swiss/source/devices/filemeta.c       evicted metadata returns to meta_mspace, eviction stops if every entry is in view, 7-bit ASCII banner text skips uchardet/iconv, and TGC metadata populates diskId
+cube/swiss/source/devices/filemeta.c       evicted metadata returns to meta_mspace, eviction stops if every entry is in view, 7-bit ASCII banner text skips uchardet/iconv, fallback pixels use a shared array declaration, and TGC metadata populates diskId
 cube/swiss/source/video.c                  the retrace callback scans the pads through padsScan(), which the menus read; first setVideoMode resets VI_DCR before VIDEO_Init and skips GX_AbortFrame before GX_Init so warm-booted DOLs do not hang in VIDEO_WaitForFlush
 cube/swiss/source/util.c                   print_debug also keeps each line for the console lab's log and LogHost (gui/lab.c), stamped with the time since the first line
 cube/swiss/source/fatfs/ffunicode.c        the DBCS code-page tables are removed; code page 437 never compiles them
