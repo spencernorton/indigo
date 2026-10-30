@@ -1,3 +1,10 @@
+## 2026-10-30 — Preserve mutation-test failure propagation
+
+Keep the long-text equivalence check's assertions visible to the mutation
+runner rather than recording nested unittest subtests. Both deliberate
+regressions (formatting under the lock and clipping caller input) now fail
+the native publisher harness as intended; the mutation suite passes.
+
 ## 2026-10-30 — Prepare Library text before publication
 
 Stage each window's title/publisher/facts scales and Spotlight description

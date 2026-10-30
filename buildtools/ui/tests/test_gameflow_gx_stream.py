@@ -1312,9 +1312,8 @@ class GameflowGxStream(unittest.TestCase):
 
     def test_staged_clipping_matches_release_and_keeps_input_immutable(self):
         for layout in range(5):
-            with self.subTest(layout=layout):
-                log = self.run_script([f"L {layout} 40 17", "C", "N 1 0.0167"])
-                self.assertEqual(len(frames(log)), 1)
+            log = self.run_script([f"L {layout} 40 17", "C", "N 1 0.0167"])
+            self.assertEqual(len(frames(log)), 1, f"layout {layout}")
 
     def test_publication_rejects_stale_layout_and_disposal(self):
         script = ["L 0 40 17", "N 5 0.0167", "T", "N 1 0.0167"]
