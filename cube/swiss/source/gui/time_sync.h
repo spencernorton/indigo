@@ -1,5 +1,7 @@
 #ifndef TIME_SYNC_H
 #define TIME_SYNC_H
+#include <stdbool.h>
+#include <stdint.h>
 
 /* The NTP server when NTP Server IP is empty: time.cloudflare.com's address,
  * since the console has no DNS. */
@@ -17,5 +19,8 @@ void time_sync_wait(void);
 /* A game's launch, before it times anything or hands the game the clock:
  * Sync Clock no longer steps it this session (a step under way finishes). */
 void time_sync_close(void);
+
+/* The offset actually applied to the console local clock, when known. */
+bool time_sync_offset(int32_t *eastSeconds);
 
 #endif

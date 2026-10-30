@@ -401,7 +401,9 @@ SD card
   make it if it isn't there.
 - **`gcbrowser` and `swiss/indigo/cubebrowser.dol`:** From the download,
   for the Web face: the web browser and its certificates. Put
-  `cubebrowser.dol` on the card with your settings. The browser reads
+  `cubebrowser.dol` on the card with your settings. Indigo names that card to
+  the browser (GC Loader, SD2SP2 or SD Gecko); standalone launches retain
+  automatic card detection. The browser reads
   `gcbrowser` from an SD2SP2, an SD Gecko or a GC Loader, not from a
   FlippyDrive's card: with a FlippyDrive, put `gcbrowser` on a card in an
   SD2SP2 or SD Gecko. With only a FlippyDrive, secure (`https`) pages don't

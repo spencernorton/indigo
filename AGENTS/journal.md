@@ -1,3 +1,25 @@
+## 2026-10-29 — Inherit the native browser context
+
+The Web face passes versioned, named preferences to the separately built
+browser: menu colour, screen/video shape, motion, sound, rumble, known UTC
+offset and supported config-card origin. Keep mount/close ownership and the
+Recent-list exclusion. Indigo stores local wall time; capture Sync Clock's
+applied offset when available, otherwise resolve an explicit POSIX zone, and
+omit an unknown offset. The browser normalizes a known local RTC for UTC/TLS,
+keeps an unknown integrated display on the console clock and preserves its
+standalone preferences. Browser context tests cover named colour mappings,
+accessibility, storage/lab flags and known/unknown time zones.
+
+Pin browser f3a7ca2e, the source-qualified native implementation and its
+start-page ZIP persistence (producer40999788117). The browser's required routes include NTSC
+4:3, PAL widescreen on port 4 and a three-boot TLS/FAT persistence proof. The
+native public HTTPS start page rendered with the verified certificate mark;
+its downloaded CI DOL matched the locally tested bytes. The guide's new
+browser image is an actual Dolphin capture. Existing physical return evidence
+belongs to the previous browser; the console is currently unreachable, so
+adapter/cable and installed return qualification remain pending. Stable main
+is not promoted by this beta development change.
+
 ## 2026-10-26 — Always show saves on Game Details
 
 The reporter on #102 confirms stock 2.5.0 switches MemCard PRO cards and

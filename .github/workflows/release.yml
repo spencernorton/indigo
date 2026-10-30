@@ -89,7 +89,7 @@ jobs:
           # The Web face launches this; built from a pinned commit of our
           # hardened fork (used with permission; see NOTICE).
           CUBEBROWSER_REPO: https://github.com/spencernorton/cubebrowser
-          CUBEBROWSER_REF: e338aa6d0a2262a350363a431770e8720788e0cc
+          CUBEBROWSER_REF: f3a7ca2ed92ae601d0f37251e5609fb7c4aeef89
         run: |
           git clone --no-tags "$CUBEBROWSER_REPO" browser-src
           git -C browser-src -c advice.detachedHead=false checkout "$CUBEBROWSER_REF"

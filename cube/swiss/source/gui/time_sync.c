@@ -20,6 +20,8 @@ static struct in_addr timeSyncServer;
 static char timeSyncZone[sizeof(swissSettings.timeZone)];
 static volatile enum { TIME_SYNC_IDLE, TIME_SYNC_ASKING, TIME_SYNC_STEPPING } timeSyncState;
 static volatile bool timeSyncClosed;
+static int32_t timeSyncOffset;
+static bool timeSyncOffsetKnown;
 
 /* One SNTP request, a second's wait for the reply, three tries. The reply is
  * the server's time; half the round trip and the time since bring it to now. */
@@ -103,7 +105,12 @@ static void time_sync_set(void)
 	};
 	struct timespec was;
 	clock_gettime(CLOCK_REALTIME, &was);
-	clock_settime(CLOCK_REALTIME, &now);
+	if(clock_settime(CLOCK_REALTIME, &now) == 0) {
+		level = IRQ_Disable();
+		timeSyncOffset = east;
+		timeSyncOffsetKnown = true;
+		IRQ_Restore(level);
+	}
 	print_debug("Sync Clock: moved the clock %lld ms\n", (long long)(now.tv_sec - was.tv_sec) * 1000 +
 		(now.tv_nsec - was.tv_nsec) / 1000000);
 	/* __SYS_GetRTC gives up while another device holds EXI channel 0 (an
@@ -157,4 +164,14 @@ void time_sync_close(void)
 	while(timeSyncState == TIME_SYNC_STEPPING) {
 		usleep(1000);
 	}
+}
+
+bool time_sync_offset(int32_t *eastSeconds)
+{
+	if(eastSeconds == NULL) return false;
+	u32 level = IRQ_Disable();
+	bool known = timeSyncOffsetKnown;
+	if(known) *eastSeconds = timeSyncOffset;
+	IRQ_Restore(level);
+	return known;
 }
