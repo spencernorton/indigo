@@ -168,9 +168,9 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
-# Keep the real-time audio mixer and decoder interface at their previous policy.
-# Their source and patches are unchanged by this size optimization.
-$(OFILES_AESND): CFLAGS += -O2
+# Native comparisons retain the hot renderers' previous frame cost at -O2.
+# Keep the real-time audio mixer and decoder interface at that policy too.
+$(OFILES_AESND) IPLFontWrite.o indigo_background.o ui_jewel_case.o: CFLAGS += -O2
 
 $(OFILES_SOURCES) : $(HFILES)
 

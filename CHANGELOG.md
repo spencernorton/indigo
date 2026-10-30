@@ -39,8 +39,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
   Jewel Case shares one cache invalidation across all its passes.
 - The executable is compiled for size, reducing its on-card size and static
   memory footprint while retaining the embedded music, supported character
-  encodings and uncompressed boot format. The audio mixer retains its existing
-  optimization setting.
+  encodings and uncompressed boot format. Hot renderers and the audio mixer
+  retain their existing optimization setting.
 
 ### Fixed
 
