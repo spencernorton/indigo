@@ -115,6 +115,9 @@ def check_immutable_textures(path, command):
     """
     font = (ROOT / FONT).read_text()
     frame = (ROOT / "cube/swiss/source/gui/FrameBufferMagic.c").read_text()
+    initialization = extract_function(frame, "void DrawInit(")
+    for publication in ("init_font();", "init_textures();"):
+        assert initialization.index(publication) < initialization.index("LWP_CreateThread(")
     functions = "\n".join((extract_function(font, "void init_font("),
                             extract_function(font, "void drawFontInit("),
                             extract_function(frame, "static void init_textures("),
@@ -128,7 +131,7 @@ def check_immutable_textures(path, command):
 typedef float Mtx[3][4];
 typedef float Mtx44[4][4];
 typedef struct {unsigned char r,g,b,a;} GXColor;
-static bool fontReady, fontTexelsPending, boxTexelsPending;
+static bool fontReady;
 static unsigned invalidations, loads, rects;
 static void note(const char *name) {
     if(!strcmp(name,"GX_InvalidateTexAll")) invalidations++;

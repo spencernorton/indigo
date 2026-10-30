@@ -79,7 +79,6 @@ GXTexObj wiikeyTexObj;
 GXTexObj systemTexObj;
 GXTexObj boxinnerTexObj;
 GXTexObj boxouterTexObj;
-static bool boxTexelsPending;
 GXTexObj ntscjTexObj;
 GXTexObj ntscuTexObj;
 GXTexObj palTexObj;
@@ -643,7 +642,6 @@ static void init_textures()
 	TPL_GetTexture(&imagesTPL, bbaimg, &bbaTexObj);
 	TPL_GetTexture(&buttonsTPL, boxinner, &boxinnerTexObj);
 	TPL_GetTexture(&buttonsTPL, boxouter, &boxouterTexObj);
-	boxTexelsPending = true;
 	TPL_GetTexture(&imagesTPL, ntscjimg, &ntscjTexObj);
 	TPL_GetTexture(&imagesTPL, ntscuimg, &ntscuTexObj);
 	TPL_GetTexture(&imagesTPL, palimg, &palTexObj);
@@ -656,6 +654,8 @@ static void init_textures()
 	TPL_GetTexture(&imagesTPL, flippyimg, &flippyTexObj);
 	TPL_GetTexture(&imagesTPL, gcnetimg, &gcnetTexObj);
 	TPL_GetTexture(&imagesTPL, kunaigcimg, &kunaigcTexObj);
+	/* These textures stay immutable; publish them before video starts. */
+	GX_InvalidateTexAll();
 }
 
 static void drawInit()
@@ -758,11 +758,6 @@ static void _DrawSimpleBox(int x, int y, int width, int height, int depth, GXCol
 	//Adjust for blank texture border
 	x-=4; y-=4; width+=8; height+=8;
 	
-	/* Both box textures are immutable after init_textures. */
-	if(boxTexelsPending) {
-		GX_InvalidateTexAll();
-		boxTexelsPending = false;
-	}
 	GX_LoadTexObj(&boxinnerTexObj, GX_TEXMAP0);
 
 	_drawRect(x, y, width/2, height/2, depth, fillColor, 0.0f, ((float)width/32), 0.0f, ((float)height/32));

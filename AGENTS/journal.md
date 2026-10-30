@@ -1,3 +1,11 @@
+## 2026-10-30 — Publish immutable textures before video starts
+
+Invalidate font and built-in panel textures at their DrawInit publication,
+before the video thread starts. This removes per-draw pending state and keeps
+the Save Details emitter independent of texture publication. Repeated-draw
+and reinitialization checks enforce one invalidation per publication, and
+check that initialization precedes the video thread's creation.
+
 ## 2026-10-30 — Reuse menu geometry and bound artwork work
 
 Cache the eight authored unit-circle sizes in a bounded 1,328-byte pool,
