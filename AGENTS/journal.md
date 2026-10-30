@@ -1,3 +1,20 @@
+## 2026-10-30 — Prepare Library text before publication
+
+Stage each window's title/publisher/facts scales and Spotlight description
+from the immutable input snapshot before taking the video mutex. Publication
+copies the prepared scales and applies staged ellipsis prefixes alongside the same validated records and banner
+textures. Staging uses 1,268 bytes on the menu stack, guarded by a 1,536-byte
+compile-time ceiling, and adds no heap allocation. Event layout, columns,
+generation and disposal still gate the final locked commit.
+
+The GX harness now invokes the actual DrawUpdateGameflow publisher on every
+layout update and rejects font measurements while the video lock is held.
+Regression cases retain the complete event on stale, layout-mismatched and
+disposed updates; a mutant that moves preparation inside the lock must fail.
+Existing frame/typography streams remain the visual reference; guide images
+retain their layout and appearance. Snapshot copying/cache flushes still run
+under the lock; metadata I/O and true native timings remain separate work.
+
 ## 2026-10-30 — Publish immutable textures before video starts
 
 Invalidate font and built-in panel textures at their DrawInit publication,
