@@ -654,6 +654,8 @@ static void init_textures()
 	TPL_GetTexture(&imagesTPL, flippyimg, &flippyTexObj);
 	TPL_GetTexture(&imagesTPL, gcnetimg, &gcnetTexObj);
 	TPL_GetTexture(&imagesTPL, kunaigcimg, &kunaigcTexObj);
+	/* These textures stay immutable; publish them before video starts. */
+	GX_InvalidateTexAll();
 }
 
 static void drawInit()
@@ -756,7 +758,6 @@ static void _DrawSimpleBox(int x, int y, int width, int height, int depth, GXCol
 	//Adjust for blank texture border
 	x-=4; y-=4; width+=8; height+=8;
 	
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&boxinnerTexObj, GX_TEXMAP0);
 
 	_drawRect(x, y, width/2, height/2, depth, fillColor, 0.0f, ((float)width/32), 0.0f, ((float)height/32));
@@ -764,7 +765,6 @@ static void _DrawSimpleBox(int x, int y, int width, int height, int depth, GXCol
 	_drawRect(x, y+(height/2), width/2, height/2, depth, fillColor, 0.0f, ((float)width/32), ((float)height/32), 0.0f);
 	_drawRect(x+(width/2), y+(height/2), width/2, height/2, depth, fillColor, ((float)width/32), 0.0f, ((float)height/32), 0.0f);
 
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&boxouterTexObj, GX_TEXMAP0);
 
 	_drawRect(x, y, width/2, height/2, depth, borderColor, 0.0f, ((float)width/32), 0.0f, ((float)height/32));
@@ -5404,6 +5404,8 @@ static bool _GameflowOpenDiscsPack(DEVICEHANDLER_INTERFACE *device)
 	return UIDiscs_Ready();
 }
 
+static u32 gameflowArtworkLayout; /* menu-thread scheduling only */
+
 void DrawGameflowRequestPosters(DEVICEHANDLER_INTERFACE *device,
 	const uiGameflowRenderSnapshot_t *snapshot)
 {
@@ -5413,6 +5415,7 @@ void DrawGameflowRequestPosters(DEVICEHANDLER_INTERFACE *device,
 	if(!_GameflowSnapshotValid(snapshot)) {
 		return;
 	}
+	gameflowArtworkLayout = snapshot->layout;
 	_GameflowOpenPosterPack(device);
 	if(snapshot->layout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT &&
 		_GameflowOpenStillsPack(device)) {
@@ -5483,10 +5486,10 @@ bool DrawGameflowPrimePoster(void)
 
 bool DrawGameflowPollPosters(void)
 {
-	/* At most one 16 KiB range per pack, between input checks. */
-	bool more = UIAssets_PollStep();
-	more = UIStills_PollStep() || more;
-	return UIDiscs_PollStep() || more;
+	/* One 16 KiB range total between input checks; pause hidden packs. */
+	return UIAssets_PollVisible(
+		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT,
+		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE);
 }
 
 static void _GameflowCopySnapshot(drawGameflowEvent_t *data,

@@ -5134,8 +5134,8 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 				break;
 			}
 			VIDEO_WaitVSync();
-			/* Each pack and a non-thread-safe folder picture advance by
-			 * at most 16 KiB, then input gets another turn. Thread-safe
+			/* Pack art shares one 16 KiB range; a non-thread-safe folder
+			 * picture may advance by another, then input gets a turn. Thread-safe
 			 * picture reads stay on their own worker. */
 			DrawGameflowPollPosters();
 			CardArt_Poll();

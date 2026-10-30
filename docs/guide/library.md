@@ -58,8 +58,9 @@ one moves.
   cover it is bare silver. Moving to the next game, the case falls back as
   the next one swings in from the side. The C-stick turns the case in your
   hands; let go and it springs back. Z stops the disc spinning, and Z again
-  starts it; Indigo remembers which. The jewel case comes from the jewel
-  case games view of portlandhodl's
+  starts it; Indigo remembers which. With **UI Motion** Off, the disc stops
+  immediately and the C-stick turns the case without coasting. The jewel case
+  comes from the jewel case games view of portlandhodl's
   [Swiss](https://github.com/portlandhodl/swiss-gc), itself after Ann
   Nguyen's [CD Case](https://www.bubbbly.com/cd-case).
 

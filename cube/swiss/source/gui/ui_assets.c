@@ -941,6 +941,48 @@ u32 UIAssets_MemoryFootprint(void) {
 	return cacheFootprint(&posters);
 }
 
+/* A menu tick has one shared read budget, not one budget per open pack.
+ * Keep the original per-pack APIs for entry priming and tools. */
+static bool cachePending(uiAssetsCache_t *c)
+{
+	bool pending = false;
+
+	syncLock(c);
+	if(c->packOpen && c->arenaReady) {
+		pending = c->loading.active;
+		for(int i = 0; i < c->shape->slotCount && !pending; i++) {
+			pending = c->slots[i].state == SLOT_PENDING;
+		}
+	}
+	syncUnlock(c);
+	return pending;
+}
+
+bool UIAssets_PollVisible(bool includeStills, bool includeDiscs)
+{
+	/* Menu-thread only. Round-robin among visible packs so a poster and
+	 * the selected still/disc both progress. Hidden packs retain their
+	 * partial records but do no I/O until their layout is used again. */
+	static unsigned next;
+	uiAssetsCache_t *visible[] = {&posters,
+		includeStills ? &stills : NULL, includeDiscs ? &discs : NULL};
+	const unsigned count = sizeof(visible) / sizeof(visible[0]);
+	bool more = false;
+
+	for(unsigned step = 0; step < count; step++) {
+		unsigned index = (next + step) % count;
+		if(visible[index] && cachePending(visible[index])) {
+			cachePoll(visible[index], UI_ASSETS_READ_BYTES);
+			next = (index + 1) % count;
+			break;
+		}
+	}
+	for(unsigned i = 0; i < count; i++) {
+		if(visible[i]) more = cachePending(visible[i]) || more;
+	}
+	return more;
+}
+
 /* ---- stills ---- */
 
 s32 UIStills_Init(const uiAssetsSource_t *source, const uiAssetsSync_t *sync) {

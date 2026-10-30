@@ -32,6 +32,8 @@ void init_font(void)
 		fontReady = true;
 		GX_InitTexObj(&fontTexObj, NULL, font->sheet_width, font->sheet_height, font->sheet_format, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_TRUE, GX_TRUE, GX_ANISO_4);
+		/* DrawInit publishes the immutable sheets before video starts. */
+		GX_InvalidateTexAll();
 	}
 }
 
@@ -120,7 +122,7 @@ void drawFontInit(void)
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_SetTexCoordScaleManually(GX_TEXCOORD0, GX_ENABLE, 1, 1);
 
-	GX_InvalidateTexAll();
+	/* The IPL sheets stay immutable after init_font publishes them. */
 	GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 
 	GX_SetNumIndStages (0);

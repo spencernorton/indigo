@@ -1126,6 +1126,10 @@ static pose_t slotPose(float slot, int direction, float t, float seed, float swa
 }
 
 #define SPIN_RATE (18.0f * PI_F / 180.0f)
+/* Every restPose frequency is an integer multiple of 0.1 rad/s. This
+ * period joins all of them, including each game's seed, without an hourly
+ * jump or the loss of float precision from an ever-growing clock. */
+#define SWAY_PERIOD (20.0f * PI_F)
 
 static struct {
 	float t;
@@ -1138,15 +1142,26 @@ static void update(float dt, float turnX, float turnY, uiMotionMode_t motion,
 	bool spin)
 {
 	jc.t += dt;
-	if(jc.t > 3600.0f) jc.t -= 3600.0f;
+	if(jc.t >= SWAY_PERIOD) jc.t -= SWAY_PERIOD;
+	bool turning = fabsf(turnX) > 12.0f / 90.0f || fabsf(turnY) > 12.0f / 90.0f;
+	float tx = turning ? clampf(-turnY * 0.45f, -0.45f, 0.45f) : 0.0f;
+	float ty = turning ? clampf(turnX * 0.9f, -0.9f, 0.9f) : 0.0f;
+	if(motion == UI_MOTION_OFF) {
+		/* Off freezes the print where it is and follows manual inspection
+		 * without a coast. Z's intentional ease to rest remains below. */
+		jc.spinRate = 0.0f;
+		jc.dragX = tx;
+		jc.dragY = ty;
+		jc.dragVX = jc.dragVY = 0.0f;
+		return;
+	}
 	float target = spin ? UIMotion_Amplitude(SPIN_RATE, motion) : 0.0f;
 	jc.spinRate += (target - jc.spinRate) * (1 - expf(-2.7f * dt));
 	jc.spin = fmodf(jc.spin + jc.spinRate * dt, 2 * PI_F);
 
 	/* Follow the stick, and keep its speed for the flick when it's let go;
 	 * let go, the case springs back. */
-	if(fabsf(turnX) > 12.0f / 90.0f || fabsf(turnY) > 12.0f / 90.0f) {
-		float tx = clampf(-turnY * 0.45f, -0.45f, 0.45f), ty = clampf(turnX * 0.9f, -0.9f, 0.9f);
+	if(turning) {
 		float k = 1 - expf(-12.0f * dt);
 		float nx = jc.dragX + (tx - jc.dragX) * k, ny = jc.dragY + (ty - jc.dragY) * k;
 		if(dt > 0) { jc.dragVX = (nx - jc.dragX) / dt; jc.dragVY = (ny - jc.dragY) / dt; }
@@ -1393,7 +1408,6 @@ static void drawDisc(shown_t *c)
 		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX2);
 		GX_SetNumIndStages(0);
 		GX_SetNumTevStages(2);
-		GX_InvalidateTexAll();
 		GX_LoadTexObj(print, GX_TEXMAP0);
 		/* Stage 0: the ink, lit by the room; its alpha is the print's where
 		 * it's printed. */
@@ -1521,7 +1535,6 @@ static void drawRods(rodmesh_t *m, Mtx mv, float scale, float fade)
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_NRM, GX_TEXMTX1);
 	GX_SetNumIndStages(0);
 	GX_SetNumTevStages(1);
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&matcapTex, GX_TEXMAP0);
 	float f = sat(fade);
 	GX_SetTevColor(GX_TEVREG0, (GXColor) {(u8)(f * glassTint[0] * 255), (u8)(f * glassTint[1] * 255),
@@ -1706,7 +1719,6 @@ static void drawSheen(Mtx mv, float z, float fade)
 	GX_SetNumTevStages(1);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&sheenTex, GX_TEXMAP0);
 	GX_LoadPosMtxImm(mv, GX_PNMTX0);
 	GX_SetCurrentMtx(GX_PNMTX0);
@@ -1860,7 +1872,6 @@ static void glowQuad(float cx, float cy, float size, GXColor c)
 	GX_SetNumTevStages(1);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&glowTex, GX_TEXMAP0);
 	float h = size / 2;
 	const float corner[4][4] = {{-1, -1, 0, 0}, {1, -1, 1, 0}, {1, 1, 1, 1}, {-1, 1, 0, 1}};
@@ -2003,6 +2014,11 @@ void UIJewelCase_Draw(const uiJewelCaseShot_t *shots, int count, int direction,
 	}
 	if(n == 0) return;
 
+	/* The caller holds the publication lock: every supplied print is
+	 * complete before this frame, and the studio/sheen/glow never change.
+	 * Invalidate once before sampling, retaining all of them through the
+	 * case's passes. There are no EFB texture copies inside this renderer. */
+	GX_InvalidateTexAll();
 	loadProjection();
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_SetAlphaCompare(GX_ALWAYS, 0, GX_AOP_AND, GX_ALWAYS, 0);
@@ -2049,5 +2065,4 @@ void UIJewelCase_Draw(const uiJewelCaseShot_t *shots, int count, int direction,
 	GX_SetTevKAlphaSel(GX_TEVSTAGE1, GX_TEV_KASEL_1);
 	GX_SetNumChans(1);
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
-	GX_InvalidateTexAll();
 }

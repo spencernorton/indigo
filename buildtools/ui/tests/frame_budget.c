@@ -22,7 +22,7 @@
 #include <gccore.h>
 
 typedef struct {
-	long sqrtCalls, trigCalls, minMaxCalls, vertices, begins;
+	long sqrtCalls, trigCalls, minMaxCalls, vertices, begins, invalidations;
 	double copyPixels;
 	unsigned long long hash;
 } frameCost_t;
@@ -143,7 +143,7 @@ void GX_LoadProjectionMtx(Mtx44 m, u8 type)
 void GX_LoadTexMtxImm(Mtx m, u32 index, u8 type) { (void)m; (void)index; (void)type; }
 void GX_SetNumTevStages(u8 count) { (void)count; stubStateCalls++; }
 void GX_SetBlendMode(u8 a, u8 b, u8 c, u8 d) { (void)a; (void)b; (void)c; (void)d; stubStateCalls++; }
-void GX_InvalidateTexAll(void) {}
+void GX_InvalidateTexAll(void) { cost.invalidations++; }
 void GX_PixModeSync(void) {}
 void GX_InitTexObj(GXTexObj *o, void *p, u16 w, u16 h, u8 f, u8 s, u8 t, u8 m)
 {
@@ -390,9 +390,9 @@ static void measure(const char *name, bool bootOverlay)
 	drawFrame(bootOverlay);
 	printf("{\"scene\": \"%s\", \"sqrtf\": %ld, \"trig\": %ld, \"minmax\": %ld, "
 		"\"vertices\": %ld, \"begins\": %ld, \"copy_pixels\": %.0f, \"state\": %ld, "
-		"\"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
+		"\"invalidations\": %ld, \"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
 		cost.minMaxCalls, cost.vertices, cost.begins, cost.copyPixels,
-		stubStateCalls, cost.hash);
+		stubStateCalls, cost.invalidations, cost.hash);
 }
 
 static void startScene(void)
@@ -482,8 +482,8 @@ static void hintRoundRect(void)
 	_HintRoundRect(100.0f, 100.0f, 22.0f, 22.0f, 11.0f, (GXColor) {0, 170, 122, 255});
 	printf("{\"scene\": \"hint-round-rect\", \"sqrtf\": %ld, \"trig\": %ld, \"minmax\": %ld, "
 		"\"vertices\": %ld, \"begins\": %ld, \"copy_pixels\": 0, \"state\": %ld, "
-		"\"hash\": \"%016llx\"}\n", cost.sqrtCalls, cost.trigCalls, cost.minMaxCalls,
-		cost.vertices, cost.begins, stubStateCalls, cost.hash);
+		"\"invalidations\": %ld, \"hash\": \"%016llx\"}\n", cost.sqrtCalls, cost.trigCalls, cost.minMaxCalls,
+		cost.vertices, cost.begins, stubStateCalls, cost.invalidations, cost.hash);
 }
 
 /* Memory Cards: the backdrop and both stacks, every cell a save with an
@@ -564,9 +564,9 @@ static void memoryCards(const char *name, bool wide, int what)
 	}
 	printf("{\"scene\": \"%s\", \"sqrtf\": %ld, \"trig\": %ld, \"minmax\": %ld, "
 		"\"vertices\": %ld, \"begins\": %ld, \"copy_pixels\": %.0f, \"state\": %ld, "
-		"\"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
+		"\"invalidations\": %ld, \"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
 		cost.minMaxCalls, cost.vertices, cost.begins, cost.copyPixels,
-		stubStateCalls, cost.hash);
+		stubStateCalls, cost.invalidations, cost.hash);
 	UIStage_SetWide(false);
 }
 
@@ -757,10 +757,56 @@ static void files(const char *name, bool wide, int active, int menu, int extra)
 	}
 	printf("{\"scene\": \"%s\", \"sqrtf\": %ld, \"trig\": %ld, \"minmax\": %ld, "
 		"\"vertices\": %ld, \"begins\": %ld, \"copy_pixels\": %.0f, \"state\": %ld, "
-		"\"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
+		"\"invalidations\": %ld, \"hash\": \"%016llx\"}\n", name, cost.sqrtCalls, cost.trigCalls,
 		cost.minMaxCalls, cost.vertices, cost.begins, cost.copyPixels,
-		stubStateCalls, cost.hash);
+		stubStateCalls, cost.invalidations, cost.hash);
 	UIStage_SetWide(false);
+}
+
+static void checkJewelMotion(void)
+{
+	for(int hz = 50; hz <= 60; hz += 10) {
+		float dt = 1.0f / (float)hz;
+		memset(&jc, 0, sizeof(jc));
+		jc.t = 20.0f * PI_F - dt * 0.5f;
+		pose_t before = restPose(jc.t, 0.4f, 1.0f);
+		update(dt, 0.0f, 0.0f, UI_MOTION_FULL, true);
+		pose_t after = restPose(jc.t, 0.4f, 1.0f);
+		if(jc.t >= dt || fabsf(after.yaw - before.yaw) > 0.005f ||
+			fabsf(after.pitch - before.pitch) > 0.005f ||
+			fabsf(after.roll - before.roll) > 0.005f ||
+			fabsf(after.y - before.y) > 0.05f) {
+			fprintf(stderr, "Jewel Case sway must join across its clock wrap (%d Hz)\n", hz);
+			exit(2);
+		}
+		jc.spin = 1.25f;
+		jc.spinRate = SPIN_RATE;
+		jc.dragX = 0.2f; jc.dragY = -0.3f;
+		jc.dragVX = 0.4f; jc.dragVY = -0.5f;
+		for(int frame = 0; frame < 4; frame++) {
+			update(dt, 0.0f, 0.0f, UI_MOTION_OFF, true);
+			if(jc.spin != 1.25f || jc.spinRate != 0.0f ||
+				jc.dragX != 0.0f || jc.dragY != 0.0f ||
+				jc.dragVX != 0.0f || jc.dragVY != 0.0f) {
+				fprintf(stderr, "Jewel Case Motion Off must stop without coasting (%d Hz)\n", hz);
+				exit(2);
+			}
+		}
+		/* Manual inspection still follows the stick immediately in Off. */
+		update(dt, 1.0f, -1.0f, UI_MOTION_OFF, true);
+		if(jc.dragX != 0.45f || jc.dragY != 0.9f || jc.spin != 1.25f) {
+			fprintf(stderr, "Jewel Case Motion Off must preserve direct stick control\n");
+			exit(2);
+		}
+		/* Z keeps its intentional ease to rest under Full motion. */
+		jc.spinRate = SPIN_RATE;
+		update(dt, 0.0f, 0.0f, UI_MOTION_FULL, false);
+		if(!(jc.spin > 1.25f && jc.spinRate > 0.0f && jc.spinRate < SPIN_RATE)) {
+			fprintf(stderr, "Jewel Case Z stop must retain its easing\n");
+			exit(2);
+		}
+	}
+	memset(&jc, 0, sizeof(jc));
 }
 
 int main(void)
@@ -771,6 +817,7 @@ int main(void)
 	IndigoBackground_SetColors(colors);
 	UIColor_Select(0);
 	UIClock_Compose(&clock, 10, 9, 30.5f);
+	checkJewelMotion();
 
 	home("home-library", 0, 600);
 	home("home-source", 1, 600);
