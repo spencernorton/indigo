@@ -1,3 +1,14 @@
+## 2026-10-30 — Reduce the executable's compiled footprint
+
+Compile application C code with -Os, retaining -O2 for the patched audio mixer
+and decoder interface. SDK and portlib archives, source behavior, embedded music,
+character encodings, dependency unwind metadata and uncompressed boot format
+remain unchanged. The whole-application prototype saves about 305 kB; retain
+source-bound build, emulator, native performance and image receipts for the
+final audio-preserving policy before acceptance. Both normal and performance
+artifacts now share a 4.25 MiB structure/stamp/size gate. More aggressive -Oz
+produced identical bytes in the pinned target compiler, so use standard -Os.
+
 ## 2026-10-30 — Show Home, Library and game details in compact GIFs
 
 The README explains the product with a real interaction recording or a source-grounded

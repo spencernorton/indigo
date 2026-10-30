@@ -37,8 +37,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
   Stills and disc art pause when their layout is hidden and resume when used.
 - Font and panel drawing preserve immutable textures in the GPU cache;
   Jewel Case shares one cache invalidation across all its passes.
-- The Settings controller is compiled for size, keeping rendering and game
-  loading on their existing optimization settings.
+- The executable is compiled for size, reducing its on-card size and static
+  memory footprint while retaining the embedded music, supported character
+  encodings and uncompressed boot format. The audio mixer retains its existing
+  optimization setting.
 
 ### Fixed
 

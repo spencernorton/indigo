@@ -152,6 +152,11 @@ jobs:
         # the Emulator job, so it adds nothing to the time CI takes.
         working-directory: elsewhere
         run: make -C cube/swiss -j8 BUILD=build-perf TARGET=swiss-perf UI_PERF=1
+      - name: Check the performance build's structure and size budget
+        working-directory: elsewhere
+        run: |
+          python3 buildtools/ci/verify_dol.py cube/swiss/swiss-perf.dol --toolchain "$TOOLCHAIN" \
+            --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dol-perf-${{ github.sha }}
