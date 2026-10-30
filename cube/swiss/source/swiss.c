@@ -72,6 +72,7 @@
 #include "gui/ui_motion.h"
 #include "gui/ui_stage.h"
 #include "gui/time_sync.h"
+#include "gui/ui_browser_launch.h"
 #include "devices/deviceHandler.h"
 #include "devices/filelock.h"
 #include "devices/filemeta.h"
@@ -3879,13 +3880,35 @@ static void launchWebBrowser(void)
 	curFile.lockCount = 0;
 	curFile.thread = LWP_THREAD_NULL;
 	free(entries);
-	/* With the console lab on, lab=1 starts the browser's own, on the same
-	 * port with the same requests: a test run goes on watching and driving,
-	 * and its /reset comes back to Indigo.
-	 * TODO: pass the current theme as argv once the browser reads it. */
-	char *labArgs[] = {NULL, "lab=1"};
+	/* Versioned named preferences cross the DOL boundary without sharing either
+	 * program's settings enums or persisting temporary overrides in the browser.
+	 * Indigo's clock is already local: localtime minus gmtime would be zero.
+	 * Prefer Sync Clock's applied offset, then an explicitly configured zone.
+	 * An unknown console offset leaves the browser's saved time preference. */
+	int32_t browserOffset = 0;
+	bool browserZoneKnown = time_sync_offset(&browserOffset) ||
+		UIBrowserLaunch_ZoneOffset(swissSettings.timeZone, (int64_t)time(NULL), &browserOffset);
+	const char *browserDevice = device == &__device_sd_a ? "sda" :
+		device == &__device_sd_b ? "sdb" : device == &__device_sd_c ? "sdc" :
+		device == &__device_gcloader ? "gcldr" : NULL;
+	GXRModeObj *browserMode = getVideoMode();
+	uiBrowserLaunchContext_t context = {
+		.color = swissSettings.uiColor,
+		.video = (browserMode->viTVMode & VI_NON_INTERLACE) && browserMode->efbHeight >= 480 ? 2 : 1,
+		.wide = swissSettings.menuWidescreen,
+		.animationsOff = swissSettings.disableUIAnimations,
+		.reduceMotion = swissSettings.reduceUIAnimations,
+		.soundsOff = swissSettings.disableMenuSFX,
+		.rumbleOff = swissSettings.disableRumble,
+		.timezoneMinutes = browserOffset / 60,
+		.timezoneKnown = browserZoneKnown,
+		.device = browserDevice,
+		.lab = swissSettings.labServer
+	};
+	uiBrowserLaunchArgs_t browserArgs;
+	UIBrowserLaunch_Arguments(&browserArgs, &context);
 	bootDolSkipRecent = true;
-	boot_dol(&curFile, swissSettings.labServer ? 2 : 0, labArgs);
+	boot_dol(&curFile, browserArgs.argc, browserArgs.argv);
 	bootDolSkipRecent = false;
 	/* It didn't start: close the DOL before its device goes. */
 	device->closeFile(&curFile);

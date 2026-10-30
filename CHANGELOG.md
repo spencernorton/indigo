@@ -8,6 +8,20 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### New
 
+- Web opens Indigo Web with a smaller native interface, an IPL chrome font,
+  an Indigo return button and a controller menu. It follows Indigo's menu
+  colour, screen shape, video mode, motion, sounds, rumble and active time
+  zone without overwriting standalone browser preferences. Its data follows
+  the config card when that card is supported. The new default start page is
+  `https://norvitech.com/indigo/start/`; an existing saved home page stays set.
+- The start page can remember a weather ZIP on the browser card for future
+  launches. Its **Forget ZIP** link clears it. This is a first-party preference;
+  general cookies and login state are not added.
+- Browser pages support checked gzip, dropdown choices, search redirects
+  and bounded meta refresh. Visible-box indexing and a reclaimable image
+  working set reduce work on long pages. Any of the four controller ports
+  can take over after returning to neutral.
+
 - Settings › Setup › Library › **Saves on Details** has an **Always** option:
   the Saves box stays visible with one copy or none. **On** keeps the
   existing two-copy threshold and **Off** leaves the memory cards alone.
