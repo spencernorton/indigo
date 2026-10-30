@@ -1,3 +1,25 @@
+## 2026-10-30 — Preserve hot-renderer timings in the size build
+
+Retain -O2 for the background, Jewel Case and font emitters as well as the
+audio mixer. The full -Os prototype holds display cadence but costs about
+5–7% more rendering work; the selective policy restores the original sampled
+tails and mean timings while keeping most of the compiled-size reduction.
+Matched native samples give Home 6.131→6.162 ms, Jewel Case rest
+4.058→4.058 ms and browsing 6.204→6.197 ms, with zero 25 ms cadence
+exceedances. Preserve exact packaged-artifact and image qualification records;
+the compiler policy removes no supported feature or dependency metadata.
+
+## 2026-10-30 — Reduce the executable's compiled footprint
+
+Compile application C code with -Os, retaining -O2 for the patched audio mixer
+and decoder interface. SDK and portlib archives, source behavior, embedded music,
+character encodings, dependency unwind metadata and uncompressed boot format
+remain unchanged. The whole-application prototype saves about 305 kB; retain
+source-bound build, emulator, native performance and image receipts for the
+final audio-preserving policy before acceptance. Both normal and performance
+artifacts now share a 4.25 MiB structure/stamp/size gate. More aggressive -Oz
+produced identical bytes in the pinned target compiler, so use standard -Os.
+
 ## 2026-10-30 — Show Home, Library and game details in compact GIFs
 
 The README explains the product with a real interaction recording or a source-grounded
