@@ -1,3 +1,13 @@
+## 2026-10-30 — Observe folder-route Settings navigation
+
+The beta follow-up folder route reached a Defaults picker while its next
+step expected Setup's Library section. Replace blind tab presses and row
+counts there with the existing title-transition and focused-row observers;
+check section entry and the return to Setup before Save & Exit. Keep the
+same input retry bounds and record missed presses. A scripted missed first
+R reproduces the old wrong-page change and passes after the fix; persistent
+misses fail before changing a value. Production code and DOL are unchanged.
+
 ## 2026-10-30 — Keep exception unwinding while omitting its unused index
 
 The pinned static unwinder searches CRT-registered frames. An emitted-relocation

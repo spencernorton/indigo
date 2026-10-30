@@ -1425,6 +1425,77 @@ class Screen(unittest.TestCase):
         with self.assertRaises(run.Failed):  # a row it can't find among the rows before
             route.walk_rows(2, "DOWNs reach the row")
 
+    def test_folder_layout_observes_settings_navigation_after_a_missed_tab_press(self):
+        """A missed first R must not turn Setup > Library into a Defaults picker."""
+        for missed in (0, 1, run.PRESSES):
+            with self.subTest(missed=missed):
+                page, focus, presses = ["Home"], [0], []
+                chosen = []
+                titles = {}
+                for index, name in enumerate(("Quick", "Defaults", "Setup", "Library")):
+                    mask = np.zeros((34, 200), bool)
+                    mask[8:20, 8 + 35 * index:38 + 35 * index:3] = True
+                    titles[name] = mask
+
+                def gray():
+                    frame = np.zeros((480, 640), np.uint8)
+                    if page[0] in titles:
+                        x0, y0, x1, y1 = run.SETTINGS_TITLE_BOX
+                        frame[y0:y1, x0:x1] = titles[page[0]] * 255
+                    for slot, top in enumerate(run.SETTINGS_ROW_TOPS):
+                        frame[top + 8:top + 24, 50 + slot * 12:58 + slot * 12] = 255
+                        if slot == focus[0]:
+                            frame[top + 2:top + 30, 320:480] = 60
+                    return frame
+
+                def press(button, seconds=0):
+                    presses.append(button)
+                    if page[0] == "Home" and button == "A":
+                        page[0] = "Quick"
+                    elif button == "R":
+                        if presses.count("R") <= missed:
+                            return
+                        page[0] = {"Quick": "Defaults", "Defaults": "Setup", "Setup": "Quick"}[page[0]]
+                        focus[0] = 0
+                    elif button == "DOWN":
+                        focus[0] += 1
+                    elif button == "A":
+                        page[0] = "Library" if page[0] == "Setup" and focus[0] == 4 else "Picker"
+                        focus[0] = 0
+                    elif button == "RIGHT":
+                        chosen.append((page[0], focus[0]))
+                    elif button == "B":
+                        page[0] = {"Library": "Setup", "Setup": "Home", "Picker": "Defaults"}.get(page[0], "Home")
+
+                class ShortWait:
+                    def __init__(self, *args):
+                        self.calls = 0
+
+                    def expired(self):
+                        self.calls += 1
+                        return self.calls > 4
+
+                route = run.Route.__new__(run.Route)
+                route.checks, route.last_rgb, route.report, route.pressed_again = [], None, None, []
+                route.emulator = mock.Mock(where=lambda: None, frame=gray)
+                route.gray, route.press, route.pause = gray, press, lambda seconds: None
+                route.covered = lambda *args: True
+                route.shot = lambda *args: None
+                settled = route.settled_label
+                route.settled_label = lambda *args, **kwargs: (np.ones((4, 4), bool), 0.0) \
+                    if page[0] == "Home" else settled(*args, **kwargs)
+                with mock.patch.object(run, "Deadline", ShortWait), mock.patch.object(run.time, "sleep"):
+                    if missed == run.PRESSES:
+                        with self.assertRaises(run.Failed):
+                            route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                        self.assertEqual(presses.count("R"), run.PRESSES)
+                        self.assertEqual(chosen, [], "a dead tab control stops before changing a setting")
+                        continue
+                    route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                self.assertEqual(chosen, [("Library", 1)])
+                self.assertEqual(presses.count("R"), 3 if missed else 2)
+                self.assertEqual(route.pressed_again, ["R"] if missed else [])
+
     def test_fatal_lines(self):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "dolphin.log"

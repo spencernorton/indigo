@@ -136,7 +136,7 @@ FOLDER_LAYOUTS = {
     # The jewel case's title stands where the carousel's does.
     "Jewel Case": (TITLE_BOX, "LEFT", "RIGHT"),
 }
-# The page title Settings opens with on a new card ("Storage").
+# Settings' page title, including the "Storage" page a new card opens with.
 SETTINGS_TITLE_BOX = (30, 46, 230, 80)
 COUNTER_BOX = (560, 120, 610, 142)  # Settings' "row / rows", shown while a row has the focus
 # Settings' six visible rows: the top of each, 40 lines apart, the box of a
@@ -1820,20 +1820,25 @@ class Route:
         library, source, settings = faces
         self.press("A")
         self.check("A opens Settings", self.covered(settings), folder_layout=name)
-        for button, pause in (("R", 1.0), ("R", 1.0), ("DOWN", 0.4), ("DOWN", 0.4),
-                              ("DOWN", 0.4), ("DOWN", 0.6), ("A", 1.5)):
-            self.press(button)
-            self.pause(pause)
+        title, _ = self.settled_label(box=SETTINGS_TITLE_BOX)
+        self.check("Settings shows a steady page title", title is not None, layout=name)
+        for tab in ("Game Defaults", "Setup"):
+            title, _ = self.press_until("R", unlike=title, box=SETTINGS_TITLE_BOX)
+            self.check(f"R reaches {tab}", title is not None, layout=name)
+        setup = title
+        self.walk_rows(4, "Setup's DOWNs reach Library", layout=name)
+        title, _ = self.press_until("A", unlike=setup, box=SETTINGS_TITLE_BOX)
+        self.check("A opens Library settings", title is not None, layout=name)
         if first:
-            self.press("DOWN")
-            self.pause(0.6)
+            self.walk_rows(1, "Library's DOWN reaches Library Folders", layout=name)
             self.press("RIGHT")
         else:  # Library Layout is the first row, cycling the five layouts.
             self.press("RIGHT")
         self.pause(1.0)
         self.shot(f"folders-{name.lower()}-setting", self.emulator.frame())
-        self.press("B")
-        self.pause(1.0)
+        self.check("B returns from Library settings to Setup",
+                   self.press_until("B", like=setup, box=SETTINGS_TITLE_BOX)[0] is not None,
+                   layout=name)
         self.press("B")
         self.check("Save & Exit returns Home with the folder layout",
                    self.settled_label(like=settings)[0] is not None, layout=name)

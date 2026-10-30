@@ -128,6 +128,12 @@ games. Each dotted ancestor and the multiple dots in the final component
 are ordinary folder names. A sibling `Racing.v1.png` becomes the folder's
 poster; oversized and damaged sibling pictures remain absent.
 
+Before changing a layout, the route observes each Settings tab title, counts
+the focused rows into Setup's Library section, and checks the section title
+and return to Setup. A missed tab press can be retried only within the
+existing bounded input policy and is recorded in `pressed_again`; a tab
+control that never responds fails before any setting is changed.
+
 In each layout A on Return to parent, B and X return to the selected child
 folder at both nested levels. At `/games` all three return Home. Reopening
 after A on the root parent chooses the first actual folder, as Library
