@@ -70,7 +70,9 @@ CXXFLAGS	= $(CFLAGS)
 ASFLAGS		= $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY $(INCLUDE)
 # One LTO partition keeps the size policy independent of build parallelism.
 # A declaration mismatch must fail the link instead of being optimized through.
-LDFLAGS		= $(CFLAGS) -flto-partition=one -Werror=lto-type-mismatch -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
+# The pinned bare-metal libgcc uses CRT-registered frames, not this index.
+# Keep .eh_frame, exception tables, personalities and registration intact.
+LDFLAGS		= $(CFLAGS) -flto-partition=one -Werror=lto-type-mismatch -Wl,--no-eh-frame-hdr -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

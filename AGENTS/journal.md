@@ -1,3 +1,18 @@
+## 2026-10-30 — Keep exception unwinding while omitting its unused index
+
+The pinned static unwinder searches CRT-registered frames. An emitted-relocation
+build is byte-identical to normal and has 55,507 allocated relocations, none
+referencing .eh_frame_hdr; CRT references to .eh_frame and frame registration
+remain. Omit only the generated index, saving about 15 kB more. Retain the
+actual .eh_frame, .gcc_except_table, personalities and registration; CI checks
+those invariants in normal, diagnostic and handoff-probe ELF files.
+
+The target probe now exercises repeated typed exceptions, rethrow, multi-frame
+RAII cleanup and std::bad_alloc before publishing its existing handoff report.
+The no-index PPC probe passes in a fresh Dolphin profile, including the existing
+encoding cases. Every game/app launch route therefore checks the target
+exception runtime rather than relying only on a symbol-presence audit.
+
 ## 2026-10-30 — Reduce cold-code size with isolated LTO
 
 The compiler/linker matrix finds no saving from relaxation, multiple-word

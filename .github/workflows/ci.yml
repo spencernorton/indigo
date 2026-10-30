@@ -53,6 +53,7 @@ jobs:
       - name: Check the DOL
         run: |
           mkdir -p dist
+          buildtools/ci/check_unwind.sh cube/swiss/swiss.elf
           python3 buildtools/ci/verify_dol.py cube/swiss/swiss.dol --toolchain "$TOOLCHAIN" \
             --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)" \
             --out dist/provenance.json
@@ -94,6 +95,7 @@ jobs:
       - name: Build the emulator test's programs
         run: |
           make -C buildtools/ui/emulator/probe
+          buildtools/ci/check_unwind.sh buildtools/ui/emulator/probe/probe.elf
           cp buildtools/ui/emulator/probe/probe.dol dist/probe.dol
           make -C buildtools/ui/emulator/aesnd
           cp buildtools/ui/emulator/aesnd/aesnd.dol dist/aesnd.dol
@@ -155,6 +157,7 @@ jobs:
       - name: Check the performance build's structure and size budget
         working-directory: elsewhere
         run: |
+          buildtools/ci/check_unwind.sh cube/swiss/swiss-perf.elf
           python3 buildtools/ci/verify_dol.py cube/swiss/swiss-perf.dol --toolchain "$TOOLCHAIN" \
             --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

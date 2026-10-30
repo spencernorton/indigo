@@ -44,6 +44,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Link-time optimization further reduces the executable while keeping hot
   renderers and audio on their measured code-generation path. The fallback
   banner retains its pixels with a consistent shared declaration.
+- Omit an unused linker-generated unwind lookup index while preserving the
+  registered exception frame tables. Game/app launch probes now exercise
+  target C++ catches, rethrows and cleanup before reporting a successful handoff.
 
 ### Fixed
 
