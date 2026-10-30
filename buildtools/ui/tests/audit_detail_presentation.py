@@ -95,13 +95,22 @@ require(prepare.count("_GameflowPrepareDetailText(") >= 10,
 card_prepare = extract_function(
     framebuffer, "static void _GameflowPrepareCardPresentation("
 )
-require(card_prepare.count("_GameflowPrepareDetailText(") == 3,
+require(card_prepare.count("_GameflowPrepareCardText(") == 3,
         "Library metadata typography is not cached")
 copy_snapshot = extract_function(
     framebuffer, "static void _GameflowCopySnapshot("
 )
-require("_GameflowPrepareCardPresentation(data, i);" in copy_snapshot,
-        "Library metadata is not prepared during snapshot publication")
+prepare_snapshot = extract_function(framebuffer, "static void _GameflowPrepareSnapshot(")
+require("_GameflowPrepareCardPresentation(snapshot, i," in prepare_snapshot and
+        "_GameflowPrepareSpotlight(snapshot," in prepare_snapshot,
+        "Library metadata is not prepared from the immutable snapshot")
+require("_GameflowPrepare" not in copy_snapshot and
+        "presentation->cards" in copy_snapshot and "presentation->spotlightLines" in copy_snapshot,
+        "Library publication must copy prepared text without fitting under the video lock")
+update_snapshot = extract_function(framebuffer, "bool DrawUpdateGameflow(")
+require(update_snapshot.index("_GameflowPrepareSnapshot(snapshot,") <
+        update_snapshot.index("LWP_MutexLock(_videomutex)"),
+        "Library text preparation blocks the video thread")
 
 publish = extract_function(framebuffer, "bool DrawUpdateGameflowDetail(")
 copy_at = publish.find("memcpy(&data->detail, snapshot")
