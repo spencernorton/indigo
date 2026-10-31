@@ -94,6 +94,8 @@ int main(void)
 if __name__ == "__main__":
     if "--sanitize" in sys.argv[1:]:
         os.environ["CC"] = os.environ.get("CC", "cc") + " -fsanitize=address,undefined -fno-omit-frame-pointer"
+        if sys.platform.startswith("linux"):
+            os.environ["CC"] += " -no-pie"
     result = measure(driver_source=driver())["rainbow-shared-samples"]
     assert result["scenarios"] == 1024
     print("rainbow samples: 1024 exact streams; 832 to 520 exponentials per visible disc")
