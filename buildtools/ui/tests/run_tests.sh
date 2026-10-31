@@ -176,6 +176,7 @@ run_contracts() {
 	python3 ./test_cube_render_pose.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
+	python3 ./test_jewel_disc_texgen.py
 	echo "== settings files: real parser/writer vs docs/SETTINGS.md =="
 	python3 ./test_settings_file.py
 	echo "== settings saves: power lost at any step leaves them whole =="
