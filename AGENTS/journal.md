@@ -1,3 +1,16 @@
+## 2026-10-31 — Load the canonical rod-lighting texture
+
+The original PowerPC generator is retained behind UI_JEWEL_CASE_REFERENCE.
+Its 21,760 texture bytes are embedded as 12,726 lossless compressed bytes,
+decoded lazily into the existing aligned allocation. Preserve room/backdrop
+function boundaries: inlining their float arithmetic changed table bytes.
+Two fresh target runs establish the canonical set; the packed prototype
+retains all 29 resource hashes and reduces isolated emulated preparation
+from 1,962,183 to 111,093 us. This is emulator timing, not native acceptance.
+Decode guards, all truncation lengths and allocation-failure/retry paths are
+covered. Full images, executable/memory cost and platform qualification remain
+required before accepting the candidate.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next

@@ -24,6 +24,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef UI_JEWEL_CASE_REFERENCE
+#include <zlib.h>
+#endif
 
 #include "ui_color.h"
 #include "ui_jewel_case.h"
@@ -141,7 +144,8 @@ static float hot(float q)
 		0.8f * band(q, -1.25f, 0.15f, 0.03f);
 }
 
-static v3 room(v3 d)
+/* Retain the original float rounding at these bake boundaries. */
+static __attribute__((noinline)) v3 room(v3 d)
 {
 	d = vnorm(d);
 	float k = 1.0f / fmaxf(fabsf(d.z), 0.08f);
@@ -168,7 +172,7 @@ static v3 room(v3 d)
 	return vmix(dim, c, smoothstep(0.0f, 0.2f, d.z));
 }
 
-static float backdropOf(v3 d)
+static __attribute__((noinline)) float backdropOf(v3 d)
 {
 	d = vnorm(d);
 	if(d.z >= 0.0f) return 0.0f;
@@ -309,6 +313,13 @@ static v3 spectral(float w)
 static u8 *matcapData;
 static GXTexObj matcapTex;
 
+static const struct { float x, y; v3 col; bool front; } studioLamps[] = {
+	{-0.42f, 0.98f, {1.0f, 1.1f, 1.27f}, true}, {0.62f, 0.72f, {0.85f, 0.96f, 1.1f}, true},
+	{-0.95f, -0.5f, {0.75f, 0.85f, 1.0f}, true}, {0.85f, -0.7f, {0.75f, 0.85f, 1.0f}, true},
+	{-0.62f, 0.58f, {0.15f, 0.17f, 0.2f}, false}, {0.66f, -0.6f, {0.15f, 0.17f, 0.2f}, false},
+};
+
+#ifdef UI_JEWEL_CASE_REFERENCE
 typedef struct { float s, z; } v2;
 
 static bool refract2(v2 i, v2 n, float eta, v2 *out)
@@ -338,11 +349,7 @@ static void initBlurTaps(void)
  * rounded surface catches each as a pin-point. Blurred over a cone they
  * spread their light (in the original's cube map, mip-mapped) over
  * everything within it. */
-static const struct { float x, y; v3 col; bool front; } studioLamps[] = {
-	{-0.42f, 0.98f, {1.0f, 1.1f, 1.27f}, true}, {0.62f, 0.72f, {0.85f, 0.96f, 1.1f}, true},
-	{-0.95f, -0.5f, {0.75f, 0.85f, 1.0f}, true}, {0.85f, -0.7f, {0.75f, 0.85f, 1.0f}, true},
-	{-0.62f, 0.58f, {0.15f, 0.17f, 0.2f}, false}, {0.66f, -0.6f, {0.15f, 0.17f, 0.2f}, false},
-};
+
 #define LAMP 12000.0f
 
 static v3 lampsBlur(v3 d, float radius)
@@ -505,6 +512,33 @@ static bool buildMatcap(void)
 	GX_InitTexObjLOD(&matcapTex, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, MATCAP_LODS - 1, 0.0f, GX_DISABLE, GX_ENABLE, GX_ANISO_1);
 	return true;
 }
+
+#else
+#include "ui_jewel_matcap.inc"
+
+static bool decodeMatcap(void *out, size_t outBytes, const void *packed, size_t packedBytes)
+{
+	uLongf decoded = outBytes;
+	uLong consumed = packedBytes;
+	if(!out || !packed || outBytes != JEWEL_MATCAP_BYTES || !packedBytes ||
+		(size_t)decoded != outBytes || (size_t)consumed != packedBytes) return false;
+	return uncompress2(out, &decoded, packed, &consumed) == Z_OK &&
+		decoded == outBytes && consumed == packedBytes;
+}
+
+static bool buildMatcap(void)
+{
+	_Static_assert(MATCAP_SIZE == 64 && MATCAP_LODS == 4, "regenerate the rod texture for a new layout");
+	const u32 bytes = JEWEL_MATCAP_BYTES;
+	matcapData = memalign(32, bytes);
+	if(matcapData == NULL) return false;
+	if(!decodeMatcap(matcapData, bytes, jewelMatcapPacked, sizeof(jewelMatcapPacked))) return false;
+	DCFlushRange(matcapData, bytes);
+	GX_InitTexObj(&matcapTex, matcapData, MATCAP_SIZE, MATCAP_SIZE, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_TRUE);
+	GX_InitTexObjLOD(&matcapTex, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, MATCAP_LODS - 1, 0.0f, GX_DISABLE, GX_ENABLE, GX_ANISO_1);
+	return true;
+}
+#endif
 
 /* ---------------------------------------------------------------------------
  * Paths, as the original builds them (2D, millimetres)
