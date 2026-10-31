@@ -52,6 +52,7 @@
 #include "ui_launch.h"
 #include "ui_jewel_case.h"
 #include "card_art.h"
+#include "ui_artwork_reader.h"
 #include "manual.h"
 #include "ui_manual.h"
 
@@ -5538,10 +5539,26 @@ bool DrawGameflowPrimePoster(void)
 
 bool DrawGameflowPollPosters(void)
 {
-	/* One 16 KiB range total between input checks; pause hidden packs. */
+	/* Thread-safe devices read in the background; the synchronous fallback
+	 * keeps one shared 16 KiB range. Both paths pause hidden packs. */
 	return UIAssets_PollVisible(
 		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT,
 		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE);
+}
+
+void DrawGameflowPausePosters(void)
+{
+	UIAssets_PauseReads();
+}
+
+void DrawGameflowBlockPosters(void)
+{
+	UIArtworkReader_Block();
+}
+
+void DrawGameflowUnblockPosters(void)
+{
+	UIArtworkReader_Unblock();
 }
 
 static void _GameflowCopySnapshot(drawGameflowEvent_t *data,

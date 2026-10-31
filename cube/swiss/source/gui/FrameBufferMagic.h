@@ -202,6 +202,9 @@ void DrawGameflowRequestPosters(DEVICEHANDLER_INTERFACE *device,
 /* Complete one poster before first Detail publication; idle work is stepped. */
 bool DrawGameflowPrimePoster(void);
 bool DrawGameflowPollPosters(void);
+void DrawGameflowPausePosters(void);
+void DrawGameflowBlockPosters(void);
+void DrawGameflowUnblockPosters(void);
 void DrawGameflowCancelPosters(void);
 /* Spotlight's description of a game, from swiss/ui/descriptions.txt on
  * device: read whole the first time it is asked for there, and again after

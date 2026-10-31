@@ -29,6 +29,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Thread-safe devices load Library artwork on one background reader instead
+  of waiting for each video frame. Reads remain bounded to 16 KiB, complete
+  textures pass their CRC before appearing, and input actions drain the reader.
+  Other devices retain the bounded menu-thread path.
 - Library title fitting and Spotlight description wrapping are prepared before
   taking the video lock, so formatting a new window does not hold up drawing.
 - Home reuses its icons' circle geometry between faces and frames, reducing

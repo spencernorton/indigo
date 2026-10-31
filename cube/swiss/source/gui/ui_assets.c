@@ -8,8 +8,9 @@
  * Compiles for the GameCube target and, with -DUI_ASSETS_HOST_BUILD, for
  * host test harnesses (buildtools/ui/tests/) with GX and allocation stubs.
  *
- * Concurrency model: one external critical section (the video mutex,
- * supplied as callbacks at Init). Menu-thread APIs enter it around every
+ * Concurrency model: one poll owner (the menu thread or a background worker
+ * joined before mutation), and one external critical section (the video
+ * mutex, supplied as callbacks at Init). Menu-thread APIs enter it around every
  * metadata mutation and publication; video-thread APIs (Query/Peek/
  * DominantColor) are read-only and run with the caller already holding
  * it, so they never lock. The lock is never held across source.read, CRC,
@@ -23,7 +24,7 @@
  * disposal after all readers stop. Slot generations are u32 and advance
  * exactly once per new slot ownership (at assignment), never on eviction.
  *
- * Two caches run this code: posters (posters.pak) and stills (stills.pak).
+ * Three caches run this code: posters, stills and disc art.
  * They differ only in the texture shape their pack must declare and in
  * their slot count; each binds its own lock callbacks and owns its arena.
  */
@@ -32,6 +33,7 @@
 #include <zlib.h>
 
 #include "ui_assets.h"
+#include "ui_artwork_reader.h"
 
 #ifdef UI_ASSETS_HOST_BUILD
 
@@ -448,6 +450,7 @@ static s32 cacheInit(uiAssetsCache_t *c, const uiAssetsSource_t *source,
 	s32 err;
 	int i;
 
+	UIArtworkReader_Stop();
 	err = validateSync(c, sync, &requestedSync);
 	if (err != UI_ASSETS_OK)
 		return err;
@@ -549,6 +552,7 @@ static void cacheRequestWindow(uiAssetsCache_t *c, const char (*ids)[8],
 	int wantCount = 0;
 	int i, j;
 
+	UIArtworkReader_Stop();
 	if (!ids)
 		return;
 	/* A cache takes at most one window entry per slot: the stills cache's
@@ -663,6 +667,7 @@ static bool cachePoll(uiAssetsCache_t *c, u32 maxBytes) {
 	u32 now, take, crc = 0u;
 	int i;
 
+	if(UIArtworkReader_Blocked()) return false;
 	/* Capture one bounded range under the video lock. A range in hand
 	 * belongs only to its original slot generation, including across calls. */
 	syncLock(c);
@@ -830,6 +835,7 @@ static bool cacheDominantColor(const uiAssetsCache_t *c, const char *gameId,
 
 static void cacheCancel(uiAssetsCache_t *c) {
 	u8 *oldIndex;
+	UIArtworkReader_Stop();
 	if (!c->arenaReady && !c->packOpen)
 		return;
 	syncLock(c);
@@ -852,7 +858,8 @@ static s32 cacheDispose(uiAssetsCache_t *c) {
 	u8 *oldArena;
 	int i;
 
-	/* Disposal is deliberately lock-free: its caller has already stopped
+	UIArtworkReader_Stop();
+	/* Disposal never acquires the video mutex: its caller has already stopped
 	 * the video thread and may already have destroyed the video mutex. The
 	 * live-mutex Cancel step must have unpublished and freed the index. */
 	if (c->packOpen || c->index != NULL)
@@ -904,10 +911,12 @@ void UIAssets_RequestWindow(const char (*ids)[8], int count, int selected) {
 }
 
 bool UIAssets_Poll(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&posters, UI_ASSETS_POSTER_BYTES);
 }
 
 bool UIAssets_PollStep(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&posters, UI_ASSETS_READ_BYTES);
 }
 
@@ -958,9 +967,9 @@ static bool cachePending(uiAssetsCache_t *c)
 	return pending;
 }
 
-bool UIAssets_PollVisible(bool includeStills, bool includeDiscs)
+static bool pollVisible(bool includeStills, bool includeDiscs)
 {
-	/* Menu-thread only. Round-robin among visible packs so a poster and
+	/* One reader at a time. Round-robin among visible packs so a poster and
 	 * the selected still/disc both progress. Hidden packs retain their
 	 * partial records but do no I/O until their layout is used again. */
 	static unsigned next;
@@ -983,6 +992,48 @@ bool UIAssets_PollVisible(bool includeStills, bool includeDiscs)
 	return more;
 }
 
+static bool readerStills, readerDiscs; /* unchanged until the worker joins */
+
+static bool readVisible(void *unused)
+{
+	(void)unused;
+	return pollVisible(readerStills, readerDiscs);
+}
+
+static bool cacheCanReadInBackground(const uiAssetsCache_t *c)
+{
+	return !c->packOpen || (c->src.threadSafe && c->sync.lock && c->sync.unlock);
+}
+
+void UIAssets_PauseReads(void)
+{
+	UIArtworkReader_Stop();
+}
+
+bool UIAssets_PollVisible(bool includeStills, bool includeDiscs)
+{
+	if(UIArtworkReader_Blocked()) return false;
+	bool safe = cacheCanReadInBackground(&posters) &&
+		(!includeStills || cacheCanReadInBackground(&stills)) &&
+		(!includeDiscs || cacheCanReadInBackground(&discs));
+	bool pending;
+
+	if(!safe || readerStills != includeStills || readerDiscs != includeDiscs) {
+		UIArtworkReader_Stop();
+		readerStills = includeStills;
+		readerDiscs = includeDiscs;
+	}
+	pending = cachePending(&posters) ||
+		(includeStills && cachePending(&stills)) ||
+		(includeDiscs && cachePending(&discs));
+	if(safe && (pending || UIArtworkReader_Running()) &&
+		UIArtworkReader_Start(readVisible, NULL)) {
+		UIArtworkReader_Wake();
+		return pending;
+	}
+	return !UIArtworkReader_Blocked() && pollVisible(includeStills, includeDiscs);
+}
+
 /* ---- stills ---- */
 
 s32 UIStills_Init(const uiAssetsSource_t *source, const uiAssetsSync_t *sync) {
@@ -998,10 +1049,12 @@ void UIStills_RequestWindow(const char (*ids)[8], int count, int selected) {
 }
 
 bool UIStills_Poll(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&stills, UI_STILLS_BYTES);
 }
 
 bool UIStills_PollStep(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&stills, UI_ASSETS_READ_BYTES);
 }
 
@@ -1050,10 +1103,12 @@ void UIDiscs_RequestWindow(const char (*ids)[8], int count, int selected) {
 }
 
 bool UIDiscs_Poll(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&discs, UI_DISCS_BYTES);
 }
 
 bool UIDiscs_PollStep(void) {
+	UIArtworkReader_Stop();
 	return cachePoll(&discs, UI_ASSETS_READ_BYTES);
 }
 
@@ -1111,6 +1166,7 @@ s32 UIAssets_SourceFromFileHandle(file_handle *file, uiAssetsSource_t *out) {
 	out->size = file->size;
 	out->ctx = file;
 	out->nowMs = NULL;
+	out->threadSafe = (file->device->features & FEAT_THREAD_SAFE) != 0;
 	return UI_ASSETS_OK;
 }
 
