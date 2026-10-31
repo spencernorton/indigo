@@ -29,6 +29,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Jewel Case derives printed disc coordinates on the GPU, removing duplicate
+  texture-coordinate data from each printed disc's vertex stream.
 - Library title fitting and Spotlight description wrapping are prepared before
   taking the video lock, so formatting a new window does not hold up drawing.
 - Home reuses its icons' circle geometry between faces and frames, reducing

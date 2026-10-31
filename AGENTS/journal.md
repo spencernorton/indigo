@@ -1,3 +1,15 @@
+## 2026-10-31 — Printed disc position texture generation
+
+The printed disc uses its local vertex position with the existing texture
+matrix. Geometry, colors, crops and motion are preserved; each printed case
+omits 1,666 duplicate texture-coordinate pairs. The frame-budget fixture keeps
+the existing geometry/color hashes. The focused test exercises 320 combinations
+of crop, spin, print fade, facing and missing artwork, checks the emitted GX
+attribute contract and compares generated coordinates with an independent
+double-precision reference. Host checks do not establish sampled-image equality
+or console frame-time improvement; controlled GX images and paired measurements
+are separate qualification steps.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
