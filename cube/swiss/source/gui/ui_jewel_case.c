@@ -610,6 +610,8 @@ typedef struct { float hw, hh, rc, zc; int seg; bool flat; } profile_t;
 
 typedef struct {
 	float *pos, *nrm;
+	u16 *normalMap, *glintNormals;
+	int normalCount;
 	int count, cap;
 	int glintEnd;	/* the first rod, the frame, is where the lamps glint */
 	u16 *prims;	/* [GX primitive, count, indices...]... */
@@ -754,25 +756,53 @@ static void rodSetupVtx(void)
 	GX_SetVtxAttrFmt(VTXFMT_ROD, GX_VA_NRM, GX_NRM_XYZ, GX_F32, 0);
 }
 
-/* Move the arrays to aligned memory and make room for the display list the
- * video thread records them in. Menu thread. */
+/* Pack equal normal bit patterns once. Keep vertex order and separate normal
+ * indices, including a small CPU map for the frame's glints. Menu thread. */
+static u32 rodNormalHash(const float *normal)
+{
+	u32 words[3];
+	memcpy(words, normal, sizeof(words));
+	u32 h = 2166136261u;
+	for(unsigned i = 0; i < 3; i++) h = (h ^ words[i]) * 16777619u;
+	return h;
+}
+
 static bool rodPack(rodmesh_t *m)
 {
-	if(m->failed || m->count == 0) return false;
-	float *pos = memalign(32, m->count * 12), *nrm = memalign(32, m->count * 12);
-	if(pos == NULL || nrm == NULL) {
-		free(pos);
-		free(nrm);
-		return false;
+	if(m->failed || m->count <= 0 || m->count > 65535 ||
+		m->glintEnd < 0 || m->glintEnd > m->count) return false;
+	unsigned slots = 1;
+	while(slots < (unsigned)m->count * 2) slots <<= 1;
+	u16 *table = calloc(slots, sizeof(*table));
+	u16 *map = malloc((size_t)m->count * sizeof(*map));
+	if(table == NULL || map == NULL) { free(table); free(map); return false; }
+	int normals = 0;
+	for(int i = 0; i < m->count; i++) {
+		const float *n = m->nrm + i * 3;
+		unsigned bucket = rodNormalHash(n) & (slots - 1);
+		while(table[bucket] && memcmp(n, m->nrm + (table[bucket] - 1) * 3, 12))
+			bucket = (bucket + 1) & (slots - 1);
+		if(!table[bucket]) { table[bucket] = i + 1; map[i] = normals++; }
+		else map[i] = map[table[bucket] - 1];
+	}
+	free(table);
+	float *pos = memalign(32, m->count * 12), *nrm = memalign(32, normals * 12);
+	u16 *glints = m->glintEnd ? malloc((size_t)m->glintEnd * sizeof(*glints)) : NULL;
+	if(pos == NULL || nrm == NULL || (m->glintEnd && glints == NULL)) {
+		free(pos); free(nrm); free(glints); free(map); return false;
 	}
 	memcpy(pos, m->pos, m->count * 12);
-	memcpy(nrm, m->nrm, m->count * 12);
+	int copied = 0;
+	for(int i = 0; i < m->count; i++) {
+		if(map[i] == copied) { memcpy(nrm + copied * 3, m->nrm + i * 3, 12); copied++; }
+	}
+	if(m->glintEnd) memcpy(glints, map, (size_t)m->glintEnd * sizeof(*glints));
 	free(m->pos);
 	free(m->nrm);
-	m->pos = pos;
-	m->nrm = nrm;
+	m->pos = pos; m->nrm = nrm;
+	m->normalMap = map; m->glintNormals = glints; m->normalCount = normals;
 	DCFlushRange(pos, m->count * 12);
-	DCFlushRange(nrm, m->count * 12);
+	DCFlushRange(nrm, normals * 12);
 
 	u32 size = 64;
 	for(int i = 0; i < m->primLen; i += m->prims[i + 1] + 2) size += 3 + m->prims[i + 1] * 4;
@@ -797,13 +827,15 @@ static bool rodRecord(rodmesh_t *m)
 		GX_Begin(m->prims[i], VTXFMT_ROD, n);
 		for(int j = 0; j < n; j++) {
 			GX_Position1x16(m->prims[i + 2 + j]);
-			GX_Normal1x16(m->prims[i + 2 + j]);
+			GX_Normal1x16(m->normalMap[m->prims[i + 2 + j]]);
 		}
 		GX_End();
 	}
 	m->dlSize = GX_EndDispList();
 	free(m->prims);
 	m->prims = NULL;
+	free(m->normalMap);
+	m->normalMap = NULL;
 	m->primLen = m->primCap = 0;
 	return m->dlSize > 0;
 }
@@ -812,6 +844,8 @@ static void rodFree(rodmesh_t *m)
 {
 	free(m->pos);
 	free(m->nrm);
+	free(m->normalMap);
+	free(m->glintNormals);
 	free(m->prims);
 	free(m->dl);
 	memset(m, 0, sizeof(*m));
@@ -1792,7 +1826,7 @@ static void findGlints(const rodmesh_t *m, Mtx mv, float scale, float fade, star
 	 * all of it. */
 	v3 V = vnorm(V3(-mv[0][3], -mv[1][3], -mv[2][3]));
 	for(int i = 0; i < m->glintEnd; i++) {
-		const float *nn = m->nrm + i * 3;
+		const float *nn = m->nrm + m->glintNormals[i] * 3;
 		v3 N;
 		xformDir(mv, V3(nn[0], nn[1], nn[2]), &N);
 		N = vmul(N, 1.0f / scale);

@@ -1,3 +1,15 @@
+## 2026-10-31 — Share the Jewel Case meshes' identical normals
+
+Pack equal normal bit patterns once, retaining separate GX normal indices and
+a small CPU glint map. The full map is retired after display-list recording;
+positions, primitive order and lighting values retain their existing behavior.
+Focused regressions reconstruct every original normal, verify the real emitted
+index stream, compare CPU glints with the former emitter across a pose grid,
+exercise collisions/signed zero/NaN payloads and inject every pack/preparation
+allocation failure followed by retry. Frame-budget scene hashes are unchanged.
+Target images, allocation costs, CI and physical qualification remain gates;
+this is an exact memory-layout experiment, with no tessellation reduction.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
