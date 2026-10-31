@@ -19,22 +19,13 @@ static bool ready;
 bool UIBuiltinImages_Decode(void *out, size_t out_bytes,
 	const void *packed, size_t packed_bytes)
 {
+	uLongf decoded = out_bytes;
+	uLong consumed = packed_bytes;
 	if(!out || !packed || !out_bytes || !packed_bytes ||
-		(size_t)(uInt)out_bytes != out_bytes || (size_t)(uInt)packed_bytes != packed_bytes)
+		(size_t)decoded != out_bytes || (size_t)consumed != packed_bytes)
 		return false;
-	z_stream stream = {0};
-	stream.next_in = (Bytef *)packed;
-	stream.avail_in = (uInt)packed_bytes;
-	stream.next_out = out;
-	stream.avail_out = (uInt)out_bytes;
-	if(inflateInit(&stream) != Z_OK)
-		return false;
-	/* All input and output are present. Z_FINISH avoids a separate sliding
-	 * window allocation when this complete stream fits in one call. */
-	int status = inflate(&stream, Z_FINISH);
-	bool complete = status == Z_STREAM_END && !stream.avail_in && !stream.avail_out;
-	int ended = inflateEnd(&stream);
-	return complete && ended == Z_OK;
+	return uncompress2(out, &decoded, packed, &consumed) == Z_OK &&
+		decoded == out_bytes && consumed == packed_bytes;
 }
 
 void *UIBuiltinImages_Get(void)
