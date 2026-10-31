@@ -50,6 +50,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- The emulator's folder checks observe Settings tab and section transitions
+  before changing a layout, recovering from a missed press with a recorded,
+  bounded retry and stopping when navigation does not respond.
 - Jewel Case's sway stays continuous through long sessions. UI Motion Off
   stops the disc immediately and follows the C-stick without coasting;
   Z keeps its gradual spin stop when motion is enabled.
