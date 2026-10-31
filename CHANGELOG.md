@@ -29,6 +29,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Built-in textures take less space in the executable, with their original
+  pixels and formats restored before the menus start. This trades about
+  30 kB of resident memory for about 75 kB less executable data.
 - Library title fitting and Spotlight description wrapping are prepared before
   taking the video lock, so formatting a new window does not hold up drawing.
 - Home reuses its icons' circle geometry between faces and frames, reducing

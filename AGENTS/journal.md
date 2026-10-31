@@ -1,3 +1,21 @@
+## 2026-10-30 — Pack built-in textures before startup publication
+
+Store images.tpl with deterministic zlib compression and an exact expanded
+size, keeping the original generated texture indices, formats and bytes.
+Expand it once into aligned persistent storage at texture initialization,
+flush it before GX can read it, and retain TPL's in-place pointer fixups on
+later initialization calls. Failed or incomplete expansion publishes nothing
+and stops initialization before the video thread can sample partial textures.
+
+The prototype saves about 75 kB in the DOL and adds about 30 kB of resident
+storage. Keep that tradeoff explicit. Generator bounds, exact output length,
+truncation/corruption/trailing data, failed publication, cache visibility and
+repeat initialization have host regressions. The existing immutable-texture
+audit keeps this outside drawing and before video-thread creation. Exact
+target resource hashes, allocation/startup measurements, reproducibility,
+host/emulator routes and normal-package acceptance remain qualification gates.
+
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
