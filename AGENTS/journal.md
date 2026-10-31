@@ -1,3 +1,13 @@
+## 2026-10-31 — Reuse the rainbow strips' shared samples
+
+Adjacent rainbow strips repeat their boundary lighting. Cache the existing
+three-byte color once per grid point, retaining the original strip order,
+positions, blend state and quantization. Each visible disc evaluates 520
+exponentials instead of 832. A frozen former emitter checks exact position,
+color and strip streams over 1,024 poses, scales, faces and fades; the frame
+budget preserves every scene hash. This operation-count saving needs target
+image and complete-frame qualification before acceptance.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next

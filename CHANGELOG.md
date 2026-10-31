@@ -6,6 +6,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
+
 ### New
 
 - Web opens Indigo Web with a smaller native interface, an IPL chrome font,

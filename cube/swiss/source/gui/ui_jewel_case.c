@@ -1330,29 +1330,38 @@ static void drawSpokes(Mtx mv, float zFace, float nzLocal, float fade)
 				}
 				data[ri] = smoothstep(21.5f, 23.0f, r) * (1 - smoothstep(58.2f, 58.8f, r));
 			}
+			/* Adjacent strips share their boundary vertices. Work out the
+			 * same colour once per grid point, then retain the strip order. */
+			u8 col[RS + 1][CS + 1][3];
+			for(int ri = 0; ri <= RS; ri++) {
+				float r = 21.5f + (58.8f - 21.5f) * ri / RS;
+				for(int ci = 0; ci <= CS; ci++) {
+					float cs = ca[ci], sn = sa[ci];
+					float x = r * cs, y = r * sn;
+					v3 P;
+					xform(mv, V3(x, y, zFace), &P);
+					v3 V = vnorm(vmul(P, -1));
+					v3 h = vadd(*L[l], V);
+					v3 rad = vadd(vmul(ex, cs), vmul(ey, sn));
+					v3 tan = vadd(vmul(ex, -sn), vmul(ey, cs));
+					float along = vdot(h, tan), u = fabsf(vdot(h, rad));
+					float w = expf(-along * along / (spread[l] * spread[l]));
+					v3 c = vadd(vadd(spectral(1600 * u), vmul(spectral(800 * u), 0.75f)), vmul(spectral(533.3f * u), 0.45f));
+					c = vmul(c, w * gain[l] * 1.3f * data[ri] * fade);
+					/* Added on top of the mirror, in display light. */
+					v3 base = vmix(under[ri][0], under[ri][1], (float)ci / CS);
+					col[ri][ci][0] = toSrgb8(base.x + c.x) - toSrgb8(base.x);
+					col[ri][ci][1] = toSrgb8(base.y + c.y) - toSrgb8(base.y);
+					col[ri][ci][2] = toSrgb8(base.z + c.z) - toSrgb8(base.z);
+				}
+			}
 			for(int ci = 0; ci < CS; ci++) {
 				GX_Begin(GX_TRIANGLESTRIP, VTXFMT_DIR, (RS + 1) * 2);
 				for(int ri = 0; ri <= RS; ri++) {
 					float r = 21.5f + (58.8f - 21.5f) * ri / RS;
 					for(int k = 0; k < 2; k++) {
-						float cs = ca[ci + k], sn = sa[ci + k];
-						float x = r * cs, y = r * sn;
-						v3 P;
-						xform(mv, V3(x, y, zFace), &P);
-						v3 V = vnorm(vmul(P, -1));
-						v3 h = vadd(*L[l], V);
-						v3 rad = vadd(vmul(ex, cs), vmul(ey, sn));
-						v3 tan = vadd(vmul(ex, -sn), vmul(ey, cs));
-						float along = vdot(h, tan), u = fabsf(vdot(h, rad));
-						float w = expf(-along * along / (spread[l] * spread[l]));
-						v3 c = vadd(vadd(spectral(1600 * u), vmul(spectral(800 * u), 0.75f)), vmul(spectral(533.3f * u), 0.45f));
-						c = vmul(c, w * gain[l] * 1.3f * data[ri] * fade);
-						/* Added on top of the mirror, in display light. */
-						v3 base = vmix(under[ri][0], under[ri][1], (float)(ci + k) / CS);
-						u8 cr = toSrgb8(base.x + c.x) - toSrgb8(base.x);
-						u8 cg = toSrgb8(base.y + c.y) - toSrgb8(base.y);
-						u8 cb = toSrgb8(base.z + c.z) - toSrgb8(base.z);
-						emitColor(x, y, zFace + nzLocal * 0.02f / sc, cr, cg, cb, 255);
+						const u8 *c = col[ri][ci + k];
+						emitColor(r * ca[ci + k], r * sa[ci + k], zFace + nzLocal * 0.02f / sc, c[0], c[1], c[2], 255);
 					}
 				}
 				GX_End();
