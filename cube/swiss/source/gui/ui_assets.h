@@ -17,7 +17,9 @@
  *
  *   Menu-thread APIs -- Init, RequestWindow, Poll and
  *   CancelForDeviceChange -- must be called WITHOUT the lock
- *   held; they enter the critical section internally for every metadata
+ *   held. Mutations and synchronous Poll calls first join the optional
+ *   background reader, so no in-flight write can survive slot reuse, source
+ *   closure or arena disposal. They enter the critical section for metadata
  *   mutation and publication. Poll is split so its bounded device read,
  *   CRC, and cache flush run OUTSIDE the lock; only job capture and final
  *   GXTexObj/failure publication run inside it. The lock is never held
@@ -29,6 +31,12 @@
  *   non-recursive mutex is safe. Pointers they return (GXTexObj, or
  *   anything derived from the pack index) must not be retained after the
  *   caller releases the lock.
+ *
+ *   PollVisible may delegate the same capture/read/publish operation to one
+ *   lower-priority worker on thread-safe sources. Only that worker OR the
+ *   menu thread polls at a time. Its visible-pack mask and all source/index/
+ *   slot ownership stay fixed until it joins. PauseReads joins before the
+ *   menu handles an input action; the next idle PollVisible resumes loading.
  *
  *   Target Init requires both callbacks. A NULL sync (or an all-zero
  *   callback pair) degrades to no synchronization only in single-threaded
@@ -180,6 +188,10 @@ typedef struct {
 	u32 size;
 	void *ctx;
 	u32 (*nowMs)(void);
+	/* Opt in only when read() and its device support another thread. The
+	 * callback must not reenter menu APIs. A complete sync pair is required
+	 * for background reads, including in the threaded host harness. */
+	bool threadSafe;
 } uiAssetsSource_t;
 
 /* Menu thread, lock NOT held. Reads and fully validates header+index
@@ -216,11 +228,19 @@ bool UIAssets_Poll(void);
 #define UI_ASSETS_READ_BYTES 16384u
 bool UIAssets_PollStep(void);
 
-/* Menu thread: at most one UI_ASSETS_READ_BYTES range TOTAL per call,
- * fairly shared by posters and the active layout's stills/discs. Hidden
- * packs are paused, including partial records. Returns whether any visible
- * pack has work left; false may still have completed its final range. */
+/* Menu thread: wake one background reader when every visible source permits
+ * threaded reads; otherwise read one UI_ASSETS_READ_BYTES range here. The
+ * worker uses that same bounded range and visible-pack fairness independently
+ * of video retraces. Hidden packs retain partial records without further I/O.
+ * Returns whether any visible pack has work left. Allocation/thread failure
+ * retains the synchronous bounded fallback. */
 bool UIAssets_PollVisible(bool includeStills, bool includeDiscs);
+
+/* Menu thread, without the video lock: drain/join the background reader
+ * before handling an input action, saving settings, or using a device for
+ * another screen. Keeps partial records; PollVisible resumes them. All cache
+ * mutations and the synchronous Poll APIs also drain before touching data. */
+void UIAssets_PauseReads(void);
 
 /* Video thread, lock ALREADY HELD by the caller; never locks. Classifies
  * gameId (gameIdLen is the number of bytes readable at gameId; inputs

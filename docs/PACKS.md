@@ -127,9 +127,14 @@ A texture whose CRC doesn't match is not shown: that game looks as if the
 pack had no picture for it, and the rest of the pack still works. The file is read in pieces as the
 Library needs them, never all at once: 25 posters, 3 stills and 3 discs at
 most are held in memory. Stills open only on first Spotlight use, and discs
-on first Jewel Case use. Each idle step reads at most 16 KiB from each pack,
-checking a texture's complete CRC before publishing it; changing device
-discards an unfinished texture. A game with no disc in `discs.pak` (or no
+on first Jewel Case use. Thread-safe devices use one background reader with
+a 16 KiB read limit and a 16 KiB worker stack. It shares reads fairly between
+the visible packs, pauses hidden layouts, and checks a texture's complete CRC
+before publishing it. Input actions and cache/device changes join the reader
+before continuing. Uploads and restarts drain it before suspending the menu;
+a rejected upload resumes loading. Other devices, or a failed worker allocation, retain one
+shared 16 KiB read per idle menu frame. Changing device discards an unfinished
+texture. A game with no disc in `discs.pak` (or no
 `discs.pak` at all) has the middle of its cover printed on its disc in the
 jewel case, and a game with neither has a bare silver disc.
 
