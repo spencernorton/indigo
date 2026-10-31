@@ -122,13 +122,13 @@ else
 	export LD	:=	$(CXX)
 endif
 
-export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
+export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(filter-out images.tpl,$(TPLFILES))) images.tplz.o
 export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(SFILES:.S=.o)
 # libogc2's AESND, from aesnd/ with Indigo's patches rather than -laesnd
 export OFILES_AESND := aesndlib.o aesndmp3player.o
 export OFILES := $(OFILES_BIN) $(OFILES_SOURCES) $(OFILES_AESND)
 
-export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES))) $(addsuffix .h,$(subst .,_,$(TPLFILES))) tags.h
+export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES))) $(addsuffix .h,$(subst .,_,$(filter-out images.tpl,$(TPLFILES)))) images_tplz.h images_meta.h tags.h
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -184,6 +184,15 @@ $(OFILES_SOURCES) : $(HFILES)
 #---------------------------------------------------------------------------------
 %.tpl.o %_tpl.h : %.tpl
 #---------------------------------------------------------------------------------
+	$(SILENTMSG) $(notdir $<)
+	$(bin2o)
+
+# Keep the original texture formats and pixels, unpacking once at DrawInit.
+# Grouped outputs make serial and parallel builds use the same metadata.
+images.tplz images_meta.h &: images.tpl ../../../buildtools/ci/pack_builtin_images.py
+	python3 ../../../buildtools/ci/pack_builtin_images.py $< images.tplz images_meta.h
+
+%.tplz.o %_tplz.h : %.tplz
 	$(SILENTMSG) $(notdir $<)
 	$(bin2o)
 
