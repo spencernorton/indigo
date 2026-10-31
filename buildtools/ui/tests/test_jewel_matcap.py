@@ -104,6 +104,8 @@ int main(void)
 if __name__ == "__main__":
     if "--sanitize" in sys.argv[1:]:
         os.environ["CC"] = os.environ.get("CC", "cc") + " -fsanitize=address,undefined -fno-omit-frame-pointer"
+        if sys.platform.startswith("linux"):
+            os.environ["CC"] += " -no-pie"
     result = measure(driver_source=driver())["jewel-matcap"]
     assert result["truncations"] == 12726
     print(f"matcap: exact decode, {result['truncations']} truncations and "
