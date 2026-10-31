@@ -1,3 +1,14 @@
+## 2026-10-31 — Retain contiguous glint normals while packing the tail
+
+The first layout saved 64,440 requested heap bytes after recording, but its
+CPU glint map increased the isolated replay by 7.45% (about 9.5 us per pose).
+Preserve the original glint prefix and compact only the remaining normals.
+This removes the per-frame indirection and separate glint allocation while
+retiring the full GX map after recording. Verify the prefix byte-for-byte,
+all reconstructed normals, emitted indices and target images; remeasure the
+CPU/heap tradeoff before accepting the candidate. Earlier first-layout results
+remain separate from this revision and do not establish its qualification.
+
 ## 2026-10-31 — Share the Jewel Case meshes' identical normals
 
 Pack equal normal bit patterns once, retaining separate GX normal indices and

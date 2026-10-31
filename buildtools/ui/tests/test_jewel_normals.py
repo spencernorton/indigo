@@ -47,7 +47,7 @@ static void checkNormal(u16 i) {
     source = source.replace("int main(void)", "int frameBudgetMain(void)", 1)
     return source + r'''
 static rodmesh_t synthetic(void) {
- rodmesh_t m={.count=16,.cap=16,.glintEnd=16};
+ rodmesh_t m={.count=16,.cap=16,.glintEnd=4};
  m.pos=assetCalloc(16,12);m.nrm=assetMalloc(16*12);m.prims=assetMalloc(18*2);m.primLen=m.primCap=18;
  assert(m.pos&&m.nrm&&m.prims);m.prims[0]=GX_TRIANGLESTRIP;m.prims[1]=16;
  u32 words[8][3];unsigned n=0;
@@ -67,7 +67,8 @@ static void compareMesh(rodmesh_t *m) {
  assert(((uintptr_t)m->pos&31)==0&&((uintptr_t)m->nrm&31)==0);
  assert(memcmp(m->pos,positions,count*12)==0);
  for(int i=0;i<count;i++)assert(m->normalMap[i]<m->normalCount&&memcmp(m->nrm+m->normalMap[i]*3,normals+i*3,12)==0);
- for(int i=0;i<glints;i++)assert(m->glintNormals[i]<m->normalCount&&memcmp(m->nrm+m->glintNormals[i]*3,normals+i*3,12)==0);
+ assert(memcmp(m->nrm,normals,glints*12)==0);
+ for(int i=0;i<glints;i++)assert(m->normalMap[i]==i);
  checked=m;originalNormals=normals;expectedIndices=indices;expectedCount=n;cursor=0;
  unsigned before=allocationCall;assert(rodRecord(m));assert(allocationCall==before);assert(cursor==n);
  checked=NULL;assert(!m->normalMap&&!m->prims);
