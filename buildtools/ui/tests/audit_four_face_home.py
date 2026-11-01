@@ -719,7 +719,8 @@ assert '"L/R  PAGE %d OF %d    B  BACK"' in SYSTEM_INFO
 assert "Press A or B" not in info_page
 interactive_info = show_info[show_info.index("while(1)") :]
 assert "BUTTON_A" not in interactive_info
-assert "if(btns & PAD_BUTTON_B)" in interactive_info
+# Swiss 45af0e6 uses the common controller mask for the same B exit.
+assert "if(btns & BUTTON_B)" in interactive_info
 assert interactive_info.count("break;") == 1
 assert "while (padsButtonsHeld() & BUTTON_B)" in interactive_info
 
