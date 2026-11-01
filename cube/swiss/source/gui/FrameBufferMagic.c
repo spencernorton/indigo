@@ -41,6 +41,7 @@
 #include "ui_hint_geometry.h"
 #include "ui_system_info.h"
 #include "ui_assets.h"
+#include "ui_builtin_images.h"
 #include "ui_command_rail.h"
 #include "ui_home_layout.h"
 #include "ui_home_text.h"
@@ -636,7 +637,12 @@ static void disposeEvent(uiDrawObj_t *event) {
 
 static void init_textures() 
 {
-	TPL_OpenTPLFromMemory(&imagesTPL, (void *)images_tpl, images_tpl_size);
+	void *images = UIBuiltinImages_Get();
+	if(!images) {
+		print_debug("Built-in texture initialization failed\n");
+		abort();
+	}
+	TPL_OpenTPLFromMemory(&imagesTPL, images, UIBuiltinImages_Size());
 	TPL_OpenTPLFromMemory(&buttonsTPL, (void *)buttons_tpl, buttons_tpl_size);
 	TPL_GetTexture(&imagesTPL, gcdvdsmall, &gcdvdsmallTexObj);
 	TPL_GetTextureCI(&imagesTPL, sdsmall, &sdsmallTexObj, &sdsmallTlutObj, GX_TLUT0);

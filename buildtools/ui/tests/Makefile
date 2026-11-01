@@ -19,7 +19,7 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 # the flags in <name>.flags (GAMEFLOW_CFLAGS unless set) and the libraries in
 # <name>.libs: plain as <name>, under ASan/UBSan as <name>_san.
 TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_png \
-	test_ui_assets test_ui_assets_target_sync test_blank_banner \
+	test_ui_assets test_ui_assets_target_sync test_blank_banner test_ui_builtin_images \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
 	test_ui_menu_input test_ui_clock test_ui_hint test_ui_stage \
 	test_ui_home test_ui_cube_motif test_ui_home_safety test_ui_home_layout \
@@ -55,6 +55,10 @@ test_ui_assets_target_sync.flags = $(CFLAGS) -DUI_ASSETS_HOST_BUILD \
 test_ui_assets_target_sync.libs := -lz
 test_blank_banner.src := $(GUI)/blankbanner.c
 test_blank_banner.flags := $(GAMEFLOW_CFLAGS) -I$(GUI)
+
+test_ui_builtin_images.src := $(GUI)/ui_builtin_images.c
+test_ui_builtin_images.flags := $(GAMEFLOW_CFLAGS) -DUI_BUILTIN_IMAGES_HOST_BUILD -I$(GUI) -Ifixtures/builtin-images
+test_ui_builtin_images.libs := -lz
 # Settings layout module: strict C99. ui_cheats is the cheat browser whose
 # window the pages share.
 test_ui_settings_layout.src := $(GUI)/ui_settings_layout.c $(GUI)/ui_hint.c \
