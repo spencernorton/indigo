@@ -128,7 +128,9 @@ pack had no picture for it, and the rest of the pack still works. The file is re
 Library needs them, never all at once: 25 posters, 3 stills and 3 discs at
 most are held in memory. Stills open only on first Spotlight use, and discs
 on first Jewel Case use. Thread-safe devices use one background reader with
-a 16 KiB read limit and a 16 KiB worker stack. It shares reads fairly between
+a 16 KiB read limit and a 16 KiB worker stack. It runs at menu priority below
+video, sleeping for 1 ms after each bounded step so other work can run.
+It shares reads fairly between
 the visible packs, pauses hidden layouts, and checks a texture's complete CRC
 before publishing it. Input actions and cache/device changes join the reader
 before continuing. Uploads and restarts drain it before suspending the menu;

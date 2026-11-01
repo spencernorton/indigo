@@ -1,3 +1,15 @@
+## 2026-11-01 — Run bounded artwork reads at menu priority
+
+The lower-priority worker regressed a native artwork workload. A diagnostic
+whose executable differs only in the priority byte reverses that regression:
+two fresh boots per variant reduce the read window from about 1.316 s on the
+menu-thread control to 0.679 s, with no sampled periods above 25 ms. Keep
+video above the worker and retain the 1 ms sleep after every bounded step.
+The host scheduler shim now enforces this policy while existing controlled
+reads exercise pause, cancellation, failures and handoff fences. Native
+metadata fairness, full-build qualification and broader device coverage
+remain gates; these measurements do not establish physical controller feel.
+
 ## 2026-10-30 — Read pack artwork independently of menu retraces
 
 Thread-safe pack sources may use one worker below menu/video priority, with

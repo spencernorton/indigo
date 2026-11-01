@@ -68,7 +68,9 @@ s32 LWP_CreateThread(lwp_t *thread, void *(*entry)(void *), void *arg,
 	void *stack, u32 stackSize, u8 priority)
 {
 	assert(!threadLive && stack && stackSize == 16u * 1024u);
-	assert(priority < LWP_PRIO_NORMAL);
+	/* Keep reads at menu priority; a lower-priority worker regressed native
+	 * throughput. The target scheduler is qualified separately on hardware. */
+	assert(priority == LWP_PRIO_NORMAL);
 	creates++;
 	if(failThread) return -1;
 	*thread = 1u;

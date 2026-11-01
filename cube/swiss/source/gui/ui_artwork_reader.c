@@ -7,11 +7,11 @@
 #include <ogc/lwp.h>
 #include <ogc/semaphore.h>
 
-/* As with folder pictures and file metadata, menu input and video preempt
- * these reads. The extra 1 ms sleep also shares idle CPU time on passive
- * adapters whose device reads do not sleep for DMA. */
+/* Run bounded reads at menu priority. Video retains its higher priority;
+ * the 1 ms sleep after every step lets input and lower-priority work run
+ * even on passive adapters whose device reads do not sleep for DMA. */
 #define ARTWORK_STACK_BYTES (16u * 1024u)
-#define ARTWORK_PRIORITY (LWP_PRIO_NORMAL - 1)
+#define ARTWORK_PRIORITY LWP_PRIO_NORMAL
 
 static lwp_t readerThread = LWP_THREAD_NULL;
 static sem_t readerWake;
