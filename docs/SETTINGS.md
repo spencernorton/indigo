@@ -194,7 +194,9 @@ most use the same key there.
 | `BBANetmask` | The prefix length, such as `24`. | `0` | IPv4 Netmask |
 | `BBAGateway` | An IPv4 address. | empty | IPv4 Gateway |
 | `NTPSync` | `Yes`, `No` | `No` | Sync Clock |
+| `SNTPHostIP` | Swiss alias of `NTPHostIP`, read on import. Saving uses `NTPHostIP`. It does not enable Sync Clock. | | NTP Server IP |
 | `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
+| `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
 | `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty keeps the zone the console's clock is in: its offset from UTC, snapped to the nearest one a real time zone uses. | empty | Time Zone |
 | `FSPHostIP` | An IPv4 address. | empty | FSP Host IP |
 | `FSPPort` | A port number. | `21` | FSP Port |
