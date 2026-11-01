@@ -1,3 +1,15 @@
+## 2026-11-01 — Preserve the mapped lookup's floating-point call boundary
+
+The combined target replay exposes seven changed bytes in one PAL-like image,
+although the full lighting tables and sampled lookup values match. Repeating
+the same artifact reproduces it; pointer-only and noinline trials retain it.
+Separate the direct builder lookup from a mapped draw lookup and keep the
+original two-argument interface. That trial restores all 24 exact target
+images without changing the palette, interpolation expressions or RAM saving.
+Recheck final-source resource/image equivalence and native timing before
+accepting the layout. This records the observed compiler-sensitive boundary;
+it is not a physical display or generalized compiler-root-cause claim.
+
 ## 2026-11-01 — Bound interning scratch by source count
 
 Use a 32,768-slot hash for 27,648 source samples. It always retains an empty

@@ -231,8 +231,28 @@ static bool buildRoomTable(void)
 }
 
 /* A direction looked up in one of the cube map tables, bilinearly. */
-static v3 cubeLookup(const v3 *table, const u16 *indices, v3 d)
+/* Keep the direct builder and mapped draw paths on two-argument interfaces.
+ * Controlled target replays pin their floating-point behavior. */
+static v3 directCubeLookup(const v3 *table, v3 d)
 {
+	float ax = fabsf(d.x), ay = fabsf(d.y), az = fabsf(d.z), u, v, m;
+	int f;
+	if(ax >= ay && ax >= az) { f = d.x > 0 ? 0 : 1; m = ax; u = d.x > 0 ? -d.z : d.z; v = d.y; }
+	else if(ay >= az) { f = d.y > 0 ? 2 : 3; m = ay; u = d.x; v = d.y > 0 ? -d.z : d.z; }
+	else { f = d.z > 0 ? 4 : 5; m = az; u = d.z > 0 ? d.x : -d.x; v = d.y; }
+	if(!(m > 0.0f)) return table[0];
+	float fx = clampf((u / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
+	float fy = clampf((v / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
+	int x0 = (int)fx, y0 = (int)fy;
+	float tx = fx - x0, ty = fy - y0;
+	const v3 *t = table + (f * ROOM_RES + y0) * ROOM_RES + x0;
+	v3 a = vmix(t[0], t[1], tx), b = vmix(t[ROOM_RES], t[ROOM_RES + 1], tx);
+	return vmix(a, b, ty);
+}
+
+static v3 mappedCubeLookup(const u16 *indices, v3 d)
+{
+	const v3 *table = roomTable;
 	float ax = fabsf(d.x), ay = fabsf(d.y), az = fabsf(d.z), u, v, m;
 	int f;
 	if(ax >= ay && ax >= az) { f = d.x > 0 ? 0 : 1; m = ax; u = d.x > 0 ? -d.z : d.z; v = d.y; }
@@ -257,7 +277,7 @@ static v3 cubeLookup(const v3 *table, const u16 *indices, v3 d)
 	return vmix(a, b, ty);
 }
 
-static v3 roomT(v3 d) { return cubeLookup(roomTable, lightingIndices, d); }
+static v3 roomT(v3 d) { return lightingIndices ? mappedCubeLookup(lightingIndices, d) : directCubeLookup(roomTable, d); }
 
 static v3 studioSlow(v3 d)
 {
@@ -266,8 +286,7 @@ static v3 studioSlow(v3 d)
 
 static v3 studio(v3 d)
 {
-	return cubeLookup(studioTable,
-		lightingIndices ? lightingIndices + ROOM_ENTRIES : NULL, d);
+	return lightingIndices ? mappedCubeLookup(lightingIndices + ROOM_ENTRIES, d) : directCubeLookup(studioTable, d);
 }
 
 static const v3 *lightingSource(unsigned i)
