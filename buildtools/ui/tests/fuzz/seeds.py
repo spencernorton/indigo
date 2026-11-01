@@ -240,7 +240,7 @@ def time_sync(out: Path) -> None:
     # a request whose cookie is 0, the one the fuzzer checks against.
     for name, zone in (("denver", b"MST7MDT,M3.2.0,M11.1.0"), ("sydney", b"AEST-10AEDT,M10.1.0,M4.1.0/3"),
                        ("nuuk", b"<-02>2<-01>,M3.5.0/-1,M10.5.0/0"), ("india", b"IST-5:30"),
-                       ("location", b"America/Denver"), ("nested", b"America/Argentina/Buenos_Aires"),
+                       ("location", b"America/Denver"), ("havana", b"America/Havana"), ("nested", b"America/Argentina/Buenos_Aires"),
                        ("unknown", b"Etc/Unknown"), ("bad_location", b"America/Denver/Extra")):
         (out / name).write_bytes(zone)
     reply = bytearray(48)

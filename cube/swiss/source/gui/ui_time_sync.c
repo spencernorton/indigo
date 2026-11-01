@@ -180,6 +180,14 @@ bool UITimeSync_ZoneOffset(const char *zone, int64_t utcSeconds,
 	 * TZ: Indigo and the IPL keep a local clock, already shifted by this offset. */
 	if(zone == NULL || eastSeconds == NULL) return false;
 	if(strchr(zone, '/') != NULL && strchr(zone, ',') == NULL) {
+		/* IANA 2026f cancels Havana's November 2026 fallback, keeping -04
+		 * until 2027-11-07 05:00 UTC. A recurring POSIX tail cannot express
+		 * this temporary interval. Explicit POSIX settings keep their rules. */
+		if(!strcmp(zone, "America/Havana") &&
+			utcSeconds >= INT64_C(1793509200) && utcSeconds < INT64_C(1825563600)) {
+			*eastSeconds = -4 * HOUR;
+			return true;
+		}
 		zone = get_timezone(zone);
 		if(zone == NULL) return false;
 	}

@@ -37,3 +37,14 @@ all supported table leaves, invalid names, bounded configuration aliases,
 environment publication, source boundaries, host sanitizers and emulator routes.
 Actual console clock persistence, launch/return and device behavior remain final
 hardware gates. No installed boot files are changed by this intake.
+
+## Independent timezone-data qualification
+
+An independent check against IANA 2026f found Havana's temporary rule cannot be
+represented by the imported recurring POSIX tail. The October 27 IANA release
+cancels the November 2026 fallback and keeps UTC-04 until November 7, 2027.
+Indigo adds a dated exception in its owned resolver, preserving explicit POSIX
+settings and the upstream table bytes. The source is the IANA 2026f release;
+the pinned source archive and offline fixture provenance are recorded with the
+host test. The fixture checks all 446 names and both sides of future transitions
+in the stated 2026-10-31 to 2028-01-01 horizon. Runtime uses no external database.

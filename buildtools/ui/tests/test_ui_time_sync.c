@@ -173,6 +173,12 @@ static void checkLocations(void)
 		{"Australia/Lord_Howe", INT64_C(1792432800), 39600},
 		{"Etc/GMT+12", INT64_C(1792432800), -43200},
 		{"Etc/UTC", INT64_C(1792432800), 0},
+		{"America/Havana", INT64_C(1793509199), -14400},
+		{"America/Havana", INT64_C(1793509200), -14400},
+		{"America/Havana", INT64_C(1800014400), -14400},
+		{"America/Havana", INT64_C(1825563599), -14400},
+		{"America/Havana", INT64_C(1825563600), -18000},
+		{"America/Havana", INT64_C(1825563601), -18000},
 	};
 	for(unsigned i = 0; i < sizeof(known) / sizeof(known[0]); i++) {
 		int32_t east = 99;
@@ -182,6 +188,10 @@ static void checkLocations(void)
 	CHECK(checkLocationTree(&TZData, "") > 400);
 	CHECK(!UITimeSync_ZoneOffset("America/Denver", 0, NULL));
 	CHECK(getenv("TZ") != NULL && !strcmp(getenv("TZ"), "UTC0"));
+	/* An explicit POSIX rule is the caller's choice, including in this interval. */
+	int32_t east;
+	CHECK(UITimeSync_ZoneOffset("CST5CDT,M3.2.0/0,M11.1.0/1", INT64_C(1800014400), &east));
+	CHECK(east == -18000);
 }
 
 static void checkBadZones(void)

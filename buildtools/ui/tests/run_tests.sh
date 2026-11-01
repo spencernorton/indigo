@@ -191,6 +191,7 @@ run_contracts() {
 	echo "== Clock: the time and its dial take the corner Settings names =="
 	python3 ./test_clock_corner.py
 	python3 ./test_upstream_clock_intake.py
+	python3 ./test_timezone_reference.py
 	echo "== menu music: a stream the console can seek and loop =="
 	python3 ./test_menu_music.py
 	echo "== settings semantics audit =="

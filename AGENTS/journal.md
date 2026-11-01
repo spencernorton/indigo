@@ -1,3 +1,17 @@
+## 2026-10-31 — Verify named timezones against independent IANA data
+
+The imported recurring table misses IANA 2026f's temporary Havana interval:
+no November 2026 fallback, UTC-04 through 2027-11-07 05:00 UTC. Apply a dated
+exception only to the location name, preserving explicit POSIX settings and
+the upstream table bytes. Add frozen independent offsets for all 446 names,
+fixed seasonal dates and both sides of future transitions. The generator
+verifies its pinned source archive and compiles that reference separately;
+CI needs no network or system timezone database. The offline 2,374 vectors
+and 190,442 daily samples across the stated future horizon pass after the
+fix; the preceding resolver fails 133 daily Havana samples. Focused C and
+sanitizer checks cover both interval boundaries and explicit-POSIX behavior.
+Target replay and regular CI must qualify this updated source before use.
+
 ## 2026-10-31 — Review Swiss clock, timezone and environment-lock updates
 
 Move the reviewed source boundary through d9159b0: the nine clock/timezone,
