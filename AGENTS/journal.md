@@ -1,3 +1,20 @@
+## 2026-11-01 — Share exact colors between Jewel lighting tables
+
+Retain the room/studio samples as one palette plus two u16 index maps. Build
+studio data from the original room samples before packing; preserve every
+float bit, sample coordinate and interpolation operation. Keep table lookup
+allocation-free, handle the zero-direction fallback through the correct map,
+and release the shared palette only once. Exact comparisons retain signed zero
+and distinct NaN payloads and cover real hash collisions.
+
+Pack geometry before building lighting to avoid overlapping their temporary
+allocations. Retire the hash before allocating the exact-sized palette. Host
+plain/sanitizer checks reconstruct both full tables, compare 8,216 lookups
+against a frozen direct lookup and exercise every packing/preparation failure
+and retry; frame-budget hashes remain unchanged. Earlier target samples predict
+about 205 kB retained saving. Actual target memory, resource/image equality,
+current CI and native timing remain gates; this is a RAM-focused experiment.
+
 ## 2026-11-01 — Prefer available RAM over built-in texture packing
 
 Keep the renderer, mesh-sharing and artwork scheduling candidates together,

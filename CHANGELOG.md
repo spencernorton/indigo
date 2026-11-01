@@ -33,6 +33,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Jewel Case shares exact repeated colors between its lighting tables,
+  reducing retained RAM while preserving reflections and interpolation.
 - Jewel Case derives printed disc coordinates on the GPU, removing duplicate
   texture-coordinate data from each printed disc's vertex stream.
 - Thread-safe devices load Library artwork on one background reader instead

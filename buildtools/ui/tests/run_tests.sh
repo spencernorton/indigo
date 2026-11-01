@@ -116,6 +116,8 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_card_art.py; else python3 ./test_card_art.py --sanitize; fi
 	echo "== Spotlight stills: only on first use$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_stills_lifecycle.py; else python3 ./test_stills_lifecycle.py --sanitize; fi
+	echo "== exact shared lighting and allocation failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_lighting.py; else python3 ./test_jewel_lighting.py --sanitize; fi
 	echo "== rod texture decode and preparation failures$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_jewel_matcap.py; else python3 ./test_jewel_matcap.py --sanitize; fi
 	echo "== exact rainbow streams$suffix =="
@@ -184,6 +186,7 @@ run_contracts() {
 	python3 ./test_cube_render_pose.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
+	python3 ./test_jewel_lighting.py
 	python3 ./test_jewel_disc_texgen.py
 	python3 ../generate_jewel_matcap.py --check
 	python3 ./test_jewel_matcap.py

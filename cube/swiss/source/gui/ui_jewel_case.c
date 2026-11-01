@@ -186,8 +186,13 @@ static __attribute__((noinline)) float backdropOf(v3 d)
  * lit every frame: looked up and interpolated it costs a fraction of working
  * it out. */
 #define ROOM_RES 48
+#define ROOM_ENTRIES (6 * ROOM_RES * ROOM_RES)
 static v3 *roomTable;
 static v3 *studioTable;	/* the room with the backdrop behind, as studio() gives it */
+/* After preparation both table pointers share one exact-value palette.
+ * The two index arrays occupy one allocation, owned through lightingIndices. */
+static u16 *lightingIndices;
+static unsigned lightingCount;
 
 static void faceDir(int f, float u, float v, v3 *d)
 {
@@ -230,31 +235,92 @@ static bool buildRoomTable(void)
 }
 
 /* A direction looked up in one of the cube map tables, bilinearly. */
-static v3 cubeLookup(const v3 *table, v3 d)
+static v3 cubeLookup(const v3 *table, const u16 *indices, v3 d)
 {
 	float ax = fabsf(d.x), ay = fabsf(d.y), az = fabsf(d.z), u, v, m;
 	int f;
 	if(ax >= ay && ax >= az) { f = d.x > 0 ? 0 : 1; m = ax; u = d.x > 0 ? -d.z : d.z; v = d.y; }
 	else if(ay >= az) { f = d.y > 0 ? 2 : 3; m = ay; u = d.x; v = d.y > 0 ? -d.z : d.z; }
 	else { f = d.z > 0 ? 4 : 5; m = az; u = d.z > 0 ? d.x : -d.x; v = d.y; }
-	if(!(m > 0.0f)) return table[0];
+	if(!(m > 0.0f)) return table[indices ? indices[0] : 0];
 	float fx = clampf((u / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
 	float fy = clampf((v / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
 	int x0 = (int)fx, y0 = (int)fy;
 	float tx = fx - x0, ty = fy - y0;
-	const v3 *t = table + (f * ROOM_RES + y0) * ROOM_RES + x0;
-	v3 a = vmix(t[0], t[1], tx), b = vmix(t[ROOM_RES], t[ROOM_RES + 1], tx);
+	unsigned at = (f * ROOM_RES + y0) * ROOM_RES + x0;
+	v3 tl, tr, bl, br;
+	if(indices) {
+		tl = table[indices[at]]; tr = table[indices[at + 1]];
+		bl = table[indices[at + ROOM_RES]]; br = table[indices[at + ROOM_RES + 1]];
+	}
+	else {
+		const v3 *t = table + at;
+		tl = t[0]; tr = t[1]; bl = t[ROOM_RES]; br = t[ROOM_RES + 1];
+	}
+	v3 a = vmix(tl, tr, tx), b = vmix(bl, br, tx);
 	return vmix(a, b, ty);
 }
 
-static v3 roomT(v3 d) { return cubeLookup(roomTable, d); }
+static v3 roomT(v3 d) { return cubeLookup(roomTable, lightingIndices, d); }
 
 static v3 studioSlow(v3 d)
 {
 	return vmix(roomT(d), V3(1.0f, 1.0f, 1.0f), backdropOf(d));
 }
 
-static v3 studio(v3 d) { return cubeLookup(studioTable, d); }
+static v3 studio(v3 d)
+{
+	return cubeLookup(studioTable,
+		lightingIndices ? lightingIndices + ROOM_ENTRIES : NULL, d);
+}
+
+static const v3 *lightingSource(unsigned i)
+{
+	return i < ROOM_ENTRIES ? roomTable + i : studioTable + (i - ROOM_ENTRIES);
+}
+
+static u32 lightingHash(const v3 *color)
+{
+	u32 words[3];
+	memcpy(words, color, sizeof(words));
+	u32 hash = 2166136261u;
+	for(unsigned i = 0; i < 3; i++) hash = (hash ^ words[i]) * 16777619u;
+	return hash;
+}
+
+/* Menu thread only. Retain exact float bits; neither table's interpolation
+ * or sample order changes. Retire the hash before allocating the palette. */
+static bool packLighting(void)
+{
+	const unsigned entries = 2 * ROOM_ENTRIES;
+	_Static_assert(2 * ROOM_ENTRIES < 65536, "lighting source indices must fit u16");
+	unsigned slots = 1;
+	while(slots < entries * 2) slots <<= 1;
+	u16 *hash = calloc(slots, sizeof(*hash));
+	u16 *indices = malloc(entries * sizeof(*indices));
+	if(hash == NULL || indices == NULL) { free(hash); free(indices); return false; }
+	unsigned unique = 0;
+	for(unsigned i = 0; i < entries; i++) {
+		const v3 *color = lightingSource(i);
+		unsigned bucket = lightingHash(color) & (slots - 1);
+		while(hash[bucket] && memcmp(color, lightingSource(hash[bucket] - 1), sizeof(*color)))
+			bucket = (bucket + 1) & (slots - 1);
+		if(hash[bucket]) indices[i] = indices[hash[bucket] - 1];
+		else { hash[bucket] = i + 1; indices[i] = unique++; }
+	}
+	free(hash);
+	v3 *palette = malloc(unique * sizeof(*palette));
+	if(palette == NULL) { free(indices); return false; }
+	unsigned copied = 0;
+	for(unsigned i = 0; i < entries; i++) {
+		if(indices[i] == copied) memcpy(palette + copied++, lightingSource(i), sizeof(*palette));
+	}
+	free(roomTable); free(studioTable);
+	roomTable = studioTable = palette;
+	lightingIndices = indices;
+	lightingCount = unique;
+	return true;
+}
 
 static v3 glare(v3 d)
 {
@@ -2038,9 +2104,12 @@ static bool recordFailed;
 static void releaseAll(void)
 {
 	free(roomTable);
-	free(studioTable);
+	if(lightingIndices == NULL) free(studioTable);
+	free(lightingIndices);
 	free(matcapData);
 	roomTable = studioTable = NULL;
+	lightingIndices = NULL;
+	lightingCount = 0;
 	matcapData = NULL;
 	rodFree(&trayRods);
 	rodFree(&lidRods);
@@ -2062,7 +2131,8 @@ bool UIJewelCase_Prepare(void)
 	}
 	buildTrayRods(&trayRods);
 	buildLidRods(&lidRods);
-	if(!buildMatcap() || !buildRoomTable() || !buildSheets() || !rodPack(&trayRods) || !rodPack(&lidRods)) {
+	if(!buildMatcap() || !buildSheets() || !rodPack(&trayRods) || !rodPack(&lidRods) ||
+		!buildRoomTable() || !packLighting()) {
 		releaseAll();
 		return false;
 	}
