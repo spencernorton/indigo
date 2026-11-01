@@ -71,6 +71,17 @@ color and strip streams over 1,024 poses, scales, faces and fades; the frame
 budget preserves every scene hash. This operation-count saving needs target
 image and complete-frame qualification before acceptance.
 
+## 2026-11-01 — Assemble the combined UI resource trial
+
+Integrate the packed built-in textures, disc texgen, canonical Jewel texture,
+shared rainbow samples, exact mesh vectors and revised artwork scheduler in
+one evaluation branch. Preserve every candidate's regression entry point and
+historical journal suffix while resolving additive test/document conflicts.
+The production code merges without conflicts. Measure this executable's
+actual size, retained memory, cold preparation, images and frame work before
+making a net platform claim. Independent draft PRs remain the review units;
+this trial is not a release or an installed boot-file update.
+
 ## 2026-11-01 — Share exact Jewel mesh positions as well as normals
 
 Reuse the preparation hash table to pack position and normal tails separately.
