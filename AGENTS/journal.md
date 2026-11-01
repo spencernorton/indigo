@@ -154,6 +154,15 @@ menu resume. This prevents suspending the owner of the reader's join/cleanup.
 The upload harness checks that order, and the threaded harness races a handoff
 against an in-flight menu stop, then resumes the original partial record.
 
+## 2026-11-01 — Count zero-initialized preparation allocations in the oracle
+
+The combined renderer trial adds calloc-backed temporary mesh tables. The
+texture failure harness previously counted their frees without counting the
+allocations. Wrap calloc with the same failure/liveness hooks as the other
+allocators so composition preserves complete failure/retry accounting.
+This follow-up changes test instrumentation only; earlier production/native
+results remain bound to their original source and artifact revisions.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
