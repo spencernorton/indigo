@@ -7,6 +7,7 @@
 #include "exi.h"
 #include "httpd.h"
 #include "rt4k.h"
+#include "sntp.h"
 #include "swiss.h"
 #include "wiiload.h"
 #include "time_sync.h"
@@ -99,7 +100,11 @@ static void *net_thread_func(void *arg)
 	init_httpd_thread();
 	init_wiiload_tcp_thread();
 	rt4k_init();
+<<<<<<< 64f2be5acbffc819c24ea8601967e2670a09ca41
 	time_sync_network();
+=======
+	sntp_init();
+>>>>>>> ff943b0adcb2dc570f3c283556510e528f827e6e
 	return NULL;
 }
 

@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 #include <string.h>
 
 #include "ui_time_sync.h"
+#include "tzdata.h"
 
 static unsigned long checks;
 
@@ -132,6 +134,56 @@ static void checkZones(void)
 	}
 }
 
+static unsigned checkLocationTree(const struct TZData *tree, const char *prefix)
+{
+	unsigned leaves = 0;
+	for(int i = 0; i < tree->count; i++) {
+		const struct TZData *entry = &tree->timezones[i];
+		char name[64];
+		int n = snprintf(name, sizeof(name), "%s%s", prefix, entry->name);
+		CHECK(n > 0 && (size_t)n < sizeof(name));
+		if(entry->count) leaves += checkLocationTree(entry, name);
+		else if(entry->timezone) {
+			CHECK(!strcmp(get_timezone(name), entry->timezone));
+			const int64_t dates[] = {INT64_C(1768478400), INT64_C(1784116800)};
+			for(unsigned j = 0; j < sizeof(dates) / sizeof(dates[0]); j++) {
+				int32_t named, posix;
+				CHECK(UITimeSync_ZoneOffset(name, dates[j], &named));
+				CHECK(UITimeSync_ZoneOffset(entry->timezone, dates[j], &posix));
+				CHECK(named == posix);
+			}
+			leaves++;
+		}
+	}
+	return leaves;
+}
+
+static void checkLocations(void)
+{
+	CHECK(setenv("TZ", "UTC0", 1) == 0);
+	static const struct { const char *name; int64_t utc; int32_t east; } known[] = {
+		{"America/Denver", INT64_C(1772960399), -25200},
+		{"America/Denver", INT64_C(1772960400), -21600},
+		{"America/Denver", INT64_C(1793519999), -21600},
+		{"America/Denver", INT64_C(1793520000), -25200},
+		{"Europe/London", INT64_C(1774745999), 0},
+		{"Europe/London", INT64_C(1774746000), 3600},
+		{"Asia/Kolkata", INT64_C(1792432800), 19800},
+		{"Asia/Kathmandu", INT64_C(1792432800), 20700},
+		{"Australia/Lord_Howe", INT64_C(1792432800), 39600},
+		{"Etc/GMT+12", INT64_C(1792432800), -43200},
+		{"Etc/UTC", INT64_C(1792432800), 0},
+	};
+	for(unsigned i = 0; i < sizeof(known) / sizeof(known[0]); i++) {
+		int32_t east = 99;
+		CHECK(UITimeSync_ZoneOffset(known[i].name, known[i].utc, &east));
+		CHECK(east == known[i].east);
+	}
+	CHECK(checkLocationTree(&TZData, "") > 400);
+	CHECK(!UITimeSync_ZoneOffset("America/Denver", 0, NULL));
+	CHECK(getenv("TZ") != NULL && !strcmp(getenv("TZ"), "UTC0"));
+}
+
 static void checkBadZones(void)
 {
 	static const char *const bad[] = {
@@ -139,7 +191,8 @@ static void checkBadZones(void)
 		"EST5EDT", "MST7MDT,M3.2.0", "MST7MDT,M13.2.0,M11.1.0",
 		"MST7MDT,M3.6.0,M11.1.0", "MST7MDT,M3.2.7,M11.1.0",
 		"MST7MDT,J60,M11.1.0", "MST7MDT,M3.2.0,M11.1.0,", "MST7MDT,M3.2.0/168,M11.1.0",
-		"MST7MDT,M3.2.0,M11.1.0 ",
+		"MST7MDT,M3.2.0,M11.1.0 ", "America", "America/", "America/No_Such_City",
+		"America/Denver/Extra", "Etc/Unknown", "/", "//", "../America/Denver",
 	};
 	int32_t east = 99;
 
@@ -257,6 +310,7 @@ static void checkKeptOffset(void)
 int main(void)
 {
 	checkZones();
+	checkLocations();
 	checkBadZones();
 	checkPackets();
 	checkKeptOffset();

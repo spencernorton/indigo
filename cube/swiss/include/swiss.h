@@ -210,7 +210,7 @@ typedef struct {
 	bool bbaUseDhcp;
 	bool ntpSync;	// Sync Clock: set the clock from ntpHostIp when the network starts (gui/time_sync.c)
 	char ntpHostIp[16];
-	char timeZone[64];	// a POSIX TZ string; empty keeps the console's own offset from UTC
+	char timeZone[64];	// a location or POSIX TZ string; empty keeps the console's offset from UTC
 	bool labServer;	// LabServer: the console lab's port, off by default (gui/ui_lab.h)
 	char logHost[24];	// LogHost: address[:port] that gets each print_debug line over UDP; empty = none
 	int autoBoot;

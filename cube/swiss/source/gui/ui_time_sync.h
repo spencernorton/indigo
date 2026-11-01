@@ -24,10 +24,11 @@ void UITimeSync_Request(uint8_t packet[UI_TIME_SYNC_PACKET], uint64_t cookie);
 bool UITimeSync_Reply(const uint8_t *packet, size_t length, uint64_t cookie,
 	int64_t *utcMicroseconds);
 
-/* Seconds east of UTC that the POSIX TZ string `zone` gives at `utcSeconds`,
+/* Seconds east of UTC that a location name (America/Denver) or POSIX TZ
+ * string `zone` gives at `utcSeconds`,
  * such as "MST7MDT,M3.2.0,M11.1.0" (US Mountain) or "IST-5:30" (India).
  * Daylight time needs both of its rules in the Mm.w.d form. False when `zone`
- * isn't one of these. */
+ * isn't one of these. Does not change the process environment or clock. */
 bool UITimeSync_ZoneOffset(const char *zone, int64_t utcSeconds,
 	int32_t *eastSeconds);
 

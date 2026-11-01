@@ -30,6 +30,7 @@ cp "$dol" "$card/ipl.dol"
 python3 buildtools/dol2ipl.py "$card/swiss/patches/apploader.img" "$reboot" "*indigo-$version" >/dev/null
 cp LICENSE "$card/swiss/indigo/LICENSE.txt"
 cp NOTICE "$card/swiss/indigo/NOTICE.txt"
+cp docs/licenses/lwip.txt "$card/swiss/indigo/LICENSE-lwip.txt"
 # Web browser (optional): a separate program the Web face launches, built from
 # the hardened fork (docs/dev/web-browser.md). Its CA bundle goes in gcbrowser/
 # at the card root, where the browser looks for it. Without it the Web face

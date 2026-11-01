@@ -36,7 +36,18 @@ handlers, the patch engine, the loader — is upstream's work, and this fork
 does not try to improve it. It is for people who use Swiss daily on real
 hardware and want it to feel like it belongs on the console.
 
+<<<<<<< 64f2be5acbffc819c24ea8601967e2670a09ca41
 [Recordings and still images](docs/demos/README.md).
+=======
+**Can provide the following services**
+- Game ID for BlueRetro, FlipperMCE, MemCard PRO GC and PixelFX RetroGEM GC
+- Profile selection for RetroTINK-4K using [ser2net](https://github.com/cminyard/ser2net)
+- Return to loader and environment setup for [libogc2](https://github.com/extremscorner/libogc2) applications
+- Return to loader for libogc v3.2.0+ applications
+- Return to loader for older applications using a legacy mechanism
+- Timekeeping using SNTP and daylight saving time data
+- [wiiload](https://wiibrew.org/wiki/Wiiload) v0.5 over TCP/IP or USB Gecko
+>>>>>>> ff943b0adcb2dc570f3c283556510e528f827e6e
 
 ## What it does
 

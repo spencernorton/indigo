@@ -96,7 +96,7 @@ class Package(unittest.TestCase):
             here = Path(directory)
             # An empty games/ is refused too: a Mac's Replace would swap the card's games folder for it.
             for case in ({"extra": ".DS_Store"}, {"extra": "games/"}, {"extra": "games/demo.iso"}, {"drop": "swiss/ui/"},
-                         {"drop": "swiss/patches/apploader.img"}, {"ipl": dol(revisions=2)}):
+                         {"drop": "swiss/patches/apploader.img"}, {"drop": "swiss/indigo/LICENSE-lwip.txt"}, {"ipl": dol(revisions=2)}):
                 self.assertNotEqual(check_package.problems(self.build(here, **case), dol(), "v9.9.9"),
                                     [], case)
 

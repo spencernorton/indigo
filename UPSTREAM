@@ -11,11 +11,11 @@
 # a pull request of its own.
 
 upstream https://github.com/emukidid/swiss-gc.git
-commit abe21df5165e9cfe8cdbb908f9f44e137fcfae98 (Swiss master, 2026-10-22 intake)
+commit d9159b024029d0dc2e8a2f5632983e01054e5221 (Swiss master, 2026-10-31 intake)
 
-Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling
+Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling; bundles the pinned stack's vendored lwIP licence because this SDK predates its standalone COPYING file
 cube/packer/Makefile                       compresses with xz: the build image has no 7z; links its files in byte order, whatever the locale
-cube/swiss/Makefile                        tags.h is empty (its reader, load_auto_dol, never runs in Indigo); links its files in byte order, names the commit in exactly 7 characters and no build path, so the DOL is the same in any locale, clone and folder; UI_PERF=1 builds the performance overlay; no unwind tables, which nothing reads; AESND is built from cube/swiss/aesnd, not -laesnd; libiconv-lite overlay precedes the SDK portlibs; the Settings menu-action controller uses -Os while renderers and loaders keep -O2
+cube/swiss/Makefile                        tags.h is empty (its reader, load_auto_dol, never runs in Indigo); links its files in byte order, names the commit in exactly 7 characters and no build path, so the DOL is the same in any locale, clone and folder; UI_PERF=1 builds the performance overlay; no unwind tables, which nothing reads; AESND is built from cube/swiss/aesnd, not -laesnd; libiconv-lite overlay precedes the SDK portlibs; cold application code uses -Os/LTO in one partition while the hot background, Jewel Case, font and audio objects retain their audited -O2/non-LTO policy; exception frames remain while their unused index is omitted; upstream sntp.c is not compiled because Indigo retains its opt-in bounded client
 cube/swiss/aesnd/                          libogc2's AESND at the toolchain's commit, including its upstream AESND_Reset fix (its README.md)
 cube/swiss/include/gcm.h                   adjust_tgc_fst takes the file table's size
 cube/swiss/source/devices/deviceHandler.c  devices shut down on reset after the interface stops reading them (priority 1)
@@ -31,4 +31,9 @@ cube/swiss/source/nkit.c                   Latin-1 bytes in game titles are writ
 cube/swiss/source/littlefs/                vendored as files, at the commit upstream's submodule names
 .gitmodules                                no submodule: littlefs is vendored
 cube/swiss/source/resources/               design sources and Windows tools the build never uses are not carried
-cube/swiss/source/aram/sidestep.c           retain the r2482 shutdown handoff: __SYS_InitTime is not exported by the pinned libogc2 SDK; the newer-SDK reset call from 99b59e7a is deferred
+cube/swiss/source/aram/sidestep.c           retain the r2482 shutdown handoff and TZ cleanup: __SYS_InitTime is not exported by the pinned libogc2 SDK; newer-SDK clock/reset changes remain deferred; environment snapshots use the upstream lock
+
+# The owned config/UI paths adapt this clock intake to Indigo's existing
+# local-time/opt-in model. Named zones resolve through the upstream table
+# without setting process-wide TZ; no periodic SNTP or automatic RTC clamp.
+# See docs/dev/upstream-intake-2026-10-31.md for every commit and deferral.

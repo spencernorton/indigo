@@ -5377,7 +5377,7 @@ bool select_dest_dir(file_handle* initial, char* selection)
 		}
 		if((buttons & BUTTON_UP) || analog == UI_MENU_INPUT_UP){	idx = (--idx < 0) ? num_files-1 : idx;}
 		if((buttons & BUTTON_DOWN) || analog == UI_MENU_INPUT_DOWN) {idx = (idx + 1) % num_files;	}
-		if((buttons & PAD_BUTTON_A))	{
+		if((buttons & BUTTON_A))	{
 			//go into a folder or select a file
 			if(directory[idx]->fileType==IS_DIR) {
 				memcpy(&curDir, directory[idx], sizeof(file_handle));

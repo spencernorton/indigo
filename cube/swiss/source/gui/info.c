@@ -726,7 +726,7 @@ void show_info()
 		if(((btns & BUTTON_LEFT) || (btns & BUTTON_L)) && page > 0) {
 			page--;
 		}
-		if(btns & PAD_BUTTON_B) {
+		if(btns & BUTTON_B) {
 			break;
 		}
 		while((padsButtonsHeld() & BUTTON_RIGHT) ||

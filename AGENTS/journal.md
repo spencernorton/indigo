@@ -2960,3 +2960,16 @@ and the recorded update date remain governed by their existing metadata.
 Strict host and ASan/UBSan regressions cover absent comments, exact identity,
 wrong makers, invalid entries, unterminated names, encoding and short buffers.
 Controller integration and native screen verification remain separate gates.
+## 2026-10-31 — Review Swiss clock, timezone and environment-lock updates
+
+Move the reviewed source boundary through d9159b0: the nine clock/timezone,
+input, ellipsis and packaging commits through 1822a324 plus their environment-
+lock follow-up. Map named locations and Swiss key aliases into Indigo's one
+bounded opt-in clock client. Retain its local-clock, launch fence and pinned
+SDK contract; do not compile the second periodic client or rewrite the RTC
+automatically. Apply common input masks and locked environment snapshots,
+bundle the pinned stack licence, refresh the source fixtures deliberately and
+correct UPSTREAM's stale compiler-policy explanation. The intake document
+records every disposition. Software/emulator and final physical gates remain
+explicit; no console operation or stable promotion occurs during this pass.
+

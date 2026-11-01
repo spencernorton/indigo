@@ -175,6 +175,7 @@ uiDrawObj_t* DrawHintLabel(int x, int y, const char *string, float size, int ali
 int GetHintSizeInPixels(const char *text);
 float GetHintScaleToFitInWidthWithMax(const char *text, int width, float maximum);
 uiDrawObj_t* DrawStyledLabelWithCaret(int x, int y, const char *string, float size, int align, GXColor color, int caretPosition);
+uiDrawObj_t* DrawStyledLabelEllipsis(int x, int y, const char *string, float size, int align, GXColor color, int maxSize);
 uiDrawObj_t* DrawLabel(int x, int y, const char *string);
 uiDrawObj_t* DrawFadingLabel(int x, int y, const char *string, float size);
 uiDrawObj_t* DrawDynamicLabel(int x, int y, const char *(*getString)(void), float size, int align, GXColor color);
