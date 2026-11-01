@@ -18,22 +18,14 @@
  */
 
 #include <ogc/system.h>
-#include <ogc/timesupp.h>
 #include <stdbool.h>
-#include <stdckdint.h>
-#include <stdlib.h>
-#include <time.h>
 #include "deviceHandler.h"
 #include "sram.h"
 #include "swiss.h"
 
 static s32 onreset(s32 final)
 {
-	if (!final) {
-		updateSRAM(&swissSettings, false);
-		unsetenv("TZ");
-	}
-
+	if (!final) updateSRAM(&swissSettings, false);
 	return TRUE;
 }
 
@@ -56,26 +48,6 @@ static void initSRAM(void)
 
 	__SYS_UnlockSram(writeSram);
 	while (!__SYS_SyncSram());
-
-	u32 epoch, rtc;
-	s32 bias = SYS_GetCounterBias();
-
-	if (!ckd_sub(&epoch, GIT_TIMESTAMP, DIFF_SEC_1970_2000) && __SYS_GetRTC(&rtc)) {
-		if (rtc < epoch) {
-			__SYS_SetRTC(epoch);
-			__SYS_SetTime(secs_to_ticks(epoch));
-			SYS_SetCounterBias(0);
-		} else if (ckd_add(&rtc, rtc, bias)) {
-			if (ckd_sub(&bias, rtc, epoch)) {
-				__SYS_SetRTC(epoch);
-				__SYS_SetTime(secs_to_ticks(epoch));
-				SYS_SetCounterBias(0);
-			} else {
-				__SYS_SetRTC(epoch);
-				SYS_SetCounterBias(bias);
-			}
-		}
-	}
 
 	SYS_RegisterResetFunc(&resetinfo);
 }
@@ -104,17 +76,6 @@ void refreshSRAM(SwissSettings *settings)
 
 void updateSRAM(SwissSettings *settings, bool syncSram)
 {
-	time_t now;
-	struct tm tm;
-
-	if (getenv("TZ")) {
-		time(&now);
-		gmtime_r(&now, &tm);
-		tm.tm_isdst = -1;
-
-		SYS_SetCounterBias(now - mktime(&tm));
-	}
-
 	SYS_SetDisplayOffsetH(settings->sramHOffset);
 	SYS_SetBootMode(settings->sramBoot);
 	SYS_SetEuRGB60(settings->sram60Hz);

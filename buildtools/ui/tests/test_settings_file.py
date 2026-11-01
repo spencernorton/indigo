@@ -440,7 +440,7 @@ READ_KEYS = set(re.findall(r'strcmp\("([^"]+)", name\)', GLOBAL_PARSER + GAME_PA
 WRITE_ONLY = {"ID"}
 # Earlier names the parser still accepts.
 OLD_NAMES = {"Enable Debug", "USB Gecko debug output", "Stop DVD Motor on startup",
-             "Hide Apps Face"}
+             "Hide Apps Face", "System Time Zone", "SNTPHostIP"}
 # Listed values global.ini does not accept, all explained in SETTINGS.md: the
 # NTSC default only takes NTSC modes, "Default" is a game's language, and
 # 32 MiB and up exceed a retail GameCube's memory.
@@ -489,6 +489,22 @@ class SettingsFileTest(unittest.TestCase):
         self.assertEqual(set(GLOBAL_KEYS) - READ_KEYS, set())
         self.assertEqual(set(GAME_KEYS) - READ_KEYS - WRITE_ONLY, set())
         self.assertEqual(READ_KEYS - set(GLOBAL_KEYS) - set(GAME_KEYS) - OLD_NAMES, set())
+
+    def test_swiss_clock_aliases_keep_sync_opt_in_and_save_canonical_keys(self):
+        written = self.global_file("System Time Zone=America/Denver\nSNTPHostIP=192.0.2.123\n")
+        self.assertEqual(written["TimeZone"], "America/Denver")
+        self.assertEqual(written["NTPHostIP"], "192.0.2.123")
+        self.assertEqual(written["NTPSync"], "No")
+        self.assertNotIn("System Time Zone", written)
+        self.assertNotIn("SNTPHostIP", written)
+        again = self.global_file("\n".join(f"{key}={value}" for key, value in written.items()))
+        self.assertEqual(again, written)
+        long_value = "x" * 128
+        written = self.global_file(f"System Time Zone={long_value}\nSNTPHostIP={long_value}\n")
+        self.assertEqual(written["TimeZone"], "x" * 63)
+        self.assertEqual(written["NTPHostIP"], "x" * 15)
+        self.assertEqual(written["NTPSync"], "No")
+        self.assertEqual(self.global_file("System Time Zone=Etc/Unknown\n")["TimeZone"], "Etc/Unknown")
 
     def test_folder_colors_survive_the_real_global_parser_and_writer(self):
         encoded = "sda:/games/Spaces%20#%3B%7E%25%3D%0A%09%0D~3"
