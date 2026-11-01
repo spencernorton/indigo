@@ -1,3 +1,12 @@
+## 2026-11-01 — Count zero-initialized preparation allocations in the oracle
+
+The combined renderer trial adds calloc-backed temporary mesh tables. The
+texture failure harness previously counted their frees without counting the
+allocations. Wrap calloc with the same failure/liveness hooks as the other
+allocators so composition preserves complete failure/retry accounting.
+This follow-up changes test instrumentation only; earlier production/native
+results remain bound to their original source and artifact revisions.
+
 ## 2026-10-31 — Qualify the isolated renderer candidate in software
 
 All 24 controlled GX framebuffer comparisons match the accepted control byte

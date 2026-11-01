@@ -17,6 +17,11 @@ static void *assetMalloc(size_t bytes)
     if(++allocationCall == failAllocation) return NULL;
     void *p = malloc(bytes); if(p) liveAllocations++; return p;
 }
+static void *assetCalloc(size_t count, size_t bytes)
+{
+    if(++allocationCall == failAllocation) return NULL;
+    void *p = calloc(count,bytes); if(p) liveAllocations++; return p;
+}
 static void *assetMemalign(size_t align, size_t bytes)
 {
     if(++allocationCall == failAllocation) return NULL;
@@ -32,11 +37,12 @@ static void assetFree(void *p)
     if(p) { assert(liveAllocations); liveAllocations--; } free(p);
 }
 #define malloc assetMalloc
+#define calloc assetCalloc
 #define realloc assetRealloc
 #define memalign assetMemalign
 #define free assetFree
 '''
-    source = source.replace('#include "ui_jewel_case.c"', hooks + '\n#include "ui_jewel_case.c"\n#undef malloc\n#undef realloc\n#undef memalign\n#undef free', 1)
+    source = source.replace('#include "ui_jewel_case.c"', hooks + '\n#include "ui_jewel_case.c"\n#undef malloc\n#undef calloc\n#undef realloc\n#undef memalign\n#undef free', 1)
     source = source.replace('int main(void)', 'int frameBudgetMain(void)', 1)
     return source + r'''
 static void checkGuards(const u8 *bytes)
