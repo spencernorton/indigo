@@ -33,9 +33,6 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
-- Built-in textures take less space in the executable, with their original
-  pixels and formats restored before the menus start. This trades about
-  30 kB of resident memory for about 75 kB less executable data.
 - Jewel Case derives printed disc coordinates on the GPU, removing duplicate
   texture-coordinate data from each printed disc's vertex stream.
 - Thread-safe devices load Library artwork on one background reader instead

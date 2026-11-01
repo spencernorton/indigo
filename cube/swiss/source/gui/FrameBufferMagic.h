@@ -39,6 +39,7 @@
 #define PROGRESS_BOX_TOPLEFT 1
 #define PROGRESS_BOX_FILES 2
 
+#include "images_tpl.h"
 #include "images.h"
 #include "buttons_tpl.h"
 #include "buttons.h"

@@ -1,3 +1,13 @@
+## 2026-11-01 — Prefer available RAM over built-in texture packing
+
+Keep the renderer, mesh-sharing and artwork scheduling candidates together,
+while restoring the original built-in texture storage and initialization.
+Remove the decoder, packed buffer and decode scratch requirement from this
+preferred trial. Preserve the previous experiment and its history separately.
+The executable may grow; acceptance now prioritizes retained/peak memory,
+exact pixels, loading behavior and safe allocation failure. Earlier combined
+measurements remain bound to bd7c8ec and do not qualify this new source.
+
 ## 2026-10-30 — Pack built-in textures before startup publication
 
 Store images.tpl with deterministic zlib compression and an exact expanded
