@@ -131,7 +131,7 @@ def measure(renderer_source: str | None = None, driver_source: str | None = None
             "-std=gnu11", "-O1", "-ffp-contract=off", "-Wall",
             "-I", str(HERE / "fixtures/gx"), "-I", str(GUI), "-I", tmp,
             "-o", str(binary), str(driver),
-            *(str(path) for path in sources), "-lm"]
+            *(str(path) for path in sources), "-lm", "-lz"]
         subprocess.run(command, check=True)
         output = subprocess.run([str(binary)], check=True, capture_output=True,
                                 text=True).stdout
