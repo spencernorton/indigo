@@ -28,6 +28,9 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 				swissSettings.sramLanguage += direction;
 				swissSettings.sramLanguage = ((s8)swissSettings.sramLanguage + SRAM_LANGUAGE_MAX) % SRAM_LANGUAGE_MAX;
 			break;
+			case SET_SYS_TIMEZONE:
+				select_timezone(swissSettings.timeZone);
+			break;
 			case SET_CONFIG_DEV:
 			{
 				int curDevicePos = -1;
@@ -289,6 +292,9 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_SMB_PASS:
 				DrawGetTextEntry(ENTRYMODE_NUMERIC|ENTRYMODE_ALPHA|ENTRYMODE_MASKED, "SMB Password", &swissSettings.smbPassword, sizeof(swissSettings.smbPassword) - 1);
+			break;
+			case SET_SNTP_HOSTIP:
+				DrawGetTextEntry(ENTRYMODE_IP, "SNTP Host IP", &swissSettings.sntpHostIp, sizeof(swissSettings.sntpHostIp) - 1);
 			break;
 			case SET_RT4K_HOSTIP:
 				DrawGetTextEntry(ENTRYMODE_IP, "RetroTINK-4K Host IP", &swissSettings.rt4kHostIp, sizeof(swissSettings.rt4kHostIp) - 1);

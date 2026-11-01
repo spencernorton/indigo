@@ -1,4 +1,5 @@
 #include <argz.h>
+#include <envlock.h>
 #include <langinfo.h>
 #include <stdcountof.h>
 #include <stdio.h>
@@ -1839,10 +1840,10 @@ void config_parse_global(char *configData, bool settingsFile) {
 				else if(!strcmp("NTPSync", name)) {
 					swissSettings.ntpSync = !strcmp("Yes", value);
 				}
-				else if(!strcmp("NTPHostIP", name)) {
+				else if(!strcmp("NTPHostIP", name) || !strcmp("SNTPHostIP", name)) {
 					strlcpy(swissSettings.ntpHostIp, value, sizeof(swissSettings.ntpHostIp));
 				}
-				else if(!strcmp("TimeZone", name)) {
+				else if(!strcmp("TimeZone", name) || !strcmp("System Time Zone", name)) {
 					strlcpy(swissSettings.timeZone, value, sizeof(swissSettings.timeZone));
 				}
 				else if(!strcmp("LabServer", name)) {
@@ -2249,6 +2250,7 @@ void config_init_environ() {
 }
 
 void config_update_environ() {
+	__env_lock(NULL);
 	setenv("AVE", aveCompatStr[swissSettings.aveCompat], 1);
 	sprintf(txtbuffer, "LANG=%s.%s", sramLanguageEnvStr[swissSettings.sramLanguage], nl_langinfo(CODESET));
 	putenv(txtbuffer);
@@ -2272,6 +2274,7 @@ void config_update_environ() {
 	
 	__PADDisableRecalibration(swissSettings.disableRecalibration);
 	__PADDisableRumble(swissSettings.disableRumble);
+	__env_unlock(NULL);
 }
 
 SwissSettings backup;

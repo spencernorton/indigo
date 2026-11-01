@@ -6,6 +6,15 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Review Swiss through `d9159b0`: Time Zone accepts bundled location names,
+  Swiss clock-setting aliases import into the existing opt-in Sync Clock,
+  environment updates and launch snapshots use the upstream lock, and downloads
+  include lwIP's licence. Time Zone observes IANA 2026f's temporary Havana rule.
+  Preserve the pinned SDK and local-clock behavior;
+  periodic SNTP and automatic RTC rewriting remain deferred.
+
+
+
 - Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
 - Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
 - Reduce Jewel Case mesh memory by sharing identical position and normal data while preserving the geometry and glints.

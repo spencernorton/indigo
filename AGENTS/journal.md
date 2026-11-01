@@ -1,3 +1,40 @@
+## 2026-11-01 — Qualify the RAM-first renderer with the reviewed Swiss intake
+
+Combine the RAM-priority renderer and artwork candidates with the ten reviewed
+Swiss commits through d9159b0, preserving Indigo's opt-in clock owner, local-time
+contract and pinned SDK. Built-in texture packing stays excluded. Keep the
+independent review units and their earlier evidence bound to their own sources;
+this combined source needs its own build, package, reproducibility, host,
+PowerPC image/resource/memory, emulator and native timing qualification.
+No release or hardware pass is implied by assembling this evaluation branch.
+
+## 2026-10-31 — Verify named timezones against independent IANA data
+
+The imported recurring table misses IANA 2026f's temporary Havana interval:
+no November 2026 fallback, UTC-04 through 2027-11-07 05:00 UTC. Apply a dated
+exception only to the location name, preserving explicit POSIX settings and
+the upstream table bytes. Add frozen independent offsets for all 446 names,
+fixed seasonal dates and both sides of future transitions. The generator
+verifies its pinned source archive and compiles that reference separately;
+CI needs no network or system timezone database. The offline 2,374 vectors
+and 190,442 daily samples across the stated future horizon pass after the
+fix; the preceding resolver fails 133 daily Havana samples. Focused C and
+sanitizer checks cover both interval boundaries and explicit-POSIX behavior.
+Target replay and regular CI must qualify this updated source before use.
+
+## 2026-10-31 — Review Swiss clock, timezone and environment-lock updates
+
+Move the reviewed source boundary through d9159b0: the nine clock/timezone,
+input, ellipsis and packaging commits through 1822a324 plus their environment-
+lock follow-up. Map named locations and Swiss key aliases into Indigo's one
+bounded opt-in clock client. Retain its local-clock, launch fence and pinned
+SDK contract; do not compile the second periodic client or rewrite the RTC
+automatically. Apply common input masks and locked environment snapshots,
+bundle the pinned stack licence, refresh the source fixtures deliberately and
+correct UPSTREAM's stale compiler-policy explanation. The intake document
+records every disposition. Software/emulator and final physical gates remain
+explicit; no console operation or stable promotion occurs during this pass.
+
 ## 2026-11-01 — Preserve the mapped lookup's floating-point call boundary
 
 The combined target replay exposes seven changed bytes in one PAL-like image,

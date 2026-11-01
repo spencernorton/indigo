@@ -83,11 +83,11 @@ static void time_sync_set(void)
 		return;
 	}
 	int64_t utcSeconds = utc / 1000000;
-	if(timeSyncZone[0] == '\0') {
+	if(timeSyncZone[0] == '\0' || !strcmp(timeSyncZone, "Etc/Unknown")) {
 		east = UITimeSync_KeptOffset(time(NULL), utcSeconds);
 	}
 	else if(!UITimeSync_ZoneOffset(timeSyncZone, utcSeconds, &east)) {
-		print_debug("Sync Clock: Time Zone %s isn't a POSIX TZ string\n", timeSyncZone);
+		print_debug("Sync Clock: Time Zone %s isn't a supported location or POSIX TZ string\n", timeSyncZone);
 		return;
 	}
 	/* A game's launch that began meanwhile keeps the clock as it is. */
