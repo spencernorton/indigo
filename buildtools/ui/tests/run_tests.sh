@@ -111,6 +111,8 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_wiiload.py; else python3 ./test_wiiload.py --sanitize; fi
 	echo "== a DOL or ELF cut short never starts$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_boot_image.py; else python3 ./test_boot_image.py --sanitize; fi
+	echo "== return-loader decoder mode and bounded failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_packer_decoder.py; else python3 ./test_packer_decoder.py --sanitize; fi
 	# card_art builds its own binaries: posters of apps and folders, their guards.
 	echo "== test_card_art$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_card_art.py; else python3 ./test_card_art.py --sanitize; fi

@@ -72,6 +72,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Keep the In-Game Reset return loader's decoder mode consistent, including
+  its short-buffer failure path.
 - The emulator's folder checks observe Settings tab and section transitions
   before changing a layout, recovering from a missed press with a recorded,
   bounded retry and stopping when navigation does not respond.

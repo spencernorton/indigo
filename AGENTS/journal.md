@@ -1,3 +1,28 @@
+## 2026-11-01 — Include the return decoder's mode correction in release evaluation
+
+Integrate the separately reviewed decoder initialization fix with the RAM-first
+renderer and ten-commit Swiss intake. Preserve both branches' journals and all
+upstream adaptation reasons. The normal interface code stays unchanged; this
+source needs new normal/package and return-payload binding, current CI and the
+same final native timing, clock, picture/input and game/return qualification.
+This remains an evaluation branch with no install, release or hardware claim.
+
+## 2026-11-01 — Initialize the return loader's single-call BCJ decoder
+
+A target stress probe decodes the actual packaged executable exactly and
+rejects truncation/footer corruption, but stalls on an undersized output
+buffer. The manually allocated BCJ state leaves single_call false while the
+LZMA2/stream configuration is single-call. Initialize that existing flag as
+the normal decoder constructor would. A paired PowerPC replay preserves the
+full output and rejects all three failure inputs with intact buffer guards.
+
+The regression includes the production packer main and decoder, retaining its
+static initialization and memory helpers while stubbing cache/entrypoint code
+for host execution. Check exact synthetic PowerPC output, truncation, bad
+footer, short capacity and an initializer mutant under bounded deadlines.
+Keep this isolated from renderer/clock changes; full CI and physical warm
+return remain gates. No runtime file-format or input policy change is added.
+
 ## 2026-11-01 — Qualify the RAM-first renderer with the reviewed Swiss intake
 
 Combine the RAM-priority renderer and artwork candidates with the ten reviewed
