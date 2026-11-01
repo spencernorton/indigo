@@ -56,6 +56,11 @@ static void compareTables(bool lookups) {
   assert(!memcmp(room+i,roomTable+lightingIndices[i],sizeof(v3)));
   assert(!memcmp(studioRef+i,studioTable+lightingIndices[i+ROOM_ENTRIES],sizeof(v3)));
  }
+ /* The synthetic studio's first value has a different palette index.
+  * A direct table[0] fallback must fail even though real cube maps may
+  * happen to share their first color. */
+ v3 a=roomT(V3(0,0,0)),b=studio(V3(0,0,0));
+ assert(!memcmp(&a,room,sizeof(a))&&!memcmp(&b,studioRef,sizeof(b)));
  unsigned before=allocationCall;
  if(lookups) {
   const v3 edge[]={{0,0,0},{NAN,NAN,NAN},{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1},{1,1,1},{-1,1,1},{1,-1,-1},{1e-20f,-1e-20f,1e-20f}};

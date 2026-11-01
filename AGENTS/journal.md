@@ -1,3 +1,13 @@
+## 2026-11-01 — Bound interning scratch by source count
+
+Use a 32,768-slot hash for 27,648 source samples. It always retains an empty
+sentinel even when every source vector is unique, while halving hash scratch
+to 65,536 bytes. The retained palette/maps and draw path are unchanged. The
+recorded target samples need at most six probes and average about 1.14.
+Add a synthetic first-sample regression whose studio palette index differs
+from zero, so bypassing the map in the zero-direction fallback is detected.
+Plain and sanitizer checks pass; remeasure target peak and final-source output.
+
 ## 2026-11-01 — Share exact colors between Jewel lighting tables
 
 Retain the room/studio samples as one palette plus two u16 index maps. Build

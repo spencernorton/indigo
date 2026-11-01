@@ -291,7 +291,9 @@ static bool packLighting(void)
 	const unsigned entries = 2 * ROOM_ENTRIES;
 	_Static_assert(2 * ROOM_ENTRIES < 65536, "lighting source indices must fit u16");
 	unsigned slots = 1;
-	while(slots < entries * 2) slots <<= 1;
+	/* More slots than source entries guarantees an empty sentinel even if
+	 * every color is unique, without reserving a second table-sized margin. */
+	while(slots <= entries) slots <<= 1;
 	u16 *hash = calloc(slots, sizeof(*hash));
 	u16 *indices = malloc(entries * sizeof(*indices));
 	if(hash == NULL || indices == NULL) { free(hash); free(indices); return false; }
