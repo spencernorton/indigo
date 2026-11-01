@@ -7,6 +7,7 @@ tag on `beta`. The newest changes are at the top until their release is named.
 ## Unreleased
 
 - Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
+- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
 
 ### New
 

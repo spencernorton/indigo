@@ -51,6 +51,26 @@ Decode guards, all truncation lengths and allocation-failure/retry paths are
 covered. Full images, executable/memory cost and platform qualification remain
 required before accepting the candidate.
 
+## 2026-10-31 — Qualify the isolated renderer candidate in software
+
+All 24 controlled GX framebuffer comparisons match the accepted control byte
+for byte across printed/bare/back views, crops, fades and screen shapes in
+two output modes. Reject early placeholder framebuffer captures; require real
+RAM copies and nontrivial image content. Allocation probes preserve the
+preparation heap peak. Focused unsafe mutations fail. Add Linux -no-pie to
+the new sanitizer test, as required by source checks. Physical measurements
+and final complete-platform acceptance remain pending.
+
+## 2026-10-31 — Reuse the rainbow strips' shared samples
+
+Adjacent rainbow strips repeat their boundary lighting. Cache the existing
+three-byte color once per grid point, retaining the original strip order,
+positions, blend state and quantization. Each visible disc evaluates 520
+exponentials instead of 832. A frozen former emitter checks exact position,
+color and strip streams over 1,024 poses, scales, faces and fades; the frame
+budget preserves every scene hash. This operation-count saving needs target
+image and complete-frame qualification before acceptance.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
