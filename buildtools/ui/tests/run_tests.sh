@@ -120,6 +120,8 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_jewel_matcap.py; else python3 ./test_jewel_matcap.py --sanitize; fi
 	echo "== exact rainbow streams$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_jewel_spokes.py; else python3 ./test_jewel_spokes.py --sanitize; fi
+	echo "== exact Jewel Case normals and glints$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_normals.py; else python3 ./test_jewel_normals.py --sanitize; fi
 	echo "== font batches: the release's exact glyph stream$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_font_batches.py; else python3 ./test_font_batches.py --sanitize; fi
 	echo "== game folder visibility$suffix =="
@@ -184,6 +186,7 @@ run_contracts() {
 	python3 ../generate_jewel_matcap.py --check
 	python3 ./test_jewel_matcap.py
 	python3 ./test_jewel_spokes.py
+	python3 ./test_jewel_normals.py
 	echo "== settings files: real parser/writer vs docs/SETTINGS.md =="
 	python3 ./test_settings_file.py
 	echo "== settings saves: power lost at any step leaves them whole =="

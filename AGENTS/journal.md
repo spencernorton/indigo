@@ -71,6 +71,41 @@ color and strip streams over 1,024 poses, scales, faces and fades; the frame
 budget preserves every scene hash. This operation-count saving needs target
 image and complete-frame qualification before acceptance.
 
+## 2026-11-01 — Share exact Jewel mesh positions as well as normals
+
+Reuse the preparation hash table to pack position and normal tails separately.
+Keep both glint prefixes contiguous at their original indices, record each
+attribute's own GX index, and retire both maps after display-list recording.
+The PowerPC fixture retains 75,336 fewer requested bytes than the original
+renderer, another 11,640 bytes beyond normal sharing. Preparation peaks 31,428
+bytes below the original, but 7,176 above normal-only packing. Exact-value,
+emitted-index, glint, collision, signed-zero, NaN and every allocation-failure
+retry check pass; frame-budget scene hashes remain unchanged. These fixture
+results do not replace full-build and native qualification of this revision.
+
+## 2026-10-31 — Retain contiguous glint normals while packing the tail
+
+The first layout saved 64,440 requested heap bytes after recording, but its
+CPU glint map increased the isolated replay by 7.45% (about 9.5 us per pose).
+Preserve the original glint prefix and compact only the remaining normals.
+This removes the per-frame indirection and separate glint allocation while
+retiring the full GX map after recording. Verify the prefix byte-for-byte,
+all reconstructed normals, emitted indices and target images; remeasure the
+CPU/heap tradeoff before accepting the candidate. Earlier first-layout results
+remain separate from this revision and do not establish its qualification.
+
+## 2026-10-31 — Share the Jewel Case meshes' identical normals
+
+Pack equal normal bit patterns once, retaining separate GX normal indices and
+a small CPU glint map. The full map is retired after display-list recording;
+positions, primitive order and lighting values retain their existing behavior.
+Focused regressions reconstruct every original normal, verify the real emitted
+index stream, compare CPU glints with the former emitter across a pose grid,
+exercise collisions/signed zero/NaN payloads and inject every pack/preparation
+allocation failure followed by retry. Frame-budget scene hashes are unchanged.
+Target images, allocation costs, CI and physical qualification remain gates;
+this is an exact memory-layout experiment, with no tessellation reduction.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
