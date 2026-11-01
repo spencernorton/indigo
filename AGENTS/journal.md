@@ -1,3 +1,19 @@
+## 2026-11-01 — Initialize the return loader's single-call BCJ decoder
+
+A target stress probe decodes the actual packaged executable exactly and
+rejects truncation/footer corruption, but stalls on an undersized output
+buffer. The manually allocated BCJ state leaves single_call false while the
+LZMA2/stream configuration is single-call. Initialize that existing flag as
+the normal decoder constructor would. A paired PowerPC replay preserves the
+full output and rejects all three failure inputs with intact buffer guards.
+
+The regression includes the production packer main and decoder, retaining its
+static initialization and memory helpers while stubbing cache/entrypoint code
+for host execution. Check exact synthetic PowerPC output, truncation, bad
+footer, short capacity and an initializer mutant under bounded deadlines.
+Keep this isolated from renderer/clock changes; full CI and physical warm
+return remain gates. No runtime file-format or input policy change is added.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
