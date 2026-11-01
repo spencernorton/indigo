@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate normal packing, the real GX index stream and CPU glints."""
+"""Validate exact mesh packing, the real GX index stream and CPU glints."""
 import hashlib
 import os
 import sys
@@ -31,16 +31,20 @@ static void assetFree(void *p) { if(p){assert(liveAllocations);liveAllocations--
     source = source.replace("void GX_Normal1x16(u16 index) { (void)index; }", "void GX_Normal1x16(u16 index) { checkNormal(index); }", 1)
     callbacks = r'''
 static const rodmesh_t *checked;
-static const float *originalNormals;
+static const float *originalNormals, *originalPositions;
 static const u16 *expectedIndices;
 static unsigned expectedCount, cursor;
-static u16 positionIndex;
+static u16 originalIndex;
 static void checkPosition(u16 i) {
- if(!checked)return;assert(cursor<expectedCount);assert(i==expectedIndices[cursor]);positionIndex=i;
+ if(!checked)return;
+ assert(cursor<expectedCount);originalIndex=expectedIndices[cursor];
+ assert(i<checked->positionCount);
+ assert(memcmp(checked->pos+i*3,originalPositions+originalIndex*3,12)==0);
 }
 static void checkNormal(u16 i) {
- if(!checked)return;assert(cursor<expectedCount);assert(i<checked->normalCount);
- assert(memcmp(checked->nrm+i*3,originalNormals+positionIndex*3,12)==0);cursor++;
+ if(!checked)return;
+ assert(cursor<expectedCount);assert(i<checked->normalCount);
+ assert(memcmp(checked->nrm+i*3,originalNormals+originalIndex*3,12)==0);cursor++;
 }
 '''
     source = source.replace("/* ---- display lists:", callbacks + "\n/* ---- display lists:", 1)
@@ -51,10 +55,12 @@ static rodmesh_t synthetic(void) {
  m.pos=assetCalloc(16,12);m.nrm=assetMalloc(16*12);m.prims=assetMalloc(18*2);m.primLen=m.primCap=18;
  assert(m.pos&&m.nrm&&m.prims);m.prims[0]=GX_TRIANGLESTRIP;m.prims[1]=16;
  u32 words[8][3];unsigned n=0;
- for(u32 k=1;n<8;k++){u32 v[3]={k,0,0};if((rodNormalHash((const float *)v)&31)==0)memcpy(words[n++],v,12);}
+ for(u32 k=1;n<8;k++){u32 v[3]={k,0,0};if((rodVectorHash((const float *)v)&31)==0)memcpy(words[n++],v,12);}
  /* Include signed zero and distinct NaN payloads in an exact-bit fixture. */
  words[0][0]=0;words[1][0]=0x80000000u;words[2][0]=0x7fc00001u;words[3][0]=0x7fc00002u;
- for(int i=0;i<16;i++){memcpy(m.nrm+i*3,words[i%8],12);m.prims[i+2]=i;}
+ for(int i=0;i<16;i++){
+  memcpy(m.nrm+i*3,words[i%8],12);memcpy(m.pos+i*3,words[(i*3)%8],12);m.prims[i+2]=i;
+ }
  return m;
 }
 static void compareMesh(rodmesh_t *m) {
@@ -63,16 +69,16 @@ static void compareMesh(rodmesh_t *m) {
  memcpy(normals,m->nrm,count*12);memcpy(positions,m->pos,count*12);
  u16 *indices=malloc(primLen*2);assert(indices);unsigned n=0;
  for(int p=0;p<primLen;p+=m->prims[p+1]+2)for(int i=0;i<m->prims[p+1];i++)indices[n++]=m->prims[p+2+i];
- assert(rodPack(m));assert(m->count==count&&m->normalCount<=count);
+ assert(rodPack(m));assert(m->count==count&&m->normalCount<=count&&m->positionCount<=count);
  assert(((uintptr_t)m->pos&31)==0&&((uintptr_t)m->nrm&31)==0);
- assert(memcmp(m->pos,positions,count*12)==0);
+ for(int i=0;i<count;i++)assert(m->positionMap[i]<m->positionCount&&memcmp(m->pos+m->positionMap[i]*3,positions+i*3,12)==0);
  for(int i=0;i<count;i++)assert(m->normalMap[i]<m->normalCount&&memcmp(m->nrm+m->normalMap[i]*3,normals+i*3,12)==0);
- assert(memcmp(m->nrm,normals,glints*12)==0);
- for(int i=0;i<glints;i++)assert(m->normalMap[i]==i);
- checked=m;originalNormals=normals;expectedIndices=indices;expectedCount=n;cursor=0;
+ assert(memcmp(m->nrm,normals,glints*12)==0&&memcmp(m->pos,positions,glints*12)==0);
+ for(int i=0;i<glints;i++)assert(m->normalMap[i]==i&&m->positionMap[i]==i);
+ checked=m;originalNormals=normals;originalPositions=positions;expectedIndices=indices;expectedCount=n;cursor=0;
  unsigned before=allocationCall;assert(rodRecord(m));assert(allocationCall==before);assert(cursor==n);
- checked=NULL;assert(!m->normalMap&&!m->prims);
- rodmesh_t reference=*m;reference.nrm=normals;
+ checked=NULL;assert(!m->normalMap&&!m->positionMap&&!m->prims);
+ rodmesh_t reference=*m;reference.nrm=normals;reference.pos=positions;
  unsigned positive=0;
  for(int x=-8;x<=8;x++)for(int y=-8;y<=8;y++) {
   Mtx a,b,mv;guMtxRotRad(a,'x',x*.18f);guMtxRotRad(b,'y',y*.21f);guMtxConcat(a,b,mv);mv[2][3]=-500;
@@ -112,4 +118,4 @@ if __name__ == "__main__":
         if sys.platform.startswith("linux"):
             os.environ["CC"] += " -no-pie"
     row = measure(driver_source=driver())["jewel-normals"]
-    print(f"normal packing: exact indices, glints, {row['pack_failures']} pack and {row['prepare_failures']} preparation failures/retries passed")
+    print(f"mesh packing: exact positions/normals, indices, glints, {row['pack_failures']} pack and {row['prepare_failures']} preparation failures/retries passed")

@@ -610,14 +610,16 @@ typedef struct { float hw, hh, rc, zc; int seg; bool flat; } profile_t;
 
 typedef struct {
 	float *pos, *nrm;
-	u16 *normalMap;
-	int normalCount;
-	int count, cap;
+	void *dl;
+	u32 dlSize;
 	int glintEnd;	/* the first rod, the frame, is where the lamps glint */
+	/* Keep the fields read every frame together; maps are preparation-only. */
+	u16 *positionMap, *normalMap;
+	int positionCount, normalCount;
+	int count, cap;
 	u16 *prims;	/* [GX primitive, count, indices...]... */
 	int primLen, primCap;
-	void *dl;
-	u32 dlSize, dlCap;
+	u32 dlCap;
 	bool failed;	/* out of memory while it was built */
 } rodmesh_t;
 
@@ -756,16 +758,45 @@ static void rodSetupVtx(void)
 	GX_SetVtxAttrFmt(VTXFMT_ROD, GX_VA_NRM, GX_NRM_XYZ, GX_F32, 0);
 }
 
-/* Keep the glint normals at their original indices for the CPU hot path.
- * Pack equal tail normals once and remap only the recorded GX indices.
- * Positions and primitive order stay unchanged. Menu thread. */
-static u32 rodNormalHash(const float *normal)
+/* Keep both glint arrays at their original indices for the CPU hot path.
+ * Share equal tail vectors by exact bits; only the recorded GX indices
+ * change. Menu thread, before either array is published. */
+static u32 rodVectorHash(const float *vector)
 {
 	u32 words[3];
-	memcpy(words, normal, sizeof(words));
+	memcpy(words, vector, sizeof(words));
 	u32 h = 2166136261u;
 	for(unsigned i = 0; i < 3; i++) h = (h ^ words[i]) * 16777619u;
 	return h;
+}
+
+static int rodMapVectors(const float *vectors, int count, int prefix,
+	u16 *map, u16 *table, unsigned slots)
+{
+	int unique = 0;
+	for(int i = 0; i < count; i++) {
+		const float *v = vectors + i * 3;
+		unsigned bucket = rodVectorHash(v) & (slots - 1);
+		while(table[bucket] && memcmp(v, vectors + (table[bucket] - 1) * 3, 12))
+			bucket = (bucket + 1) & (slots - 1);
+		if(i < prefix) {
+			map[i] = unique++;
+			if(!table[bucket]) table[bucket] = i + 1;
+		}
+		else if(!table[bucket]) { table[bucket] = i + 1; map[i] = unique++; }
+		else map[i] = map[table[bucket] - 1];
+	}
+	return unique;
+}
+
+static void rodCopyVectors(float *dst, const float *src, int count,
+	int prefix, const u16 *map)
+{
+	memcpy(dst, src, prefix * 12);
+	int copied = prefix;
+	for(int i = prefix; i < count; i++) {
+		if(map[i] == copied) { memcpy(dst + copied * 3, src + i * 3, 12); copied++; }
+	}
 }
 
 static bool rodPack(rodmesh_t *m)
@@ -775,37 +806,27 @@ static bool rodPack(rodmesh_t *m)
 	unsigned slots = 1;
 	while(slots < (unsigned)m->count * 2) slots <<= 1;
 	u16 *table = calloc(slots, sizeof(*table));
-	u16 *map = malloc((size_t)m->count * sizeof(*map));
-	if(table == NULL || map == NULL) { free(table); free(map); return false; }
-	int normals = 0;
-	for(int i = 0; i < m->count; i++) {
-		const float *n = m->nrm + i * 3;
-		unsigned bucket = rodNormalHash(n) & (slots - 1);
-		while(table[bucket] && memcmp(n, m->nrm + (table[bucket] - 1) * 3, 12))
-			bucket = (bucket + 1) & (slots - 1);
-		if(i < m->glintEnd) {
-			map[i] = normals++;
-			if(!table[bucket]) table[bucket] = i + 1;
-		}
-		else if(!table[bucket]) { table[bucket] = i + 1; map[i] = normals++; }
-		else map[i] = map[table[bucket] - 1];
+	u16 *positionsMap = malloc((size_t)m->count * sizeof(*positionsMap));
+	u16 *normalsMap = malloc((size_t)m->count * sizeof(*normalsMap));
+	if(table == NULL || positionsMap == NULL || normalsMap == NULL) {
+		free(table); free(positionsMap); free(normalsMap); return false;
 	}
+	int positions = rodMapVectors(m->pos, m->count, m->glintEnd, positionsMap, table, slots);
+	memset(table, 0, slots * sizeof(*table));
+	int normals = rodMapVectors(m->nrm, m->count, m->glintEnd, normalsMap, table, slots);
 	free(table);
-	float *pos = memalign(32, m->count * 12), *nrm = memalign(32, normals * 12);
+	float *pos = memalign(32, positions * 12), *nrm = memalign(32, normals * 12);
 	if(pos == NULL || nrm == NULL) {
-		free(pos); free(nrm); free(map); return false;
+		free(pos); free(nrm); free(positionsMap); free(normalsMap); return false;
 	}
-	memcpy(pos, m->pos, m->count * 12);
-	memcpy(nrm, m->nrm, m->glintEnd * 12);
-	int copied = m->glintEnd;
-	for(int i = m->glintEnd; i < m->count; i++) {
-		if(map[i] == copied) { memcpy(nrm + copied * 3, m->nrm + i * 3, 12); copied++; }
-	}
+	rodCopyVectors(pos, m->pos, m->count, m->glintEnd, positionsMap);
+	rodCopyVectors(nrm, m->nrm, m->count, m->glintEnd, normalsMap);
 	free(m->pos);
 	free(m->nrm);
 	m->pos = pos; m->nrm = nrm;
-	m->normalMap = map; m->normalCount = normals;
-	DCFlushRange(pos, m->count * 12);
+	m->positionMap = positionsMap; m->positionCount = positions;
+	m->normalMap = normalsMap; m->normalCount = normals;
+	DCFlushRange(pos, positions * 12);
 	DCFlushRange(nrm, normals * 12);
 
 	u32 size = 64;
@@ -830,7 +851,7 @@ static bool rodRecord(rodmesh_t *m)
 		int n = m->prims[i + 1];
 		GX_Begin(m->prims[i], VTXFMT_ROD, n);
 		for(int j = 0; j < n; j++) {
-			GX_Position1x16(m->prims[i + 2 + j]);
+			GX_Position1x16(m->positionMap[m->prims[i + 2 + j]]);
 			GX_Normal1x16(m->normalMap[m->prims[i + 2 + j]]);
 		}
 		GX_End();
@@ -840,6 +861,8 @@ static bool rodRecord(rodmesh_t *m)
 	m->prims = NULL;
 	free(m->normalMap);
 	m->normalMap = NULL;
+	free(m->positionMap);
+	m->positionMap = NULL;
 	m->primLen = m->primCap = 0;
 	return m->dlSize > 0;
 }
@@ -849,6 +872,7 @@ static void rodFree(rodmesh_t *m)
 	free(m->pos);
 	free(m->nrm);
 	free(m->normalMap);
+	free(m->positionMap);
 	free(m->prims);
 	free(m->dl);
 	memset(m, 0, sizeof(*m));

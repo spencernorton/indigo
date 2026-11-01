@@ -1,3 +1,15 @@
+## 2026-11-01 — Share exact Jewel mesh positions as well as normals
+
+Reuse the preparation hash table to pack position and normal tails separately.
+Keep both glint prefixes contiguous at their original indices, record each
+attribute's own GX index, and retire both maps after display-list recording.
+The PowerPC fixture retains 75,336 fewer requested bytes than the original
+renderer, another 11,640 bytes beyond normal sharing. Preparation peaks 31,428
+bytes below the original, but 7,176 above normal-only packing. Exact-value,
+emitted-index, glint, collision, signed-zero, NaN and every allocation-failure
+retry check pass; frame-budget scene hashes remain unchanged. These fixture
+results do not replace full-build and native qualification of this revision.
+
 ## 2026-10-31 — Retain contiguous glint normals while packing the tail
 
 The first layout saved 64,440 requested heap bytes after recording, but its
