@@ -116,6 +116,8 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_card_art.py; else python3 ./test_card_art.py --sanitize; fi
 	echo "== Spotlight stills: only on first use$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_stills_lifecycle.py; else python3 ./test_stills_lifecycle.py --sanitize; fi
+	echo "== exact shared lighting and allocation failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_lighting.py; else python3 ./test_jewel_lighting.py --sanitize; fi
 	echo "== font batches: the release's exact glyph stream$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_font_batches.py; else python3 ./test_font_batches.py --sanitize; fi
 	echo "== game folder visibility$suffix =="
@@ -176,6 +178,7 @@ run_contracts() {
 	python3 ./test_cube_render_pose.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
+	python3 ./test_jewel_lighting.py
 	echo "== settings files: real parser/writer vs docs/SETTINGS.md =="
 	python3 ./test_settings_file.py
 	echo "== settings saves: power lost at any step leaves them whole =="

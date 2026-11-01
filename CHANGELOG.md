@@ -29,6 +29,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Jewel Case shares exact repeated colors between its lighting tables,
+  reducing retained RAM while preserving reflections and interpolation.
 - Library title fitting and Spotlight description wrapping are prepared before
   taking the video lock, so formatting a new window does not hold up drawing.
 - Home reuses its icons' circle geometry between faces and frames, reducing
