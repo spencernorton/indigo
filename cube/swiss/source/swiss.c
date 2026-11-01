@@ -5133,13 +5133,15 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 					analog != UI_MENU_INPUT_NONE) {
 				break;
 			}
-			VIDEO_WaitVSync();
-			/* Pack art shares one 16 KiB range; a non-thread-safe folder
-			 * picture may advance by another, then input gets a turn. Thread-safe
-			 * picture reads stay on their own worker. */
+			/* Wake the bounded pack reader, or take its synchronous fallback
+			 * range. A folder picture may advance by another bounded range.
+			 * Check input again as soon as the retrace wait ends. */
 			DrawGameflowPollPosters();
 			CardArt_Poll();
+			VIDEO_WaitVSync();
 		}
+		/* No artwork I/O may outlive the idle loop into an input action. */
+		DrawGameflowPausePosters();
 		/* Y on a game opens its settings through its Detail: never on the
 		 * parent card, and A wins a press of both. */
 		bool openSettings = !(browserButtons & BUTTON_A) &&
@@ -7822,9 +7824,8 @@ static int gameflow_info_game(ConfigEntry *config,
 				if(analog == UI_MENU_INPUT_DOWN) buttons |= BUTTON_DOWN;
 				if(analog == UI_MENU_INPUT_LEFT) buttons |= BUTTON_LEFT;
 				if(analog == UI_MENU_INPUT_RIGHT) buttons |= BUTTON_RIGHT;
-				/* A poster still on its way (its slot was just let go, or
-				 * the pack only now opened) is read on an idle retrace, one
-				 * at most, as the Library does, and fades in when it lands. */
+				/* Wake the bounded pack reader only while waiting for input;
+				 * a completed, CRC-checked texture fades in when it lands. */
 				if(buttons == 0u) {
 					DrawGameflowPollPosters();
 					/* A card finished changing to this game's card, gave
@@ -7835,6 +7836,7 @@ static int gameflow_info_game(ConfigEntry *config,
 					}
 				}
 			} while(buttons == 0u);
+			DrawGameflowPausePosters();
 			/* Left and Right choose the save copy to start with, while there
 			 * is a choice: each copy, then the totals again (-1, the card as
 			 * it is), so a choice can always be undone. */

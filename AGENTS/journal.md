@@ -106,6 +106,43 @@ allocation failure followed by retry. Frame-budget scene hashes are unchanged.
 Target images, allocation costs, CI and physical qualification remain gates;
 this is an exact memory-layout experiment, with no tessellation reduction.
 
+## 2026-11-01 — Run bounded artwork reads at menu priority
+
+The lower-priority worker regressed a native artwork workload. A diagnostic
+whose executable differs only in the priority byte reverses that regression:
+two fresh boots per variant reduce the read window from about 1.316 s on the
+menu-thread control to 0.679 s, with no sampled periods above 25 ms. Keep
+video above the worker and retain the 1 ms sleep after every bounded step.
+The host scheduler shim now enforces this policy while existing controlled
+reads exercise pause, cancellation, failures and handoff fences. Native
+metadata fairness, full-build qualification and broader device coverage
+remain gates; these measurements do not establish physical controller feel.
+
+## 2026-10-30 — Read pack artwork independently of menu retraces
+
+Thread-safe pack sources may use one worker below menu/video priority, with
+the same shared 16 KiB read quantum, visible-pack round-robin, complete CRC
+publication and eviction quarantine. A 1 ms sleep between chunks shares idle
+CPU time with folder-art and metadata workers even on passive adapters. Keep
+the existing synchronous path on other devices or worker-resource failure.
+
+Join before every cache ownership/lifetime mutation and synchronous poll;
+also join immediately after Library/Detail idle input, before handling an
+action. Joining before window reuse is essential: generation checks alone
+cannot protect texels from an old writer. The reader adds one 16 KiB stack,
+with no staging arena or format changes. Controlled pthread device reads
+exercise blocked I/O, coalesced wakes, allocation/thread failure, hidden packs,
+CRC rejection, window churn and concurrent video queries. Host timing uses
+synthetic read latency; native cold-I/O, cadence, input and cancellation
+measurements remain required before accepting a console performance claim.
+
+Upload/reset handoffs block and drain reader controls before suspending the
+menu, including when it is already stopping a read. The handoff retains the
+control gate until shutdown or rejected-upload recovery; unblocking precedes
+menu resume. This prevents suspending the owner of the reader's join/cleanup.
+The upload harness checks that order, and the threaded harness races a handoff
+against an in-flight menu stop, then resumes the original partial record.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next

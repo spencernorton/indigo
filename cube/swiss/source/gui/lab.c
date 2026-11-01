@@ -188,6 +188,7 @@ static void lab_suspend_main(void *unused)
 static void lab_restart(void)
 {
 	wiiload_hold();
+	DrawGameflowBlockPosters();
 	DrawWithVideoLocked(lab_suspend_main, NULL);
 	MP3Player_Stop();
 	menuaudio_shutdown();
