@@ -112,12 +112,16 @@ def check_renderer_selection() -> None:
     assert not renderer_definition(historical, "_SaveCubesColour", optional=True)
 
 
-def measure(renderer_source: str | None = None) -> dict:
+def measure(renderer_source: str | None = None, driver_source: str | None = None) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         Path(tmp, "hint_source.c").write_text(hint_source(), encoding="utf-8")
         Path(tmp, "save_cubes_source.c").write_text(save_cubes_source(renderer_source), encoding="utf-8")
         Path(tmp, "files_source.c").write_text(files_source(), encoding="utf-8")
         binary = Path(tmp, "frame_budget")
+        driver = HERE / "frame_budget.c"
+        if driver_source is not None:
+            driver = Path(tmp, "frame_budget.c")
+            driver.write_text(driver_source, encoding="utf-8")
         sources = [GUI / name for name in SOURCES]
         # Only the folder-color emitter depends on this newer helper. Keeping
         # it conditional also permits measuring pre-feature source trees.
@@ -126,7 +130,7 @@ def measure(renderer_source: str | None = None) -> dict:
         command = shlex.split(os.environ.get("CC", "cc")) + [
             "-std=gnu11", "-O1", "-ffp-contract=off", "-Wall",
             "-I", str(HERE / "fixtures/gx"), "-I", str(GUI), "-I", tmp,
-            "-o", str(binary), str(HERE / "frame_budget.c"),
+            "-o", str(binary), str(driver),
             *(str(path) for path in sources), "-lm"]
         subprocess.run(command, check=True)
         output = subprocess.run([str(binary)], check=True, capture_output=True,

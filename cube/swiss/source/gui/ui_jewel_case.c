@@ -1400,12 +1400,14 @@ static void drawDisc(shown_t *c)
 
 	/* The printed side, or the bare silver when there's no print. */
 	if(printing) {
-		directVtx(true);
+		/* The print matrix uses the disc's local x/y directly. GX can read
+		 * them from each position without a duplicate texture attribute. */
+		directVtx(false);
 		GX_SetNumChans(1);
 		GX_SetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
 		GX_SetNumTexGens(1);
 		loadPrintMtx(jc.spin, c->shot->rect);
-		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX2);
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_POS, GX_TEXMTX2);
 		GX_SetNumIndStages(0);
 		GX_SetNumTevStages(2);
 		GX_LoadTexObj(print, GX_TEXMAP0);
@@ -1479,7 +1481,6 @@ static void drawDisc(shown_t *c)
 					const u8 *col = ringCol[ri + k][si];
 					GX_Position3f32(x, y, z);
 					GX_Color4u8(col[0], col[1], col[2], col[3]);
-					if(printing) GX_TexCoord2f32(x, y);
 				}
 			}
 			GX_End();
