@@ -1,3 +1,99 @@
+## 2026-11-01 — Combine the qualified emulator observers with the RAM-first evaluation
+
+Bring the qualified Home, Memory Cards and observed file-root controller tests
+into the combined RAM-first renderer, reviewed Swiss intake and return decoder
+evaluation. Preserve both parents' histories and all native acceptance gates.
+The production source and generated resources remain byte-identical to the
+preceding combined evaluation; only the test observers and their documentation
+change. This new source needs its own normal/performance/package/return payload
+binding, complete CI, all eleven emulator routes and separate Fuzz result.
+No console, installation or release qualification is claimed by this merge.
+
+## 2026-11-02 — Settle the initial root reference before using it
+
+Review of the prepared root-selection guard finds the same reference hazard
+as Home: the first visible path need not mean the device name has finished
+fading. Two new regressions reject its prototype: repeated fading frames at
+a frozen console clock must not establish a reference, and a steady full name
+after progress must replace the arriving mask.
+
+Anchor both initial context masks across three observations and 0.3 emulated
+seconds before recording the boot's reference. The full root guard now has
+11 focused cases; all 95 executed tests of the 98-test suite pass with three
+existing skips, plus source checks. Existing word thresholds remain unchanged.
+This is prepared controller-test code, pending end-to-end qualification; the
+current separate observer run is allowed to finish before integration.
+
+## 2026-11-02 — Observe the root selection before entering games
+
+A single missed UP in the former four-UP root walk reproduces the retained
+wrong-folder capture: gcbrowser opens, nine DOWNs select its parent, and A
+returns to root on gcbrowser. The exact original input loss is not measured;
+the exposed fault class is proceeding without observing the selected row.
+
+For the demonstration root that fits on screen, read its active highlight,
+require the same boot's root path/device, and correct arrows from the observed
+position within a fixed bound. Three matching observations span emulated time;
+frozen captures, another pane, a popup or changed context cannot authorize
+input. A root needing scrolling fails closed. Only the verified games row
+returns to its caller that sends A. Refresh the root reference on each boot.
+Wide context uses the whole authored stage so its device name stays visible.
+
+Nine focused cases cover actual captured shapes/palette, clock progress,
+missed/double inputs, context loss and bounded failure before A. The old blind
+sequence reproduces the final root/gcbrowser state, while the observed route
+reaches the probe. All 93 executed tests of the 96-test suite pass, with three
+existing skips; source checks pass. An initial test incorrectly expected the
+same row in the themed fixture; its actual highlighted row is two, confirmed
+from the untouched capture. No detector or word threshold was relaxed.
+Production code is unchanged. This follow-up still requires end-to-end CI.
+
+## 2026-11-02 — Retain file-game navigation evidence
+
+The separate file-route failure ends at root with gcbrowser selected after a
+check that only proved the path changed. Record each file-navigation listing,
+expected row delta, folder and target, plus captures before entering games,
+after its path transition and after game selection. The inputs, path checks,
+word thresholds and acceptance checks are unchanged; no retry is added and no
+fix for that failure is claimed. These captures let a future failure identify
+the first unexpected selection instead of inferring it from the final screen.
+
+## 2026-11-02 — Observe Save Details and Actions before card operations
+
+Combined smoke CI reaches Memory Cards but still shows Actions on Move at its
+planned Copy-confirmation capture. The final A opens Move's question, instead
+of confirming a Copy. The route sent A, A, DOWN, A without observing either
+opening transition. Details publishes its panel before initializing input, so
+a lost opening press is a reproducible scenario consistent with the captures.
+
+Reuse the existing guarded Save Details observer, allow fresh emulated progress,
+and require a changed Actions footer plus the disappearance of the Details panel
+before selecting a row. Capture each transition and fail on an unobserved
+Actions A; never repeat that press or a confirmation. Use this for the initial
+Actions check, Copy, the dimmed-Move check and Erase. Keep the exact card-byte
+and source-presence checks. Production code and image thresholds are unchanged.
+
+Five delayed/missed/wrong-context cases pass. The old blind sequence reproduces
+the Move question in that model. The full observer/source suite runs 87 tests
+with three existing skips. Fresh end-to-end CI is required for this new source;
+the separate file-browser navigation failure is still unresolved.
+
+## 2026-11-01 — Observe emulated progress before settling Home text
+
+Two smoke artifacts return to the correct Library face but fail the comparison
+against a reference captured during its boot fade. Repeated host screenshots
+can look steady while Dolphin's console clock has not advanced. Freeze the
+neutral label crops as a regression: the old observer accepts the arriving
+234-pixel mask instead of its settled313-pixel version.
+
+Require three matching Home observations spanning0.3 emulated seconds, anchored
+to the first stable mask. Keep word-identity thresholds unchanged, preserve the
+existing rule for other boxes/backends without clock reports, and never infer
+readiness from a frozen emulated clock. Five regression cases include wrong-name
+rejection and normal progress. The full observer/source suite must pass before
+CI replays; this changes test observation only, not the normal executable.
+The separate failed file-browser launch route remains an investigation gate.
+
 ## 2026-11-01 — Include the return decoder's mode correction in release evaluation
 
 Integrate the separately reviewed decoder initialization fix with the RAM-first

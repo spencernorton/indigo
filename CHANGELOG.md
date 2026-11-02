@@ -74,6 +74,18 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 - Keep the In-Game Reset return loader's decoder mode consistent, including
   its short-buffer failure path.
+
+- Dolphin file-game entry observes the root selection and bounds arrow
+  corrections before opening games, rejecting changed or ambiguous context.
+
+- Dolphin file-game navigation retains the expected rows and actual directory/
+  selection captures for diagnosing a failed transition.
+
+- Dolphin Memory Cards checks observe Save Details and Actions before selecting
+  a card operation, so a missed opening press cannot turn Copy into Move.
+
+- Emulator Home checks wait for the console's animation time before accepting
+  a steady face name, so cached host frames cannot capture a fading reference.
 - The emulator's folder checks observe Settings tab and section transitions
   before changing a layout, recovering from a missed press with a recorded,
   bounded retry and stopping when navigation does not respond.

@@ -230,6 +230,7 @@ SAME, DIFFERENT = 0.85, 0.5  # intersection over union of two label masks
 # before WALL_FLOOR: a slow Dolphin must not cut a short press down to a frame.
 BOOT_SECONDS = 120
 SETTLE_SECONDS = 10
+HOME_STEADY_SECONDS = 0.3  # In Dolphin's time, not repeated captures of a cached host frame.
 WALL_FACTOR = 5
 WALL_FLOOR = 0.5
 TICKS_PER_SECOND = 486_000_000  # the GameCube's CPU clock, which Dolphin's ticks count
@@ -476,6 +477,30 @@ def active_pane(rgb: np.ndarray, wide: bool = False) -> int:
     rgb = detection_frame(rgb, wide)
     left, right = (_edge(rgb, x0, x1, 108) for x0, x1 in FILES_PANES)
     return 0 if left > right else 1
+
+
+def files_focus_row(rgb: np.ndarray, count: int, wide: bool = False) -> int | None:
+    """The active left pane's fill, for a root fitting all eight visible rows.
+
+    Median row interiors exclude names, icons and outlines. An ambiguous or
+    absent fill is no selection; the caller separately checks page/context.
+    """
+    if not 2 <= count <= 8:
+        return None
+    frame, at = files_stage(rgb, wide)
+    left, right = files_pane_x(0, wide)
+    fill = [float(np.median(frame[118 + 28 * n:136 + 28 * n,
+                                 left + 12 + at:right - 12 + at].max(axis=2)))
+            for n in range(count)]
+    ranked = sorted(fill)
+    return int(np.argmax(fill)) if ranked[-1] - ranked[-2] >= 24 else None
+
+
+def files_root_context(rgb: np.ndarray, wide: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    """Path and device, retaining the left pane outside the wide stage's center."""
+    frame, at = files_stage(rgb, wide)
+    left = files_pane_x(0, wide)[0] + at
+    return files_text(rgb, wide), text_mask(frame.max(axis=2), (left, 62, left + 88, 88))
 
 
 class PresentedFrames:
@@ -1187,6 +1212,7 @@ class Route:
         self.checks: list[dict[str, object]] = []
         self.shots: list[tuple[str, Path]] = []
         self.pad = emulator.pad
+        self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -1221,19 +1247,36 @@ class Route:
                       box: tuple[int, int, int, int] = LABEL_BOX,
                       level: int = TEXT_LEVEL,
                       numeric: bool = False) -> tuple[np.ndarray | None, float]:
-        """Wait for steady text in a box (the face's name by default), optionally unlike or like a given one."""
+        """Wait for steady text, with Home names spanning actual emulated time.
+
+        A busy host can capture a fading Home label repeatedly without the
+        console advancing. Those copies cannot establish a settled reference.
+        Other boxes and backends without clock reports retain their existing
+        observation rule; word identity thresholds are unchanged.
+        """
         deadline = Deadline(self.emulator, seconds)
-        previous, steady = None, 0
+        previous, steady, stable_since = None, 0, None
         while not deadline.expired():
             mask = text_mask(self.gray(), box, level)
+            clock = getattr(self.emulator, "emulated", lambda: None)()
             ok = has_save_number(mask) if numeric else has_label(mask)
             if ok and unlike is not None:
                 ok = overlap(mask, unlike) < DIFFERENT
             if ok and like is not None:
                 ok = same_text(mask, like)
-            steady = steady + 1 if ok and previous is not None and overlap(mask, previous) >= 0.95 else 0
-            previous = mask if ok else None
-            if steady >= 2:
+            if ok and previous is not None and overlap(mask, previous) >= 0.95:
+                steady += 1
+                if stable_since is None:
+                    stable_since = clock
+            else:
+                steady = 0
+                stable_since = clock if ok else None
+                previous = mask if ok else None
+            if box != LABEL_BOX or clock is None:
+                previous = mask if ok else None
+            progressed = (box != LABEL_BOX or clock is None or
+                          (stable_since is not None and clock - stable_since >= HOME_STEADY_SECONDS))
+            if steady >= 2 and progressed:
                 return mask, time.monotonic()
             time.sleep(0.15)
         return None, time.monotonic()
@@ -2387,7 +2430,102 @@ class Route:
         sorts it."""
         names = card.listing(image, folder)
         rows = names.index(target) - names.index(focus)
+        print("FILES navigation " + json.dumps({"from": focus, "target": target,
+              "folder": folder, "rows": rows, "listing": names}), flush=True)
         self.steps(" ".join(["DOWN" if rows > 0 else "UP"] * abs(rows)), 0.4)
+
+    def remember_files_root(self) -> None:
+        """A settled initial path/device reference, refreshed on each boot.
+
+        A path appearing first does not prove its device name has finished
+        fading. Anchor both masks across actual console progress, as at Home.
+        """
+        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        reference, steady, since = None, 0, None
+        while not deadline.expired():
+            rgb = self.emulator.frame()
+            self.last_rgb = rgb
+            context = files_root_context(rgb, self.menu_wide)
+            clock = self.emulator.emulated()
+            visible = files_screen(rgb, self.menu_wide) and active_pane(rgb, self.menu_wide) == 0 and \
+                all(mask.any() for mask in context)
+            if visible and reference is not None and \
+                    all(overlap(now, before) >= .95 for now, before in zip(context, reference)):
+                steady += 1
+                if since is None:
+                    since = clock
+            else:
+                reference, steady, since = context if visible else None, 0, clock
+            progressed = clock is None or (since is not None and clock - since >= HOME_STEADY_SECONDS)
+            if visible and steady >= 2 and progressed:
+                self.files_root_reference = context
+                return
+            time.sleep(0.15)
+        self.check("File Browser's initial root context settles before navigation", False)
+
+    def files_root_position(self, count: int) -> int | None:
+        """A steady highlighted row in the same boot's unchanged root/device.
+
+        Repeated host captures without console progress do not settle a moving
+        fill. Another pane, path, device or popup forbids corrective input.
+        """
+        reference = self.files_root_reference
+        if reference is None:
+            return None
+        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        previous, steady, since = None, 0, None
+        while not deadline.expired():
+            rgb = self.emulator.frame()
+            self.last_rgb = rgb
+            context = files_root_context(rgb, self.menu_wide)
+            if not files_screen(rgb, self.menu_wide) or active_pane(rgb, self.menu_wide) != 0 or \
+                    files_box(rgb, 0, self.menu_wide) or message_up(rgb, self.menu_wide) or \
+                    any(not same_text(now, before) for now, before in zip(context, reference)):
+                return None
+            position = files_focus_row(rgb, count, self.menu_wide)
+            clock = self.emulator.emulated()
+            if position is not None and position == previous:
+                steady += 1
+                if since is None:
+                    since = clock
+            else:
+                previous, steady, since = position, 0, clock
+            progressed = clock is None or (since is not None and clock - since >= 0.2)
+            if position is not None and steady >= 2 and progressed:
+                return position
+            time.sleep(0.15)
+        return None
+
+    def files_select_root(self, image: Path, target: str) -> None:
+        """Correct arrows from observed rows, then permit directory entry.
+
+        This fixture's root fits on screen. Scrolling roots fail closed rather
+        than assigning a visible slot to an unknown absolute row. No A is sent
+        here; only a verified target returns to the caller that opens it.
+        """
+        names = card.listing(image)
+        self.check("game entry uses a fully visible fixture root",
+                   2 <= len(names) <= 8 and target in names)
+        wanted = names.index(target)
+        limit = len(names) + PRESSES
+        previous, button = None, None
+        for step in range(limit + 1):
+            position = self.files_root_position(len(names))
+            self.check("game entry observes the unchanged root and selection", position is not None)
+            print("FILES observed root " + json.dumps({"row": position, "target_row": wanted,
+                  "target": target, "listing": names}), flush=True)
+            if position == wanted:
+                self.shot("files-root-target", self.last_rgb)
+                return
+            if step == limit:
+                break
+            if position == previous and button is not None:
+                self.pressed_again.append(button)
+            previous = position
+            button = "DOWN" if position < wanted else "UP"
+            self.press(button)
+            self.pause(0.4)
+        self.check("game entry reaches its observed target before opening", False)
 
     def files_said(self, what: str, failed: bool = False) -> np.ndarray | None:
         """The maroon message comes, says an operation ended, and goes by
@@ -2459,6 +2597,7 @@ class Route:
         self.check("System shows its File Browser row before opening it", system is not None)
         self.press("A")
         self.check("File Browser opens on the GC Loader", self.files_list(True, pane=0))
+        self.remember_files_root()
         before = self.files_path(right=True, box=FILES_NAME_BOXES[1])
         self.press("R")
         self.files_storage_menu(1, True)
@@ -2676,6 +2815,7 @@ class Route:
         self.steps("DOWN DOWN")
         self.press("A")
         self.check("File Browser opens on the GC Loader again", self.files_list(True, pane=0))
+        self.remember_files_root()
         self.press("R")
         self.files_storage_menu(1, True)
         self.steps("DOWN A")
@@ -2700,10 +2840,14 @@ class Route:
                    game: tuple[str, str] = card.PROBE_GAME) -> np.ndarray | None:
         """A on games/ opens it in the left pane, and DOWN goes to a game,
         the probe's by default. The path line at the top, as a mask."""
-        self.files_goto(image, focus, "games/")
+        print("FILES game entry " + json.dumps({"previous_hint": focus,
+              "target": "games/"}), flush=True)
+        self.files_select_root(image, "games/")
         top = self.files_path()
+        self.shot("files-games-before-open", self.last_rgb)
         self.press("A")
         inside = self.files_path(unlike=top) if top is not None else None
+        self.shot("files-games-after-open", self.last_rgb)
         self.check("A on games/ opens it in the left pane", inside is not None)
         # Flatten directory (on for /games) lists a folder's files in its
         # place: such a folder has no row, and they sort after the probe.
@@ -2712,6 +2856,8 @@ class Route:
         rows = names.index(card.game_file(*game)) - 1
         self.steps(" ".join(["DOWN"] * rows), 0.4)
         self.pause(1.0)
+        self.last_rgb = self.emulator.frame()
+        self.shot("files-game-selection", self.last_rgb)
         return top
 
     def files_poster(self, image: Path, focus: str) -> None:
@@ -2904,17 +3050,13 @@ class Route:
         self.press("B")
         closed = self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         self.check("B closes details without opening an action", closed is not None)
-        self.save_details("memory-cards-details-again")
-        self.press("A")
-        opened = self.differs(browsing, FOOTER_BOX)
-        self.shot("memory-cards-box", self.last_rgb)
-        self.check("A Actions opens the box beside the save", opened)
-        menu = text_mask(self.gray(), FOOTER_BOX)
+        menu = self.save_actions("memory-cards-box")
         self.press("B")
         closed = self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         self.check("B closes the box", closed is not None)
         before_b = saves(slot_b)
-        self.steps("A A DOWN A")
+        self.save_actions("memory-cards-copy-actions", like=menu)
+        self.steps("DOWN A")
         self.shot("memory-cards-copy-to", self.emulator.frame())
         self.press("A")
         self.check("Copy, Yes: the maroon box says the save is copied", self.message())
@@ -2926,8 +3068,7 @@ class Route:
                    same_save((slot_a / name).read_bytes(), (slot_b / name).read_bytes()),
                    gained=sorted(gained))
         self.check("the maroon box closes by itself", self.message_closes())
-        self.steps("A A", 0.3)
-        self.differs(browsing, FOOTER_BOX)
+        self.save_actions("memory-cards-dimmed-actions")
         reason = text_mask(self.gray(), FOOTER_BOX)
         self.shot("memory-cards-dimmed", self.last_rgb)
         self.check("A on the copied save: Move is dimmed, and the buttons say why",
@@ -2935,7 +3076,8 @@ class Route:
         self.press("B")
         self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         before_a = saves(slot_a)
-        self.steps("A A DOWN DOWN A")
+        self.save_actions("memory-cards-erase-actions", like=reason)
+        self.steps("DOWN DOWN A")
         self.shot("memory-cards-erase", self.emulator.frame())
         self.steps("UP")
         self.press("A")
@@ -3030,6 +3172,27 @@ class Route:
             fields[field] = mask
         self.shot(name, self.last_rgb)
         return fields
+
+    def save_actions(self, name: str, like: np.ndarray | None = None) -> np.ndarray:
+        """Observe Details, then Actions, before any action-list navigation.
+
+        A second blind A can arrive while Details initializes its input and
+        be discarded. DOWN then reaches Details instead of Copy, and the next
+        A only opens Actions. Never repeat an Actions A: wait for its distinct
+        footer and for the Details panel to leave, or fail at this transition.
+        """
+        self.save_details(name + "-details")
+        before = text_mask(self.gray(), FOOTER_BOX)
+        self.pause(0.3, fresh=True)
+        self.press("A")
+        opened = self.text_until(FOOTER_BOX, lambda mask: has_label(mask) and
+                                 not same_text(mask, before) and
+                                 (like is None or same_text(mask, like)))
+        gone = not save_details_panel(self.gray())
+        self.shot(name, self.last_rgb)
+        self.check("A from observed Save Details opens Actions before navigation",
+                   opened is not None and gone)
+        return opened
 
     def memory_folder_open(self, name: str, like: np.ndarray | None = None) -> np.ndarray:
         """Y opens the selected save-folder cube's retained identity page."""
