@@ -1,3 +1,18 @@
+## 2026-11-02 — Prepare the validated RAM-first and Swiss integration for v2.6.0
+
+Combine the artwork/renderer work, ten-commit Swiss intake, return loader
+initialization fix and emulator/CI observations in one release unit. Carry
+released main ancestry forward while preserving the validated combined tree;
+the new preparation changes release documentation only. Keep the pinned SDK,
+local-clock model and opt-in Sync Clock behavior documented by the intake.
+
+Record native automated coverage separately from the remaining attended
+picture/controller, actual clock/settings persistence, game/A+Z+Start, Web
+return and installed/cold-boot checks. The maintainer approved publication
+with those coverage limits visible. The final release source and package need
+their own required checks, fuzz result and source/provenance binding before
+promotion and publication. Optional MemCard PRO GC coverage remains pending.
+
 ## 2026-11-01 — Re-evaluate the combined candidate with executable post-CI fuzzing
 
 Integrate the isolated CI scheduling correction into the RAM-first/ten-Swiss/

@@ -4,20 +4,7 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
-## Unreleased
-
-- Review Swiss through `d9159b0`: Time Zone accepts bundled location names,
-  Swiss clock-setting aliases import into the existing opt-in Sync Clock,
-  environment updates and launch snapshots use the upstream lock, and downloads
-  include lwIP's licence. Time Zone observes IANA 2026f's temporary Havana rule.
-  Preserve the pinned SDK and local-clock behavior;
-  periodic SNTP and automatic RTC rewriting remain deferred.
-
-
-
-- Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
-- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
-- Reduce Jewel Case mesh memory by sharing identical position and normal data while preserving the geometry and glints.
+## v2.6.0 — Jewel Case memory savings and Swiss updates
 
 ### New
 
@@ -41,6 +28,19 @@ tag on `beta`. The newest changes are at the top until their release is named.
   Card loading and save scanning are unchanged.
 
 ### Improved
+
+- Review Swiss through `d9159b0`: Time Zone accepts bundled location names,
+  Swiss clock-setting aliases import into the existing opt-in Sync Clock,
+  environment updates and launch snapshots use the upstream lock, and downloads
+  include lwIP's licence. Time Zone observes IANA 2026f's temporary Havana rule.
+  Preserve the pinned SDK and local-clock behavior;
+  periodic SNTP and automatic RTC rewriting remain deferred.
+
+
+
+- Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
+- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
+- Reduce Jewel Case mesh memory by sharing identical position and normal data while preserving the geometry and glints.
 
 - Jewel Case shares exact repeated colors between its lighting tables,
   reducing retained RAM while preserving reflections and interpolation.
@@ -95,6 +95,19 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Jewel Case's sway stays continuous through long sessions. UI Motion Off
   stops the disc immediately and follows the C-stick without coasting;
   Z keeps its gradual spin stop when motion is enabled.
+
+### Validation coverage
+
+- Automated checks cover all eleven emulator routes, thirteen parser-fuzz targets,
+  and native GameCube SD2SP2 menu browsing at NTSC 480p. Matched renderer tests
+  retained about 274 KiB less Jewel heap and reduced first preparation from
+  about 2.91 seconds to 0.185 seconds; 24 native image pairs were byte-identical.
+  The captured workloads contained 14,606 frames with no frame period above
+  25 ms. These measurements describe renderer allocation and preparation.
+- Attended picture/controller assessment, actual opt-in clock sync and saved
+  preference persistence, real game/A+Z+Start return, Web return and installed
+  cold-boot qualification remain pending for this release.
+- MemCard PRO GC qualification remains pending.
 
 ## v2.5.0 — Manuals, disc art and a connected cube
 
