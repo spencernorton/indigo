@@ -1,3 +1,18 @@
+## 2026-11-02 — Settle the initial root reference before using it
+
+Review of the prepared root-selection guard finds the same reference hazard
+as Home: the first visible path need not mean the device name has finished
+fading. Two new regressions reject its prototype: repeated fading frames at
+a frozen console clock must not establish a reference, and a steady full name
+after progress must replace the arriving mask.
+
+Anchor both initial context masks across three observations and 0.3 emulated
+seconds before recording the boot's reference. The full root guard now has
+11 focused cases; all 95 executed tests of the 98-test suite pass with three
+existing skips, plus source checks. Existing word thresholds remain unchanged.
+This is prepared controller-test code, pending end-to-end qualification; the
+current separate observer run is allowed to finish before integration.
+
 ## 2026-11-02 — Observe the root selection before entering games
 
 A single missed UP in the former four-UP root walk reproduces the retained

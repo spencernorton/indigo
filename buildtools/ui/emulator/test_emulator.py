@@ -881,6 +881,51 @@ class FileRootSelection(unittest.TestCase):
         for frame in (changed, self.frame("files-screen-right.png"), self.frame("files-screen-z.png")):
             self.assertIsNone(self.position([(frame, t) for t in (1.0, 1.1, 1.3)]))
 
+    def remember(self, samples):
+        route = run.Route.__new__(run.Route)
+        route.menu_wide, route.files_root_reference = False, None
+        state = {"clock": samples[0][1], "calls": 0}
+        stream = iter(samples)
+
+        class Frames:
+            def frame(self):
+                frame, state["clock"] = next(stream)
+                return frame
+
+            def emulated(self):
+                return state["clock"]
+
+        class Budget:
+            def __init__(self, *args):
+                pass
+
+            def expired(self):
+                state["calls"] += 1
+                return state["calls"] > len(samples)
+
+        def check(name, passed, **detail):
+            if not passed:
+                raise run.Failed(name)
+
+        route.emulator, route.check = Frames(), check
+        with mock.patch.object(run, "Deadline", Budget), mock.patch.object(run.time, "sleep"):
+            route.remember_files_root()
+        return route.files_root_reference
+
+    def test_initial_root_reference_waits_out_a_fading_device_name(self):
+        full = self.frame()
+        arriving = full.copy()
+        x0, y0, x1, y1 = run.FILES_NAME_BOXES[0]
+        arriving[y0:y1, x0:x1] = (arriving[y0:y1, x0:x1] * .7).astype(np.uint8)
+        self.assertFalse(run.same_text(run.files_root_context(arriving)[1],
+                                       run.files_root_context(full)[1]))
+        reference = self.remember([(arriving, 0.0)] * 4 + [(full, t) for t in (.1, .2, .3, .4, .5)])
+        self.assertTrue(np.array_equal(reference[1], run.files_root_context(full)[1]))
+
+    def test_a_frozen_initial_root_never_establishes_a_reference(self):
+        with self.assertRaises(run.Failed):
+            self.remember([(self.frame(), 1.0)] * 5)
+
     def walking(self, *, miss=0, every_miss=False, double_first=False, drift=False, count=8, start=6):
         route = run.Route.__new__(run.Route)
         root = self.ROOT[:count] + (["extra.txt"] if count == 9 else [])

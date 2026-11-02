@@ -437,3 +437,7 @@ The missed-UP regression reproduces the former wrong gcbrowser/parent walk.
 The median-fill detector reads untouched normal/wide/themed captures; the
 themed capture selects row two while the other two select row three. This
 guard changes the test controller route, with production code unchanged.
+
+The initial root reference itself also waits for three matching path/device
+observations across 0.3 emulated seconds, so an early fading device name or
+repeated cached frame cannot become its baseline.

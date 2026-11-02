@@ -2435,12 +2435,33 @@ class Route:
         self.steps(" ".join(["DOWN" if rows > 0 else "UP"] * abs(rows)), 0.4)
 
     def remember_files_root(self) -> None:
-        """The fixture's initial root path and device, refreshed on each boot."""
-        path = self.files_path()
-        device = files_root_context(self.last_rgb, self.menu_wide)[1]
-        self.check("File Browser's initial root context is visible",
-                   path is not None and device.any())
-        self.files_root_reference = (path, device)
+        """A settled initial path/device reference, refreshed on each boot.
+
+        A path appearing first does not prove its device name has finished
+        fading. Anchor both masks across actual console progress, as at Home.
+        """
+        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        reference, steady, since = None, 0, None
+        while not deadline.expired():
+            rgb = self.emulator.frame()
+            self.last_rgb = rgb
+            context = files_root_context(rgb, self.menu_wide)
+            clock = self.emulator.emulated()
+            visible = files_screen(rgb, self.menu_wide) and active_pane(rgb, self.menu_wide) == 0 and \
+                all(mask.any() for mask in context)
+            if visible and reference is not None and \
+                    all(overlap(now, before) >= .95 for now, before in zip(context, reference)):
+                steady += 1
+                if since is None:
+                    since = clock
+            else:
+                reference, steady, since = context if visible else None, 0, clock
+            progressed = clock is None or (since is not None and clock - since >= HOME_STEADY_SECONDS)
+            if visible and steady >= 2 and progressed:
+                self.files_root_reference = context
+                return
+            time.sleep(0.15)
+        self.check("File Browser's initial root context settles before navigation", False)
 
     def files_root_position(self, count: int) -> int | None:
         """A steady highlighted row in the same boot's unchanged root/device.
