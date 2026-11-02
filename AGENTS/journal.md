@@ -1,3 +1,20 @@
+## 2026-11-01 — Run post-CI fuzzing when a manual run skips the branch check
+
+Two exact-source workflow-dispatch attempts finish all build, host and eleven
+emulator routes, but skip Fuzz without assigning a runner or starting a step.
+A job-only rerun retains the completed checks and repeats the scheduling skip.
+The dependency chain includes the intentionally skipped PR-only Target branch;
+Fuzz's implicit success() inherits that skip even though CI passed succeeds.
+
+Give Fuzz an explicit status condition: no cancellation and CI passed success.
+The fuzzer command, targets, durations, sanitizers and failure handling stay
+unchanged. Workflow checks now reject a missing guard, unconditional execution,
+failed/skipped/cancelled aggregate states and a dependency that bypasses the
+aggregate. Eleven regressions include the real workflow with its guard removed.
+Local checks are not an end-to-end scheduling result; require a real manual run
+with a completed source-bound Fuzz log before qualification. Product sources
+and resources do not change.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next

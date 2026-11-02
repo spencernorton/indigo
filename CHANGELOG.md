@@ -50,6 +50,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Manual and weekly CI runs start parser fuzzing after successful checks even
+  when the pull-request-only branch check is skipped, while honoring cancellation.
+
 - The emulator's folder checks observe Settings tab and section transitions
   before changing a layout, recovering from a missed press with a recorded,
   bounded retry and stopping when navigation does not respond.
