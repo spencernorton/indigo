@@ -812,6 +812,167 @@ class SaveActionTransitions(unittest.TestCase):
         self.assertIsNone(state["confirmed"])
 
 
+class FileRootSelection(unittest.TestCase):
+    ROOT = ["..", "apps/", "games/", "gcbrowser/", "b-two.txt", "boot.iso",
+            "Indigo-README.txt", "ipl.dol"]
+
+    def frame(self, name="files-screen.png"):
+        from PIL import Image
+        return np.asarray(Image.open(Path(__file__).parent / "fixtures" / name).convert("RGB"))
+
+    def test_focus_fill_in_captured_shapes_and_palette(self):
+        for name, wide, count, focused in (("files-screen.png", False, 8, 3),
+                                           ("files-screen-wide.png", True, 8, 3),
+                                           ("files-screen-themed.png", False, 6, 2)):
+            self.assertEqual(run.files_focus_row(self.frame(name), count, wide), focused, name)
+        plain = np.full((run.HEIGHT, run.WIDTH, 3), 70, np.uint8)
+        self.assertIsNone(run.files_focus_row(plain, 8))
+        self.assertIsNone(run.files_focus_row(self.frame(), 9), "scrolling roots are unsupported")
+        self.assertIsNone(run.files_focus_row(self.frame(), 3), "the fill is outside those rows")
+
+    def test_root_context_retains_the_wide_device_name(self):
+        for wide in (False, True):
+            path, device = run.files_root_context(self.frame("files-screen-wide.png" if wide else
+                                                          "files-screen.png"), wide)
+            self.assertTrue(path.any())
+            self.assertTrue(device.any())
+
+    def position(self, samples, wide=False):
+        reference = self.frame("files-screen-wide.png" if wide else "files-screen.png")
+        route = run.Route.__new__(run.Route)
+        route.menu_wide = wide
+        route.files_root_reference = run.files_root_context(reference, wide)
+        state = {"clock": samples[0][1], "calls": 0}
+        stream = iter(samples)
+
+        class Clock:
+            def frame(self):
+                rgb, state["clock"] = next(stream)
+                return rgb
+
+            def emulated(self):
+                return state["clock"]
+
+        class Budget:
+            def __init__(self, *args):
+                pass
+
+            def expired(self):
+                state["calls"] += 1
+                return state["calls"] > len(samples)
+
+        route.emulator = Clock()
+        with mock.patch.object(run, "Deadline", Budget), mock.patch.object(run.time, "sleep"):
+            return route.files_root_position(8)
+
+    def test_root_focus_requires_emulated_progress(self):
+        frame = self.frame()
+        self.assertIsNone(self.position([(frame, 1.0)] * 5))
+        self.assertEqual(self.position([(frame, t) for t in (1.0, 1.1, 1.3)]), 3)
+        self.assertEqual(self.position([(frame, None)] * 3), 3)
+        self.assertEqual(self.position([(frame, t) for t in (None, 1.0, 1.1, 1.3)]), 3)
+        wide = self.frame("files-screen-wide.png")
+        self.assertEqual(self.position([(wide, t) for t in (1.0, 1.1, 1.3)], wide=True), 3)
+
+    def test_root_focus_rejects_changed_path_another_pane_and_popup(self):
+        changed = self.frame().copy()
+        x0, y0, x1, y1 = run.FILES_PATH_BOX
+        changed[y0:y1, x0:x1] = 0
+        for frame in (changed, self.frame("files-screen-right.png"), self.frame("files-screen-z.png")):
+            self.assertIsNone(self.position([(frame, t) for t in (1.0, 1.1, 1.3)]))
+
+    def walking(self, *, miss=0, every_miss=False, double_first=False, drift=False, count=8, start=6):
+        route = run.Route.__new__(run.Route)
+        root = self.ROOT[:count] + (["extra.txt"] if count == 9 else [])
+        games = [".."] + [f"demo-{n}.iso" for n in range(9)] + [run.card.game_file(*run.card.PROBE_GAME)]
+        state = {"folder": "", "row": start, "miss": miss, "presses": [], "entered": [], "moves": 0}
+        route.last_rgb = self.frame()
+        route.pressed_again = []
+        route.pause = lambda *args, **kwargs: None
+        route.shot = lambda name, frame: frame
+        route.emulator = type("Frames", (), {"frame": lambda self: route.last_rgb})()
+
+        def listing(image, folder=""):
+            return root if not folder else games
+
+        def press(button):
+            state["presses"].append(button)
+            names = root if not state["folder"] else (["..", "cacert.pem"] if
+                    state["folder"] == "gcbrowser" else games)
+            if button in ("UP", "DOWN"):
+                state["moves"] += 1
+                if every_miss or state["miss"]:
+                    state["miss"] = max(0, state["miss"] - 1)
+                    return
+                delta = -1 if button == "UP" else 1
+                if double_first and state["moves"] == 1:
+                    delta *= 2
+                state["row"] = (state["row"] + delta) % len(names)
+            elif button == "A":
+                selected = names[state["row"]]
+                if not state["folder"]:
+                    state["entered"].append(selected)
+                    state["folder"], state["row"] = selected.rstrip("/"), 1
+                elif selected == "..":
+                    state["row"] = root.index(state["folder"] + "/")
+                    state["folder"] = ""
+                else:
+                    state["folder"] = "details"
+
+        def check(name, passed, **detail):
+            if not passed:
+                raise run.Failed(name)
+
+        route.press, route.check = press, check
+        route.files_root_position = lambda count: None if drift and state["moves"] else state["row"]
+        root_path, inside = np.zeros((16, 180), bool), np.ones((16, 180), bool)
+        root_path[8, 3] = True
+        route.files_path = lambda **kwargs: root_path if not state["folder"] else inside
+        return route, state, listing
+
+    def test_missed_up_reproduces_wrong_folder_but_observed_entry_reaches_the_game(self):
+        old, before, listing = self.walking(miss=1)
+        old.files_select_root = lambda image, target: old.files_goto(image, "Indigo-README.txt", target)
+        with mock.patch.object(run.card, "listing", listing):
+            old.files_game(Path("fixture.img"), "Indigo-README.txt")
+        old.press("A")
+        self.assertEqual((before["folder"], before["row"]), ("", 3),
+                         "old blind input reproduces root/gcbrowser after entering the wrong directory")
+        route, after, listing = self.walking(miss=1)
+        with mock.patch.object(run.card, "listing", listing):
+            route.files_game(Path("fixture.img"), "Indigo-README.txt")
+        self.assertEqual(after["entered"], ["games/"])
+        self.assertEqual((after["folder"], after["row"]), ("games", 10))
+        self.assertEqual(route.pressed_again, ["UP"])
+
+    def test_double_step_is_corrected_from_the_observed_row(self):
+        route, state, listing = self.walking(double_first=True, start=3)
+        with mock.patch.object(run.card, "listing", listing):
+            route.files_game(Path("fixture.img"), "Indigo-README.txt")
+        self.assertEqual(state["entered"], ["games/"])
+        self.assertEqual((state["folder"], state["row"]), ("games", 10))
+        self.assertEqual(state["presses"][:2], ["UP", "DOWN"], "an observed overshoot is corrected")
+
+    def test_persistent_misses_stop_before_any_directory_is_opened(self):
+        route, state, listing = self.walking(every_miss=True)
+        with mock.patch.object(run.card, "listing", listing), self.assertRaises(run.Failed):
+            route.files_game(Path("fixture.img"), "Indigo-README.txt")
+        self.assertNotIn("A", state["presses"])
+        self.assertLessEqual(len(state["presses"]), len(self.ROOT) + run.PRESSES)
+
+    def test_context_change_stops_correction_without_opening_a_directory(self):
+        route, state, listing = self.walking(drift=True)
+        with mock.patch.object(run.card, "listing", listing), self.assertRaises(run.Failed):
+            route.files_game(Path("fixture.img"), "Indigo-README.txt")
+        self.assertEqual(state["presses"], ["UP"])
+
+    def test_a_scrolling_root_fails_before_input(self):
+        route, state, listing = self.walking(count=9)
+        with mock.patch.object(run.card, "listing", listing), self.assertRaises(run.Failed):
+            route.files_game(Path("fixture.img"), "Indigo-README.txt")
+        self.assertEqual(state["presses"], [])
+
+
 class Pad(unittest.TestCase):
     def test_wire_format(self):
         info = bytearray(dsu_pad.port_info(1, 0, True))

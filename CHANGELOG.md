@@ -50,6 +50,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Dolphin file-game entry observes the root selection and bounds arrow
+  corrections before opening games, rejecting changed or ambiguous context.
+
 - Dolphin file-game navigation retains the expected rows and actual directory/
   selection captures for diagnosing a failed transition.
 

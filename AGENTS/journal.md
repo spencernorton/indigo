@@ -1,3 +1,27 @@
+## 2026-11-02 — Observe the root selection before entering games
+
+A single missed UP in the former four-UP root walk reproduces the retained
+wrong-folder capture: gcbrowser opens, nine DOWNs select its parent, and A
+returns to root on gcbrowser. The exact original input loss is not measured;
+the exposed fault class is proceeding without observing the selected row.
+
+For the demonstration root that fits on screen, read its active highlight,
+require the same boot's root path/device, and correct arrows from the observed
+position within a fixed bound. Three matching observations span emulated time;
+frozen captures, another pane, a popup or changed context cannot authorize
+input. A root needing scrolling fails closed. Only the verified games row
+returns to its caller that sends A. Refresh the root reference on each boot.
+Wide context uses the whole authored stage so its device name stays visible.
+
+Nine focused cases cover actual captured shapes/palette, clock progress,
+missed/double inputs, context loss and bounded failure before A. The old blind
+sequence reproduces the final root/gcbrowser state, while the observed route
+reaches the probe. All 93 executed tests of the 96-test suite pass, with three
+existing skips; source checks pass. An initial test incorrectly expected the
+same row in the themed fixture; its actual highlighted row is two, confirmed
+from the untouched capture. No detector or word threshold was relaxed.
+Production code is unchanged. This follow-up still requires end-to-end CI.
+
 ## 2026-11-02 — Retain file-game navigation evidence
 
 The separate file-route failure ends at root with gcbrowser selected after a

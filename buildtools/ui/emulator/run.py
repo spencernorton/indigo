@@ -479,6 +479,30 @@ def active_pane(rgb: np.ndarray, wide: bool = False) -> int:
     return 0 if left > right else 1
 
 
+def files_focus_row(rgb: np.ndarray, count: int, wide: bool = False) -> int | None:
+    """The active left pane's fill, for a root fitting all eight visible rows.
+
+    Median row interiors exclude names, icons and outlines. An ambiguous or
+    absent fill is no selection; the caller separately checks page/context.
+    """
+    if not 2 <= count <= 8:
+        return None
+    frame, at = files_stage(rgb, wide)
+    left, right = files_pane_x(0, wide)
+    fill = [float(np.median(frame[118 + 28 * n:136 + 28 * n,
+                                 left + 12 + at:right - 12 + at].max(axis=2)))
+            for n in range(count)]
+    ranked = sorted(fill)
+    return int(np.argmax(fill)) if ranked[-1] - ranked[-2] >= 24 else None
+
+
+def files_root_context(rgb: np.ndarray, wide: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    """Path and device, retaining the left pane outside the wide stage's center."""
+    frame, at = files_stage(rgb, wide)
+    left = files_pane_x(0, wide)[0] + at
+    return files_text(rgb, wide), text_mask(frame.max(axis=2), (left, 62, left + 88, 88))
+
+
 class PresentedFrames:
     """Consume Dolphin's sequential PNG dumps, keeping bounded evidence.
 
@@ -1188,6 +1212,7 @@ class Route:
         self.checks: list[dict[str, object]] = []
         self.shots: list[tuple[str, Path]] = []
         self.pad = emulator.pad
+        self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -2409,6 +2434,78 @@ class Route:
               "folder": folder, "rows": rows, "listing": names}), flush=True)
         self.steps(" ".join(["DOWN" if rows > 0 else "UP"] * abs(rows)), 0.4)
 
+    def remember_files_root(self) -> None:
+        """The fixture's initial root path and device, refreshed on each boot."""
+        path = self.files_path()
+        device = files_root_context(self.last_rgb, self.menu_wide)[1]
+        self.check("File Browser's initial root context is visible",
+                   path is not None and device.any())
+        self.files_root_reference = (path, device)
+
+    def files_root_position(self, count: int) -> int | None:
+        """A steady highlighted row in the same boot's unchanged root/device.
+
+        Repeated host captures without console progress do not settle a moving
+        fill. Another pane, path, device or popup forbids corrective input.
+        """
+        reference = self.files_root_reference
+        if reference is None:
+            return None
+        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        previous, steady, since = None, 0, None
+        while not deadline.expired():
+            rgb = self.emulator.frame()
+            self.last_rgb = rgb
+            context = files_root_context(rgb, self.menu_wide)
+            if not files_screen(rgb, self.menu_wide) or active_pane(rgb, self.menu_wide) != 0 or \
+                    files_box(rgb, 0, self.menu_wide) or message_up(rgb, self.menu_wide) or \
+                    any(not same_text(now, before) for now, before in zip(context, reference)):
+                return None
+            position = files_focus_row(rgb, count, self.menu_wide)
+            clock = self.emulator.emulated()
+            if position is not None and position == previous:
+                steady += 1
+                if since is None:
+                    since = clock
+            else:
+                previous, steady, since = position, 0, clock
+            progressed = clock is None or (since is not None and clock - since >= 0.2)
+            if position is not None and steady >= 2 and progressed:
+                return position
+            time.sleep(0.15)
+        return None
+
+    def files_select_root(self, image: Path, target: str) -> None:
+        """Correct arrows from observed rows, then permit directory entry.
+
+        This fixture's root fits on screen. Scrolling roots fail closed rather
+        than assigning a visible slot to an unknown absolute row. No A is sent
+        here; only a verified target returns to the caller that opens it.
+        """
+        names = card.listing(image)
+        self.check("game entry uses a fully visible fixture root",
+                   2 <= len(names) <= 8 and target in names)
+        wanted = names.index(target)
+        limit = len(names) + PRESSES
+        previous, button = None, None
+        for step in range(limit + 1):
+            position = self.files_root_position(len(names))
+            self.check("game entry observes the unchanged root and selection", position is not None)
+            print("FILES observed root " + json.dumps({"row": position, "target_row": wanted,
+                  "target": target, "listing": names}), flush=True)
+            if position == wanted:
+                self.shot("files-root-target", self.last_rgb)
+                return
+            if step == limit:
+                break
+            if position == previous and button is not None:
+                self.pressed_again.append(button)
+            previous = position
+            button = "DOWN" if position < wanted else "UP"
+            self.press(button)
+            self.pause(0.4)
+        self.check("game entry reaches its observed target before opening", False)
+
     def files_said(self, what: str, failed: bool = False) -> np.ndarray | None:
         """The maroon message comes, says an operation ended, and goes by
         itself (2 s); a failure's stays until A. Its words, as a mask."""
@@ -2479,6 +2576,7 @@ class Route:
         self.check("System shows its File Browser row before opening it", system is not None)
         self.press("A")
         self.check("File Browser opens on the GC Loader", self.files_list(True, pane=0))
+        self.remember_files_root()
         before = self.files_path(right=True, box=FILES_NAME_BOXES[1])
         self.press("R")
         self.files_storage_menu(1, True)
@@ -2696,6 +2794,7 @@ class Route:
         self.steps("DOWN DOWN")
         self.press("A")
         self.check("File Browser opens on the GC Loader again", self.files_list(True, pane=0))
+        self.remember_files_root()
         self.press("R")
         self.files_storage_menu(1, True)
         self.steps("DOWN A")
@@ -2720,7 +2819,9 @@ class Route:
                    game: tuple[str, str] = card.PROBE_GAME) -> np.ndarray | None:
         """A on games/ opens it in the left pane, and DOWN goes to a game,
         the probe's by default. The path line at the top, as a mask."""
-        self.files_goto(image, focus, "games/")
+        print("FILES game entry " + json.dumps({"previous_hint": focus,
+              "target": "games/"}), flush=True)
+        self.files_select_root(image, "games/")
         top = self.files_path()
         self.shot("files-games-before-open", self.last_rgb)
         self.press("A")
