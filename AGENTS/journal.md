@@ -1,3 +1,29 @@
+## 2026-11-01 — Re-evaluate the combined candidate with executable post-CI fuzzing
+
+Integrate the isolated CI scheduling correction into the RAM-first/ten-Swiss/
+return-decoder candidate and qualified menu observers. Product and generated
+files remain unchanged. The preceding evaluation's eleven reports/1,476 checks
+pass, but both attempts skip Fuzz without executing it. This new source needs
+its own complete build, package, emulator and real separate Fuzz evidence.
+No source-bound result is carried forward as a new execution.
+
+## 2026-11-01 — Run post-CI fuzzing when a manual run skips the branch check
+
+Two exact-source workflow-dispatch attempts finish all build, host and eleven
+emulator routes, but skip Fuzz without assigning a runner or starting a step.
+A job-only rerun retains the completed checks and repeats the scheduling skip.
+The dependency chain includes the intentionally skipped PR-only Target branch;
+Fuzz's implicit success() inherits that skip even though CI passed succeeds.
+
+Give Fuzz an explicit status condition: no cancellation and CI passed success.
+The fuzzer command, targets, durations, sanitizers and failure handling stay
+unchanged. Workflow checks now reject a missing guard, unconditional execution,
+failed/skipped/cancelled aggregate states and a dependency that bypasses the
+aggregate. Eleven regressions include the real workflow with its guard removed.
+Local checks are not an end-to-end scheduling result; require a real manual run
+with a completed source-bound Fuzz log before qualification. Product sources
+and resources do not change.
+
 ## 2026-11-01 — Combine the qualified emulator observers with the RAM-first evaluation
 
 Bring the qualified Home, Memory Cards and observed file-root controller tests

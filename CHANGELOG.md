@@ -72,6 +72,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Manual and weekly CI runs start parser fuzzing after successful checks even
+  when the pull-request-only branch check is skipped, while honoring cancellation.
+
 - Keep the In-Game Reset return loader's decoder mode consistent, including
   its short-buffer failure path.
 

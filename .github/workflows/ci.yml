@@ -311,6 +311,9 @@ jobs:
     # same runners.
     name: Fuzz
     needs: passed
+    # A manual/weekly run skips Target branch. Override the implicit success()
+    # check for that ancestor, but still require CI passed and no cancellation.
+    if: ${{ !cancelled() && needs.passed.result == 'success' }}
     runs-on: [self-hosted, indigo-build]
     timeout-minutes: 60
     steps:
