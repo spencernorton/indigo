@@ -50,14 +50,16 @@ static bool discsPackFileOwned, discsPackAttempted, discsReady;
 static bool descriptionsAttempted, postersReady, stillsReady, noPosters, noStills;
 static file_handle posterPackFile, stillsPackFile, discsPackFile;
 static unsigned posterOpens, stillOpens, discOpens, closes, stillRequests, discRequests;
-static unsigned fullPosterReads, posterSteps, stillSteps, discSteps;
+static unsigned fullPosterReads, visiblePolls;
+static u32 gameflowArtworkLayout;
+static bool pollStills, pollDiscs;
 static unsigned manualForgets;
 static bool manualReady;
 static void Manual_Forget(void) { manualReady=false;manualForgets++; }
 static bool UIAssets_Poll(void) {fullPosterReads++;return true;}
-static bool UIAssets_PollStep(void) {posterSteps++;return true;}
-static bool UIStills_PollStep(void) {stillSteps++;return true;}
-static bool UIDiscs_PollStep(void) {discSteps++;return true;}
+static bool UIAssets_PollVisible(bool stills, bool discs) {
+    visiblePolls++;pollStills=stills;pollDiscs=discs;return true;
+}
 static bool UIDiscs_Ready(void) { return discsReady; }
 static void UIDiscs_CancelForDeviceChange(void) { discsReady = false; }
 static int UIDiscs_Init(const uiAssetsSource_t *s, const uiAssetsSync_t *l) {
@@ -111,27 +113,35 @@ int main(void) {
     DrawGameflowCancelPosters();
     assert(!manualReady && manualForgets==1 && closes==0);
     assert(DrawGameflowPrimePoster());
-    assert(fullPosterReads==1 && posterSteps==0 && stillSteps==0);
+    assert(fullPosterReads==1 && visiblePolls==0);
     assert(DrawGameflowPollPosters());
-    assert(fullPosterReads==1 && posterSteps==1 && stillSteps==1 && discSteps==1);
+    assert(fullPosterReads==1 && visiblePolls==1 && !pollStills && !pollDiscs);
     for(int layout=0;layout<3;layout++) {
         snapshot.layout=layout;
         DrawGameflowRequestPosters(&a,&snapshot);
+        DrawGameflowPollPosters();
+        assert(!pollStills && !pollDiscs);
     }
     assert(posterOpens==1 && stillOpens==0 && !stillsReady && discOpens==0);
     snapshot.layout=UI_GAMEFLOW_LAYOUT_SPOTLIGHT;
     DrawGameflowRequestPosters(&a,&snapshot);
     DrawGameflowRequestPosters(&a,&snapshot);
     assert(stillOpens==1 && stillRequests==2 && stillsReady && discOpens==0);
+    DrawGameflowPollPosters();
+    assert(pollStills && !pollDiscs);
     /* Discs: only the Jewel Case opens them, once per device. */
     snapshot.layout=UI_GAMEFLOW_LAYOUT_JEWEL_CASE;
     DrawGameflowRequestPosters(&a,&snapshot);
     DrawGameflowRequestPosters(&a,&snapshot);
     assert(discOpens==1 && discRequests==2 && discsReady && stillRequests==2);
+    DrawGameflowPollPosters();
+    assert(!pollStills && pollDiscs);
     snapshot.layout=0;
     manualReady=true;
     DrawGameflowRequestPosters(&b,&snapshot);
     assert(!manualReady);
+    DrawGameflowPollPosters();
+    assert(!pollStills && !pollDiscs);
     assert(posterOpens==2 && stillOpens==1 && !stillsReady && !discsReady && closes==3);
     snapshot.layout=UI_GAMEFLOW_LAYOUT_SPOTLIGHT;
     noStills=true;

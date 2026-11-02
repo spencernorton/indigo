@@ -293,6 +293,7 @@ static void wiiload_handler(int sd, wiiload_read_function_t read, const char *me
 	bool restartMenuAudio = false;
 	bool resetOnLoadFailure = false;
 	if (buffer) {
+		DrawGameflowBlockPosters();
 		DrawWithVideoLocked(wiiload_suspend_main, NULL);
 		suspended = true;
 		setenv("WIILOAD", host, 1);
@@ -323,7 +324,10 @@ static void wiiload_handler(int sd, wiiload_read_function_t read, const char *me
 	// A valid image never returns. Resume only after a rejected upload.
 	if (restartMenuAudio) menuaudio_init();
 
-	if (suspended) LWP_ResumeThread(main_thread);
+	if (suspended) {
+		DrawGameflowUnblockPosters();
+		LWP_ResumeThread(main_thread);
+	}
 	LWP_SetThreadPriority(LWP_THREAD_NULL, priority);
 	LWP_MutexUnlock(upload_mutex);
 }

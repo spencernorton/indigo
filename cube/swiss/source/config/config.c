@@ -1,4 +1,5 @@
 #include <argz.h>
+#include <envlock.h>
 #include <langinfo.h>
 #include <stdcountof.h>
 #include <stdio.h>
@@ -580,6 +581,7 @@ int config_update_global(bool checkConfigDevice) {
 	fprintf(fp, "Spin Discs=%s\r\n", swissSettings.stillDiscs ? "No":"Yes");
 	fprintf(fp, "Library Folders=%s\r\n", swissSettings.libraryFolders ? "Yes":"No");
 	fprintf(fp, "Hide Saves on Details=%s\r\n", swissSettings.hideDetailSaves ? "Yes":"No");
+	fprintf(fp, "Always Show Saves on Details=%s\r\n", swissSettings.alwaysShowDetailSaves ? "Yes":"No");
 	fprintf(fp, "Idle Animation=%s\r\n", swissSettings.idleAnimation ? "Sway":"Calm");
 	fprintf(fp, "Hide Waves=%s\r\n", swissSettings.hideWaves ? "Yes":"No");
 	fprintf(fp, "Hide On-screen Controls=%s\r\n", swissSettings.hideHomeControls ? "Yes":"No");
@@ -1642,6 +1644,9 @@ void config_parse_global(char *configData, bool settingsFile) {
 				else if(!strcmp("Hide Saves on Details", name)) {
 					swissSettings.hideDetailSaves = !strcmp("Yes", value);
 				}
+				else if(!strcmp("Always Show Saves on Details", name)) {
+					swissSettings.alwaysShowDetailSaves = !strcmp("Yes", value);
+				}
 				else if(!strcmp("Idle Animation", name)) {
 					swissSettings.idleAnimation = !strcmp("Sway", value);
 				}
@@ -1835,10 +1840,10 @@ void config_parse_global(char *configData, bool settingsFile) {
 				else if(!strcmp("NTPSync", name)) {
 					swissSettings.ntpSync = !strcmp("Yes", value);
 				}
-				else if(!strcmp("NTPHostIP", name)) {
+				else if(!strcmp("NTPHostIP", name) || !strcmp("SNTPHostIP", name)) {
 					strlcpy(swissSettings.ntpHostIp, value, sizeof(swissSettings.ntpHostIp));
 				}
-				else if(!strcmp("TimeZone", name)) {
+				else if(!strcmp("TimeZone", name) || !strcmp("System Time Zone", name)) {
 					strlcpy(swissSettings.timeZone, value, sizeof(swissSettings.timeZone));
 				}
 				else if(!strcmp("LabServer", name)) {
@@ -2245,6 +2250,7 @@ void config_init_environ() {
 }
 
 void config_update_environ() {
+	__env_lock(NULL);
 	setenv("AVE", aveCompatStr[swissSettings.aveCompat], 1);
 	sprintf(txtbuffer, "LANG=%s.%s", sramLanguageEnvStr[swissSettings.sramLanguage], nl_langinfo(CODESET));
 	putenv(txtbuffer);
@@ -2268,6 +2274,7 @@ void config_update_environ() {
 	
 	__PADDisableRecalibration(swissSettings.disableRecalibration);
 	__PADDisableRumble(swissSettings.disableRumble);
+	__env_unlock(NULL);
 }
 
 SwissSettings backup;

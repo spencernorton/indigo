@@ -96,7 +96,7 @@ class Package(unittest.TestCase):
             here = Path(directory)
             # An empty games/ is refused too: a Mac's Replace would swap the card's games folder for it.
             for case in ({"extra": ".DS_Store"}, {"extra": "games/"}, {"extra": "games/demo.iso"}, {"drop": "swiss/ui/"},
-                         {"drop": "swiss/patches/apploader.img"}, {"ipl": dol(revisions=2)}):
+                         {"drop": "swiss/patches/apploader.img"}, {"drop": "swiss/indigo/LICENSE-lwip.txt"}, {"ipl": dol(revisions=2)}):
                 self.assertNotEqual(check_package.problems(self.build(here, **case), dol(), "v9.9.9"),
                                     [], case)
 
@@ -143,6 +143,18 @@ jobs:
       - indigo-emulator
     steps:
       - run: true
+  passed:
+    needs: [build, emulator]
+    if: always()
+    runs-on: [self-hosted, indigo-build]
+    steps:
+      - run: true
+  fuzz:
+    needs: passed
+    if: ${{{{ !cancelled() && needs.passed.result == 'success' }}}}
+    runs-on: [self-hosted, indigo-build]
+    steps:
+      - run: true
 """
 
 
@@ -165,6 +177,12 @@ class Workflows(unittest.TestCase):
 
     def test_our_runners_pinned_actions_and_the_runner_toolchain_pass(self):
         self.assertEqual(self.check(self.good()), [])
+
+    def test_fuzz_scheduling_guard_is_enforced_by_workflow_check(self):
+        guard = "    if: ${{ !cancelled() && needs.passed.result == 'success' }}\n"
+        bad = self.good().replace(guard, "", 1)
+        self.assertNotEqual(bad, self.good())
+        self.assertTrue(any("Fuzz" in problem for problem in self.check(bad)))
 
     def test_each_breach_is_caught(self):
         good = self.good()

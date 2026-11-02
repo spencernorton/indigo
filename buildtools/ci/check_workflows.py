@@ -52,6 +52,26 @@ def runs_on_values(lines: list[str]) -> list[tuple[int, set[str]]]:
     return found
 
 
+def fuzz_gate_problems(text: str) -> list[str]:
+    """The fuzz job must survive a skipped ancestor, after CI succeeds only."""
+    job = re.search(r"^  fuzz:\s*\n(.*?)(?=^  [\w-]+:|\Z)", text, re.M | re.S)
+    if not job:
+        return ["ci.yml: missing Fuzz job"]
+    fields = dict(re.findall(r"^    (needs|if):\s*(.*?)\s*$", job.group(1), re.M))
+    found = []
+    if fields.get("needs") not in {"passed", "[passed]"}:
+        found.append("ci.yml: Fuzz must wait for CI passed")
+    condition = fields.get("if", "")
+    if condition.startswith("${{") and condition.endswith("}}"):
+        condition = condition[3:-2]
+    terms = set(re.sub(r"\s+", "", condition).split("&&"))
+    required = {"!cancelled()", "needs.passed.result=='success'"}
+    if terms not in (required, required | {"always()"}):
+        found.append("ci.yml: Fuzz needs an explicit cancellation check and successful CI gate "
+                     "so a skipped ancestor does not suppress it")
+    return found
+
+
 def problems(root: Path) -> list[str]:
     found: list[str] = []
     dockerfile = (root / "buildtools/ci/runner/build.Dockerfile").read_text()
@@ -67,6 +87,8 @@ def problems(root: Path) -> list[str]:
         name = path.relative_to(root)
         text = path.read_text()
         lines = text.splitlines()
+        if path.name == "ci.yml":
+            found.extend(fuzz_gate_problems(text))
         for number, line in enumerate(lines, 1):
             code = line.split("#", 1)[0]
             key = re.match(r"^\s*([\w-]+):", code)

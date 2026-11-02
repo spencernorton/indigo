@@ -48,7 +48,6 @@ static int GetTextSizeInPixels(const char *text) {
     assert(!drawing);measures++;return (int)strlen(text)*24;
 }
 static void drawInit(void) {assert(!active);ready=true;}
-static void GX_InvalidateTexAll(void) {assert(!active && ready);}
 static void GX_LoadTexObj(const int *texture,int map) {
     assert(!active && ready && texture && map==GX_TEXMAP0);
 }

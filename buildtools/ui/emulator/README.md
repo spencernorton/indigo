@@ -128,6 +128,12 @@ games. Each dotted ancestor and the multiple dots in the final component
 are ordinary folder names. A sibling `Racing.v1.png` becomes the folder's
 poster; oversized and damaged sibling pictures remain absent.
 
+Before changing a layout, the route observes each Settings tab title, counts
+the focused rows into Setup's Library section, and checks the section title
+and return to Setup. A missed tab press can be retried only within the
+existing bounded input policy and is recorded in `pressed_again`; a tab
+control that never responds fails before any setting is changed.
+
 In each layout A on Return to parent, B and X return to the selected child
 folder at both nested levels. At `/games` all three return Home. Reopening
 after A on the root parent chooses the first actual folder, as Library
@@ -421,3 +427,17 @@ Dolphin; the launches and the SD card need the runner's.
   are damaged on purpose, a header-only dump and a table that counts more
   entries than it holds, because the Library must list both without
   crashing.
+
+The file-game entry guard uses the same boot's initial root path and device
+as its reference. The demonstration root fits all its rows on screen, so a
+steady highlight identifies an absolute row. Bounded arrow corrections use
+that observed position before A opens games; a changed page, device, path or
+popup, a frozen emulated clock or a scrolling root cannot authorize entry.
+The missed-UP regression reproduces the former wrong gcbrowser/parent walk.
+The median-fill detector reads untouched normal/wide/themed captures; the
+themed capture selects row two while the other two select row three. This
+guard changes the test controller route, with production code unchanged.
+
+The initial root reference itself also waits for three matching path/device
+observations across 0.3 emulated seconds, so an early fading device name or
+repeated cached frame cannot become its baseline.

@@ -72,6 +72,7 @@
 #include "gui/ui_motion.h"
 #include "gui/ui_stage.h"
 #include "gui/time_sync.h"
+#include "gui/ui_browser_launch.h"
 #include "devices/deviceHandler.h"
 #include "devices/filelock.h"
 #include "devices/filemeta.h"
@@ -3879,13 +3880,35 @@ static void launchWebBrowser(void)
 	curFile.lockCount = 0;
 	curFile.thread = LWP_THREAD_NULL;
 	free(entries);
-	/* With the console lab on, lab=1 starts the browser's own, on the same
-	 * port with the same requests: a test run goes on watching and driving,
-	 * and its /reset comes back to Indigo.
-	 * TODO: pass the current theme as argv once the browser reads it. */
-	char *labArgs[] = {NULL, "lab=1"};
+	/* Versioned named preferences cross the DOL boundary without sharing either
+	 * program's settings enums or persisting temporary overrides in the browser.
+	 * Indigo's clock is already local: localtime minus gmtime would be zero.
+	 * Prefer Sync Clock's applied offset, then an explicitly configured zone.
+	 * An unknown console offset leaves the browser's saved time preference. */
+	int32_t browserOffset = 0;
+	bool browserZoneKnown = time_sync_offset(&browserOffset) ||
+		UIBrowserLaunch_ZoneOffset(swissSettings.timeZone, (int64_t)time(NULL), &browserOffset);
+	const char *browserDevice = device == &__device_sd_a ? "sda" :
+		device == &__device_sd_b ? "sdb" : device == &__device_sd_c ? "sdc" :
+		device == &__device_gcloader ? "gcldr" : NULL;
+	GXRModeObj *browserMode = getVideoMode();
+	uiBrowserLaunchContext_t context = {
+		.color = swissSettings.uiColor,
+		.video = (browserMode->viTVMode & VI_NON_INTERLACE) && browserMode->efbHeight >= 480 ? 2 : 1,
+		.wide = swissSettings.menuWidescreen,
+		.animationsOff = swissSettings.disableUIAnimations,
+		.reduceMotion = swissSettings.reduceUIAnimations,
+		.soundsOff = swissSettings.disableMenuSFX,
+		.rumbleOff = swissSettings.disableRumble,
+		.timezoneMinutes = browserOffset / 60,
+		.timezoneKnown = browserZoneKnown,
+		.device = browserDevice,
+		.lab = swissSettings.labServer
+	};
+	uiBrowserLaunchArgs_t browserArgs;
+	UIBrowserLaunch_Arguments(&browserArgs, &context);
 	bootDolSkipRecent = true;
-	boot_dol(&curFile, swissSettings.labServer ? 2 : 0, labArgs);
+	boot_dol(&curFile, browserArgs.argc, browserArgs.argv);
 	bootDolSkipRecent = false;
 	/* It didn't start: close the DOL before its device goes. */
 	device->closeFile(&curFile);
@@ -5110,13 +5133,15 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 					analog != UI_MENU_INPUT_NONE) {
 				break;
 			}
-			VIDEO_WaitVSync();
-			/* Each pack and a non-thread-safe folder picture advance by
-			 * at most 16 KiB, then input gets another turn. Thread-safe
-			 * picture reads stay on their own worker. */
+			/* Wake the bounded pack reader, or take its synchronous fallback
+			 * range. A folder picture may advance by another bounded range.
+			 * Check input again as soon as the retrace wait ends. */
 			DrawGameflowPollPosters();
 			CardArt_Poll();
+			VIDEO_WaitVSync();
 		}
+		/* No artwork I/O may outlive the idle loop into an input action. */
+		DrawGameflowPausePosters();
 		/* Y on a game opens its settings through its Detail: never on the
 		 * parent card, and A wins a press of both. */
 		bool openSettings = !(browserButtons & BUTTON_A) &&
@@ -5354,7 +5379,7 @@ bool select_dest_dir(file_handle* initial, char* selection)
 		}
 		if((buttons & BUTTON_UP) || analog == UI_MENU_INPUT_UP){	idx = (--idx < 0) ? num_files-1 : idx;}
 		if((buttons & BUTTON_DOWN) || analog == UI_MENU_INPUT_DOWN) {idx = (idx + 1) % num_files;	}
-		if((buttons & PAD_BUTTON_A))	{
+		if((buttons & BUTTON_A))	{
 			//go into a folder or select a file
 			if(directory[idx]->fileType==IS_DIR) {
 				memcpy(&curDir, directory[idx], sizeof(file_handle));
@@ -7689,6 +7714,7 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 		}
 		context->savesWaiting = CardSlots_WaitingFor(context->gameId);
 		source.saveStats = &context->saveStats;
+		source.savesAlways = swissSettings.alwaysShowDetailSaves;
 		source.saveLine = gameflowSaveNewestLine();
 		source.savesWaiting = context->savesWaiting;
 		source.savesCardFailed = context->savesCardFailed;
@@ -7798,9 +7824,8 @@ static int gameflow_info_game(ConfigEntry *config,
 				if(analog == UI_MENU_INPUT_DOWN) buttons |= BUTTON_DOWN;
 				if(analog == UI_MENU_INPUT_LEFT) buttons |= BUTTON_LEFT;
 				if(analog == UI_MENU_INPUT_RIGHT) buttons |= BUTTON_RIGHT;
-				/* A poster still on its way (its slot was just let go, or
-				 * the pack only now opened) is read on an idle retrace, one
-				 * at most, as the Library does, and fades in when it lands. */
+				/* Wake the bounded pack reader only while waiting for input;
+				 * a completed, CRC-checked texture fades in when it lands. */
 				if(buttons == 0u) {
 					DrawGameflowPollPosters();
 					/* A card finished changing to this game's card, gave
@@ -7811,6 +7836,7 @@ static int gameflow_info_game(ConfigEntry *config,
 					}
 				}
 			} while(buttons == 0u);
+			DrawGameflowPausePosters();
 			/* Left and Right choose the save copy to start with, while there
 			 * is a choice: each copy, then the totals again (-1, the card as
 			 * it is), so a choice can always be undone. */

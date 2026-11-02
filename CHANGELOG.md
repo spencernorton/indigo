@@ -4,6 +4,111 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## v2.6.0 — Jewel Case memory savings and Swiss updates
+
+### New
+
+- Web opens Indigo Web with a smaller native interface, an IPL chrome font,
+  an Indigo return button and a controller menu. It follows Indigo's menu
+  colour, screen shape, video mode, motion, sounds, rumble and active time
+  zone without overwriting standalone browser preferences. Its data follows
+  the config card when that card is supported. The new default start page is
+  `https://norvitech.com/indigo/start/`; an existing saved home page stays set.
+- The start page can remember a weather ZIP on the browser card for future
+  launches. Its **Forget ZIP** link clears it. This is a first-party preference;
+  general cookies and login state are not added.
+- Browser pages support checked gzip, dropdown choices, search redirects
+  and bounded meta refresh. Visible-box indexing and a reclaimable image
+  working set reduce work on long pages. Any of the four controller ports
+  can take over after returning to neutral.
+
+- Settings › Setup › Library › **Saves on Details** has an **Always** option:
+  the Saves box stays visible with one copy or none. **On** keeps the
+  existing two-copy threshold and **Off** leaves the memory cards alone.
+  Card loading and save scanning are unchanged.
+
+### Improved
+
+- Review Swiss through `d9159b0`: Time Zone accepts bundled location names,
+  Swiss clock-setting aliases import into the existing opt-in Sync Clock,
+  environment updates and launch snapshots use the upstream lock, and downloads
+  include lwIP's licence. Time Zone observes IANA 2026f's temporary Havana rule.
+  Preserve the pinned SDK and local-clock behavior;
+  periodic SNTP and automatic RTC rewriting remain deferred.
+
+
+
+- Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
+- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
+- Reduce Jewel Case mesh memory by sharing identical position and normal data while preserving the geometry and glints.
+
+- Jewel Case shares exact repeated colors between its lighting tables,
+  reducing retained RAM while preserving reflections and interpolation.
+- Jewel Case derives printed disc coordinates on the GPU, removing duplicate
+  texture-coordinate data from each printed disc's vertex stream.
+- Thread-safe devices load Library artwork on one background reader instead
+  of waiting for each video frame. Reads remain bounded to 16 KiB, complete
+  textures pass their CRC before appearing, and input actions drain the reader.
+  A short sleep after every step shares time with input and background work.
+  Other devices retain the bounded menu-thread path.
+- Library title fitting and Spotlight description wrapping are prepared before
+  taking the video lock, so formatting a new window does not hold up drawing.
+- Home reuses its icons' circle geometry between faces and frames, reducing
+  repeated calculations without changing their appearance.
+- Library artwork shares a bounded read budget between input checks.
+  Stills and disc art pause when their layout is hidden and resume when used.
+- Font and panel drawing preserve immutable textures in the GPU cache;
+  Jewel Case shares one cache invalidation across all its passes.
+- The executable is compiled for size, reducing its on-card size and static
+  memory footprint while retaining the embedded music, supported character
+  encodings and uncompressed boot format. Hot renderers and the audio mixer
+  retain their existing optimization setting.
+- Link-time optimization further reduces the executable while keeping hot
+  renderers and audio on their measured code-generation path. The fallback
+  banner retains its pixels with a consistent shared declaration.
+- Omit an unused linker-generated unwind lookup index while preserving the
+  registered exception frame tables. Game/app launch probes now exercise
+  target C++ catches, rethrows and cleanup before reporting a successful handoff.
+
+### Fixed
+
+- Manual and weekly CI runs start parser fuzzing after successful checks even
+  when the pull-request-only branch check is skipped, while honoring cancellation.
+
+- Keep the In-Game Reset return loader's decoder mode consistent, including
+  its short-buffer failure path.
+
+- Dolphin file-game entry observes the root selection and bounds arrow
+  corrections before opening games, rejecting changed or ambiguous context.
+
+- Dolphin file-game navigation retains the expected rows and actual directory/
+  selection captures for diagnosing a failed transition.
+
+- Dolphin Memory Cards checks observe Save Details and Actions before selecting
+  a card operation, so a missed opening press cannot turn Copy into Move.
+
+- Emulator Home checks wait for the console's animation time before accepting
+  a steady face name, so cached host frames cannot capture a fading reference.
+- The emulator's folder checks observe Settings tab and section transitions
+  before changing a layout, recovering from a missed press with a recorded,
+  bounded retry and stopping when navigation does not respond.
+- Jewel Case's sway stays continuous through long sessions. UI Motion Off
+  stops the disc immediately and follows the C-stick without coasting;
+  Z keeps its gradual spin stop when motion is enabled.
+
+### Validation coverage
+
+- Automated checks cover all eleven emulator routes, thirteen parser-fuzz targets,
+  and native GameCube SD2SP2 menu browsing at NTSC 480p. Matched renderer tests
+  retained about 274 KiB less Jewel heap and reduced first preparation from
+  about 2.91 seconds to 0.185 seconds; 24 native image pairs were byte-identical.
+  The captured workloads contained 14,606 frames with no frame period above
+  25 ms. These measurements describe renderer allocation and preparation.
+- Attended picture/controller assessment, actual opt-in clock sync and saved
+  preference persistence, real game/A+Z+Start return, Web return and installed
+  cold-boot qualification remain pending for this release.
+- MemCard PRO GC qualification remains pending.
+
 ## v2.5.0 — Manuals, disc art and a connected cube
 
 ### New

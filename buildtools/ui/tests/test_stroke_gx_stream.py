@@ -1128,6 +1128,7 @@ class StrokeGXStreamTests(unittest.TestCase):
         blocks += [extract_function(indigo, "static void " + name + "(")
                    for name in ("putProjectedRailVertex",)]
         blocks += [extract_function(indigo, "static guVector semanticFacePoint(")]
+        blocks += [extract_function(indigo, "static const indigoPoint_t *faceCircleSamples(")]
         blocks += [extract_function(indigo, "static void " + name + "(") for name in (
             "putSemanticMotifQuad", "putSemanticMotifRect", "putSemanticFaceDiamond",
             "putSemanticFaceHand", "putSemanticFaceBook", "drawFacePolygon", "drawFaceBand",

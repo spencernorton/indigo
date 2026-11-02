@@ -37,7 +37,7 @@ typedef int wiiload_read_function_t(int,void *,size_t);
 #define SYS_HOTRESET 0
 #define FALSE 0
 static int main_thread=1,upload_mutex=2;
-static bool suspended,videoOwner,guarded,mutexHeld,idleSocket;
+static bool suspended,videoOwner,guarded,mutexHeld,idleSocket,artworkBlocked;
 static unsigned suspends,launches,progresses,disposes,rawMode;
 static u8 incoming[65536];static size_t incomingSize,cursor,chunk=4096;
 static void menuStep(void) {assert(!suspended);videoOwner=false;}
@@ -59,8 +59,10 @@ static void DrawWithVideoLocked(void (*fn)(void *),void *ctx) {
     if(videoOwner)menuStep();
     guarded=true;fn(ctx);guarded=false;
 }
-static void LWP_SuspendThread(int t) {(void)t;assert(guarded&&!videoOwner);suspended=true;suspends++;}
-static void LWP_ResumeThread(int t) {(void)t;assert(suspended);suspended=false;}
+static void DrawGameflowBlockPosters(void) {assert(!suspended&&!artworkBlocked);artworkBlocked=true;}
+static void DrawGameflowUnblockPosters(void) {assert(suspended&&artworkBlocked);artworkBlocked=false;}
+static void LWP_SuspendThread(int t) {(void)t;assert(guarded&&!videoOwner&&artworkBlocked);suspended=true;suspends++;}
+static void LWP_ResumeThread(int t) {(void)t;assert(suspended&&!artworkBlocked);suspended=false;}
 static int LWP_SetThreadPriority(int t,int priority) {(void)t;(void)priority;return 64;}
 static void LWP_MutexLock(int m) {(void)m;assert(!mutexHeld);mutexHeld=true;}
 static void LWP_MutexUnlock(int m) {(void)m;assert(mutexHeld);mutexHeld=false;}
@@ -95,7 +97,7 @@ static void transferArgs(const u8 *image,size_t size,const char *args,size_t arg
     memcpy(incoming+sizeof(h)+n,args,argsSize);
     incomingSize=sizeof(h)+n+h.args_size;cursor=0;chunk=4096;videoOwner=true;
     wiiload_handler(0,reader,"Receiving","TCP:192.0.2.1");
-    assert(!suspended&&!mutexHeld);
+    assert(!suspended&&!mutexHeld&&!artworkBlocked);
 }
 static void transfer(const u8 *image,size_t size,bool badArgs) {
     transferArgs(image,size,"xx",badArgs?2:0);

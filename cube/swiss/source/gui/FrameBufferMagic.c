@@ -52,6 +52,7 @@
 #include "ui_launch.h"
 #include "ui_jewel_case.h"
 #include "card_art.h"
+#include "ui_artwork_reader.h"
 #include "manual.h"
 #include "ui_manual.h"
 
@@ -373,6 +374,21 @@ typedef struct drawGameflowCardPresentation {
 	float factsScale;
 } drawGameflowCardPresentation_t;
 
+typedef struct drawGameflowPreparedCard {
+	drawGameflowCardPresentation_t sizes;
+	u16 keep[3]; /* prefix before ellipsis, or 0xffff for the complete text */
+} drawGameflowPreparedCard_t;
+
+/* Menu-side staging: prepare text without holding the video's mutex.
+ * Keep it small enough for a menu action's stack, with no allocation. */
+typedef struct drawGameflowSnapshotPresentation {
+	drawGameflowPreparedCard_t cards[UI_GAMEFLOW_RENDER_SLOTS];
+	char spotlightLines[UI_GAMEFLOW_DESCRIPTION_LINES][UI_CHEATS_TEXT_CAPACITY];
+} drawGameflowSnapshotPresentation_t;
+
+_Static_assert(sizeof(drawGameflowSnapshotPresentation_t) <= 1536u,
+	"Library text staging must stay within its menu stack budget");
+
 typedef struct drawGameflowEvent {
 	uiGameflowRenderSnapshot_t snapshot;
 	uiGameflowState_t state;
@@ -654,6 +670,8 @@ static void init_textures()
 	TPL_GetTexture(&imagesTPL, flippyimg, &flippyTexObj);
 	TPL_GetTexture(&imagesTPL, gcnetimg, &gcnetTexObj);
 	TPL_GetTexture(&imagesTPL, kunaigcimg, &kunaigcTexObj);
+	/* These textures stay immutable; publish them before video starts. */
+	GX_InvalidateTexAll();
 }
 
 static void drawInit()
@@ -756,7 +774,6 @@ static void _DrawSimpleBox(int x, int y, int width, int height, int depth, GXCol
 	//Adjust for blank texture border
 	x-=4; y-=4; width+=8; height+=8;
 	
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&boxinnerTexObj, GX_TEXMAP0);
 
 	_drawRect(x, y, width/2, height/2, depth, fillColor, 0.0f, ((float)width/32), 0.0f, ((float)height/32));
@@ -764,7 +781,6 @@ static void _DrawSimpleBox(int x, int y, int width, int height, int depth, GXCol
 	_drawRect(x, y+(height/2), width/2, height/2, depth, fillColor, 0.0f, ((float)width/32), ((float)height/32), 0.0f);
 	_drawRect(x+(width/2), y+(height/2), width/2, height/2, depth, fillColor, ((float)width/32), 0.0f, ((float)height/32), 0.0f);
 
-	GX_InvalidateTexAll();
 	GX_LoadTexObj(&boxouterTexObj, GX_TEXMAP0);
 
 	_drawRect(x, y, width/2, height/2, depth, borderColor, 0.0f, ((float)width/32), 0.0f, ((float)height/32));
@@ -3209,8 +3225,35 @@ static float _GameflowPrepareDetailText(char *text, size_t capacity,
 	return scale < floor ? floor : scale;
 }
 
-static void _GameflowPrepareCardPresentation(drawGameflowEvent_t *data,
-	u32 recordIndex)
+/* Measure and clip a private copy. Only the visible prefix length needs
+ * staging; the caller's snapshot, including text, stays immutable. */
+static float _GameflowPrepareCardText(const char *source, size_t capacity,
+	int width, float maximum, float floor, u16 *keep)
+{
+	char text[UI_GAMEFLOW_TITLE_LENGTH];
+	_Static_assert(UI_GAMEFLOW_COMPANY_LENGTH <= sizeof(text) &&
+		UI_GAMEFLOW_FACTS_LENGTH <= sizeof(text), "card text scratch size");
+
+	memcpy(text, source, capacity);
+	float scale = _GameflowPrepareDetailText(text, capacity, width, maximum, floor);
+	size_t length = strlen(text);
+	*keep = 0xffffu;
+	if(length >= 3u && (length != strnlen(source, capacity - 1u) ||
+		memcmp(text, source, length))) {
+		*keep = (u16)(length - 3u);
+	}
+	return scale;
+}
+
+static void _GameflowApplyCardText(char *text, size_t capacity, u16 keep)
+{
+	if(text[0] == '\0') return;
+	text[capacity - 1u] = '\0';
+	if(keep != 0xffffu) memcpy(text + keep, "...", 4u);
+}
+
+static void _GameflowPrepareCardPresentation(const uiGameflowRenderSnapshot_t *snapshot,
+	u32 recordIndex, drawGameflowPreparedCard_t *presentation)
 {
 	/* Room for the title, publisher and facts in each layout, in the
 	 * layouts' order: the line under the carousel's cover, the column beside
@@ -3233,47 +3276,47 @@ static void _GameflowPrepareCardPresentation(drawGameflowEvent_t *data,
 	/* A layout without its row would draw its text at scale 0. */
 	_Static_assert(sizeof(fit) / sizeof(fit[0]) == UI_GAMEFLOW_LAYOUT_COUNT,
 		"every Library layout needs its text sizes");
-	uiGameflowCardSnapshot_t *record;
-	drawGameflowCardPresentation_t *presentation;
+	const uiGameflowCardSnapshot_t *record;
 	u32 layout;
 
-	if(data == NULL || recordIndex >= data->snapshot.recordCount ||
+	if(snapshot == NULL || presentation == NULL ||
+		recordIndex >= snapshot->recordCount ||
 		recordIndex >= UI_GAMEFLOW_RENDER_SLOTS) {
 		return;
 	}
-	record = &data->snapshot.records[recordIndex];
-	presentation = &data->cardPresentation[recordIndex];
-	layout = data->snapshot.layout < UI_GAMEFLOW_LAYOUT_COUNT ?
-		data->snapshot.layout : UI_GAMEFLOW_LAYOUT_HORIZONTAL;
-	presentation->titleScale = _GameflowPrepareDetailText(record->title,
+	record = &snapshot->records[recordIndex];
+	layout = snapshot->layout < UI_GAMEFLOW_LAYOUT_COUNT ?
+		snapshot->layout : UI_GAMEFLOW_LAYOUT_HORIZONTAL;
+	presentation->sizes.titleScale = _GameflowPrepareCardText(record->title,
 		sizeof(record->title), fit[layout][0].width, fit[layout][0].maximum,
-		fit[layout][0].floor);
-	presentation->companyScale = _GameflowPrepareDetailText(record->company,
+		fit[layout][0].floor, &presentation->keep[0]);
+	presentation->sizes.companyScale = _GameflowPrepareCardText(record->company,
 		sizeof(record->company), fit[layout][1].width, fit[layout][1].maximum,
-		fit[layout][1].floor);
-	presentation->factsScale = _GameflowPrepareDetailText(record->facts,
+		fit[layout][1].floor, &presentation->keep[1]);
+	presentation->sizes.factsScale = _GameflowPrepareCardText(record->facts,
 		sizeof(record->facts), fit[layout][2].width, fit[layout][2].maximum,
-		fit[layout][2].floor);
+		fit[layout][2].floor, &presentation->keep[2]);
 }
 
 /* Spotlight's column: the selected game's description wrapped to its
  * width, once per snapshot. A banner breaks its lines with newlines or runs
  * of spaces; the column joins them and wraps at its own width. A game with
  * no description says so rather than leaving the column blank. */
-static void _GameflowPrepareSpotlight(drawGameflowEvent_t *data)
+static void _GameflowPrepareSpotlight(const uiGameflowRenderSnapshot_t *snapshot,
+	char lines[UI_GAMEFLOW_DESCRIPTION_LINES][UI_CHEATS_TEXT_CAPACITY])
 {
-	const char *description = data->snapshot.description;
+	const char *description = snapshot->description;
 	const uiGameflowCardSnapshot_t *selected;
-	char text[sizeof(data->snapshot.description)];
+	char text[sizeof(snapshot->description)];
 	size_t in;
 	size_t out = 0u;
 
-	memset(data->spotlightLines, 0, sizeof(data->spotlightLines));
-	if(data->snapshot.layout != UI_GAMEFLOW_LAYOUT_SPOTLIGHT) {
+	memset(lines, 0, UI_GAMEFLOW_DESCRIPTION_LINES * UI_CHEATS_TEXT_CAPACITY);
+	if(snapshot->layout != UI_GAMEFLOW_LAYOUT_SPOTLIGHT) {
 		return;
 	}
-	selected = _GameflowFindRecord(&data->snapshot,
-		data->snapshot.selection.selectedIndex, NULL);
+	selected = _GameflowFindRecord(snapshot,
+		snapshot->selection.selectedIndex, NULL);
 	for(in = 0u; in < sizeof(text) && description[in] != '\0' &&
 		out + 1u < sizeof(text); ++in) {
 		char c = description[in];
@@ -3294,9 +3337,19 @@ static void _GameflowPrepareSpotlight(drawGameflowEvent_t *data)
 		memcpy(text, GAMEFLOW_SPOTLIGHT_NO_DESCRIPTION,
 			sizeof(GAMEFLOW_SPOTLIGHT_NO_DESCRIPTION));
 	}
-	UICheats_WrapLines(data->spotlightLines, UI_GAMEFLOW_DESCRIPTION_LINES,
+	UICheats_WrapLines(lines, UI_GAMEFLOW_DESCRIPTION_LINES,
 		text, GAMEFLOW_SPOTLIGHT_COLUMN_W, GAMEFLOW_SPOTLIGHT_TEXT_SCALE,
 		GetTextSizeInPixels);
+}
+
+static void _GameflowPrepareSnapshot(const uiGameflowRenderSnapshot_t *snapshot,
+	drawGameflowSnapshotPresentation_t *presentation)
+{
+	memset(presentation, 0, sizeof(*presentation));
+	for(u32 i = 0; i < snapshot->recordCount; i++) {
+		_GameflowPrepareCardPresentation(snapshot, i, &presentation->cards[i]);
+	}
+	_GameflowPrepareSpotlight(snapshot, presentation->spotlightLines);
 }
 
 static void _GameflowPrepareDetailPresentation(drawGameflowEvent_t *data)
@@ -5404,6 +5457,8 @@ static bool _GameflowOpenDiscsPack(DEVICEHANDLER_INTERFACE *device)
 	return UIDiscs_Ready();
 }
 
+static u32 gameflowArtworkLayout; /* menu-thread scheduling only */
+
 void DrawGameflowRequestPosters(DEVICEHANDLER_INTERFACE *device,
 	const uiGameflowRenderSnapshot_t *snapshot)
 {
@@ -5413,6 +5468,7 @@ void DrawGameflowRequestPosters(DEVICEHANDLER_INTERFACE *device,
 	if(!_GameflowSnapshotValid(snapshot)) {
 		return;
 	}
+	gameflowArtworkLayout = snapshot->layout;
 	_GameflowOpenPosterPack(device);
 	if(snapshot->layout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT &&
 		_GameflowOpenStillsPack(device)) {
@@ -5483,14 +5539,31 @@ bool DrawGameflowPrimePoster(void)
 
 bool DrawGameflowPollPosters(void)
 {
-	/* At most one 16 KiB range per pack, between input checks. */
-	bool more = UIAssets_PollStep();
-	more = UIStills_PollStep() || more;
-	return UIDiscs_PollStep() || more;
+	/* Thread-safe devices read in the background; the synchronous fallback
+	 * keeps one shared 16 KiB range. Both paths pause hidden packs. */
+	return UIAssets_PollVisible(
+		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT,
+		gameflowArtworkLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE);
+}
+
+void DrawGameflowPausePosters(void)
+{
+	UIAssets_PauseReads();
+}
+
+void DrawGameflowBlockPosters(void)
+{
+	UIArtworkReader_Block();
+}
+
+void DrawGameflowUnblockPosters(void)
+{
+	UIArtworkReader_Unblock();
 }
 
 static void _GameflowCopySnapshot(drawGameflowEvent_t *data,
-	const uiGameflowRenderSnapshot_t *snapshot)
+	const uiGameflowRenderSnapshot_t *snapshot,
+	const drawGameflowSnapshotPresentation_t *presentation)
 {
 	u32 i;
 
@@ -5498,14 +5571,19 @@ static void _GameflowCopySnapshot(drawGameflowEvent_t *data,
 	memcpy(&data->snapshot, snapshot,
 		offsetof(uiGameflowRenderSnapshot_t, records) +
 		snapshot->recordCount * sizeof(snapshot->records[0]));
-	memset(data->cardPresentation, 0, sizeof(data->cardPresentation));
 	for(i = 0u; i < UI_GAMEFLOW_RENDER_SLOTS; ++i) {
 		uiGameflowCardSnapshot_t *record = &data->snapshot.records[i];
+		data->cardPresentation[i] = presentation->cards[i].sizes;
 		memset(&data->bannerTexObj[i], 0, sizeof(data->bannerTexObj[i]));
 		if(i >= data->snapshot.recordCount) {
 			continue;
 		}
-		_GameflowPrepareCardPresentation(data, i);
+		_GameflowApplyCardText(record->title, sizeof(record->title),
+			presentation->cards[i].keep[0]);
+		_GameflowApplyCardText(record->company, sizeof(record->company),
+			presentation->cards[i].keep[1]);
+		_GameflowApplyCardText(record->facts, sizeof(record->facts),
+			presentation->cards[i].keep[2]);
 		if(!(record->flags & UI_GAMEFLOW_CARD_HAS_BANNER)) {
 			continue;
 		}
@@ -5514,12 +5592,13 @@ static void _GameflowCopySnapshot(drawGameflowEvent_t *data,
 			GX_TF_RGB5A3, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_InitTexObjFilterMode(&data->bannerTexObj[i], GX_LINEAR, GX_NEAR);
 	}
-	_GameflowPrepareSpotlight(data);
+	memcpy(data->spotlightLines, presentation->spotlightLines, sizeof(data->spotlightLines));
 }
 
 uiDrawObj_t* DrawGameflow(const uiGameflowRenderSnapshot_t *snapshot)
 {
 	drawGameflowEvent_t *eventData;
+	drawGameflowSnapshotPresentation_t presentation;
 	uiDrawObj_t *event;
 
 	if(!_GameflowSnapshotValid(snapshot)) {
@@ -5547,7 +5626,8 @@ uiDrawObj_t* DrawGameflow(const uiGameflowRenderSnapshot_t *snapshot)
 		free(event);
 		return NULL;
 	}
-	_GameflowCopySnapshot(eventData, snapshot);
+	_GameflowPrepareSnapshot(snapshot, &presentation);
+	_GameflowCopySnapshot(eventData, snapshot, &presentation);
 	event->type = EV_GAMEFLOW;
 	event->data = eventData;
 	return event;
@@ -5556,11 +5636,15 @@ uiDrawObj_t* DrawGameflow(const uiGameflowRenderSnapshot_t *snapshot)
 bool DrawUpdateGameflow(uiDrawObj_t *evt,
 	const uiGameflowRenderSnapshot_t *snapshot)
 {
+	drawGameflowSnapshotPresentation_t presentation;
 	bool updated = false;
 
 	if(evt == NULL || !_GameflowSnapshotValid(snapshot)) {
 		return false;
 	}
+	/* Font measurement and description wrapping read only the caller's
+	 * immutable snapshot. Publish only the ready result under the lock. */
+	_GameflowPrepareSnapshot(snapshot, &presentation);
 	LWP_MutexLock(_videomutex);
 	if(!evt->disposed && evt->type == EV_GAMEFLOW && evt->data != NULL) {
 		drawGameflowEvent_t *data = (drawGameflowEvent_t*)evt->data;
@@ -5569,7 +5653,7 @@ bool DrawUpdateGameflow(uiDrawObj_t *evt,
 			data->snapshot.columns == snapshot->columns &&
 			UIGameflow_ApplySnapshot(&data->state, &snapshot->selection,
 			_CurrentMotionMode())) {
-			_GameflowCopySnapshot(data, snapshot);
+			_GameflowCopySnapshot(data, snapshot, &presentation);
 			updated = true;
 		}
 	}

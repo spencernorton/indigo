@@ -18,8 +18,8 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 # A test builds <name>.c (or <name>.main) with the sources in <name>.src,
 # the flags in <name>.flags (GAMEFLOW_CFLAGS unless set) and the libraries in
 # <name>.libs: plain as <name>, under ASan/UBSan as <name>_san.
-TESTS := test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_png \
-	test_ui_assets test_ui_assets_target_sync \
+TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_png \
+	test_ui_assets test_ui_assets_target_sync test_blank_banner \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
 	test_ui_menu_input test_ui_clock test_ui_hint test_ui_stage \
 	test_ui_home test_ui_cube_motif test_ui_home_safety test_ui_home_layout \
@@ -29,6 +29,7 @@ TESTS := test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata t
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual
 
+test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c tzdata_host.c
 test_ui_cheats.src := $(GUI)/ui_cheats.c
 test_ui_saves.src := $(GUI)/ui_saves.c
 test_ui_saves_raw.src := $(GUI)/ui_saves_raw.c $(GUI)/ui_saves.c
@@ -52,6 +53,8 @@ test_ui_assets_target_sync.src := $(GUI)/ui_assets.c
 test_ui_assets_target_sync.flags = $(CFLAGS) -DUI_ASSETS_HOST_BUILD \
 	-DUI_ASSETS_HOST_REQUIRE_SYNC
 test_ui_assets_target_sync.libs := -lz
+test_blank_banner.src := $(GUI)/blankbanner.c
+test_blank_banner.flags := $(GAMEFLOW_CFLAGS) -I$(GUI)
 # Settings layout module: strict C99. ui_cheats is the cheat browser whose
 # window the pages share.
 test_ui_settings_layout.src := $(GUI)/ui_settings_layout.c $(GUI)/ui_hint.c \
@@ -62,7 +65,11 @@ test_ui_settings_focus.libs := -lm
 test_ui_system_info.src := $(GUI)/ui_system_info.c
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c
-test_ui_time_sync.src := $(GUI)/ui_time_sync.c
+test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c
+# See tzdata_host.c for the imported table's two isolated warning exemptions.
+TIME_SYNC_FLAGS := $(GAMEFLOW_CFLAGS) -I$(GUI)/../../include
+test_ui_time_sync.flags = $(TIME_SYNC_FLAGS)
+test_ui_browser_launch.flags = $(TIME_SYNC_FLAGS)
 # Memory card slots around a GameID switch (indigo#102), against scripted cards.
 test_ui_card_slots.src := $(GUI)/ui_card_slots.c
 test_ui_clock.libs := -lm

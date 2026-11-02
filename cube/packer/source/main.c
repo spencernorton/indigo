@@ -30,7 +30,7 @@ void (*entrypoint)(void) = EXECUTABLE_ADDR;
 extern struct __argv __argv __attribute((section(".init")));
 extern struct __argv __envp __attribute((section(".init")));
 
-static struct xz_dec_bcj xz_dec_bcj;
+static struct xz_dec_bcj xz_dec_bcj = { .single_call = true };
 static struct xz_dec_lzma2 xz_dec_lzma2;
 static struct xz_dec xz_dec;
 

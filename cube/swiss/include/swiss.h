@@ -158,6 +158,7 @@ typedef struct {
 	int libraryFolders;	// 1 = the Library shows folders in /games, two deep; 0 = one list of games (default)
 	char libraryFoldersFlattenDir[PATHNAME_MAX];	// FlattenDir as saved, while Library Folders sets its own
 	int hideDetailSaves;	// 1 = a game's details never read the memory cards; 0 = they show two or more save copies (default)
+	int alwaysShowDetailSaves;	// with hideDetailSaves off, show the Saves box even with one copy or none; 0 = two or more (default)
 	int idleAnimation;	// how the cube moves while Home rests: 0 = Calm, a slight drift (default); 1 = Sway, left and right
 	int hideWaves;	// 1 = no waves behind the cube; 0 = the waves (default)
 	int hideHomeControls;	// 1 = Home shows no button hints under the cube; 0 = it shows them (default)
@@ -209,7 +210,7 @@ typedef struct {
 	bool bbaUseDhcp;
 	bool ntpSync;	// Sync Clock: set the clock from ntpHostIp when the network starts (gui/time_sync.c)
 	char ntpHostIp[16];
-	char timeZone[64];	// a POSIX TZ string; empty keeps the console's own offset from UTC
+	char timeZone[64];	// a location or POSIX TZ string; empty keeps the console's offset from UTC
 	bool labServer;	// LabServer: the console lab's port, off by default (gui/ui_lab.h)
 	char logHost[24];	// LogHost: address[:port] that gets each print_debug line over UDP; empty = none
 	int autoBoot;

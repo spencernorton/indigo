@@ -7,6 +7,10 @@ Posters are the box art in the [Library](library.md) and on each game's
 `/swiss/ui/posters.pak`. It's optional: without it, each game shows its disc
 banner and its six-character game ID.
 
+Artwork fills in while the Library is idle. Switching layouts pauses unused
+stills or disc art, so they do not compete with the pictures on screen;
+returning to that layout resumes them.
+
 <p align="center">
   <img alt="1080° Avalanche in the Library twice: on the left without a poster pack, a card with its disc banner and game ID, GTEE01; on the right with one, its box art." src="images/posters-compare.png" width="640">
 </p>

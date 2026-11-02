@@ -53,6 +53,7 @@ jobs:
       - name: Check the DOL
         run: |
           mkdir -p dist
+          buildtools/ci/check_unwind.sh cube/swiss/swiss.elf
           python3 buildtools/ci/verify_dol.py cube/swiss/swiss.dol --toolchain "$TOOLCHAIN" \
             --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)" \
             --out dist/provenance.json
@@ -66,7 +67,7 @@ jobs:
           # The Web face launches this; built from a pinned commit of our
           # hardened fork (used with permission; see NOTICE).
           CUBEBROWSER_REPO: https://github.com/spencernorton/cubebrowser
-          CUBEBROWSER_REF: e338aa6d0a2262a350363a431770e8720788e0cc
+          CUBEBROWSER_REF: c98a0bfb5dbac270035542d2d5313c57725dace2
         run: |
           git clone --no-tags "$CUBEBROWSER_REPO" browser-src
           git -C browser-src -c advice.detachedHead=false checkout "$CUBEBROWSER_REF"
@@ -94,6 +95,7 @@ jobs:
       - name: Build the emulator test's programs
         run: |
           make -C buildtools/ui/emulator/probe
+          buildtools/ci/check_unwind.sh buildtools/ui/emulator/probe/probe.elf
           cp buildtools/ui/emulator/probe/probe.dol dist/probe.dol
           make -C buildtools/ui/emulator/aesnd
           cp buildtools/ui/emulator/aesnd/aesnd.dol dist/aesnd.dol
@@ -152,6 +154,12 @@ jobs:
         # the Emulator job, so it adds nothing to the time CI takes.
         working-directory: elsewhere
         run: make -C cube/swiss -j8 BUILD=build-perf TARGET=swiss-perf UI_PERF=1
+      - name: Check the performance build's structure and size budget
+        working-directory: elsewhere
+        run: |
+          buildtools/ci/check_unwind.sh cube/swiss/swiss-perf.elf
+          python3 buildtools/ci/verify_dol.py cube/swiss/swiss-perf.dol --toolchain "$TOOLCHAIN" \
+            --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dol-perf-${{ github.sha }}
@@ -303,6 +311,9 @@ jobs:
     # same runners.
     name: Fuzz
     needs: passed
+    # A manual/weekly run skips Target branch. Override the implicit success()
+    # check for that ancestor, but still require CI passed and no cancellation.
+    if: ${{ !cancelled() && needs.passed.result == 'success' }}
     runs-on: [self-hosted, indigo-build]
     timeout-minutes: 60
     steps:

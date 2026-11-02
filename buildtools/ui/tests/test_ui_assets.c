@@ -2058,6 +2058,86 @@ static void test_discs_load_one_texture_each(void) {
 }
 
 /* Each cache takes only its own pack's shape. */
+typedef struct {
+	u8 *data;
+	size_t length;
+	u32 calls, bytes;
+} pollSource_t;
+
+static s32 pollSourceRead(void *ctx, u32 offset, void *dst, u32 length)
+{
+	pollSource_t *source = ctx;
+	CHECK(lockDepth == 0);
+	CHECK(length <= UI_ASSETS_READ_BYTES);
+	if((u64)offset + length > source->length) return UI_ASSETS_ERR_IO;
+	source->calls++;
+	source->bytes += length;
+	memcpy(dst, source->data + offset, length);
+	return (s32)length;
+}
+
+static void test_visible_packs_share_one_read_and_pause_hidden(void)
+{
+	pollSource_t sources[3] = {{0}};
+	sources[0].data = buildPack(BASIC, 3, &sources[0].length, 0);
+	sources[1].data = buildStillPack(BASIC, 3, &sources[1].length);
+	sources[2].data = buildDiscPack(BASIC, 3, &sources[2].length);
+	for(int i = 0; i < 3; i++) {
+		uiAssetsSource_t source = {.ctx = &sources[i], .read = pollSourceRead,
+			.size = (u32)sources[i].length, .nowMs = fakeNow};
+		s32 result = i == 0 ? UIAssets_Init(&source, &testSync) :
+			i == 1 ? UIStills_Init(&source, &testSync) : UIDiscs_Init(&source, &testSync);
+		CHECK(result == UI_ASSETS_OK);
+		sources[i].calls = sources[i].bytes = 0;
+	}
+	const char ids[1][8] = {"GALE01"};
+	uiPosterHandle_t poster, still, disc;
+	UIAssets_RequestWindow(ids, 1, 0);
+	UIStills_RequestWindow(ids, 1, 0);
+	UIDiscs_RequestWindow(ids, 1, 0);
+	UIAssets_Query(ids[0], 6, false, &poster);
+	UIStills_Query(ids[0], 6, false, &still);
+	UIDiscs_Query(ids[0], 6, false, &disc);
+	allocsFrozen = 1;
+
+	/* Spotlight shares ticks fairly; neither unfinished texture is visible. */
+	for(int tick = 0; tick < 2; tick++) {
+		CHECK(UIAssets_PollVisible(true, false));
+		CHECK(sources[0].calls + sources[1].calls == (u32)(tick + 1));
+		CHECK(sources[0].bytes + sources[1].bytes <= (u32)(tick + 1) * UI_ASSETS_READ_BYTES);
+	}
+	CHECK(sources[0].calls == 1 && sources[1].calls == 1 && sources[2].calls == 0);
+	CHECK(!UIAssets_Peek(poster) && !UIStills_Peek(still) && !UIDiscs_Peek(disc));
+
+	/* Switching to Jewel Case pauses the partial still and finishes the
+	 * poster and disc. A final range may return false, but must be published. */
+	bool more = true;
+	for(int tick = 0; tick < 12 && more; tick++) {
+		u32 beforeCalls = sources[0].calls + sources[2].calls;
+		u32 beforeBytes = sources[0].bytes + sources[2].bytes;
+		more = UIAssets_PollVisible(false, true);
+		CHECK(sources[0].calls + sources[2].calls <= beforeCalls + 1);
+		CHECK(sources[0].bytes + sources[2].bytes <= beforeBytes + UI_ASSETS_READ_BYTES);
+		CHECK(sources[1].calls == 1);
+	}
+	CHECK(!more && UIAssets_Peek(poster) && UIDiscs_Peek(disc));
+	CHECK(!UIStills_Peek(still));
+	CHECK(!UIAssets_PollVisible(false, false)); /* hidden work is not drained */
+	CHECK(sources[1].calls == 1);
+
+	/* Resume the same still's partial read and CRC, without restarting it. */
+	more = true;
+	for(int tick = 0; tick < 12 && more; tick++) {
+		u32 calls = sources[1].calls, bytes = sources[1].bytes;
+		more = UIAssets_PollVisible(true, false);
+		CHECK(sources[1].calls <= calls + 1);
+		CHECK(sources[1].bytes <= bytes + UI_ASSETS_READ_BYTES);
+	}
+	CHECK(!more && UIStills_Peek(still));
+	CHECK(sources[1].bytes == UI_STILLS_BYTES);
+	for(int i = 0; i < 3; i++) free(sources[i].data);
+}
+
 static void test_discs_refuse_the_other_packs(void) {
 	size_t posterLen, stillLen, discLen;
 	u8 *posterPack = buildPack(BASIC, 3, &posterLen, 0);
@@ -2401,6 +2481,7 @@ int main(int argc, char **argv) {
 	RUN(test_stills_memory_budget);
 	RUN(test_discs_load_one_texture_each);
 	RUN(test_discs_refuse_the_other_packs);
+	RUN(test_visible_packs_share_one_read_and_pause_hidden);
 
 	if (argc > 2 && strcmp(argv[1], "--exact-pack") == 0)
 		test_exact_pack(argv[2], argc - 3, &argv[3]);

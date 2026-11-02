@@ -76,7 +76,9 @@ static void publish(int layout, uint32_t count, uint32_t selected)
 	UIGameflow_Init(&eventData->state);
 	UIGameflow_SetColumns(&eventData->state, snapshot.columns);
 	CHECK(UIGameflow_ApplySnapshot(&eventData->state, &snapshot.selection, motionMode));
-	_GameflowCopySnapshot(eventData, &snapshot);
+	drawGameflowSnapshotPresentation_t presentation;
+	_GameflowPrepareSnapshot(&snapshot, &presentation);
+	_GameflowCopySnapshot(eventData, &snapshot, &presentation);
 }
 
 /* Detail's snapshot for the focused game, as DrawUpdateGameflowDetail

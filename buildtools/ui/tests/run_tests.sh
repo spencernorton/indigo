@@ -111,11 +111,23 @@ run_binaries() {
 	if [ -z "$suffix" ]; then python3 ./test_wiiload.py; else python3 ./test_wiiload.py --sanitize; fi
 	echo "== a DOL or ELF cut short never starts$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_boot_image.py; else python3 ./test_boot_image.py --sanitize; fi
+	echo "== return-loader decoder mode and bounded failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_packer_decoder.py; else python3 ./test_packer_decoder.py --sanitize; fi
 	# card_art builds its own binaries: posters of apps and folders, their guards.
 	echo "== test_card_art$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_card_art.py; else python3 ./test_card_art.py --sanitize; fi
 	echo "== Spotlight stills: only on first use$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_stills_lifecycle.py; else python3 ./test_stills_lifecycle.py --sanitize; fi
+	echo "== exact shared lighting and allocation failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_lighting.py; else python3 ./test_jewel_lighting.py --sanitize; fi
+	echo "== rod texture decode and preparation failures$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_matcap.py; else python3 ./test_jewel_matcap.py --sanitize; fi
+	echo "== exact rainbow streams$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_spokes.py; else python3 ./test_jewel_spokes.py --sanitize; fi
+	echo "== exact Jewel Case normals and glints$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_jewel_normals.py; else python3 ./test_jewel_normals.py --sanitize; fi
+	echo "== background pack reads: bounded I/O and joined lifetimes$suffix =="
+	if [ -z "$suffix" ]; then python3 ./test_artwork_reader.py; else python3 ./test_artwork_reader.py --sanitize; fi
 	echo "== font batches: the release's exact glyph stream$suffix =="
 	if [ -z "$suffix" ]; then python3 ./test_font_batches.py; else python3 ./test_font_batches.py --sanitize; fi
 	echo "== game folder visibility$suffix =="
@@ -176,8 +188,16 @@ run_contracts() {
 	python3 ./test_cube_render_pose.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
+	python3 ./test_jewel_lighting.py
+	python3 ./test_jewel_disc_texgen.py
+	python3 ../generate_jewel_matcap.py --check
+	python3 ./test_jewel_matcap.py
+	python3 ./test_jewel_spokes.py
+	python3 ./test_jewel_normals.py
 	echo "== settings files: real parser/writer vs docs/SETTINGS.md =="
 	python3 ./test_settings_file.py
+	echo "== background artwork: lifetime and device-safety regressions =="
+	python3 ./test_artwork_reader.py --mutations
 	echo "== settings saves: power lost at any step leaves them whole =="
 	python3 ./test_folder_config.py
 	python3 ./test_folder_config.py --sanitize
@@ -190,6 +210,8 @@ run_contracts() {
 	python3 ./test_ui_color.py
 	echo "== Clock: the time and its dial take the corner Settings names =="
 	python3 ./test_clock_corner.py
+	python3 ./test_upstream_clock_intake.py
+	python3 ./test_timezone_reference.py
 	echo "== menu music: a stream the console can seek and loop =="
 	python3 ./test_menu_music.py
 	echo "== settings semantics audit =="

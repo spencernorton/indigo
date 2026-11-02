@@ -26,9 +26,10 @@
 #include "sidestep.h"
 #include "deviceHandler.h"
 #include "FrameBufferMagic.h"
+#include "blankbanner.h"
 
-//this is the blank banner that will be shown if no banner is found on a disc
-extern BNR blankbanner;
+_Static_assert(sizeof(blankbanner) == BNR_PIXELDATA_LEN,
+	"fallback banner must contain one complete RGB5A3 image");
 
 #define NUM_META_MAX (512)
 #define META_CACHE_SIZE (sizeof(file_meta) * NUM_META_MAX)
@@ -210,7 +211,7 @@ void populate_game_meta(file_handle *f, u32 bannerOffset, u32 bannerSize, u16 fo
 	f->meta->bannerSum = 0xFFFF;
 	f->meta->bannerSize = BNR_PIXELDATA_LEN;
 	f->meta->banner = memalign(32,BNR_PIXELDATA_LEN);
-	memcpy(f->meta->banner,blankbanner.pixelData,BNR_PIXELDATA_LEN);
+	memcpy(f->meta->banner,blankbanner,BNR_PIXELDATA_LEN);
 	if(bannerOffset == -1 || bannerOffset + bannerSize > f->size) {
 		print_debug("Banner not found or out of range\n");
 	}
@@ -305,7 +306,7 @@ void populate_meta(file_handle *f) {
 				f->meta->bannerSum = 0xFFFF;
 				f->meta->bannerSize = BNR_PIXELDATA_LEN;
 				f->meta->banner = memalign(32,BNR_PIXELDATA_LEN);
-				memcpy(f->meta->banner,blankbanner.pixelData,BNR_PIXELDATA_LEN);
+				memcpy(f->meta->banner,blankbanner,BNR_PIXELDATA_LEN);
 				meta_create_direct_texture(f->meta);
 				// Assign GCM region texture
 				ISOInfo_t* isoInfo = (ISOInfo_t*)&f->other;

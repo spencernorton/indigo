@@ -21,11 +21,11 @@ import struct
 import sys
 from pathlib import Path
 
-# A tripwire, not a hardware limit: the DOL is about 5.2 MiB, 1.3 MiB of it
-# the menu music's MP3 and 1.1 MiB the libiconv and uchardet tables upstream
-# Swiss links since r2119 for file names in other encodings. Growth past this
-# should be a decision someone made, so raise it on purpose when that happens.
-MAX_DOL_BYTES = 6 * 1024 * 1024
+# A tripwire, not a hardware limit. Size-focused application compilation keeps
+# the uncompressed normal and diagnostic DOLs below 4.25 MiB, with headroom.
+# Music, supported character encodings and dependency unwind data remain intact.
+# Growth past this should be an explicit decision, not a lost build policy.
+MAX_DOL_BYTES = 17 * 1024 * 1024 // 4
 
 
 class Invalid(Exception):

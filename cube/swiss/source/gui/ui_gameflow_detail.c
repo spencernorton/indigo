@@ -276,13 +276,13 @@ static const char *savesLineAfter(const char *line)
 	return line != NULL && line[0] != '\0' ? " | " : "";
 }
 
-/* SAVES shows for two or more save copies: with one, none, or a scan that
- * found fewer, the details leave it out, unless a memory card is changing to
- * this game's card or was given up on. Then it says just that. Copies of one
- * file are copies; different files of the game are files, each file's
- * blocks counted once. line: the newest copy's own line. */
+/* SAVES normally shows for two or more save copies. Always also shows a
+ * settled scan with one copy or none. A memory card changing to this game's
+ * card, or given up on, still says just that with fewer than two copies.
+ * Copies of one file are copies; different files of the game are files,
+ * each file's blocks counted once. line: the newest copy's own line. */
 static void buildSavesPresentation(uiGameflowDetailSnapshot_t *snapshot,
-	const uiSavesGameStats_t *stats, bool waiting, bool cardFailed,
+	const uiSavesGameStats_t *stats, bool always, bool waiting, bool cardFailed,
 	const char *line)
 {
 	char updated[17];
@@ -290,12 +290,12 @@ static void buildSavesPresentation(uiGameflowDetailSnapshot_t *snapshot,
 	uint32_t files;
 	bool incomplete;
 
-	if(stats == NULL || (stats->saves < 2u && !waiting && !cardFailed)) {
+	if(stats == NULL || (stats->saves < 2u && !always && !waiting && !cardFailed)) {
 		return;
 	}
 	snapshot->flags |= UI_GAMEFLOW_DETAIL_HAS_SAVES;
 	snapshot->saveStats = *stats;
-	if(stats->saves < 2u) {
+	if(stats->saves < 2u && (waiting || cardFailed)) {
 		copyText(snapshot->savesSummary, sizeof(snapshot->savesSummary),
 			waiting ? "Memory card loading" : "Memory card didn't load");
 		copyText(snapshot->savesUpdated, sizeof(snapshot->savesUpdated),
@@ -303,10 +303,19 @@ static void buildSavesPresentation(uiGameflowDetailSnapshot_t *snapshot,
 		return;
 	}
 	incomplete = stats->partial || stats->checkedSources == 0u;
+	if(stats->saves == 0u) {
+		copyText(snapshot->savesSummary, sizeof(snapshot->savesSummary),
+			incomplete ? "Save scan incomplete" : "No save copies found");
+		return;
+	}
 	files = stats->files != 0u && stats->files <= stats->saves ?
 		stats->files : stats->saves;
 	blocks = stats->blocks == 1u ? "block" : "blocks";
-	if(files == 1u) {
+	if(stats->saves == 1u) {
+		(void)snprintf(snapshot->savesSummary, sizeof(snapshot->savesSummary),
+			"1 save | %lu %s", (unsigned long)stats->blocks, blocks);
+	}
+	else if(files == 1u) {
 		(void)snprintf(snapshot->savesSummary, sizeof(snapshot->savesSummary),
 			"%lu copies | %lu %s", (unsigned long)stats->saves,
 			(unsigned long)stats->blocks, blocks);
@@ -480,8 +489,8 @@ bool UIGameflowDetail_Build(uiGameflowDetailSnapshot_t *snapshot,
 		UIGameHistory_SaveStatus(source->saveStatus));
 	buildPresentation(snapshot);
 	buildSettingsPresentation(snapshot, source->firstCustomSetting);
-	buildSavesPresentation(snapshot, source->saveStats, source->savesWaiting,
-		source->savesCardFailed, source->saveLine);
+	buildSavesPresentation(snapshot, source->saveStats, source->savesAlways,
+		source->savesWaiting, source->savesCardFailed, source->saveLine);
 	buildSaveChoicePresentation(snapshot, source);
 	buildManualPresentation(snapshot, source->manualPages);
 	return true;

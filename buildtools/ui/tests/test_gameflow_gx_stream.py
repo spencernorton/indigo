@@ -24,6 +24,7 @@ and log what is drawn. The tests then check:
 - From every layout the focused card flies to Detail's pose.
 """
 
+from functools import lru_cache
 import os
 from pathlib import Path
 import re
@@ -104,6 +105,15 @@ def between(source: str, start: str, end: str, inclusive: bool = False) -> str:
     return source[first:last + (len(end) if inclusive else 0)]
 
 
+@lru_cache(maxsize=1)
+def reference_text_preparation() -> str:
+    source = subprocess.check_output(["git", "-C", str(ROOT), "show",
+                                      "v2.5.0:cube/swiss/source/gui/FrameBufferMagic.c"], text=True)
+    return "\n".join(extract_function(source, "static void " + name + "(").replace(
+        name + "(", "reference" + name + "(", 1)
+        for name in ("_GameflowPrepareCardPresentation", "_GameflowPrepareSpotlight"))
+
+
 def renderer(frame_c: str, frame_h: str) -> str:
     return "\n".join([
         '#include "ui_folder.h"' if "UIFolder_ColorRGB" in frame_c else "",
@@ -114,6 +124,9 @@ def renderer(frame_c: str, frame_h: str) -> str:
         between(frame_c, "typedef struct gameflowPoint {", "static void _DrawHomeText("),
         extract_function(frame_c, "static bool _GameflowSnapshotValid("),
         extract_function(frame_c, "static void _GameflowCopySnapshot("),
+        extract_function(frame_c, "bool DrawUpdateGameflow(")
+        if "static void _GameflowPrepareSnapshot(" in frame_c else "",
+        reference_text_preparation() if "static void _GameflowPrepareSnapshot(" in frame_c else "",
     ])
 
 
@@ -153,7 +166,11 @@ static struct { int uiColor, stillDiscs; } swissSettings;
 
 #define CHECK(c) do { if(!(c)) { fprintf(stderr, "failed %d: %s\n", __LINE__, #c); exit(73); } } while(0)
 static FILE *out;
-static bool active;
+static bool active, videoLocked;
+enum { EV_GAMEFLOW = 77 };
+static const int _videomutex = 1;
+static void LWP_MutexLock(int mutex) { CHECK(mutex==1 && !videoLocked);videoLocked=true; }
+static void LWP_MutexUnlock(int mutex) { CHECK(mutex==1 && videoLocked);videoLocked=false; }
 static int declared, emitted, phase;
 static void drawInit(void) { CHECK(!active); }
 static void _SetupRasterColor(void) { CHECK(!active); }
@@ -195,7 +212,7 @@ static void _DrawHintText(int x, int y, const char *text, float scale, int align
 { CHECK(!active); fprintf(out, "H %d %d %.3f %d %u %s\n", x, y, scale, align, c.a, text); }
 static void _HintRoundRect(float cx, float cy, float w, float h, float r, GXColor c)
 { CHECK(!active); fprintf(out, "R %.2f %.2f %.2f %.2f %.2f %u\n", cx, cy, w, h, r, c.a); }
-static int GetTextSizeInPixels(const char *text) { return 11 * (int)strlen(text); }
+static int GetTextSizeInPixels(const char *text) { CHECK(!videoLocked);return 11 * (int)strlen(text); }
 static float GetTextScaleToFitInWidthWithMax(const char *text, int width, float maximum)
 {
 	float size = (float)GetTextSizeInPixels(text);
@@ -420,10 +437,16 @@ static void publish(int layout, uint32_t count, uint32_t selected, int hint,
 		UIGameflow_Init(&eventData->state);
 #if LAYOUTS
 		UIGameflow_SetColumns(&eventData->state, snapshot.columns);
+		eventData->snapshot.layout = snapshot.layout;
+		eventData->snapshot.columns = snapshot.columns;
 #endif
 	}
+#if LAYOUTS
+	CHECK(DrawUpdateGameflow(&event, &snapshot));
+#else
 	CHECK(UIGameflow_ApplySnapshot(&eventData->state, &snapshot.selection, motionMode));
 	_GameflowCopySnapshot(eventData, &snapshot);
+#endif
 }
 
 int main(void)
@@ -435,6 +458,7 @@ int main(void)
 	eventData = calloc(1, sizeof(*eventData));
 	CHECK(eventData != NULL);
 	event.data = eventData;
+	event.type = EV_GAMEFLOW;
 	sceneFrame.scene = UI_SCENE_LIBRARY;
 	sceneFrame.chromeProgress = 1.0f;
 	sceneFrame.libraryReveal = 1.0f;
@@ -459,6 +483,60 @@ int main(void)
 #if LAYOUTS
 		else if(line[0] == 'K') jewelUnready = true;
 		else if(line[0] == 'Q') discsLoading = true;
+#endif
+#if LAYOUTS
+		else if(line[0] == 'C') {
+			drawGameflowEvent_t *reference = malloc(sizeof(*reference));
+			uiGameflowRenderSnapshot_t *original = malloc(sizeof(*original));
+			CHECK(reference && original);
+			for(u32 i=0;i<snapshot.recordCount;i++) {
+				uiGameflowCardSnapshot_t *record=&snapshot.records[i];
+				memset(record->title,'W',sizeof(record->title)-1);
+				memset(record->company,'C',sizeof(record->company)-1);
+				memset(record->facts,'F',sizeof(record->facts)-1);
+				record->title[sizeof(record->title)-1]=0;
+				record->company[sizeof(record->company)-1]=0;
+				record->facts[sizeof(record->facts)-1]=0;
+			}
+			snapshot.selection.generation=++generation;
+			memcpy(original,&snapshot,sizeof(snapshot));
+			memcpy(reference,eventData,sizeof(*reference));
+			memcpy(&reference->snapshot,&snapshot,sizeof(snapshot));
+			for(u32 i=0;i<snapshot.recordCount;i++)
+				reference_GameflowPrepareCardPresentation(reference,i);
+			reference_GameflowPrepareSpotlight(reference);
+			CHECK(DrawUpdateGameflow(&event,&snapshot));
+			CHECK(!memcmp(original,&snapshot,sizeof(snapshot)));
+			for(u32 i=0;i<snapshot.recordCount;i++) {
+				CHECK(!strcmp(eventData->snapshot.records[i].title,reference->snapshot.records[i].title));
+				CHECK(!strcmp(eventData->snapshot.records[i].company,reference->snapshot.records[i].company));
+				CHECK(!strcmp(eventData->snapshot.records[i].facts,reference->snapshot.records[i].facts));
+				CHECK(!memcmp(&eventData->cardPresentation[i],&reference->cardPresentation[i],
+					sizeof(eventData->cardPresentation[i])));
+			}
+			CHECK(!memcmp(eventData->spotlightLines,reference->spotlightLines,sizeof(eventData->spotlightLines)));
+			free(original);free(reference);
+		}
+		else if(line[0] == 'T') {
+			drawGameflowEvent_t *saved = malloc(sizeof(*saved));
+			CHECK(saved != NULL);
+			memcpy(saved, eventData, sizeof(*saved));
+			snapshot.records[0].title[0] = '!';
+			/* A stale generation must not publish even prepared text. */
+			CHECK(!DrawUpdateGameflow(&event, &snapshot));
+			CHECK(!memcmp(saved, eventData, sizeof(*saved)) && !videoLocked);
+			snapshot.selection.generation++;
+			snapshot.layout = UI_GAMEFLOW_LAYOUT_VERTICAL;
+			CHECK(!DrawUpdateGameflow(&event, &snapshot));
+			CHECK(!memcmp(saved, eventData, sizeof(*saved)) && !videoLocked);
+			snapshot.layout = saved->snapshot.layout;
+			event.disposed = true;
+			CHECK(!DrawUpdateGameflow(&event, &snapshot));
+			CHECK(!memcmp(saved, eventData, sizeof(*saved)) && !videoLocked);
+			event.disposed = false;
+			memcpy(&snapshot, &saved->snapshot, sizeof(snapshot));
+			free(saved);
+		}
 #endif
 		else if(sscanf(line, "D %d", &c) == 1) {
 			UIGameflow_SetMode(&eventData->state, (uiGameflowMode_t)c, motionMode);
@@ -508,7 +586,7 @@ def build(work: Path, gui: Path, frame_c: str, frame_h: str, layouts: bool, name
 
 def frames(log: str) -> list:
     """Each frame's lines, after the first 'F'."""
-    return log.split("F\n")[1:]
+    return re.split(r"(?m)^F\n", log)[1:]
 
 
 def covers(frame: str) -> dict:
@@ -1232,9 +1310,26 @@ class GameflowGxStream(unittest.TestCase):
                 self.assertEqual(frames(log)[-1], self.run_script(
                     ["M 2", f"L {layout} 40 22", "N 5 0.0167"]).split("F\n")[-1])
 
+    def test_staged_clipping_matches_release_and_keeps_input_immutable(self):
+        for layout in range(5):
+            log = self.run_script([f"L {layout} 40 17", "C", "N 1 0.0167"])
+            self.assertEqual(len(frames(log)), 1, f"layout {layout}")
+
+    def test_publication_rejects_stale_layout_and_disposal(self):
+        script = ["L 0 40 17", "N 5 0.0167", "T", "N 1 0.0167"]
+        actual = frames(self.run_script(script))[-1]
+        expected = frames(self.run_script([item for item in script if item != "T"]))[-1]
+        self.assertEqual(actual, expected)
+
     def test_mutants_fail(self):
         work = Path(self.tmp.name)
         mutants = {
+            "snapshot text is clipped in place": (
+                "float scale = _GameflowPrepareDetailText(text, capacity, width, maximum, floor);",
+                "float scale = _GameflowPrepareDetailText((char *)source, capacity, width, maximum, floor);"),
+            "text preparation holds the video lock": (
+                "_GameflowPrepareSnapshot(snapshot, &presentation);\n\tLWP_MutexLock(_videomutex);",
+                "LWP_MutexLock(_videomutex);\n\t_GameflowPrepareSnapshot(snapshot, &presentation);"),
             "grid rows never wrap round the screen": ("int copies = rows >= 3u ? 1 : 0;",
                                                       "int copies = 0;"),
             "rows two away show": ("\tif(distance >= 2.0f) {\n\t\treturn 0.0f;\n\t}\n\treturn distance <= 1.0f ? 1.0f - 0.34f * distance :\n\t\t0.66f * (2.0f - distance);",
@@ -1270,7 +1365,8 @@ class GameflowGxStream(unittest.TestCase):
                 "if(_GameflowDiscTexture(record, &shot->print, &shot->printAlpha)) {",
                 "if(false) {"),
         }
-        tests = (self.test_grid_rows_and_highlight, self.check_all_grid_moves,
+        tests = (self.test_staged_clipping_matches_release_and_keeps_input_immutable,
+                 self.test_grid_rows_and_highlight, self.check_all_grid_moves,
                  self.test_vertical_column, self.test_horizontal_shows_two_covers_either_side,
                  self.test_spotlight_row_picture_and_column, self.test_spotlight_moves_never_jump,
                  self.test_spotlight_never_leaves_the_column_blank,

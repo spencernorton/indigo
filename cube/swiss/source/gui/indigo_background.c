@@ -1247,6 +1247,34 @@ static void drawFaceBand(const cubeRasterTransform_t *raster, int face,
 	GX_End();
 }
 
+/* The eight authored circle sizes share unit samples between the icon and
+ * shadow passes, across faces and frames. Only 1,328 bytes, filled once
+ * on the video thread: no allocation or trigonometry on a warm frame.
+ * Keep the general emitters' other segment counts working uncached. */
+static const indigoPoint_t *faceCircleSamples(int segments)
+{
+	static const u8 sides[] = {8, 12, 14, 16, 20, 24, 32, 40};
+	static indigoPoint_t samples[8 + 12 + 14 + 16 + 20 + 24 + 32 + 40];
+	static u8 ready;
+	int offset = 0;
+
+	for(unsigned slot = 0; slot < sizeof(sides) / sizeof(sides[0]); slot++) {
+		if(segments != sides[slot]) {
+			offset += sides[slot];
+			continue;
+		}
+		if(!(ready & (1u << slot))) {
+			for(int i = 0; i < segments; i++) {
+				float angle = -INDIGO_TAU * (float)i / (float)segments;
+				samples[offset + i] = (indigoPoint_t) {cosf(angle), sinf(angle)};
+			}
+			ready |= 1u << slot;
+		}
+		return samples + offset;
+	}
+	return NULL;
+}
+
 /* A filled circle of segments sides: the controller's sticks and buttons,
  * the Toggles' knobs, the Info dot. */
 static void drawFaceCircle(const cubeRasterTransform_t *raster, int face,
@@ -1255,10 +1283,15 @@ static void drawFaceCircle(const cubeRasterTransform_t *raster, int face,
 	indigoPoint_t corners[FACE_POLYGON_MAX];
 
 	if(segments < 3 || segments > FACE_POLYGON_MAX) return;
+	const indigoPoint_t *unit = faceCircleSamples(segments);
 	for(int i = 0; i < segments; i++) {
-		float angle = -INDIGO_TAU * (float)i / (float)segments;
-		corners[i] = (indigoPoint_t) {x + radius * cosf(angle),
-			y + radius * sinf(angle)};
+		if(unit) {
+			corners[i] = (indigoPoint_t) {x + radius * unit[i].x, y + radius * unit[i].y};
+		}
+		else {
+			float angle = -INDIGO_TAU * (float)i / (float)segments;
+			corners[i] = (indigoPoint_t) {x + radius * cosf(angle), y + radius * sinf(angle)};
+		}
 	}
 	drawFacePolygon(raster, face, corners, segments, plane, color);
 }
@@ -1272,10 +1305,15 @@ static void drawFaceRing(const cubeRasterTransform_t *raster, int face,
 	indigoPoint_t corners[FACE_BAND_MAX];
 
 	if(segments < 3 || segments > FACE_BAND_MAX) return;
+	const indigoPoint_t *unit = faceCircleSamples(segments);
 	for(int i = 0; i < segments; i++) {
-		float angle = -INDIGO_TAU * (float)i / (float)segments;
-		corners[i] = (indigoPoint_t) {x + radius * cosf(angle),
-			y + radius * sinf(angle)};
+		if(unit) {
+			corners[i] = (indigoPoint_t) {x + radius * unit[i].x, y + radius * unit[i].y};
+		}
+		else {
+			float angle = -INDIGO_TAU * (float)i / (float)segments;
+			corners[i] = (indigoPoint_t) {x + radius * cosf(angle), y + radius * sinf(angle)};
+		}
 	}
 	drawFaceBand(raster, face, corners, segments, halfWidth, plane, color);
 }

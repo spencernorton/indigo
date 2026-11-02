@@ -7,12 +7,14 @@ newlines and extended characters must preserve every emitted vertex.
 
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
 import tempfile
 
 from test_cheats_gx_stream import extract_function
+from test_frame_budget import renderer_definition
 
 ROOT = Path(__file__).resolve().parents[3]
 FONT = "cube/swiss/source/gui/IPLFontWrite.c"
@@ -104,6 +106,72 @@ int main(void) {
 '''
 
 
+def check_immutable_textures(path, command):
+    """Execute the actual setup and bind paths across repeated draws/reinit.
+
+    Unrelated GX state setters are counted no-ops; loads and invalidations
+    retain their identities. Mutable pack textures and EFB copies are outside
+    this check and retain their own publication/synchronization contracts.
+    """
+    font = (ROOT / FONT).read_text()
+    frame = (ROOT / "cube/swiss/source/gui/FrameBufferMagic.c").read_text()
+    initialization = extract_function(frame, "void DrawInit(")
+    for publication in ("init_font();", "init_textures();"):
+        assert initialization.index(publication) < initialization.index("LWP_CreateThread(")
+    functions = "\n".join((extract_function(font, "void init_font("),
+                            extract_function(font, "void drawFontInit("),
+                            extract_function(frame, "static void init_textures("),
+                            renderer_definition(frame, "_DrawSimpleBox")))
+    calls = set(re.findall(r"\b((?:GX_|gu|UIStage_|SYS_|TPL_|_drawRect)\w*)\s*\(", functions))
+    stubs = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+typedef float Mtx[3][4];
+typedef float Mtx44[4][4];
+typedef struct {unsigned char r,g,b,a;} GXColor;
+static bool fontReady;
+static unsigned invalidations, loads, rects;
+static void note(const char *name) {
+    if(!strcmp(name,"GX_InvalidateTexAll")) invalidations++;
+    if(!strcmp(name,"GX_LoadTexObj")) loads++;
+    if(!strcmp(name,"_drawRect")) rects++;
+}
+'''
+    # Ignore the register values here; the existing native stream tests and
+    # target compilation cover their types and pipeline behavior.
+    stubs += "\n".join(f'#define {name}(...) note("{name}")' for name in sorted(calls - {"SYS_InitFont"}))
+    stubs += "\n#define SYS_InitFont(...) true\n"
+    driver = r'''
+int main(void) {
+    for(unsigned initialization=1;initialization<=2;initialization++) {
+        init_font();
+        assert(fontReady);
+        for(unsigned draw=0;draw<100;draw++) drawFontInit();
+        assert(invalidations==initialization && loads==100*initialization);
+    }
+    invalidations=loads=0;
+    for(unsigned initialization=1;initialization<=2;initialization++) {
+        init_textures();
+        for(unsigned draw=0;draw<100;draw++)
+            _DrawSimpleBox(10,20,100,50,0,(GXColor){0},(GXColor){0});
+        assert(invalidations==initialization && loads==200*initialization);
+        assert(rects==800*initialization);
+    }
+    puts("immutable textures: one invalidation per publication across 100 draws and reinit PASS");
+    return 0;
+}
+'''
+    source = path / "textures.c"
+    source.write_text(stubs + functions + driver)
+    # Setters' arguments are intentionally discarded by these macros.
+    subprocess.run(command + ["-Wno-unused-variable", "-Wno-unused-parameter",
+                              "-Wno-unused-but-set-parameter",
+                              str(source), "-o", str(path / "textures")], check=True)
+    subprocess.run([str(path / "textures")], check=True, timeout=10)
+
+
 def main():
     baseline = subprocess.check_output(["git", "-C", str(ROOT), "show", "v2.4.0:" + FONT], text=True)
     marker = "static void drawStringWeighted("
@@ -120,6 +188,7 @@ def main():
                 command += ["-no-pie"]
         subprocess.run(command + [str(path / "font.c"), "-o", str(path / "font")], check=True)
         subprocess.run([str(path / "font")], check=True, timeout=10)
+        check_immutable_textures(path, command)
 
 
 if __name__ == "__main__":

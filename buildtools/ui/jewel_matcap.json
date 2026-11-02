@@ -1,0 +1,12 @@
+{
+  "origin_commit": "46a40d3aa2b375027ccf72913642a6317e246380",
+  "sdk_image": "ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2",
+  "width": 64,
+  "height": 64,
+  "levels": 4,
+  "format": "GX_TF_RGBA8",
+  "bytes": 21760,
+  "sha256": "ba7e4b4fc3ebae4576aacc10d467a6fd88663b39913cdf28eab0795810ab8b31",
+  "crc32": "4ef9ed55",
+  "zlib_bytes": 12726
+}

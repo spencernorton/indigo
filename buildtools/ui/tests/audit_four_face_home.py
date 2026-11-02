@@ -324,8 +324,9 @@ ordered(dispatch, "case UI_HOME_EFFECT_OPEN_WEB:", "launchWebBrowser();")
 web_launch = extract_function(SWISS, "static void launchWebBrowser(void)\n{")
 ordered(web_launch, "mounted = config_set_device();", "device = devices[DEVICE_CONFIG];",
     "if(mounted && ", "device->readDir(", "if(found < 0) {", "if(mounted) {",
-    "config_unset_device();", "return;", 'char *labArgs[] = {NULL, "lab=1"};',
-    "boot_dol(&curFile, swissSettings.labServer ? 2 : 0, labArgs);",
+    "config_unset_device();", "return;", ".lab = swissSettings.labServer",
+    "UIBrowserLaunch_Arguments(&browserArgs, &context);",
+    "boot_dol(&curFile, browserArgs.argc, browserArgs.argv);",
     "device->closeFile(&curFile);", "config_unset_device();")
 assert web_launch.count("config_unset_device();") == 2
 assert web_launch.count("boot_dol(") == 1
@@ -718,7 +719,8 @@ assert '"L/R  PAGE %d OF %d    B  BACK"' in SYSTEM_INFO
 assert "Press A or B" not in info_page
 interactive_info = show_info[show_info.index("while(1)") :]
 assert "BUTTON_A" not in interactive_info
-assert "if(btns & PAD_BUTTON_B)" in interactive_info
+# Swiss 45af0e6 uses the common controller mask for the same B exit.
+assert "if(btns & BUTTON_B)" in interactive_info
 assert interactive_info.count("break;") == 1
 assert "while (padsButtonsHeld() & BUTTON_B)" in interactive_info
 

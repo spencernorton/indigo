@@ -45,7 +45,7 @@ echo "== building the fuzzers =="
 	$cc $flags -std=c11 -DUI_ASSETS_HOST_BUILD -I"$gui" -o "$out/bin/posters" \
 		"$here/fuzz_posters.c" "$gui/ui_assets.c" -lz
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/png" "$here/fuzz_png.c" "$gui/ui_png.c" -lz -lm
-	$cc $flags -std=c11 -I"$gui" -o "$out/bin/time_sync" "$here/fuzz_time_sync.c" "$gui/ui_time_sync.c"
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/time_sync" "$here/fuzz_time_sync.c" "$gui/ui_time_sync.c" "$here/../tzdata_host.c" -I"$gui/../../include"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/manual" "$here/fuzz_manual.c" "$gui/ui_manual.c" -lz -lm
 	python3 "$here/settings_source.py" "$out/fuzz_settings.c"
 	$cc $flags -std=gnu11 -w -o "$out/bin/settings" "$out/fuzz_settings.c"

@@ -16,9 +16,11 @@ compiling it into `ipl.dol` because:
 - The browser keeps its own renderer, audio, network and crash isolation, so a
   browser fault cannot corrupt Indigo.
 
-Trade-off: the browser renders itself rather than through Indigo's GX/IPL-font
-path, so the match to the rest of the UI is close but not pixel-identical. Its
-themes already mirror Indigo's (Indigo / Jet Black / Platinum / Spice).
+The browser owns its GX renderer and reads the console's IPL font at runtime
+for its chrome. It uses native dark panels and named Indigo menu colours;
+page fonts and author styles stay independent. A versioned argv contract
+passes display, motion, sound, rumble, active UTC offset and supported
+config-card origin without persisting those overrides in browser settings.
 
 ## The browser
 
@@ -32,11 +34,12 @@ permission to integrate). The fork already carries:
 - fixes for the page-reachable parser memory-safety bugs found by fuzzing
   (CSS value underflow, `:is`/`:not` recursion, a `<title>` overrun);
 - a parser fuzz suite (the upstream project had no tests);
-- **Return to Indigo** at bottom-left of every browsing page: one click
+- **< Indigo** at top-left of every browsing page: one click
   returns from the browser's main loop so the loader hands control back to
   the installed Indigo. Dialogs retain input ownership;
 - the SD card in a GC Loader as well as an SD2SP2 or SD Gecko: with more than
-  one card it takes the one whose `gcbrowser/` holds `cacert.pem`;
+  one card Indigo names its config card. Standalone fallback prefers the card
+  whose `gcbrowser/` holds `cacert.pem`;
 - rectangles cut to the clip box before drawing, which stopped a grey wedge
   drawn over some pages;
 - a console lab, off unless the browser starts with `lab=1`. `launchWebBrowser`
@@ -49,24 +52,24 @@ the GC Loader. libogc2 has no FlippyDrive device, so on a FlippyDrive-only
 console the browser has no certificates (https pages fail) and saves
 nothing; the zip's README and the install guide say so.
 
-## Integration checklist (Indigo side)
+## Launch behavior
 
-1. **Widen the 8-face cap first.** `gui/ui_home.c` asserts `UI_HOME_FACE_COUNT
-   <= 8` because the `absent` mask is a `uint8_t`; widen it, and raise the
-   640-byte motif-state bound in `test_ui_cube_motif.c`.
-2. Append `UI_HOME_FACE_WEB` after `FILES`, an icon, and
-   `UI_HOME_EFFECT_OPEN_WEB`; update the side-choice name arrays in
-   `gui/settings.c` (modulo order) and the ~dozen tests/audits that pin the face
-   list (`audit_four_face_home.py`, `test_ui_home.c`, the `*_gx_stream.py`
-   per-face arrays, `frame_budget.c`, …).
-3. Dispatch the effect in `swiss.c` `homeDispatchEffect` to `boot_dol` on the
-   bundled browser, after `menuaudio_shutdown()` + `DrawShutdown()`. Pass the
-   current theme to the browser via argv so it opens in the matching colour.
-4. Draw a web/globe icon in `gui/indigo_background.c`, fixed primitive count.
-5. Ship `cubebrowser.dol` in the zip (`buildtools/sd_package.sh`) at a known
-   path, and add a build step that produces it (see Open decisions).
-6. Use a distinct internal name (e.g. `WEB`): "browser" already means the File
-   Browser in this codebase and its tests.
+The Web Home face dispatches to `launchWebBrowser`, which mounts the config
+device to find `swiss/indigo/cubebrowser.dol` and keeps it mounted through
+`boot_dol`. Missing/failed launches close their handles and release the mount.
+The bundled browser stays out of Recent, so it cannot become the next automatic
+launch. The existing loader stub returns to the Indigo installed on the card.
+
+`gui/ui_browser_launch.c` formats bounded, versioned named arguments. Colour
+names avoid incompatible theme enum orders. Indigo supplies the active menu
+shape/video, motion, sound, rumble and local UTC offset (including DST), plus a
+supported config card. Its clock is already local: use Sync Clock's applied
+offset or an explicit POSIX zone, and omit an unknown offset rather than
+claiming UTC. The browser retains its own text size, safe margin and
+browsing preferences; inherited fields are hidden and are not written over
+standalone settings. `lab=1` is added only when Indigo's own lab is enabled.
+Host coverage checks the formatter, known/unknown offsets and configured POSIX time zones;
+the existing routing audit keeps mount/close/Recent behavior guarded.
 
 ## Packaging
 
@@ -99,17 +102,31 @@ CA bundle and mbed TLS's licence into `browser/` for `sd_package.sh`:
 
 - fork: https://github.com/spencernorton/cubebrowser (maintained by us, used
   with permission; its own README/NOTICE credit Arial-Bold)
-- pinned commit: `e338aa6d0a2262a350363a431770e8720788e0cc` — bump it in both
+- pinned commit: `c98a0bfb5dbac270035542d2d5313c57725dace2` — bump it in both
   workflows' `CUBEBROWSER_REF` to take browser changes.
 
 It builds with the same libogc2 toolchain the runner already carries, and
 `get-mbedtls.sh` fetches mbedTLS and stb from GitHub, which the CI egress proxy
 allows.
 
-## Open decisions
+## Qualification
 
-- **Theme to the browser via argv** — the browser ignores argv today, so it
-  opens in its own saved theme (Indigo by default). Add argv parsing to sync it.
-- The main-screen return passed a real-console check: one press returned to
-  the installed Indigo in about eight seconds. The start/help pages keep the
-  button visible, and an open Bookmarks dialog blocks clicks through it.
+The producer compares fresh builds across checkout paths, host locales and
+serial/parallel make, so Indigo packages the exact runtime-qualified bytes.
+The browser requires deterministic parser/engine sanitizer cases and two
+Dolphin routes: NTSC 4:3 and PAL interlaced widescreen on controller port 4.
+Each boots the produced DOL, fetches gzip HTML and PNG, drives menus,
+Settings and the address keyboard, follows a link and goes Back. The exact
+native browser DOL also rendered the public HTTPS start URL with the verified
+certificate indicator. This establishes native TLS/page compatibility in the
+emulator; real adapters, cables and return to resident Indigo still need
+qualification while the console is unavailable. The earlier return route
+passed on the previous browser; that result is not a new hardware pass.
+
+The start page's five-digit weather ZIP is the only persisted cookie-like
+preference. Verified responses scope it to norvitech.com/indigo/start/; its
+first-party PNG receives it directly and the image helper is bypassed. Save,
+restart and clear are qualified on the actual DOL/FAT fixture. General login
+cookies are not added. See the fork's `docs/start-preference.md` for the site
+contract and `docs/launch-context.md` for the launch arguments. Keep the
+separate DOL, curated CA bundle, verified dependency pins and opt-in lab.

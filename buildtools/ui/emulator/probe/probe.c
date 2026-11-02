@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "iconv_check.h"
+#include "unwind_check.h"
 
 #define PROBE_MAGIC 0x1D160B0Eu
 #define PROBE_VERSION 2u
@@ -135,6 +136,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	uart("probe: iconv passed\r");
+	if (!unwind_check()) {
+		uart("probe: unwind FAILED\r");
+		return 1;
+	}
+	uart("probe: unwind passed\r");
 	word[W_MAGIC] = PROBE_MAGIC;
 	word[W_VERSION] = PROBE_VERSION;
 	word[W_ARGC] = (u32)argc;

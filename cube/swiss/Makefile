@@ -59,14 +59,20 @@ INCLUDES	:=	include $(SOURCES) .. aesnd/libogc2/include
 
 # UI_PERF=1 builds the frame-time and GPU-counter overlay (gui/ui_perf.h).
 UI_PERF		?= 0
-# No unwind tables: nothing in Swiss unwinds (no C++, and a crash report walks
-# the stack's back chain), and they were about 100 KB of the DOL. Source paths
-# are named from this folder, so the DOL is the same wherever it is built.
-CFLAGS		= -g -O2 -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
+# Application C is optimized for size and linked with LTO, without changing
+# floating-point or aliasing policy. Hot renderers/audio opt out below.
+# C needs no unwind tables; crash reports walk the stack back chain.
+# Prebuilt dependencies retain their own exception metadata and compiler flags.
+# Source paths are relative so the DOL is the same wherever it is built.
+CFLAGS		= -g -Os -flto -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(shell git log -1 --format=%ct)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
 CXXFLAGS	= $(CFLAGS)
 
 ASFLAGS		= $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY $(INCLUDE)
-LDFLAGS		= $(CFLAGS) -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
+# One LTO partition keeps the size policy independent of build parallelism.
+# A declaration mismatch must fail the link instead of being optimized through.
+# The pinned bare-metal libgcc uses CRT-registered frames, not this index.
+# Keep .eh_frame, exception tables, personalities and registration intact.
+LDFLAGS		= $(CFLAGS) -flto-partition=one -Werror=lto-type-mismatch -Wl,--no-eh-frame-hdr -Wl,-Map,$(notdir $@).map -T ../../linker-script/ogc.ld -T ../../reservedarea.ld
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -100,6 +106,8 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 # Each directory's files in byte order: wildcard follows the locale, and the
 # link order decides the DOL's bytes.
 CFILES		:=	$(foreach dir,$(SOURCES),$(sort $(notdir $(wildcard $(dir)/*.c))))
+# Indigo keeps its opt-in, bounded time_sync client and local RTC model.
+CFILES := $(filter-out sntp.c,$(CFILES))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(sort $(notdir $(wildcard $(dir)/*.cpp))))
 sFILES		:=	$(foreach dir,$(SOURCES),$(sort $(notdir $(wildcard $(dir)/*.s))))
 SFILES		:=	$(foreach dir,$(SOURCES),$(sort $(notdir $(wildcard $(dir)/*.S))))
@@ -166,6 +174,10 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
+
+# Keep the measured hot emitters and audio outside cross-file optimization:
+# their instructions and relocation records match the previous -O2 objects.
+$(OFILES_AESND) IPLFontWrite.o indigo_background.o ui_jewel_case.o: CFLAGS += -O2 -fno-lto
 
 $(OFILES_SOURCES) : $(HFILES)
 

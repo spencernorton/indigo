@@ -194,8 +194,10 @@ most use the same key there.
 | `BBANetmask` | The prefix length, such as `24`. | `0` | IPv4 Netmask |
 | `BBAGateway` | An IPv4 address. | empty | IPv4 Gateway |
 | `NTPSync` | `Yes`, `No` | `No` | Sync Clock |
+| `SNTPHostIP` | Swiss alias of `NTPHostIP`, read on import. Saving uses `NTPHostIP`. It does not enable Sync Clock. | | NTP Server IP |
 | `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
-| `TimeZone` | A POSIX TZ string, such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Empty keeps the zone the console's clock is in: its offset from UTC, snapped to the nearest one a real time zone uses. | empty | Time Zone |
+| `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
+| `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty keeps the zone the console's clock is in: its offset from UTC, snapped to the nearest one a real time zone uses. | empty | Time Zone |
 | `FSPHostIP` | An IPv4 address. | empty | FSP Host IP |
 | `FSPPort` | A port number. | `21` | FSP Port |
 | `FSPPassword` | Text, stored as written. | empty | FSP Password |
@@ -220,7 +222,8 @@ most use the same key there.
 | --- | --- | --- | --- |
 | `Spin Discs` | `Yes`, `No`. `No`: the Jewel Case's disc rests instead of spinning. Z in the Jewel Case sets it and saves. | `Yes` | (Z in the Jewel Case) |
 | `Library Folders` | `Yes`, `No`. `Yes` shows as Library Folders › On: the Library shows the folders in `/games`, two levels deep. While it is `Yes`, Indigo flattens by `*/games/*/*` and `FlattenDir` keeps the value it replaced. | `No` | Library Folders |
-| `Hide Saves on Details` | `Yes`, `No`. `Yes` shows as Saves on Details › Off: a game's details leave the memory cards alone. With `No`, they read the memory cards and the Save Folder for the game's saves, and show them when there are two or more copies. | `No` | Saves on Details |
+| `Hide Saves on Details` | `Yes`, `No`. `Yes` shows as Saves on Details › Off: a game's details leave the memory cards alone, even if `Always Show Saves on Details` is `Yes`. With `No`, they read the memory cards and the Save Folder for the game's saves. | `No` | Saves on Details |
+| `Always Show Saves on Details` | `Yes`, `No`. With `Hide Saves on Details=No`, `Yes` shows as Saves on Details › Always: the Saves box stays visible with one copy or none. `No` keeps On's two-copy threshold. Older versions ignore this key and keep their On/Off behavior. | `No` | Saves on Details |
 | `Memory Card Folder Colors` | Saved colors for the small folder and RAW card-image cubes on Memory Cards, set with Y Folder. Up to 32 device-prefixed full paths, separated by `;`, each followed by `~1` through `~8` for Indigo, Azure, Emerald, Gold, Spice, Crimson, Rose and Jet Black. Reserved characters and spaces in paths use `%HH` hexadecimal escapes. For example `sda:/swiss/saves/Backups~3`. An empty value clears the colors; invalid entries are ignored. Resetting to Default removes that path. | empty | Memory Cards › Y Folder |
 | `Library Layout` | `Horizontal`, `Vertical`, `Grid`, `Spotlight`, `Jewel Case`. How the Library shows your games: a row, a column, rows of five, a gameplay still over a row of banners, or one CD jewel case at a time with the game's disc spinning inside. | `Horizontal` | Library Layout |
 | `FileBrowserType` | `Standard`, `Fullwidth`, `Carousel`. Read and written for Swiss; Indigo ignores it. | `Standard` | — |
@@ -307,3 +310,10 @@ file still overrides the fix.
 - **Configuration Device** and **CPU Temperature Calibration** live only in
   the console's SRAM. Set them on the console.
 - The **Reset to defaults** rows are actions, not settings.
+
+Swiss configuration imports may also use `System Time Zone` and `SNTPHostIP`;
+Indigo reads these as aliases of `TimeZone` and `NTPHostIP`. Saving writes the
+Indigo keys. Importing a server or zone does not turn on Sync Clock.
+`Etc/Unknown` keeps the console's existing offset, like an empty Time Zone.
+The bundled names provide the upstream table's current recurring rules, not
+a complete historical timezone database.
