@@ -634,6 +634,79 @@ class MemoryCards(unittest.TestCase):
         self.assertIsNone(self.step(itertools.repeat(copper), first), "the same name never counts")
 
 
+class TextSettling(unittest.TestCase):
+    def frame(self, fixture):
+        from PIL import Image
+        gray = np.full((run.HEIGHT, run.WIDTH), 40, np.uint8)
+        x0, y0, x1, y1 = run.LABEL_BOX
+        gray[y0:y1, x0:x1] = np.asarray(Image.open(
+            Path(__file__).parent / "fixtures" / fixture).convert("L"))
+        return gray
+
+    def settle(self, samples, **match):
+        state = {"clock": samples[0][1], "seen": 0}
+
+        class Clock:
+            def emulated(self):
+                return state["clock"]
+
+        class BoundedWait:
+            def __init__(self, *args, **kwargs):
+                self.calls = 0
+
+            def expired(self):
+                self.calls += 1
+                return self.calls > len(samples)
+
+        route = run.Route.__new__(run.Route)
+        route.emulator = Clock()
+        stream = iter(samples)
+
+        def gray():
+            frame, state["clock"] = next(stream)
+            state["seen"] += 1
+            return frame
+
+        route.gray = gray
+        with mock.patch.object(run, "Deadline", BoundedWait), mock.patch.object(run.time, "sleep"):
+            mask, _ = route.settled_label(**match)
+        return mask, state["seen"]
+
+    def test_cached_fading_home_is_not_the_settled_name(self):
+        arriving = self.frame("home-label-arriving.png")
+        settled = self.frame("home-label-settled.png")
+        before, after = run.text_mask(arriving), run.text_mask(settled)
+        self.assertTrue(run.has_label(before) and run.has_label(after))
+        self.assertFalse(run.same_text(before, after), "captured fade reproduces the comparison failure")
+        samples = [(arriving, 0.0)] * 4 + [(settled, t) for t in (.1, .2, .3, .4, .5)]
+        found, seen = self.settle(samples)
+        self.assertIsNotNone(found)
+        self.assertTrue(np.array_equal(found, after))
+        self.assertGreater(seen, 4, "cached host captures do not advance the emulated animation")
+
+    def test_a_frozen_emulated_clock_never_establishes_settling(self):
+        frame = self.frame("home-label-settled.png")
+        found, _ = self.settle([(frame, 1.0)] * 8)
+        self.assertIsNone(found)
+
+    def test_steady_text_with_emulated_progress_is_accepted(self):
+        frame = self.frame("home-label-settled.png")
+        found, seen = self.settle([(frame, t) for t in (0.0, .2, .4)])
+        self.assertTrue(np.array_equal(found, run.text_mask(frame)))
+        self.assertEqual(seen, 3)
+
+    def test_without_clock_reports_the_existing_observations_still_apply(self):
+        frame = self.frame("home-label-settled.png")
+        found, seen = self.settle([(frame, None)] * 3)
+        self.assertTrue(np.array_equal(found, run.text_mask(frame)))
+        self.assertEqual(seen, 3)
+
+    def test_time_progress_does_not_accept_the_wrong_name(self):
+        frame = self.frame("home-label-settled.png")
+        found, _ = self.settle([(frame, t) for t in (0.0, .2, .4, .6)], unlike=run.text_mask(frame))
+        self.assertIsNone(found)
+
+
 class Pad(unittest.TestCase):
     def test_wire_format(self):
         info = bytearray(dsu_pad.port_info(1, 0, True))

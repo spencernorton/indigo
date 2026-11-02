@@ -50,6 +50,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Emulator Home checks wait for the console's animation time before accepting
+  a steady face name, so cached host frames cannot capture a fading reference.
 - The emulator's folder checks observe Settings tab and section transitions
   before changing a layout, recovering from a missed press with a recorded,
   bounded retry and stopping when navigation does not respond.

@@ -230,6 +230,7 @@ SAME, DIFFERENT = 0.85, 0.5  # intersection over union of two label masks
 # before WALL_FLOOR: a slow Dolphin must not cut a short press down to a frame.
 BOOT_SECONDS = 120
 SETTLE_SECONDS = 10
+HOME_STEADY_SECONDS = 0.3  # In Dolphin's time, not repeated captures of a cached host frame.
 WALL_FACTOR = 5
 WALL_FLOOR = 0.5
 TICKS_PER_SECOND = 486_000_000  # the GameCube's CPU clock, which Dolphin's ticks count
@@ -1221,19 +1222,36 @@ class Route:
                       box: tuple[int, int, int, int] = LABEL_BOX,
                       level: int = TEXT_LEVEL,
                       numeric: bool = False) -> tuple[np.ndarray | None, float]:
-        """Wait for steady text in a box (the face's name by default), optionally unlike or like a given one."""
+        """Wait for steady text, with Home names spanning actual emulated time.
+
+        A busy host can capture a fading Home label repeatedly without the
+        console advancing. Those copies cannot establish a settled reference.
+        Other boxes and backends without clock reports retain their existing
+        observation rule; word identity thresholds are unchanged.
+        """
         deadline = Deadline(self.emulator, seconds)
-        previous, steady = None, 0
+        previous, steady, stable_since = None, 0, None
         while not deadline.expired():
             mask = text_mask(self.gray(), box, level)
+            clock = getattr(self.emulator, "emulated", lambda: None)()
             ok = has_save_number(mask) if numeric else has_label(mask)
             if ok and unlike is not None:
                 ok = overlap(mask, unlike) < DIFFERENT
             if ok and like is not None:
                 ok = same_text(mask, like)
-            steady = steady + 1 if ok and previous is not None and overlap(mask, previous) >= 0.95 else 0
-            previous = mask if ok else None
-            if steady >= 2:
+            if ok and previous is not None and overlap(mask, previous) >= 0.95:
+                steady += 1
+                if stable_since is None:
+                    stable_since = clock
+            else:
+                steady = 0
+                stable_since = clock if ok else None
+                previous = mask if ok else None
+            if box != LABEL_BOX or clock is None:
+                previous = mask if ok else None
+            progressed = (box != LABEL_BOX or clock is None or
+                          (stable_since is not None and clock - stable_since >= HOME_STEADY_SECONDS))
+            if steady >= 2 and progressed:
                 return mask, time.monotonic()
             time.sleep(0.15)
         return None, time.monotonic()

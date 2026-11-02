@@ -1,3 +1,19 @@
+## 2026-11-01 — Observe emulated progress before settling Home text
+
+Two smoke artifacts return to the correct Library face but fail the comparison
+against a reference captured during its boot fade. Repeated host screenshots
+can look steady while Dolphin's console clock has not advanced. Freeze the
+neutral label crops as a regression: the old observer accepts the arriving
+234-pixel mask instead of its settled313-pixel version.
+
+Require three matching Home observations spanning0.3 emulated seconds, anchored
+to the first stable mask. Keep word-identity thresholds unchanged, preserve the
+existing rule for other boxes/backends without clock reports, and never infer
+readiness from a frozen emulated clock. Five regression cases include wrong-name
+rejection and normal progress. The full observer/source suite must pass before
+CI replays; this changes test observation only, not the normal executable.
+The separate failed file-browser launch route remains an investigation gate.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next
