@@ -1,3 +1,13 @@
+## 2026-11-02 — Retain file-game navigation evidence
+
+The separate file-route failure ends at root with gcbrowser selected after a
+check that only proved the path changed. Record each file-navigation listing,
+expected row delta, folder and target, plus captures before entering games,
+after its path transition and after game selection. The inputs, path checks,
+word thresholds and acceptance checks are unchanged; no retry is added and no
+fix for that failure is claimed. These captures let a future failure identify
+the first unexpected selection instead of inferring it from the final screen.
+
 ## 2026-11-02 — Observe Save Details and Actions before card operations
 
 Combined smoke CI reaches Memory Cards but still shows Actions on Move at its

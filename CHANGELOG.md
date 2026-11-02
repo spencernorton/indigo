@@ -50,6 +50,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Dolphin file-game navigation retains the expected rows and actual directory/
+  selection captures for diagnosing a failed transition.
+
 - Dolphin Memory Cards checks observe Save Details and Actions before selecting
   a card operation, so a missed opening press cannot turn Copy into Move.
 

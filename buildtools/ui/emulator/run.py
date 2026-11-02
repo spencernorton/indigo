@@ -2405,6 +2405,8 @@ class Route:
         sorts it."""
         names = card.listing(image, folder)
         rows = names.index(target) - names.index(focus)
+        print("FILES navigation " + json.dumps({"from": focus, "target": target,
+              "folder": folder, "rows": rows, "listing": names}), flush=True)
         self.steps(" ".join(["DOWN" if rows > 0 else "UP"] * abs(rows)), 0.4)
 
     def files_said(self, what: str, failed: bool = False) -> np.ndarray | None:
@@ -2720,8 +2722,10 @@ class Route:
         the probe's by default. The path line at the top, as a mask."""
         self.files_goto(image, focus, "games/")
         top = self.files_path()
+        self.shot("files-games-before-open", self.last_rgb)
         self.press("A")
         inside = self.files_path(unlike=top) if top is not None else None
+        self.shot("files-games-after-open", self.last_rgb)
         self.check("A on games/ opens it in the left pane", inside is not None)
         # Flatten directory (on for /games) lists a folder's files in its
         # place: such a folder has no row, and they sort after the probe.
@@ -2730,6 +2734,8 @@ class Route:
         rows = names.index(card.game_file(*game)) - 1
         self.steps(" ".join(["DOWN"] * rows), 0.4)
         self.pause(1.0)
+        self.last_rgb = self.emulator.frame()
+        self.shot("files-game-selection", self.last_rgb)
         return top
 
     def files_poster(self, image: Path, focus: str) -> None:
