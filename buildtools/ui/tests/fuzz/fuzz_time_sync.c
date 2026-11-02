@@ -12,7 +12,9 @@
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
 	static const int64_t when[] = {
-		INT64_C(-2208988800), 0, INT64_C(1792432800), INT64_C(4294967295),
+		INT64_C(-2208988800), 0, INT64_C(1792432800),
+		INT64_C(1793509200), INT64_C(1800014400), INT64_C(1825563600),
+		INT64_C(4294967295),
 		INT64_C(6370000000),
 	};
 	char *zone = malloc(size + 1);

@@ -4,7 +4,7 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
-## Unreleased
+## v2.6.0 — Jewel Case memory savings and Swiss updates
 
 ### New
 
@@ -29,6 +29,28 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Improved
 
+- Review Swiss through `d9159b0`: Time Zone accepts bundled location names,
+  Swiss clock-setting aliases import into the existing opt-in Sync Clock,
+  environment updates and launch snapshots use the upstream lock, and downloads
+  include lwIP's licence. Time Zone observes IANA 2026f's temporary Havana rule.
+  Preserve the pinned SDK and local-clock behavior;
+  periodic SNTP and automatic RTC rewriting remain deferred.
+
+
+
+- Prepare the Jewel Case rod-lighting texture from lossless target-generated data, reducing work at first use.
+- Reuse the Jewel Case rainbow strips’ shared lighting samples while preserving their geometry and colors.
+- Reduce Jewel Case mesh memory by sharing identical position and normal data while preserving the geometry and glints.
+
+- Jewel Case shares exact repeated colors between its lighting tables,
+  reducing retained RAM while preserving reflections and interpolation.
+- Jewel Case derives printed disc coordinates on the GPU, removing duplicate
+  texture-coordinate data from each printed disc's vertex stream.
+- Thread-safe devices load Library artwork on one background reader instead
+  of waiting for each video frame. Reads remain bounded to 16 KiB, complete
+  textures pass their CRC before appearing, and input actions drain the reader.
+  A short sleep after every step shares time with input and background work.
+  Other devices retain the bounded menu-thread path.
 - Library title fitting and Spotlight description wrapping are prepared before
   taking the video lock, so formatting a new window does not hold up drawing.
 - Home reuses its icons' circle geometry between faces and frames, reducing
@@ -50,12 +72,42 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Manual and weekly CI runs start parser fuzzing after successful checks even
+  when the pull-request-only branch check is skipped, while honoring cancellation.
+
+- Keep the In-Game Reset return loader's decoder mode consistent, including
+  its short-buffer failure path.
+
+- Dolphin file-game entry observes the root selection and bounds arrow
+  corrections before opening games, rejecting changed or ambiguous context.
+
+- Dolphin file-game navigation retains the expected rows and actual directory/
+  selection captures for diagnosing a failed transition.
+
+- Dolphin Memory Cards checks observe Save Details and Actions before selecting
+  a card operation, so a missed opening press cannot turn Copy into Move.
+
+- Emulator Home checks wait for the console's animation time before accepting
+  a steady face name, so cached host frames cannot capture a fading reference.
 - The emulator's folder checks observe Settings tab and section transitions
   before changing a layout, recovering from a missed press with a recorded,
   bounded retry and stopping when navigation does not respond.
 - Jewel Case's sway stays continuous through long sessions. UI Motion Off
   stops the disc immediately and follows the C-stick without coasting;
   Z keeps its gradual spin stop when motion is enabled.
+
+### Validation coverage
+
+- Automated checks cover all eleven emulator routes, thirteen parser-fuzz targets,
+  and native GameCube SD2SP2 menu browsing at NTSC 480p. Matched renderer tests
+  retained about 274 KiB less Jewel heap and reduced first preparation from
+  about 2.91 seconds to 0.185 seconds; 24 native image pairs were byte-identical.
+  The captured workloads contained 14,606 frames with no frame period above
+  25 ms. These measurements describe renderer allocation and preparation.
+- Attended picture/controller assessment, actual opt-in clock sync and saved
+  preference persistence, real game/A+Z+Start return, Web return and installed
+  cold-boot qualification remain pending for this release.
+- MemCard PRO GC qualification remains pending.
 
 ## v2.5.0 — Manuals, disc art and a connected cube
 

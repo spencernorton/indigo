@@ -29,7 +29,7 @@ TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw t
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual
 
-test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c
+test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c tzdata_host.c
 test_ui_cheats.src := $(GUI)/ui_cheats.c
 test_ui_saves.src := $(GUI)/ui_saves.c
 test_ui_saves_raw.src := $(GUI)/ui_saves_raw.c $(GUI)/ui_saves.c
@@ -65,7 +65,11 @@ test_ui_settings_focus.libs := -lm
 test_ui_system_info.src := $(GUI)/ui_system_info.c
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c
-test_ui_time_sync.src := $(GUI)/ui_time_sync.c
+test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c
+# See tzdata_host.c for the imported table's two isolated warning exemptions.
+TIME_SYNC_FLAGS := $(GAMEFLOW_CFLAGS) -I$(GUI)/../../include
+test_ui_time_sync.flags = $(TIME_SYNC_FLAGS)
+test_ui_browser_launch.flags = $(TIME_SYNC_FLAGS)
 # Memory card slots around a GameID switch (indigo#102), against scripted cards.
 test_ui_card_slots.src := $(GUI)/ui_card_slots.c
 test_ui_clock.libs := -lm

@@ -199,7 +199,8 @@ require('"JEWEL CASE BY PORTLANDHODL, AFTER CD CASE BY ANN NGUYEN"' in credits,
 # Input remains exactly the established B-only, one-level return contract.
 interactive = show_info[show_info.index("while(1)") :]
 require("BUTTON_A" not in interactive, "A exits or acts inside System Information")
-require("if(btns & PAD_BUTTON_B)" in interactive, "B exit is missing")
+# Swiss 45af0e6 uses the common controller mask for the exit too.
+require("if(btns & BUTTON_B)" in interactive, "common-controller B exit is missing")
 require(interactive.count("break;") == 1, "more than one exit path exists")
 require("while (padsButtonsHeld() & BUTTON_B)" in interactive,
         "B release is not drained")

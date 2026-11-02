@@ -24,6 +24,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef UI_JEWEL_CASE_REFERENCE
+#include <zlib.h>
+#endif
 
 #include "ui_color.h"
 #include "ui_jewel_case.h"
@@ -141,7 +144,8 @@ static float hot(float q)
 		0.8f * band(q, -1.25f, 0.15f, 0.03f);
 }
 
-static v3 room(v3 d)
+/* Retain the original float rounding at these bake boundaries. */
+static __attribute__((noinline)) v3 room(v3 d)
 {
 	d = vnorm(d);
 	float k = 1.0f / fmaxf(fabsf(d.z), 0.08f);
@@ -168,7 +172,7 @@ static v3 room(v3 d)
 	return vmix(dim, c, smoothstep(0.0f, 0.2f, d.z));
 }
 
-static float backdropOf(v3 d)
+static __attribute__((noinline)) float backdropOf(v3 d)
 {
 	d = vnorm(d);
 	if(d.z >= 0.0f) return 0.0f;
@@ -182,8 +186,13 @@ static float backdropOf(v3 d)
  * lit every frame: looked up and interpolated it costs a fraction of working
  * it out. */
 #define ROOM_RES 48
+#define ROOM_ENTRIES (6 * ROOM_RES * ROOM_RES)
 static v3 *roomTable;
 static v3 *studioTable;	/* the room with the backdrop behind, as studio() gives it */
+/* After preparation both table pointers share one exact-value palette.
+ * The two index arrays occupy one allocation, owned through lightingIndices. */
+static u16 *lightingIndices;
+static unsigned lightingCount;
 
 static void faceDir(int f, float u, float v, v3 *d)
 {
@@ -226,7 +235,9 @@ static bool buildRoomTable(void)
 }
 
 /* A direction looked up in one of the cube map tables, bilinearly. */
-static v3 cubeLookup(const v3 *table, v3 d)
+/* Keep the direct builder and mapped draw paths on two-argument interfaces.
+ * Controlled target replays pin their floating-point behavior. */
+static v3 directCubeLookup(const v3 *table, v3 d)
 {
 	float ax = fabsf(d.x), ay = fabsf(d.y), az = fabsf(d.z), u, v, m;
 	int f;
@@ -243,14 +254,94 @@ static v3 cubeLookup(const v3 *table, v3 d)
 	return vmix(a, b, ty);
 }
 
-static v3 roomT(v3 d) { return cubeLookup(roomTable, d); }
+static v3 mappedCubeLookup(const u16 *indices, v3 d)
+{
+	const v3 *table = roomTable;
+	float ax = fabsf(d.x), ay = fabsf(d.y), az = fabsf(d.z), u, v, m;
+	int f;
+	if(ax >= ay && ax >= az) { f = d.x > 0 ? 0 : 1; m = ax; u = d.x > 0 ? -d.z : d.z; v = d.y; }
+	else if(ay >= az) { f = d.y > 0 ? 2 : 3; m = ay; u = d.x; v = d.y > 0 ? -d.z : d.z; }
+	else { f = d.z > 0 ? 4 : 5; m = az; u = d.z > 0 ? d.x : -d.x; v = d.y; }
+	if(!(m > 0.0f)) return table[indices ? indices[0] : 0];
+	float fx = clampf((u / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
+	float fy = clampf((v / m + 1) * 0.5f * ROOM_RES - 0.5f, 0, ROOM_RES - 1.001f);
+	int x0 = (int)fx, y0 = (int)fy;
+	float tx = fx - x0, ty = fy - y0;
+	unsigned at = (f * ROOM_RES + y0) * ROOM_RES + x0;
+	v3 tl, tr, bl, br;
+	if(indices) {
+		tl = table[indices[at]]; tr = table[indices[at + 1]];
+		bl = table[indices[at + ROOM_RES]]; br = table[indices[at + ROOM_RES + 1]];
+	}
+	else {
+		const v3 *t = table + at;
+		tl = t[0]; tr = t[1]; bl = t[ROOM_RES]; br = t[ROOM_RES + 1];
+	}
+	v3 a = vmix(tl, tr, tx), b = vmix(bl, br, tx);
+	return vmix(a, b, ty);
+}
+
+static v3 roomT(v3 d) { return lightingIndices ? mappedCubeLookup(lightingIndices, d) : directCubeLookup(roomTable, d); }
 
 static v3 studioSlow(v3 d)
 {
 	return vmix(roomT(d), V3(1.0f, 1.0f, 1.0f), backdropOf(d));
 }
 
-static v3 studio(v3 d) { return cubeLookup(studioTable, d); }
+static v3 studio(v3 d)
+{
+	return lightingIndices ? mappedCubeLookup(lightingIndices + ROOM_ENTRIES, d) : directCubeLookup(studioTable, d);
+}
+
+static const v3 *lightingSource(unsigned i)
+{
+	return i < ROOM_ENTRIES ? roomTable + i : studioTable + (i - ROOM_ENTRIES);
+}
+
+static u32 lightingHash(const v3 *color)
+{
+	u32 words[3];
+	memcpy(words, color, sizeof(words));
+	u32 hash = 2166136261u;
+	for(unsigned i = 0; i < 3; i++) hash = (hash ^ words[i]) * 16777619u;
+	return hash;
+}
+
+/* Menu thread only. Retain exact float bits; neither table's interpolation
+ * or sample order changes. Retire the hash before allocating the palette. */
+static bool packLighting(void)
+{
+	const unsigned entries = 2 * ROOM_ENTRIES;
+	_Static_assert(2 * ROOM_ENTRIES < 65536, "lighting source indices must fit u16");
+	unsigned slots = 1;
+	/* More slots than source entries guarantees an empty sentinel even if
+	 * every color is unique, without reserving a second table-sized margin. */
+	while(slots <= entries) slots <<= 1;
+	u16 *hash = calloc(slots, sizeof(*hash));
+	u16 *indices = malloc(entries * sizeof(*indices));
+	if(hash == NULL || indices == NULL) { free(hash); free(indices); return false; }
+	unsigned unique = 0;
+	for(unsigned i = 0; i < entries; i++) {
+		const v3 *color = lightingSource(i);
+		unsigned bucket = lightingHash(color) & (slots - 1);
+		while(hash[bucket] && memcmp(color, lightingSource(hash[bucket] - 1), sizeof(*color)))
+			bucket = (bucket + 1) & (slots - 1);
+		if(hash[bucket]) indices[i] = indices[hash[bucket] - 1];
+		else { hash[bucket] = i + 1; indices[i] = unique++; }
+	}
+	free(hash);
+	v3 *palette = malloc(unique * sizeof(*palette));
+	if(palette == NULL) { free(indices); return false; }
+	unsigned copied = 0;
+	for(unsigned i = 0; i < entries; i++) {
+		if(indices[i] == copied) memcpy(palette + copied++, lightingSource(i), sizeof(*palette));
+	}
+	free(roomTable); free(studioTable);
+	roomTable = studioTable = palette;
+	lightingIndices = indices;
+	lightingCount = unique;
+	return true;
+}
 
 static v3 glare(v3 d)
 {
@@ -309,6 +400,13 @@ static v3 spectral(float w)
 static u8 *matcapData;
 static GXTexObj matcapTex;
 
+static const struct { float x, y; v3 col; bool front; } studioLamps[] = {
+	{-0.42f, 0.98f, {1.0f, 1.1f, 1.27f}, true}, {0.62f, 0.72f, {0.85f, 0.96f, 1.1f}, true},
+	{-0.95f, -0.5f, {0.75f, 0.85f, 1.0f}, true}, {0.85f, -0.7f, {0.75f, 0.85f, 1.0f}, true},
+	{-0.62f, 0.58f, {0.15f, 0.17f, 0.2f}, false}, {0.66f, -0.6f, {0.15f, 0.17f, 0.2f}, false},
+};
+
+#ifdef UI_JEWEL_CASE_REFERENCE
 typedef struct { float s, z; } v2;
 
 static bool refract2(v2 i, v2 n, float eta, v2 *out)
@@ -338,11 +436,7 @@ static void initBlurTaps(void)
  * rounded surface catches each as a pin-point. Blurred over a cone they
  * spread their light (in the original's cube map, mip-mapped) over
  * everything within it. */
-static const struct { float x, y; v3 col; bool front; } studioLamps[] = {
-	{-0.42f, 0.98f, {1.0f, 1.1f, 1.27f}, true}, {0.62f, 0.72f, {0.85f, 0.96f, 1.1f}, true},
-	{-0.95f, -0.5f, {0.75f, 0.85f, 1.0f}, true}, {0.85f, -0.7f, {0.75f, 0.85f, 1.0f}, true},
-	{-0.62f, 0.58f, {0.15f, 0.17f, 0.2f}, false}, {0.66f, -0.6f, {0.15f, 0.17f, 0.2f}, false},
-};
+
 #define LAMP 12000.0f
 
 static v3 lampsBlur(v3 d, float radius)
@@ -506,6 +600,33 @@ static bool buildMatcap(void)
 	return true;
 }
 
+#else
+#include "ui_jewel_matcap.inc"
+
+static bool decodeMatcap(void *out, size_t outBytes, const void *packed, size_t packedBytes)
+{
+	uLongf decoded = outBytes;
+	uLong consumed = packedBytes;
+	if(!out || !packed || outBytes != JEWEL_MATCAP_BYTES || !packedBytes ||
+		(size_t)decoded != outBytes || (size_t)consumed != packedBytes) return false;
+	return uncompress2(out, &decoded, packed, &consumed) == Z_OK &&
+		decoded == outBytes && consumed == packedBytes;
+}
+
+static bool buildMatcap(void)
+{
+	_Static_assert(MATCAP_SIZE == 64 && MATCAP_LODS == 4, "regenerate the rod texture for a new layout");
+	const u32 bytes = JEWEL_MATCAP_BYTES;
+	matcapData = memalign(32, bytes);
+	if(matcapData == NULL) return false;
+	if(!decodeMatcap(matcapData, bytes, jewelMatcapPacked, sizeof(jewelMatcapPacked))) return false;
+	DCFlushRange(matcapData, bytes);
+	GX_InitTexObj(&matcapTex, matcapData, MATCAP_SIZE, MATCAP_SIZE, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_TRUE);
+	GX_InitTexObjLOD(&matcapTex, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, MATCAP_LODS - 1, 0.0f, GX_DISABLE, GX_ENABLE, GX_ANISO_1);
+	return true;
+}
+#endif
+
 /* ---------------------------------------------------------------------------
  * Paths, as the original builds them (2D, millimetres)
  * ------------------------------------------------------------------------- */
@@ -610,12 +731,16 @@ typedef struct { float hw, hh, rc, zc; int seg; bool flat; } profile_t;
 
 typedef struct {
 	float *pos, *nrm;
-	int count, cap;
+	void *dl;
+	u32 dlSize;
 	int glintEnd;	/* the first rod, the frame, is where the lamps glint */
+	/* Keep the fields read every frame together; maps are preparation-only. */
+	u16 *positionMap, *normalMap;
+	int positionCount, normalCount;
+	int count, cap;
 	u16 *prims;	/* [GX primitive, count, indices...]... */
 	int primLen, primCap;
-	void *dl;
-	u32 dlSize, dlCap;
+	u32 dlCap;
 	bool failed;	/* out of memory while it was built */
 } rodmesh_t;
 
@@ -754,25 +879,76 @@ static void rodSetupVtx(void)
 	GX_SetVtxAttrFmt(VTXFMT_ROD, GX_VA_NRM, GX_NRM_XYZ, GX_F32, 0);
 }
 
-/* Move the arrays to aligned memory and make room for the display list the
- * video thread records them in. Menu thread. */
+/* Keep both glint arrays at their original indices for the CPU hot path.
+ * Share equal tail vectors by exact bits; only the recorded GX indices
+ * change. Menu thread, before either array is published. */
+static u32 rodVectorHash(const float *vector)
+{
+	u32 words[3];
+	memcpy(words, vector, sizeof(words));
+	u32 h = 2166136261u;
+	for(unsigned i = 0; i < 3; i++) h = (h ^ words[i]) * 16777619u;
+	return h;
+}
+
+static int rodMapVectors(const float *vectors, int count, int prefix,
+	u16 *map, u16 *table, unsigned slots)
+{
+	int unique = 0;
+	for(int i = 0; i < count; i++) {
+		const float *v = vectors + i * 3;
+		unsigned bucket = rodVectorHash(v) & (slots - 1);
+		while(table[bucket] && memcmp(v, vectors + (table[bucket] - 1) * 3, 12))
+			bucket = (bucket + 1) & (slots - 1);
+		if(i < prefix) {
+			map[i] = unique++;
+			if(!table[bucket]) table[bucket] = i + 1;
+		}
+		else if(!table[bucket]) { table[bucket] = i + 1; map[i] = unique++; }
+		else map[i] = map[table[bucket] - 1];
+	}
+	return unique;
+}
+
+static void rodCopyVectors(float *dst, const float *src, int count,
+	int prefix, const u16 *map)
+{
+	memcpy(dst, src, prefix * 12);
+	int copied = prefix;
+	for(int i = prefix; i < count; i++) {
+		if(map[i] == copied) { memcpy(dst + copied * 3, src + i * 3, 12); copied++; }
+	}
+}
+
 static bool rodPack(rodmesh_t *m)
 {
-	if(m->failed || m->count == 0) return false;
-	float *pos = memalign(32, m->count * 12), *nrm = memalign(32, m->count * 12);
-	if(pos == NULL || nrm == NULL) {
-		free(pos);
-		free(nrm);
-		return false;
+	if(m->failed || m->count <= 0 || m->count > 65535 ||
+		m->glintEnd < 0 || m->glintEnd > m->count) return false;
+	unsigned slots = 1;
+	while(slots < (unsigned)m->count * 2) slots <<= 1;
+	u16 *table = calloc(slots, sizeof(*table));
+	u16 *positionsMap = malloc((size_t)m->count * sizeof(*positionsMap));
+	u16 *normalsMap = malloc((size_t)m->count * sizeof(*normalsMap));
+	if(table == NULL || positionsMap == NULL || normalsMap == NULL) {
+		free(table); free(positionsMap); free(normalsMap); return false;
 	}
-	memcpy(pos, m->pos, m->count * 12);
-	memcpy(nrm, m->nrm, m->count * 12);
+	int positions = rodMapVectors(m->pos, m->count, m->glintEnd, positionsMap, table, slots);
+	memset(table, 0, slots * sizeof(*table));
+	int normals = rodMapVectors(m->nrm, m->count, m->glintEnd, normalsMap, table, slots);
+	free(table);
+	float *pos = memalign(32, positions * 12), *nrm = memalign(32, normals * 12);
+	if(pos == NULL || nrm == NULL) {
+		free(pos); free(nrm); free(positionsMap); free(normalsMap); return false;
+	}
+	rodCopyVectors(pos, m->pos, m->count, m->glintEnd, positionsMap);
+	rodCopyVectors(nrm, m->nrm, m->count, m->glintEnd, normalsMap);
 	free(m->pos);
 	free(m->nrm);
-	m->pos = pos;
-	m->nrm = nrm;
-	DCFlushRange(pos, m->count * 12);
-	DCFlushRange(nrm, m->count * 12);
+	m->pos = pos; m->nrm = nrm;
+	m->positionMap = positionsMap; m->positionCount = positions;
+	m->normalMap = normalsMap; m->normalCount = normals;
+	DCFlushRange(pos, positions * 12);
+	DCFlushRange(nrm, normals * 12);
 
 	u32 size = 64;
 	for(int i = 0; i < m->primLen; i += m->prims[i + 1] + 2) size += 3 + m->prims[i + 1] * 4;
@@ -796,14 +972,18 @@ static bool rodRecord(rodmesh_t *m)
 		int n = m->prims[i + 1];
 		GX_Begin(m->prims[i], VTXFMT_ROD, n);
 		for(int j = 0; j < n; j++) {
-			GX_Position1x16(m->prims[i + 2 + j]);
-			GX_Normal1x16(m->prims[i + 2 + j]);
+			GX_Position1x16(m->positionMap[m->prims[i + 2 + j]]);
+			GX_Normal1x16(m->normalMap[m->prims[i + 2 + j]]);
 		}
 		GX_End();
 	}
 	m->dlSize = GX_EndDispList();
 	free(m->prims);
 	m->prims = NULL;
+	free(m->normalMap);
+	m->normalMap = NULL;
+	free(m->positionMap);
+	m->positionMap = NULL;
 	m->primLen = m->primCap = 0;
 	return m->dlSize > 0;
 }
@@ -812,6 +992,8 @@ static void rodFree(rodmesh_t *m)
 {
 	free(m->pos);
 	free(m->nrm);
+	free(m->normalMap);
+	free(m->positionMap);
 	free(m->prims);
 	free(m->dl);
 	memset(m, 0, sizeof(*m));
@@ -1330,29 +1512,38 @@ static void drawSpokes(Mtx mv, float zFace, float nzLocal, float fade)
 				}
 				data[ri] = smoothstep(21.5f, 23.0f, r) * (1 - smoothstep(58.2f, 58.8f, r));
 			}
+			/* Adjacent strips share their boundary vertices. Work out the
+			 * same colour once per grid point, then retain the strip order. */
+			u8 col[RS + 1][CS + 1][3];
+			for(int ri = 0; ri <= RS; ri++) {
+				float r = 21.5f + (58.8f - 21.5f) * ri / RS;
+				for(int ci = 0; ci <= CS; ci++) {
+					float cs = ca[ci], sn = sa[ci];
+					float x = r * cs, y = r * sn;
+					v3 P;
+					xform(mv, V3(x, y, zFace), &P);
+					v3 V = vnorm(vmul(P, -1));
+					v3 h = vadd(*L[l], V);
+					v3 rad = vadd(vmul(ex, cs), vmul(ey, sn));
+					v3 tan = vadd(vmul(ex, -sn), vmul(ey, cs));
+					float along = vdot(h, tan), u = fabsf(vdot(h, rad));
+					float w = expf(-along * along / (spread[l] * spread[l]));
+					v3 c = vadd(vadd(spectral(1600 * u), vmul(spectral(800 * u), 0.75f)), vmul(spectral(533.3f * u), 0.45f));
+					c = vmul(c, w * gain[l] * 1.3f * data[ri] * fade);
+					/* Added on top of the mirror, in display light. */
+					v3 base = vmix(under[ri][0], under[ri][1], (float)ci / CS);
+					col[ri][ci][0] = toSrgb8(base.x + c.x) - toSrgb8(base.x);
+					col[ri][ci][1] = toSrgb8(base.y + c.y) - toSrgb8(base.y);
+					col[ri][ci][2] = toSrgb8(base.z + c.z) - toSrgb8(base.z);
+				}
+			}
 			for(int ci = 0; ci < CS; ci++) {
 				GX_Begin(GX_TRIANGLESTRIP, VTXFMT_DIR, (RS + 1) * 2);
 				for(int ri = 0; ri <= RS; ri++) {
 					float r = 21.5f + (58.8f - 21.5f) * ri / RS;
 					for(int k = 0; k < 2; k++) {
-						float cs = ca[ci + k], sn = sa[ci + k];
-						float x = r * cs, y = r * sn;
-						v3 P;
-						xform(mv, V3(x, y, zFace), &P);
-						v3 V = vnorm(vmul(P, -1));
-						v3 h = vadd(*L[l], V);
-						v3 rad = vadd(vmul(ex, cs), vmul(ey, sn));
-						v3 tan = vadd(vmul(ex, -sn), vmul(ey, cs));
-						float along = vdot(h, tan), u = fabsf(vdot(h, rad));
-						float w = expf(-along * along / (spread[l] * spread[l]));
-						v3 c = vadd(vadd(spectral(1600 * u), vmul(spectral(800 * u), 0.75f)), vmul(spectral(533.3f * u), 0.45f));
-						c = vmul(c, w * gain[l] * 1.3f * data[ri] * fade);
-						/* Added on top of the mirror, in display light. */
-						v3 base = vmix(under[ri][0], under[ri][1], (float)(ci + k) / CS);
-						u8 cr = toSrgb8(base.x + c.x) - toSrgb8(base.x);
-						u8 cg = toSrgb8(base.y + c.y) - toSrgb8(base.y);
-						u8 cb = toSrgb8(base.z + c.z) - toSrgb8(base.z);
-						emitColor(x, y, zFace + nzLocal * 0.02f / sc, cr, cg, cb, 255);
+						const u8 *c = col[ri][ci + k];
+						emitColor(r * ca[ci + k], r * sa[ci + k], zFace + nzLocal * 0.02f / sc, c[0], c[1], c[2], 255);
 					}
 				}
 				GX_End();
@@ -1400,12 +1591,14 @@ static void drawDisc(shown_t *c)
 
 	/* The printed side, or the bare silver when there's no print. */
 	if(printing) {
-		directVtx(true);
+		/* The print matrix uses the disc's local x/y directly. GX can read
+		 * them from each position without a duplicate texture attribute. */
+		directVtx(false);
 		GX_SetNumChans(1);
 		GX_SetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
 		GX_SetNumTexGens(1);
 		loadPrintMtx(jc.spin, c->shot->rect);
-		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX2);
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_POS, GX_TEXMTX2);
 		GX_SetNumIndStages(0);
 		GX_SetNumTevStages(2);
 		GX_LoadTexObj(print, GX_TEXMAP0);
@@ -1479,7 +1672,6 @@ static void drawDisc(shown_t *c)
 					const u8 *col = ringCol[ri + k][si];
 					GX_Position3f32(x, y, z);
 					GX_Color4u8(col[0], col[1], col[2], col[3]);
-					if(printing) GX_TexCoord2f32(x, y);
 				}
 			}
 			GX_End();
@@ -1933,9 +2125,12 @@ static bool recordFailed;
 static void releaseAll(void)
 {
 	free(roomTable);
-	free(studioTable);
+	if(lightingIndices == NULL) free(studioTable);
+	free(lightingIndices);
 	free(matcapData);
 	roomTable = studioTable = NULL;
+	lightingIndices = NULL;
+	lightingCount = 0;
 	matcapData = NULL;
 	rodFree(&trayRods);
 	rodFree(&lidRods);
@@ -1957,7 +2152,8 @@ bool UIJewelCase_Prepare(void)
 	}
 	buildTrayRods(&trayRods);
 	buildLidRods(&lidRods);
-	if(!buildMatcap() || !buildRoomTable() || !buildSheets() || !rodPack(&trayRods) || !rodPack(&lidRods)) {
+	if(!buildMatcap() || !buildSheets() || !rodPack(&trayRods) || !rodPack(&lidRods) ||
+		!buildRoomTable() || !packLighting()) {
 		releaseAll();
 		return false;
 	}

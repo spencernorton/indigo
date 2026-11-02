@@ -1,3 +1,416 @@
+## 2026-11-02 — Prepare the validated RAM-first and Swiss integration for v2.6.0
+
+Combine the artwork/renderer work, ten-commit Swiss intake, return loader
+initialization fix and emulator/CI observations in one release unit. Carry
+released main ancestry forward while preserving the validated combined tree;
+the new preparation changes release documentation only. Keep the pinned SDK,
+local-clock model and opt-in Sync Clock behavior documented by the intake.
+
+Record native automated coverage separately from the remaining attended
+picture/controller, actual clock/settings persistence, game/A+Z+Start, Web
+return and installed/cold-boot checks. The maintainer approved publication
+with those coverage limits visible. The final release source and package need
+their own required checks, fuzz result and source/provenance binding before
+promotion and publication. Optional MemCard PRO GC coverage remains pending.
+
+## 2026-11-01 — Re-evaluate the combined candidate with executable post-CI fuzzing
+
+Integrate the isolated CI scheduling correction into the RAM-first/ten-Swiss/
+return-decoder candidate and qualified menu observers. Product and generated
+files remain unchanged. The preceding evaluation's eleven reports/1,476 checks
+pass, but both attempts skip Fuzz without executing it. This new source needs
+its own complete build, package, emulator and real separate Fuzz evidence.
+No source-bound result is carried forward as a new execution.
+
+## 2026-11-01 — Run post-CI fuzzing when a manual run skips the branch check
+
+Two exact-source workflow-dispatch attempts finish all build, host and eleven
+emulator routes, but skip Fuzz without assigning a runner or starting a step.
+A job-only rerun retains the completed checks and repeats the scheduling skip.
+The dependency chain includes the intentionally skipped PR-only Target branch;
+Fuzz's implicit success() inherits that skip even though CI passed succeeds.
+
+Give Fuzz an explicit status condition: no cancellation and CI passed success.
+The fuzzer command, targets, durations, sanitizers and failure handling stay
+unchanged. Workflow checks now reject a missing guard, unconditional execution,
+failed/skipped/cancelled aggregate states and a dependency that bypasses the
+aggregate. Eleven regressions include the real workflow with its guard removed.
+Local checks are not an end-to-end scheduling result; require a real manual run
+with a completed source-bound Fuzz log before qualification. Product sources
+and resources do not change.
+
+## 2026-11-01 — Combine the qualified emulator observers with the RAM-first evaluation
+
+Bring the qualified Home, Memory Cards and observed file-root controller tests
+into the combined RAM-first renderer, reviewed Swiss intake and return decoder
+evaluation. Preserve both parents' histories and all native acceptance gates.
+The production source and generated resources remain byte-identical to the
+preceding combined evaluation; only the test observers and their documentation
+change. This new source needs its own normal/performance/package/return payload
+binding, complete CI, all eleven emulator routes and separate Fuzz result.
+No console, installation or release qualification is claimed by this merge.
+
+## 2026-11-02 — Settle the initial root reference before using it
+
+Review of the prepared root-selection guard finds the same reference hazard
+as Home: the first visible path need not mean the device name has finished
+fading. Two new regressions reject its prototype: repeated fading frames at
+a frozen console clock must not establish a reference, and a steady full name
+after progress must replace the arriving mask.
+
+Anchor both initial context masks across three observations and 0.3 emulated
+seconds before recording the boot's reference. The full root guard now has
+11 focused cases; all 95 executed tests of the 98-test suite pass with three
+existing skips, plus source checks. Existing word thresholds remain unchanged.
+This is prepared controller-test code, pending end-to-end qualification; the
+current separate observer run is allowed to finish before integration.
+
+## 2026-11-02 — Observe the root selection before entering games
+
+A single missed UP in the former four-UP root walk reproduces the retained
+wrong-folder capture: gcbrowser opens, nine DOWNs select its parent, and A
+returns to root on gcbrowser. The exact original input loss is not measured;
+the exposed fault class is proceeding without observing the selected row.
+
+For the demonstration root that fits on screen, read its active highlight,
+require the same boot's root path/device, and correct arrows from the observed
+position within a fixed bound. Three matching observations span emulated time;
+frozen captures, another pane, a popup or changed context cannot authorize
+input. A root needing scrolling fails closed. Only the verified games row
+returns to its caller that sends A. Refresh the root reference on each boot.
+Wide context uses the whole authored stage so its device name stays visible.
+
+Nine focused cases cover actual captured shapes/palette, clock progress,
+missed/double inputs, context loss and bounded failure before A. The old blind
+sequence reproduces the final root/gcbrowser state, while the observed route
+reaches the probe. All 93 executed tests of the 96-test suite pass, with three
+existing skips; source checks pass. An initial test incorrectly expected the
+same row in the themed fixture; its actual highlighted row is two, confirmed
+from the untouched capture. No detector or word threshold was relaxed.
+Production code is unchanged. This follow-up still requires end-to-end CI.
+
+## 2026-11-02 — Retain file-game navigation evidence
+
+The separate file-route failure ends at root with gcbrowser selected after a
+check that only proved the path changed. Record each file-navigation listing,
+expected row delta, folder and target, plus captures before entering games,
+after its path transition and after game selection. The inputs, path checks,
+word thresholds and acceptance checks are unchanged; no retry is added and no
+fix for that failure is claimed. These captures let a future failure identify
+the first unexpected selection instead of inferring it from the final screen.
+
+## 2026-11-02 — Observe Save Details and Actions before card operations
+
+Combined smoke CI reaches Memory Cards but still shows Actions on Move at its
+planned Copy-confirmation capture. The final A opens Move's question, instead
+of confirming a Copy. The route sent A, A, DOWN, A without observing either
+opening transition. Details publishes its panel before initializing input, so
+a lost opening press is a reproducible scenario consistent with the captures.
+
+Reuse the existing guarded Save Details observer, allow fresh emulated progress,
+and require a changed Actions footer plus the disappearance of the Details panel
+before selecting a row. Capture each transition and fail on an unobserved
+Actions A; never repeat that press or a confirmation. Use this for the initial
+Actions check, Copy, the dimmed-Move check and Erase. Keep the exact card-byte
+and source-presence checks. Production code and image thresholds are unchanged.
+
+Five delayed/missed/wrong-context cases pass. The old blind sequence reproduces
+the Move question in that model. The full observer/source suite runs 87 tests
+with three existing skips. Fresh end-to-end CI is required for this new source;
+the separate file-browser navigation failure is still unresolved.
+
+## 2026-11-01 — Observe emulated progress before settling Home text
+
+Two smoke artifacts return to the correct Library face but fail the comparison
+against a reference captured during its boot fade. Repeated host screenshots
+can look steady while Dolphin's console clock has not advanced. Freeze the
+neutral label crops as a regression: the old observer accepts the arriving
+234-pixel mask instead of its settled313-pixel version.
+
+Require three matching Home observations spanning0.3 emulated seconds, anchored
+to the first stable mask. Keep word-identity thresholds unchanged, preserve the
+existing rule for other boxes/backends without clock reports, and never infer
+readiness from a frozen emulated clock. Five regression cases include wrong-name
+rejection and normal progress. The full observer/source suite must pass before
+CI replays; this changes test observation only, not the normal executable.
+The separate failed file-browser launch route remains an investigation gate.
+
+## 2026-11-01 — Include the return decoder's mode correction in release evaluation
+
+Integrate the separately reviewed decoder initialization fix with the RAM-first
+renderer and ten-commit Swiss intake. Preserve both branches' journals and all
+upstream adaptation reasons. The normal interface code stays unchanged; this
+source needs new normal/package and return-payload binding, current CI and the
+same final native timing, clock, picture/input and game/return qualification.
+This remains an evaluation branch with no install, release or hardware claim.
+
+## 2026-11-01 — Initialize the return loader's single-call BCJ decoder
+
+A target stress probe decodes the actual packaged executable exactly and
+rejects truncation/footer corruption, but stalls on an undersized output
+buffer. The manually allocated BCJ state leaves single_call false while the
+LZMA2/stream configuration is single-call. Initialize that existing flag as
+the normal decoder constructor would. A paired PowerPC replay preserves the
+full output and rejects all three failure inputs with intact buffer guards.
+
+The regression includes the production packer main and decoder, retaining its
+static initialization and memory helpers while stubbing cache/entrypoint code
+for host execution. Check exact synthetic PowerPC output, truncation, bad
+footer, short capacity and an initializer mutant under bounded deadlines.
+Keep this isolated from renderer/clock changes; full CI and physical warm
+return remain gates. No runtime file-format or input policy change is added.
+
+## 2026-11-01 — Qualify the RAM-first renderer with the reviewed Swiss intake
+
+Combine the RAM-priority renderer and artwork candidates with the ten reviewed
+Swiss commits through d9159b0, preserving Indigo's opt-in clock owner, local-time
+contract and pinned SDK. Built-in texture packing stays excluded. Keep the
+independent review units and their earlier evidence bound to their own sources;
+this combined source needs its own build, package, reproducibility, host,
+PowerPC image/resource/memory, emulator and native timing qualification.
+No release or hardware pass is implied by assembling this evaluation branch.
+
+## 2026-10-31 — Verify named timezones against independent IANA data
+
+The imported recurring table misses IANA 2026f's temporary Havana interval:
+no November 2026 fallback, UTC-04 through 2027-11-07 05:00 UTC. Apply a dated
+exception only to the location name, preserving explicit POSIX settings and
+the upstream table bytes. Add frozen independent offsets for all 446 names,
+fixed seasonal dates and both sides of future transitions. The generator
+verifies its pinned source archive and compiles that reference separately;
+CI needs no network or system timezone database. The offline 2,374 vectors
+and 190,442 daily samples across the stated future horizon pass after the
+fix; the preceding resolver fails 133 daily Havana samples. Focused C and
+sanitizer checks cover both interval boundaries and explicit-POSIX behavior.
+Target replay and regular CI must qualify this updated source before use.
+
+## 2026-10-31 — Review Swiss clock, timezone and environment-lock updates
+
+Move the reviewed source boundary through d9159b0: the nine clock/timezone,
+input, ellipsis and packaging commits through 1822a324 plus their environment-
+lock follow-up. Map named locations and Swiss key aliases into Indigo's one
+bounded opt-in clock client. Retain its local-clock, launch fence and pinned
+SDK contract; do not compile the second periodic client or rewrite the RTC
+automatically. Apply common input masks and locked environment snapshots,
+bundle the pinned stack licence, refresh the source fixtures deliberately and
+correct UPSTREAM's stale compiler-policy explanation. The intake document
+records every disposition. Software/emulator and final physical gates remain
+explicit; no console operation or stable promotion occurs during this pass.
+
+## 2026-11-01 — Preserve the mapped lookup's floating-point call boundary
+
+The combined target replay exposes seven changed bytes in one PAL-like image,
+although the full lighting tables and sampled lookup values match. Repeating
+the same artifact reproduces it; pointer-only and noinline trials retain it.
+Separate the direct builder lookup from a mapped draw lookup and keep the
+original two-argument interface. That trial restores all 24 exact target
+images without changing the palette, interpolation expressions or RAM saving.
+Recheck final-source resource/image equivalence and native timing before
+accepting the layout. This records the observed compiler-sensitive boundary;
+it is not a physical display or generalized compiler-root-cause claim.
+
+## 2026-11-01 — Bound interning scratch by source count
+
+Use a 32,768-slot hash for 27,648 source samples. It always retains an empty
+sentinel even when every source vector is unique, while halving hash scratch
+to 65,536 bytes. The retained palette/maps and draw path are unchanged. The
+recorded target samples need at most six probes and average about 1.14.
+Add a synthetic first-sample regression whose studio palette index differs
+from zero, so bypassing the map in the zero-direction fallback is detected.
+Plain and sanitizer checks pass; remeasure target peak and final-source output.
+
+## 2026-11-01 — Share exact colors between Jewel lighting tables
+
+Retain the room/studio samples as one palette plus two u16 index maps. Build
+studio data from the original room samples before packing; preserve every
+float bit, sample coordinate and interpolation operation. Keep table lookup
+allocation-free, handle the zero-direction fallback through the correct map,
+and release the shared palette only once. Exact comparisons retain signed zero
+and distinct NaN payloads and cover real hash collisions.
+
+Pack geometry before building lighting to avoid overlapping their temporary
+allocations. Retire the hash before allocating the exact-sized palette. Host
+plain/sanitizer checks reconstruct both full tables, compare 8,216 lookups
+against a frozen direct lookup and exercise every packing/preparation failure
+and retry; frame-budget hashes remain unchanged. Earlier target samples predict
+about 205 kB retained saving. Actual target memory, resource/image equality,
+current CI and native timing remain gates; this is a RAM-focused experiment.
+
+## 2026-11-01 — Prefer available RAM over built-in texture packing
+
+Keep the renderer, mesh-sharing and artwork scheduling candidates together,
+while restoring the original built-in texture storage and initialization.
+Remove the decoder, packed buffer and decode scratch requirement from this
+preferred trial. Preserve the previous experiment and its history separately.
+The executable may grow; acceptance now prioritizes retained/peak memory,
+exact pixels, loading behavior and safe allocation failure. Earlier combined
+measurements remain bound to bd7c8ec and do not qualify this new source.
+
+## 2026-10-30 — Pack built-in textures before startup publication
+
+Store images.tpl with deterministic zlib compression and an exact expanded
+size, keeping the original generated texture indices, formats and bytes.
+Expand it once into aligned persistent storage at texture initialization,
+flush it before GX can read it, and retain TPL's in-place pointer fixups on
+later initialization calls. Failed or incomplete expansion publishes nothing
+and stops initialization before the video thread can sample partial textures.
+
+The prototype saves about 75 kB in the DOL and adds about 30 kB of resident
+storage. Keep that tradeoff explicit. Generator bounds, exact output length,
+truncation/corruption/trailing data, failed publication, cache visibility and
+repeat initialization have host regressions. The existing immutable-texture
+audit keeps this outside drawing and before video-thread creation. Exact
+target resource hashes, allocation/startup measurements, reproducibility,
+host/emulator routes and normal-package acceptance remain qualification gates.
+
+
+## 2026-10-31 — Printed disc position texture generation
+
+The printed disc uses its local vertex position with the existing texture
+matrix. Geometry, colors, crops and motion are preserved; each printed case
+omits 1,666 duplicate texture-coordinate pairs. The frame-budget fixture keeps
+the existing geometry/color hashes. The focused test exercises 320 combinations
+of crop, spin, print fade, facing and missing artwork, checks the emitted GX
+attribute contract and compares generated coordinates with an independent
+double-precision reference. Host checks do not establish sampled-image equality
+or console frame-time improvement; controlled GX images and paired measurements
+are separate qualification steps.
+
+## 2026-10-31 — Qualify the isolated renderer candidate in software
+
+All 24 controlled GX framebuffer comparisons match the accepted control byte
+for byte across printed/bare/back views, crops, fades and screen shapes in
+two output modes. Reject early placeholder framebuffer captures; require real
+RAM copies and nontrivial image content. Allocation probes preserve the
+preparation heap peak. Focused unsafe mutations fail. Add Linux -no-pie to
+the new sanitizer test, as required by source checks. Physical measurements
+and final complete-platform acceptance remain pending.
+
+## 2026-10-31 — Load the canonical rod-lighting texture
+
+The original PowerPC generator is retained behind UI_JEWEL_CASE_REFERENCE.
+Its 21,760 texture bytes are embedded as 12,726 lossless compressed bytes,
+decoded lazily into the existing aligned allocation. Preserve room/backdrop
+function boundaries: inlining their float arithmetic changed table bytes.
+Two fresh target runs establish the canonical set; the packed prototype
+retains all 29 resource hashes and reduces isolated emulated preparation
+from 1,962,183 to 111,093 us. This is emulator timing, not native acceptance.
+Decode guards, all truncation lengths and allocation-failure/retry paths are
+covered. Full images, executable/memory cost and platform qualification remain
+required before accepting the candidate.
+
+## 2026-10-31 — Qualify the isolated renderer candidate in software
+
+All 24 controlled GX framebuffer comparisons match the accepted control byte
+for byte across printed/bare/back views, crops, fades and screen shapes in
+two output modes. Reject early placeholder framebuffer captures; require real
+RAM copies and nontrivial image content. Allocation probes preserve the
+preparation heap peak. Focused unsafe mutations fail. Add Linux -no-pie to
+the new sanitizer test, as required by source checks. Physical measurements
+and final complete-platform acceptance remain pending.
+
+## 2026-10-31 — Reuse the rainbow strips' shared samples
+
+Adjacent rainbow strips repeat their boundary lighting. Cache the existing
+three-byte color once per grid point, retaining the original strip order,
+positions, blend state and quantization. Each visible disc evaluates 520
+exponentials instead of 832. A frozen former emitter checks exact position,
+color and strip streams over 1,024 poses, scales, faces and fades; the frame
+budget preserves every scene hash. This operation-count saving needs target
+image and complete-frame qualification before acceptance.
+
+## 2026-11-01 — Assemble the combined UI resource trial
+
+Integrate the packed built-in textures, disc texgen, canonical Jewel texture,
+shared rainbow samples, exact mesh vectors and revised artwork scheduler in
+one evaluation branch. Preserve every candidate's regression entry point and
+historical journal suffix while resolving additive test/document conflicts.
+The production code merges without conflicts. Measure this executable's
+actual size, retained memory, cold preparation, images and frame work before
+making a net platform claim. Independent draft PRs remain the review units;
+this trial is not a release or an installed boot-file update.
+
+## 2026-11-01 — Share exact Jewel mesh positions as well as normals
+
+Reuse the preparation hash table to pack position and normal tails separately.
+Keep both glint prefixes contiguous at their original indices, record each
+attribute's own GX index, and retire both maps after display-list recording.
+The PowerPC fixture retains 75,336 fewer requested bytes than the original
+renderer, another 11,640 bytes beyond normal sharing. Preparation peaks 31,428
+bytes below the original, but 7,176 above normal-only packing. Exact-value,
+emitted-index, glint, collision, signed-zero, NaN and every allocation-failure
+retry check pass; frame-budget scene hashes remain unchanged. These fixture
+results do not replace full-build and native qualification of this revision.
+
+## 2026-10-31 — Retain contiguous glint normals while packing the tail
+
+The first layout saved 64,440 requested heap bytes after recording, but its
+CPU glint map increased the isolated replay by 7.45% (about 9.5 us per pose).
+Preserve the original glint prefix and compact only the remaining normals.
+This removes the per-frame indirection and separate glint allocation while
+retiring the full GX map after recording. Verify the prefix byte-for-byte,
+all reconstructed normals, emitted indices and target images; remeasure the
+CPU/heap tradeoff before accepting the candidate. Earlier first-layout results
+remain separate from this revision and do not establish its qualification.
+
+## 2026-10-31 — Share the Jewel Case meshes' identical normals
+
+Pack equal normal bit patterns once, retaining separate GX normal indices and
+a small CPU glint map. The full map is retired after display-list recording;
+positions, primitive order and lighting values retain their existing behavior.
+Focused regressions reconstruct every original normal, verify the real emitted
+index stream, compare CPU glints with the former emitter across a pose grid,
+exercise collisions/signed zero/NaN payloads and inject every pack/preparation
+allocation failure followed by retry. Frame-budget scene hashes are unchanged.
+Target images, allocation costs, CI and physical qualification remain gates;
+this is an exact memory-layout experiment, with no tessellation reduction.
+
+## 2026-11-01 — Run bounded artwork reads at menu priority
+
+The lower-priority worker regressed a native artwork workload. A diagnostic
+whose executable differs only in the priority byte reverses that regression:
+two fresh boots per variant reduce the read window from about 1.316 s on the
+menu-thread control to 0.679 s, with no sampled periods above 25 ms. Keep
+video above the worker and retain the 1 ms sleep after every bounded step.
+The host scheduler shim now enforces this policy while existing controlled
+reads exercise pause, cancellation, failures and handoff fences. Native
+metadata fairness, full-build qualification and broader device coverage
+remain gates; these measurements do not establish physical controller feel.
+
+## 2026-10-30 — Read pack artwork independently of menu retraces
+
+Thread-safe pack sources may use one worker below menu/video priority, with
+the same shared 16 KiB read quantum, visible-pack round-robin, complete CRC
+publication and eviction quarantine. A 1 ms sleep between chunks shares idle
+CPU time with folder-art and metadata workers even on passive adapters. Keep
+the existing synchronous path on other devices or worker-resource failure.
+
+Join before every cache ownership/lifetime mutation and synchronous poll;
+also join immediately after Library/Detail idle input, before handling an
+action. Joining before window reuse is essential: generation checks alone
+cannot protect texels from an old writer. The reader adds one 16 KiB stack,
+with no staging arena or format changes. Controlled pthread device reads
+exercise blocked I/O, coalesced wakes, allocation/thread failure, hidden packs,
+CRC rejection, window churn and concurrent video queries. Host timing uses
+synthetic read latency; native cold-I/O, cadence, input and cancellation
+measurements remain required before accepting a console performance claim.
+
+Upload/reset handoffs block and drain reader controls before suspending the
+menu, including when it is already stopping a read. The handoff retains the
+control gate until shutdown or rejected-upload recovery; unblocking precedes
+menu resume. This prevents suspending the owner of the reader's join/cleanup.
+The upload harness checks that order, and the threaded harness races a handoff
+against an in-flight menu stop, then resumes the original partial record.
+
+## 2026-11-01 — Count zero-initialized preparation allocations in the oracle
+
+The combined renderer trial adds calloc-backed temporary mesh tables. The
+texture failure harness previously counted their frees without counting the
+allocations. Wrap calloc with the same failure/liveness hooks as the other
+allocators so composition preserves complete failure/retry accounting.
+This follow-up changes test instrumentation only; earlier production/native
+results remain bound to their original source and artifact revisions.
+
 ## 2026-10-30 — Observe folder-route Settings navigation
 
 The beta follow-up folder route reached a Defaults picker while its next

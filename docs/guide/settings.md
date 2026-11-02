@@ -256,7 +256,7 @@ The Settings tour above predates the Apps Video Mode row.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock, NTP Server IP, Time Zone | Shown only with a network adapter, and off until you turn it on. Sets the clock from a time server each time the network starts; the IPL and games see it too. Time Zone is a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` (US Mountain), so daylight time changes by itself. Empty keeps the zone the clock is in. |
+| Sync Clock, NTP Server IP, Time Zone | Shown only with a network adapter, and off until you turn it on. Sets the clock from a time server each time the network starts; the IPL and games see it too. Time Zone accepts a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` (US Mountain). The rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the zone the clock is in. |
 
 Passwords are saved as plain text in `global.ini`.
 

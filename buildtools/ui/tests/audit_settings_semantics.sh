@@ -247,6 +247,16 @@ normalized = re.sub(
     r"\t+DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\);\n"
     r"\t+break;\n",
     "", normalized, count=1)
+# Swiss's new clock controls map to Indigo's existing Network rows. Match
+# their exact upstream bodies before removing them from this comparison.
+normalized = re.sub(
+    r"(?ms)^\t+case SET_SYS_TIMEZONE:\n"
+    r"\t+select_timezone\(swissSettings\.timeZone\);\n"
+    r"\t+break;\n", "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_SNTP_HOSTIP:\n"
+    r"\t+DrawGetTextEntry\(ENTRYMODE_IP, \"SNTP Host IP\", &swissSettings\.sntpHostIp, sizeof\(swissSettings\.sntpHostIp\) - 1\);\n"
+    r"\t+break;\n", "", normalized, count=1)
 # The File Browser Type arms are gone, with Swiss's lists.
 normalized, browsers = re.subn(
     r"(?ms)^\t+case SET_(FILE|APPS|GAME)BROWSER_TYPE:\n"

@@ -209,7 +209,6 @@ int main(int argc, char *argv[])
 {
 	// Setup defaults (if no config is found)
 	memset(&swissSettings, 0 , sizeof(SwissSettings));
-	strcpy(swissSettings.flattenDir, "*/games");
 
 	// Register all devices supported (order matters for boot devices)
 	int i = 0;
@@ -269,7 +268,7 @@ int main(int argc, char *argv[])
 	swissSettings.appsBrowserType = BROWSER_FULLWIDTH;
 	swissSettings.gameBrowserType = BROWSER_FULLWIDTH;
 	swissSettings.recentListLevel = 2;
-	memset(&swissSettings.recent[0][0], 0, PATHNAME_MAX);
+	strcpy(swissSettings.flattenDir, "*/games");
 	config_init_environ();
 
 	Initialise();
