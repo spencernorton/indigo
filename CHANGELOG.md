@@ -50,6 +50,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ### Fixed
 
+- Dolphin Memory Cards checks observe Save Details and Actions before selecting
+  a card operation, so a missed opening press cannot turn Copy into Move.
+
 - Emulator Home checks wait for the console's animation time before accepting
   a steady face name, so cached host frames cannot capture a fading reference.
 - The emulator's folder checks observe Settings tab and section transitions

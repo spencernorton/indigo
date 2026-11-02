@@ -2922,17 +2922,13 @@ class Route:
         self.press("B")
         closed = self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         self.check("B closes details without opening an action", closed is not None)
-        self.save_details("memory-cards-details-again")
-        self.press("A")
-        opened = self.differs(browsing, FOOTER_BOX)
-        self.shot("memory-cards-box", self.last_rgb)
-        self.check("A Actions opens the box beside the save", opened)
-        menu = text_mask(self.gray(), FOOTER_BOX)
+        menu = self.save_actions("memory-cards-box")
         self.press("B")
         closed = self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         self.check("B closes the box", closed is not None)
         before_b = saves(slot_b)
-        self.steps("A A DOWN A")
+        self.save_actions("memory-cards-copy-actions", like=menu)
+        self.steps("DOWN A")
         self.shot("memory-cards-copy-to", self.emulator.frame())
         self.press("A")
         self.check("Copy, Yes: the maroon box says the save is copied", self.message())
@@ -2944,8 +2940,7 @@ class Route:
                    same_save((slot_a / name).read_bytes(), (slot_b / name).read_bytes()),
                    gained=sorted(gained))
         self.check("the maroon box closes by itself", self.message_closes())
-        self.steps("A A", 0.3)
-        self.differs(browsing, FOOTER_BOX)
+        self.save_actions("memory-cards-dimmed-actions")
         reason = text_mask(self.gray(), FOOTER_BOX)
         self.shot("memory-cards-dimmed", self.last_rgb)
         self.check("A on the copied save: Move is dimmed, and the buttons say why",
@@ -2953,7 +2948,8 @@ class Route:
         self.press("B")
         self.text_until(FOOTER_BOX, lambda mask: same_text(mask, browsing))
         before_a = saves(slot_a)
-        self.steps("A A DOWN DOWN A")
+        self.save_actions("memory-cards-erase-actions", like=reason)
+        self.steps("DOWN DOWN A")
         self.shot("memory-cards-erase", self.emulator.frame())
         self.steps("UP")
         self.press("A")
@@ -3048,6 +3044,27 @@ class Route:
             fields[field] = mask
         self.shot(name, self.last_rgb)
         return fields
+
+    def save_actions(self, name: str, like: np.ndarray | None = None) -> np.ndarray:
+        """Observe Details, then Actions, before any action-list navigation.
+
+        A second blind A can arrive while Details initializes its input and
+        be discarded. DOWN then reaches Details instead of Copy, and the next
+        A only opens Actions. Never repeat an Actions A: wait for its distinct
+        footer and for the Details panel to leave, or fail at this transition.
+        """
+        self.save_details(name + "-details")
+        before = text_mask(self.gray(), FOOTER_BOX)
+        self.pause(0.3, fresh=True)
+        self.press("A")
+        opened = self.text_until(FOOTER_BOX, lambda mask: has_label(mask) and
+                                 not same_text(mask, before) and
+                                 (like is None or same_text(mask, like)))
+        gone = not save_details_panel(self.gray())
+        self.shot(name, self.last_rgb)
+        self.check("A from observed Save Details opens Actions before navigation",
+                   opened is not None and gone)
+        return opened
 
     def memory_folder_open(self, name: str, like: np.ndarray | None = None) -> np.ndarray:
         """Y opens the selected save-folder cube's retained identity page."""

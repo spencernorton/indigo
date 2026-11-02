@@ -707,6 +707,111 @@ class TextSettling(unittest.TestCase):
         self.assertIsNone(found)
 
 
+class SaveActionTransitions(unittest.TestCase):
+    def route(self, *, miss_details=0, miss_actions=False, wrong_footer=False, panel_stays=False):
+        from PIL import Image
+        root = Path(__file__).parent / "fixtures"
+        browser, details = [np.asarray(Image.open(root / name).convert("RGB")).max(axis=2)
+                            for name in ("themed-save-browser.png", "themed-save-details.png")]
+        actions = browser.copy()
+        x0, y0, x1, y1 = run.FOOTER_BOX
+        actions[y0:y1, x0:x1] = np.asarray(Image.open(root / "memory-actions-footer.png"))
+        expected = run.text_mask(actions, run.FOOTER_BOX)
+        state = {"clock": 0.0, "page": "browser", "ready": 0.0,
+                 "selected": 0, "miss_details": miss_details, "presses": [], "confirmed": None}
+
+        def update():
+            if state["page"] == "opening" and state["clock"] >= state["ready"]:
+                state["page"] = "details"
+
+        def pause(seconds, fresh=False):
+            state["clock"] += seconds
+
+        def press(button):
+            update()
+            state["presses"].append(button)
+            if button == "DOWN" and state["page"] == "actions":
+                state["selected"] += 1
+            if button != "A":
+                return
+            if state["page"] == "browser":
+                if state["miss_details"]:
+                    state["miss_details"] -= 1
+                else:
+                    state.update(page="opening", ready=state["clock"] + 1.0)
+            elif state["page"] == "details" and not miss_actions:
+                state["page"] = "actions"
+            elif state["page"] == "actions":
+                state["page"] = "question"
+            elif state["page"] == "question":
+                state["confirmed"] = ("Move", "Copy", "Erase")[state["selected"]]
+                state["page"] = "done"
+
+        route = run.Route.__new__(run.Route)
+        route.menu_wide, route.pressed_again = False, []
+        route.emulator = type("Clock", (), {"emulated": lambda self: state["clock"]})()
+        route.press, route.pause = press, pause
+        route.shot = lambda name, rgb: rgb
+
+        def gray():
+            pause(.15)
+            update()
+            frame = details if state["page"] == "details" else browser
+            if state["page"] == "actions":
+                frame = details.copy() if panel_stays else actions.copy()
+                frame[y0:y1, x0:x1] = (browser if wrong_footer else actions)[y0:y1, x0:x1]
+            route.last_rgb = np.repeat(frame[..., None], 3, axis=2)
+            return frame
+
+        def check(name, passed, **detail):
+            if not passed:
+                raise run.Failed(name)
+
+        route.gray, route.check = gray, check
+        return route, state, expected, pause
+
+    def test_delayed_details_cannot_turn_the_copy_sequence_into_move(self):
+        old, before, _, _ = self.route()
+        old.steps("A A DOWN A")
+        old.press("A")
+        self.assertEqual((before["page"], before["selected"]), ("question", 0),
+                         "the old blind sequence reproduces the captured Move confirmation")
+        new, after, expected, pause = self.route()
+        with mock.patch.object(run.time, "sleep", pause):
+            new.save_actions("copy", like=expected)
+        new.steps("DOWN A")
+        new.press("A")
+        self.assertEqual(after["confirmed"], "Copy")
+
+    def test_missed_details_a_is_retried_only_by_the_existing_context_guard(self):
+        route, state, expected, pause = self.route(miss_details=1)
+        with mock.patch.object(run.time, "sleep", pause):
+            route.save_actions("copy", like=expected)
+        self.assertEqual(state["page"], "actions")
+        self.assertEqual(route.pressed_again, ["A"])
+
+    def test_missed_actions_a_never_gets_an_unobserved_second_a(self):
+        route, state, expected, pause = self.route(miss_actions=True)
+        with mock.patch.object(run.time, "sleep", pause), self.assertRaises(run.Failed):
+            route.save_actions("copy", like=expected)
+        self.assertEqual(state["page"], "details")
+        self.assertEqual(state["presses"], ["A", "A"])
+
+    def test_another_footer_is_not_the_expected_actions_menu(self):
+        route, state, expected, pause = self.route(wrong_footer=True)
+        with mock.patch.object(run.time, "sleep", pause), self.assertRaises(run.Failed):
+            route.save_actions("copy", like=expected)
+        self.assertNotIn("DOWN", state["presses"])
+        self.assertIsNone(state["confirmed"])
+
+    def test_footer_change_cannot_hide_a_details_panel_that_did_not_close(self):
+        route, state, expected, pause = self.route(panel_stays=True)
+        with mock.patch.object(run.time, "sleep", pause), self.assertRaises(run.Failed):
+            route.save_actions("copy", like=expected)
+        self.assertNotIn("DOWN", state["presses"])
+        self.assertIsNone(state["confirmed"])
+
+
 class Pad(unittest.TestCase):
     def test_wire_format(self):
         info = bytearray(dsu_pad.port_info(1, 0, True))

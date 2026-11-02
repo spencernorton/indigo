@@ -1,3 +1,23 @@
+## 2026-11-02 — Observe Save Details and Actions before card operations
+
+Combined smoke CI reaches Memory Cards but still shows Actions on Move at its
+planned Copy-confirmation capture. The final A opens Move's question, instead
+of confirming a Copy. The route sent A, A, DOWN, A without observing either
+opening transition. Details publishes its panel before initializing input, so
+a lost opening press is a reproducible scenario consistent with the captures.
+
+Reuse the existing guarded Save Details observer, allow fresh emulated progress,
+and require a changed Actions footer plus the disappearance of the Details panel
+before selecting a row. Capture each transition and fail on an unobserved
+Actions A; never repeat that press or a confirmation. Use this for the initial
+Actions check, Copy, the dimmed-Move check and Erase. Keep the exact card-byte
+and source-presence checks. Production code and image thresholds are unchanged.
+
+Five delayed/missed/wrong-context cases pass. The old blind sequence reproduces
+the Move question in that model. The full observer/source suite runs 87 tests
+with three existing skips. Fresh end-to-end CI is required for this new source;
+the separate file-browser navigation failure is still unresolved.
+
 ## 2026-11-01 — Observe emulated progress before settling Home text
 
 Two smoke artifacts return to the correct Library face but fail the comparison
