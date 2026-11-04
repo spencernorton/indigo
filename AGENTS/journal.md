@@ -1,3 +1,22 @@
+## 2026-11-04 — Exercise a whole optical game and preserve the full smoke route
+
+The two DVD routes in the first disc-source CI attempt show the corrected
+single disc card, then fail because their old observers expect a multi-game
+/games folder. Keep that full navigation and damaged-image coverage on SD
+storage, and give the optical route a real GameCube-format probe image with
+no /games folder. Confirm the current Disc source through the picker, check
+single-card wrapping and Home re-entry, then launch the whole disc and read
+back its identity, 24 MB, stopped audio and quiet memory from the probe.
+
+The independent PAL/component replay passes those checks using the first
+candidate's checksum-verified CI executable. The emulator observer suite
+passes 99 tests with three existing skips; invalid media/route combinations
+fail before starting an emulator. Full PAL/composite smoke now runs on a
+fresh SD2SP2 card instead of the synthetic multi-game DVD. Its result and
+new-head CI remain pending. This is emulated optical qualification; physical
+drive recognition, media condition and the reporter's exact setup remain
+unmeasured. Runtime source is unchanged from the preceding fix.
+
 ## 2026-11-04 — Open optical games from the selected disc
 
 Investigate #191 by replaying the actual source-routing, directory scan and

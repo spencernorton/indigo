@@ -1893,5 +1893,20 @@ class Screen(unittest.TestCase):
             self.assertEqual(len(run.fatal_lines(log)), 1, "a stack reached its guard")
 
 
+class MediaRouteTests(unittest.TestCase):
+    def test_optical_requires_a_probe_and_the_disc_drive(self):
+        cases = (
+            ["--route", "optical"],
+            ["--route", "optical", "--probe", "probe.dol", "--storage", "sd2sp2",
+             "--card-zip", "release.zip"],
+            ["--route", "game", "--probe", "probe.dol", "--storage", "dvd"],
+            ["--route", "smoke", "--probe", "probe.dol", "--storage", "dvd"],
+        )
+        for args in cases:
+            with self.subTest(args=args), mock.patch("sys.stderr"), self.assertRaises(SystemExit) as stopped:
+                run.main(["swiss.dol", "--out", "unused"] + args)
+            self.assertEqual(stopped.exception.code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

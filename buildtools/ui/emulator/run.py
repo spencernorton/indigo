@@ -2,7 +2,7 @@
 """Boot an Indigo DOL in Dolphin and drive its menus with a controller.
 
 Dolphin (headless: software OpenGL on a virtual X server) boots the DOL with
-the demonstration disc (card.py) in the drive. Once Home is up a controller
+a game disc or a demonstration SD card (card.py). Once Home is up a controller
 is plugged in (dsu_pad.py) and a route of button presses walks the cube and
 opens each face. Every check compares the screen with itself earlier in the
 same run, never with stored pictures, so a redesign does not break the test
@@ -1548,6 +1548,52 @@ class Route:
         drift = float(np.linalg.norm(backdrop(self.last_rgb) - self.home_backdrop))
         self.check("... in the colours the card's settings chose, not the defaults", drift < 15,
                    drift=round(drift, 1))
+
+    def optical(self) -> None:
+        """Confirm Game Disc as Source, retain its single game through Home,
+        then launch the whole disc through the real optical driver."""
+        home = self.boot()
+        source = self.turn([home], "RIGHT", "optical-source")
+        self.press("A")
+        self.check("A opens the Source choices", self.covered(source))
+        before = text_mask(self.gray(), TITLE_BOX)
+        self.press("A")
+        picker, _ = self.settled_label(unlike=before, box=TITLE_BOX)
+        self.shot("optical-source-picker", self.last_rgb)
+        self.check("Change Source opens the device picker", picker is not None)
+        # The fixture boots with only the disc drive as a game source. A
+        # confirms that same device and exercises its normal remount path.
+        self.press("A")
+        back, _ = self.settled_label(like=source)
+        self.check("confirming Game Disc returns to the Source face", back is not None)
+        back, _ = self.press_until("LEFT", like=home)
+        self.check("LEFT returns to the Library face", back is not None)
+        self.press("A")
+        self.check("Games opens the selected disc", self.covered(home))
+        title, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("optical-library", self.last_rgb)
+        self.check("the optical game has a Library card", title is not None)
+        for button in ("RIGHT", "LEFT"):
+            self.press(button)
+            same, _ = self.settled_label(like=title, box=TITLE_BOX)
+            self.check("the single disc card wraps to itself", same is not None, button=button)
+        self.press("B")
+        back, _ = self.settled_label(like=home)
+        self.check("B returns from the disc to Home", back is not None)
+        self.press("A")
+        same, _ = self.settled_label(like=title, box=TITLE_BOX)
+        self.check("Games reopens the same disc card", same is not None)
+        self.press("A")
+        self.check("A opens the optical game's details", self.covered(title, TITLE_BOX))
+        details, _ = self.settled_label(box=DETAIL_TITLE_BOX)
+        self.shot("optical-details", self.last_rgb)
+        self.check("the optical details show the game's title", details is not None)
+        self.press("A")
+        report = self.handoff("optical-game")
+        self.check("the optical game starts with its own disc ID",
+                   report["disc_id"] == card.PROBE_GAME[0], disc_id=report["disc_id"])
+        self.check("the optical game is given the full 24 MB", report["memsize"] == 0x01800000,
+                   memory=f"{report['memsize']:08X}")
 
     def game(self) -> None:
         """Boot, open the Library, move to the probe's game, open its details
@@ -3767,9 +3813,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dol", type=Path)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--route", choices=("smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
+    parser.add_argument("--route", choices=("optical", "smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
                                             "manual"),
-                        default="smoke")
+                        default=None)
     parser.add_argument("--probe", type=Path, help="the probe DOL (probe/), launched as an app and a game")
     parser.add_argument("--region", choices=tuple(REGIONS), default="pal")
     parser.add_argument("--storage", choices=tuple(STORAGES), default="dvd")
@@ -3782,8 +3828,14 @@ def main(argv: list[str] | None = None) -> int:
                              "its launch must be refused")
     parser.add_argument("--disc", type=Path, help="a disc to use instead of building card.py's")
     args = parser.parse_args(argv)
-    if args.route == "game" and not args.probe:
-        parser.error("the game route launches the probe: give --probe")
+    if args.route is None:
+        args.route = "optical" if args.storage == "dvd" else "smoke"
+    if args.route in ("game", "optical") and not args.probe:
+        parser.error("the game and optical routes launch the probe: give --probe")
+    if args.route == "optical" and args.storage != "dvd":
+        parser.error("the optical route needs --storage dvd")
+    if args.route in ("smoke", "tour", "game") and args.storage == "dvd":
+        parser.error("multi-game Library routes need an SD card; use --route optical for a game disc")
     if (args.storage != "dvd") != bool(args.card_zip):
         parser.error("an SD card (--storage) is made from the release zip (--card-zip), and only then")
     if args.settings and not args.card_zip:
@@ -3828,8 +3880,14 @@ def main(argv: list[str] | None = None) -> int:
                     dol.write_bytes(package.read("ipl.dol"))
                 report["dol"] = f"{args.card_zip.name}:ipl.dol"
             elif disc is None:
-                disc = work / "demo.iso"
-                report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
+                if args.route == "optical":
+                    disc = work / "optical.iso"
+                    disc.write_bytes(card.probe_image(args.probe.read_bytes()))
+                    report["disc"] = {"kind": "gamecube-game", "disc_id": card.PROBE_GAME[0],
+                                      "games": 1, "bytes": disc.stat().st_size}
+                else:
+                    disc = work / "demo.iso"
+                    report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
             # The smoke route opens Memory Cards with a memory card in each
             # slot, unless an SD Gecko has Slot B.
             cards = None

@@ -180,13 +180,13 @@ jobs:
           # among them, then the probe launched as an app. game: the
           # Library to a game's launch, the probe launched as a game. The
           # console's region and cable decide the video mode: PAL composite
-          # 576i, NTSC composite 480i, a component cable 480p. dvd boots with
-          # the demonstration disc in the drive; sd2sp2 from an SD card made
+          # 576i, NTSC composite 480i, a component cable 480p. optical launches
+          # a whole game disc; sd2sp2 boots from an SD card made
           # from this build's zip, as someone sets one up; gcloader from such a
           # card in a GC Loader, which serves the game from its fragments.
-          - { name: Emulator, route: smoke, region: pal, cable: composite, storage: dvd, artifact: emulator }
+          - { name: Emulator, route: smoke, region: pal, cable: composite, storage: sd2sp2, artifact: emulator }
           # It also stops AESND hundreds of times, as a launch does (aesnd_test.py).
-          - { name: "Emulator (game, PAL, component)", route: game, region: pal, cable: component,
+          - { name: "Emulator (optical disc, PAL, component)", route: optical, region: pal, cable: component,
               storage: dvd, aesnd: true, artifact: emulator-game-pal-component }
           # The GC Loader smoke job's card starts with settings/non-default.ini;
           # the game jobs' cards are new, so they start in Settings.

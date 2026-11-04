@@ -72,12 +72,21 @@ probe's game and launches it from its details: the probe must see the game's
 own disc ID, the 24 MB a game is promised, the music stopped and memory
 quiet.
 
-CI runs ten jobs, the first of them the required **Emulator** check:
+The optical route (`--route optical --probe probe.dol`) inserts one GameCube
+game disc built around the probe, without a `/games` folder. It confirms Game
+Disc in Source, opens its Library card, checks single-card wrapping and Home
+re-entry, then launches the whole disc. The probe must report the disc's own
+ID, the full 24 MB, stopped menu audio and no stray writes. This exercises
+the real DVD/FST path in Dolphin; it does not certify a physical drive.
+DVD storage defaults to this route; SD storage defaults to the full smoke
+route. Multi-game Library routes require an SD card.
+
+CI runs these jobs, the first of them the required **Emulator** check:
 
 | Job | Console | Video | Storage |
 | --- | --- | --- | --- |
-| Emulator (smoke) | PAL, composite | 576i | disc |
-| game, PAL, component | PAL, component | 480p | disc |
+| Emulator (smoke) | PAL, composite | 576i | SD2SP2, a new card |
+| optical disc, PAL, component | PAL, component | 480p | one whole game disc, no `/games` folder |
 | smoke, NTSC, component, GC Loader | NTSC, component | 480p | GC Loader, the card with `non-default.ini` |
 | game, NTSC, SD2SP2 | NTSC, composite | 480i | SD2SP2, a new card |
 | folders, NTSC, component, SD2SP2 | NTSC, component | 480p | SD2SP2, a new card, all five Library layouts |
