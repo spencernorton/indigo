@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Add a standalone experimental video diagnostic for normal 480p source-width
+  and recovery tests, with source-pattern captures and a pinned SDK audit.
+  Indigo's menu video modes are unchanged.
+
 - Add Arrmes and Endexis to the README suite links.
 - Recover a missed Right press in the virtual memory-card emulator test
   only while the original folder colour is still visible.

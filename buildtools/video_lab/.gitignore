@@ -1,0 +1,5 @@
+*.o
+*.elf
+*.dol
+build.json
+sdk-audit.txt
