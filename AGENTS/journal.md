@@ -1,3 +1,14 @@
+## 2026-11-03 — Allow the watch's exact HTTPS destinations
+
+The first manual dry-run reaches the upstream comparison, then fails because
+the runner proxy refuses its model API connection. Allow only the three exact
+hosts used by the existing watch: its assessment API, token endpoint and Graph
+mail endpoint. Retain HTTPS-only tunnels, public-address checks and rejection
+of other names, including sibling and nested subdomains. Add regression cases
+for the accepted hosts, deceptive names and forbidden ports. Runner images
+and the proxy refresh through the existing trusted-beta supervisor; no direct
+runner changes or sending test are required.
+
 ## 2026-11-03 — Refresh scheduled checks and expose dispatcher validation
 
 Both weekly schedule definitions have no recorded runs and were last edited

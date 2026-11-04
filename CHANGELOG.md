@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Allow the upstream watch to reach its three required API hosts through the
+  runner's HTTPS proxy. Other destinations and private addresses stay blocked.
+
 - Refresh scheduled checks under the active workflow maintainer and allow the
   weekly beta dispatcher to be tested manually. Scheduled runs retain the full
   extended fuzzing check; manual runs can select it explicitly.

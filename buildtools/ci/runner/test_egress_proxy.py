@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The egress proxy lets a job reach GitHub and Sigstore, and nothing else."""
+"""Job egress stays restricted to the documented CI and watch services."""
 
 import asyncio
 import gc
@@ -22,6 +22,19 @@ class Rules(unittest.TestCase):
         for host in ("", "evilgithub.com", "github.com.evil.net", "githubusercontent.com.evil.net",
                      "example.com", "localhost", "intranet", "140.82.112.3", "10.0.0.1",
                      "[::1]", "git.hub.com", "github.com:443", "sigstore.dev.evil.net"):
+            self.assertFalse(host_allowed(host), host)
+
+    def test_swiss_watch_services_pass(self):
+        for host in ("api.openai.com", "login.microsoftonline.com", "graph.microsoft.com",
+                     "API.OpenAI.com."):
+            self.assertTrue(host_allowed(host), host)
+
+    def test_swiss_watch_services_are_exact_names(self):
+        for host in ("openai.com", "microsoft.com", "microsoftonline.com",
+                     "other.openai.com", "other.microsoftonline.com", "other.microsoft.com",
+                     "evilapi.openai.com", "sub.api.openai.com", "api.openai.com.evil.net",
+                     "sub.login.microsoftonline.com", "login.microsoftonline.com.evil.net",
+                     "sub.graph.microsoft.com", "graph.microsoft.com.evil.net"):
             self.assertFalse(host_allowed(host), host)
 
     def test_connect_line(self):
@@ -61,9 +74,31 @@ class Refusals(unittest.TestCase):
                         .startswith(b"HTTP/1.1 405"))
 
     def test_other_hosts_and_ports_are_refused(self):
-        for target in (b"example.com:443", b"github.com:22", b"127.0.0.1:443", b"localhost:443"):
+        for target in (b"example.com:443", b"github.com:22", b"127.0.0.1:443", b"localhost:443",
+                       b"api.openai.com:80", b"graph.microsoft.com:22"):
             reply = self.exchange(b"CONNECT " + target + b" HTTP/1.1\r\nHost: x\r\n\r\n")
             self.assertTrue(reply.startswith(b"HTTP/1.1 403"), (target, reply))
+
+    def test_watch_hosts_resolving_to_private_addresses_are_refused(self):
+        async def run(host: str) -> bytes:
+            server = await asyncio.start_server(accept, "127.0.0.1", 0)
+            async with server:
+                reader, writer = await asyncio.open_connection(*server.sockets[0].getsockname()[:2])
+                # Mixed public/private DNS must fail before opening any tunnel.
+                answers = [(egress_proxy.socket.AF_INET, egress_proxy.socket.SOCK_STREAM,
+                            egress_proxy.socket.IPPROTO_TCP, "", (address, 443))
+                           for address in ("8.8.8.8", "127.0.0.1")]
+                with mock.patch.object(asyncio.get_running_loop(), "getaddrinfo",
+                                       new=mock.AsyncMock(return_value=answers)):
+                    writer.write(f"CONNECT {host}:443 HTTP/1.1\r\nHost: x\r\n\r\n".encode())
+                    await writer.drain()
+                    reply = await asyncio.wait_for(reader.read(), 10)
+                writer.close()
+                await writer.wait_closed()
+                return reply
+
+        for host in ("api.openai.com", "login.microsoftonline.com", "graph.microsoft.com"):
+            self.assertTrue(asyncio.run(run(host)).startswith(b"HTTP/1.1 403"), host)
 
 
 class Lifetime(unittest.TestCase):

@@ -3,10 +3,10 @@
 
 Job containers sit on Docker networks with no route out; this proxy is
 attached to those networks and to one that has a route. It opens HTTPS
-tunnels (CONNECT host:443) to GitHub and Sigstore and refuses everything
-else: other names, other ports, plain HTTP, IP literals, and any name that
-resolves to a private, loopback, link-local or otherwise non-public address.
-A job can therefore reach GitHub and nothing on the machine's own networks.
+tunnels (CONNECT host:443) to GitHub, Sigstore and the watch's exact API
+destinations. It refuses other names, other ports, plain HTTP, IP literals,
+and any name that resolves to a private, loopback, link-local or otherwise non-public address.
+A job cannot reach anything on the machine's own networks.
 """
 
 from __future__ import annotations
@@ -18,7 +18,8 @@ import socket
 import sys
 
 # The runner's own traffic, checkout, artifacts and logs are GitHub; build
-# provenance is signed through Sigstore. Nothing else is needed by a job.
+# provenance is signed through Sigstore. Swiss watch also uses OpenAI and
+# Microsoft Graph; those three entries are exact names, never suffix rules.
 ALLOWED = (
     "github.com",
     ".github.com",
@@ -26,6 +27,9 @@ ALLOWED = (
     ".blob.core.windows.net",
     "ghcr.io",
     ".sigstore.dev",
+    "api.openai.com",
+    "login.microsoftonline.com",
+    "graph.microsoft.com",
 )
 NAME_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789.-")
 
