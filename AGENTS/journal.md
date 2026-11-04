@@ -1,3 +1,18 @@
+## 2026-11-04 — Keep the parked Library cube beyond the widescreen edge
+
+Real-console captures reveal part of the Home cube in the left margin of
+widescreen Grid and Spotlight. The full-screen Library pose uses a fixed
+horizontal offset while Menu Widescreen expands the perspective. Scale that
+offset with the stage's pixel width and retarget through the existing spring
+when screen shape changes. The renderer can then reject the hidden cube
+before drawing its surfaces, as it already does in the standard screen shape.
+
+Exercise the real renderer across all three full-screen layouts, both screen
+shapes, every motion mode and several animation times. Change shape with the
+Library open and return Home in every case. Steady-frame measurements select
+screen shape before settling; refresh only the affected widescreen budgets.
+Existing guide pictures use the standard screen shape and remain current.
+
 ## 2026-11-04 — Observe storage identity and destination context in smoke coverage
 
 The right rows crop can remain 0.927765 alike after a correct swap because

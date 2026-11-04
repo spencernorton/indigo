@@ -84,7 +84,7 @@ test_ui_home_safety.src := $(GUI)/ui_home_safety.c
 test_ui_home_layout.src := $(GUI)/ui_home_layout.c $(GUI)/ui_home_text.c \
 	$(GUI)/ui_home.c
 test_ui_scene.src := $(GUI)/ui_scene.c $(GUI)/ui_motion.c $(GUI)/ui_home.c \
-	$(GUI)/ui_cube_motif.c
+	$(GUI)/ui_cube_motif.c $(GUI)/ui_stage.c
 test_ui_scene.libs := -lm
 test_ui_command_rail.src := $(GUI)/ui_command_rail.c
 test_ui_command_rail.libs := -lm
