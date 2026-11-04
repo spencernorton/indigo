@@ -2,7 +2,7 @@
 
 # Library
 
-The Library shows the games on your card as posters: in a row, in a column
+The Library shows the games on your source as posters: in a row, in a column
 or in a grid, or as a gameplay still over a row of disc banners, as you
 choose. On Home, turn the cube to **Library** and press A.
 

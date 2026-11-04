@@ -591,6 +591,12 @@ static void gameflowGamesRoot(const DEVICEHANDLER_INTERFACE *device,
 		gamesRoot[0] = '\0';
 		return;
 	}
+	/* The optical handler exposes the disc's game(s) at its root, without
+	 * a /games folder. An explicit Disc source must stay on that disc. */
+	if(device == &__device_dvd) {
+		strlcpy(gamesRoot, device->initial->name, PATHNAME_MAX);
+		return;
+	}
 	/* Settings › Library Path, when it is on this device; else /games. */
 	if(gameflowCustomRootForDevice(device, swissSettings.libraryPath,
 			gamesRoot)) {
@@ -2820,7 +2826,8 @@ static uiGameflowLibraryMode_t gameflowLibraryMode(file_handle **directory,
 		return UI_GAMEFLOW_LIBRARY_NONE;
 	}
 	gameflowGamesRoot(devices[DEVICE_CUR], gamesRoot);
-	location = swissSettings.libraryFolders ?
+	location = swissSettings.libraryFolders &&
+		devices[DEVICE_CUR] != &__device_dvd ?
 		UIGameflowLibrary_LocateFolders(gamesRoot, curDir.name) :
 		UIGameflowLibrary_Locate(gamesRoot, curDir.name);
 	if(location == UI_GAMEFLOW_LIBRARY_LOCATION_NONE) {
@@ -2836,7 +2843,9 @@ static uiGameflowLibraryMode_t gameflowLibraryMode(file_handle **directory,
 		const char *name = directory[i] ?
 			getRelativeName(directory[i]->name) : NULL;
 		uiGameflowLibraryEntryType_t type = gameflowEntryType(directory[i]);
-		if(flattened && type == UI_GAMEFLOW_LIBRARY_ENTRY_DIRECTORY) {
+		/* Disc folders are the game's data, not Library folders. */
+		if((flattened || devices[DEVICE_CUR] == &__device_dvd) &&
+			type == UI_GAMEFLOW_LIBRARY_ENTRY_DIRECTORY) {
 			continue;
 		}
 		if(!UIGameflowLibrary_ClassifierAdd(&classifier, type, name)) {
@@ -2900,7 +2909,8 @@ static bool gameflowInsideFolder(void)
 {
 	char gamesRoot[PATHNAME_MAX];
 
-	if(!swissSettings.libraryFolders || devices[DEVICE_CUR] == NULL ||
+	if(!swissSettings.libraryFolders || devices[DEVICE_CUR] == &__device_dvd ||
+		devices[DEVICE_CUR] == NULL ||
 		devices[DEVICE_CUR]->initial == NULL) {
 		return false;
 	}

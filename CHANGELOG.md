@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Keep Game Disc selected when opening the Library and show the disc's game
+  at its root. A disc no longer falls back to another card's `/games` folder,
+  and its data folders stay in the File Browser.
+
 - Allow the upstream watch to reach its three required API hosts through the
   runner's HTTPS proxy. Other destinations and private addresses stay blocked.
 

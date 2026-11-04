@@ -2,7 +2,7 @@
 """Boot an Indigo DOL in Dolphin and drive its menus with a controller.
 
 Dolphin (headless: software OpenGL on a virtual X server) boots the DOL with
-the demonstration disc (card.py) in the drive. Once Home is up a controller
+a game disc or a demonstration SD card (card.py). Once Home is up a controller
 is plugged in (dsu_pad.py) and a route of button presses walks the cube and
 opens each face. Every check compares the screen with itself earlier in the
 same run, never with stored pictures, so a redesign does not break the test
@@ -1213,6 +1213,7 @@ class Route:
         self.shots: list[tuple[str, Path]] = []
         self.pad = emulator.pad
         self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
+        self.source_picker_name: np.ndarray | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -1548,6 +1549,58 @@ class Route:
         drift = float(np.linalg.norm(backdrop(self.last_rgb) - self.home_backdrop))
         self.check("... in the colours the card's settings chose, not the defaults", drift < 15,
                    drift=round(drift, 1))
+
+    def optical(self) -> None:
+        """Confirm Game Disc as Source, retain its single game through Home,
+        then launch the whole disc through the real optical driver."""
+        home = self.boot()
+        source = self.turn([home], "RIGHT", "optical-source")
+        self.press("A")
+        self.check("A opens the Source choices", self.covered(source))
+        before = text_mask(self.gray(), TITLE_BOX)
+        self.press("A")
+        picker, _ = self.settled_label(unlike=before, box=TITLE_BOX)
+        self.shot("optical-source-picker", self.last_rgb)
+        self.check("Change Source opens the device picker", picker is not None)
+        if self.storage == "sd2sp2":
+            # The fixture has only DVD and SD2SP2 as game sources. DVD is
+            # immediately after SD2SP2 in the normal detected-device order.
+            disc, _ = self.press_until("RIGHT", unlike=picker, box=TITLE_BOX)
+            self.shot("optical-disc-selected", self.last_rgb)
+            self.check("RIGHT selects the disc instead of the SD card", disc is not None)
+        # Confirm the optical source through its normal remount path. The
+        # one-card and handoff checks reject accidentally keeping SD selected.
+        self.press("A")
+        back, _ = self.settled_label(like=source)
+        self.check("confirming Game Disc returns to the Source face", back is not None)
+        back, _ = self.press_until("LEFT", like=home)
+        self.check("LEFT returns to the Library face", back is not None)
+        self.press("A")
+        self.check("Games opens the selected disc", self.covered(home))
+        title, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("optical-library", self.last_rgb)
+        self.check("the optical game has a Library card", title is not None)
+        for button in ("RIGHT", "LEFT"):
+            self.press(button)
+            same, _ = self.settled_label(like=title, box=TITLE_BOX)
+            self.check("the single disc card wraps to itself", same is not None, button=button)
+        self.press("B")
+        back, _ = self.settled_label(like=home)
+        self.check("B returns from the disc to Home", back is not None)
+        self.press("A")
+        same, _ = self.settled_label(like=title, box=TITLE_BOX)
+        self.check("Games reopens the same disc card", same is not None)
+        self.press("A")
+        self.check("A opens the optical game's details", self.covered(title, TITLE_BOX))
+        details, _ = self.settled_label(box=DETAIL_TITLE_BOX)
+        self.shot("optical-details", self.last_rgb)
+        self.check("the optical details show the game's title", details is not None)
+        self.press("A")
+        report = self.handoff("optical-game")
+        self.check("the optical game starts with its own disc ID",
+                   report["disc_id"] == card.PROBE_GAME[0], disc_id=report["disc_id"])
+        self.check("the optical game is given the full 24 MB", report["memsize"] == 0x01800000,
+                   memory=f"{report['memsize']:08X}")
 
     def game(self) -> None:
         """Boot, open the Library, move to the probe's game, open its details
@@ -2130,6 +2183,7 @@ class Route:
         first, _ = self.settled_label(unlike=before, box=TITLE_BOX)
         self.shot("source-picker", self.last_rgb)
         self.check("Change Source opens the device picker", first is not None)
+        self.source_picker_name = first.copy()
         name, _ = self.press_until("RIGHT", unlike=first, box=TITLE_BOX)
         self.shot("source-picker-right", self.last_rgb)
         self.check("RIGHT shows the next device", name is not None)
@@ -2335,6 +2389,16 @@ class Route:
         again swaps back, the left pane as it was. L opens the left pane's
         menu and B closes it."""
         disc = self.files_rows(right=True)
+        # Long device names fit differently in each header. Record the
+        # original source in the same focused right pane it will occupy
+        # after Y, rather than comparing a left-pane fit with a right one.
+        self.press("RIGHT")
+        self.check("RIGHT focuses the original source on the right", self.files_list(True, pane=1))
+        source = self.files_path(right=True, box=FILES_NAME_BOXES[1])
+        self.shot("file-browser-source-reference", self.last_rgb)
+        self.check("the focused right pane shows the original source name", source is not None)
+        self.press("LEFT")
+        self.check("LEFT restores the source pane before choosing storage", self.files_list(True, pane=0))
         self.press("R")
         opened = self.files_storage_menu(1, True)
         self.shot("file-browser-storage-right", self.last_rgb)
@@ -2343,11 +2407,10 @@ class Route:
         self.check("B closes the storage menu", self.files_storage_menu(1, False))
         self.press("R")
         self.files_storage_menu(1, True)
-        # The GC Loader route lists the drive's disc between them, greyed.
+        # SD sources list the drive between the source and the memory card.
         self.steps("DOWN" if self.storage == "dvd" else "DOWN DOWN")
         self.press("A")
         card = self.files_rows(right=True, unlike=disc) if disc is not None else None
-        source = self.files_path(right=True, box=FILES_NAME_BOXES[0])  # focused: white
         self.shot("file-browser-second-device", self.last_rgb)
         self.check("R and A on Memory Card - Slot A show its saves in the right pane",
                    card is not None and not files_menu(self.last_rgb, 1, self.menu_wide))
@@ -2360,19 +2423,46 @@ class Route:
         moved = self.files_path(unlike=name, right=True, box=FILES_INFO_TITLE_BOX) \
             if name is not None else None
         self.check("DOWN browses the second device", moved is not None)
+        card_item = moved
+        self.press("LEFT")
+        self.check("LEFT focuses the original source before swapping", self.files_list(True, pane=0))
+        source_item = self.files_path(unlike=card_item, box=FILES_INFO_TITLE_BOX)
+        self.check("the original source has a different selected item", source_item is not None)
+        self.press("RIGHT")
+        self.check("RIGHT restores the card's selected item before swapping",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
         left = self.files_rows(right=False)
         right = self.files_rows(right=True)
+        self.shot("file-browser-before-swap", self.last_rgb)
         self.press("Y")
         # The Source's name moves to the focused right pane once both sides
         # are mounted and read (a disc drive resets on the way).
         moved = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1]) \
             if source is not None else None
         swapped = self.files_rows(right=False, unlike=left) if left is not None else None
-        changed = self.files_rows(right=True, unlike=right) if right is not None else None
+        focused = self.files_list(True, pane=1)
+        item = self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX)
+        right_changed = right is not None and not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX), right)
         self.shot("file-browser-swapped", self.last_rgb)
-        self.check("Y swaps the sides: the card is the Source, the disc on the right",
-                   moved is not None and swapped is not None and changed is not None and
-                   self.files_list(True, pane=1))
+        # A common focus fill can dominate a short rows crop even when its
+        # text differs. Require the source's selected item in the global info
+        # bar instead, and prove the other item on the left before swapping
+        # back. Both complete row masks must still round-trip exactly below.
+        self.check("Y swaps the sides: the card is the Source, the original source on the right",
+                   moved is not None and swapped is not None and item is not None and
+                   focused, source_name_matches=moved is not None,
+                   left_rows_changed=swapped is not None, right_rows_changed=right_changed,
+                   right_focused=focused, selected_item_matches=item is not None)
+        self.press("LEFT")
+        self.check("the card's selected item moved to the left pane",
+                   self.files_list(True, pane=0) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
+        self.press("RIGHT")
+        self.check("the original source's selected item moved to the right pane",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX) is not None)
         self.press("Y")
         home = self.files_path(like=other, right=True, box=FILES_NAME_BOXES[1]) \
             if other is not None else None
@@ -2386,22 +2476,50 @@ class Route:
         self.check("L opens the left pane's storage menu", opened)
         self.press("B")
         self.check("B closes the left storage menu", self.files_storage_menu(0, False))
-        if self.storage == "dvd":
-            self.files_not_ready()
+        self.files_not_ready(source)
 
-    def files_not_ready(self) -> None:
+    def files_not_ready(self, source: np.ndarray) -> None:
         """A second device that isn't there. R, UP twice (from Memory Card -
         Slot A, which the menu focuses, round to Other devices...) and A open
         Swiss's destination picker; Z lists every
         device and RIGHT twice goes from Memory Card - Slot A to KunaiGC,
         which A chooses. The right pane says it isn't ready instead of rows,
-        Y leaves the sides as they are, and R and A put the disc back."""
+        Y leaves the sides as they are, and R and A put the original source
+        back. SD sources have an extra disc entry before Memory Card - Slot A."""
         left = self.files_rows(right=False)
         self.press("R")
         self.files_storage_menu(1, True)
-        self.steps("UP UP A")
-        self.pause(2.0)
-        self.steps("Z RIGHT RIGHT")
+        self.steps("UP UP" if self.storage == "dvd" else "UP UP UP")
+        self.shot("not-ready-menu-target", self.emulator.frame())
+        self.press("A")
+        picker, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("not-ready-picker", self.last_rgb)
+        self.check("Other devices opens the destination picker", picker is not None)
+        # The destination picker remembers a previous source, not the pane's
+        # memory card. Anchor its detected-only ring to the same source name
+        # observed in Change Source earlier in this boot. Our writable source
+        # is followed by Memory Card - Slot A in this fixture.
+        self.check("the boot has an observed source-picker reference", self.source_picker_name is not None)
+        for step in range(4):
+            if same_text(picker, self.source_picker_name):
+                break
+            picker, _ = self.press_until("LEFT", unlike=picker, box=TITLE_BOX)
+            self.check("find the original source in detected destinations", picker is not None, step=step)
+        self.check("the destination picker is anchored to the original source",
+                   same_text(picker, self.source_picker_name))
+        picker, _ = self.press_until("RIGHT", unlike=picker, box=TITLE_BOX)
+        self.check("the next detected destination is the memory card anchor", picker is not None)
+        self.press("Z")
+        all_devices, _ = self.settled_label(like=picker, box=TITLE_BOX)
+        self.shot("not-ready-all-devices", self.last_rgb)
+        self.check("Z keeps the focused destination while showing every device", all_devices is not None)
+        for step in range(2):
+            # Slot A and Slot B differ by one character; a whole-word
+            # "unlike" threshold must not turn one press into two here.
+            self.press("RIGHT")
+            picker, _ = self.settled_label(box=TITLE_BOX)
+            self.shot(f"not-ready-device-{step}", self.last_rgb)
+            self.check("the next destination name settles after RIGHT", picker is not None, step=step)
         self.press("A")
         message = self.files_path(right=True, box=FILES_RIGHT_MESSAGE_BOX)
         rows = files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX)
@@ -2420,9 +2538,13 @@ class Route:
         self.files_storage_menu(1, True)
         self.press("A")
         back = self.files_rows(right=True)
-        self.check("R and A on the disc put it back on the right",
-                   back is not None and not files_text(self.last_rgb, self.menu_wide,
-                                                       box=FILES_RIGHT_MESSAGE_BOX).any())
+        source_back = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1])
+        message_gone = not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_MESSAGE_BOX), message)
+        self.check("R and A put the original source back on the right",
+                   back is not None and message_gone and source_back is not None,
+                   rows_returned=back is not None, error_message_gone=message_gone,
+                   source_name_matches=source_back is not None)
 
     def files_goto(self, image: Path, focus: str, target: str, folder: str = "") -> None:
         """Moves the focused pane's focus from one entry to another, by their
@@ -3767,9 +3889,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dol", type=Path)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--route", choices=("smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
+    parser.add_argument("--route", choices=("optical", "smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
                                             "manual"),
-                        default="smoke")
+                        default=None)
     parser.add_argument("--probe", type=Path, help="the probe DOL (probe/), launched as an app and a game")
     parser.add_argument("--region", choices=tuple(REGIONS), default="pal")
     parser.add_argument("--storage", choices=tuple(STORAGES), default="dvd")
@@ -3782,8 +3904,14 @@ def main(argv: list[str] | None = None) -> int:
                              "its launch must be refused")
     parser.add_argument("--disc", type=Path, help="a disc to use instead of building card.py's")
     args = parser.parse_args(argv)
-    if args.route == "game" and not args.probe:
-        parser.error("the game route launches the probe: give --probe")
+    if args.route is None:
+        args.route = "optical" if args.storage == "dvd" else "smoke"
+    if args.route in ("game", "optical") and not args.probe:
+        parser.error("the game and optical routes launch the probe: give --probe")
+    if args.route == "optical" and args.storage not in ("dvd", "sd2sp2"):
+        parser.error("the optical route needs dvd or a supporting sd2sp2 card")
+    if args.route in ("smoke", "tour", "game") and args.storage == "dvd":
+        parser.error("multi-game Library routes need an SD card; use --route optical for a game disc")
     if (args.storage != "dvd") != bool(args.card_zip):
         parser.error("an SD card (--storage) is made from the release zip (--card-zip), and only then")
     if args.settings and not args.card_zip:
@@ -3827,9 +3955,15 @@ def main(argv: list[str] | None = None) -> int:
                 with zipfile.ZipFile(args.card_zip) as package:
                     dol.write_bytes(package.read("ipl.dol"))
                 report["dol"] = f"{args.card_zip.name}:ipl.dol"
-            elif disc is None:
-                disc = work / "demo.iso"
-                report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
+            if disc is None and (args.storage == "dvd" or args.route == "optical"):
+                if args.route == "optical":
+                    disc = work / "optical.iso"
+                    disc.write_bytes(card.probe_image(args.probe.read_bytes(), optical_data=True))
+                    report["disc"] = {"kind": "gamecube-game", "disc_id": card.PROBE_GAME[0],
+                                      "games": 1, "bytes": disc.stat().st_size}
+                else:
+                    disc = work / "demo.iso"
+                    report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
             # The smoke route opens Memory Cards with a memory card in each
             # slot, unless an SD Gecko has Slot B.
             cards = None

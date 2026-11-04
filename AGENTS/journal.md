@@ -1,3 +1,86 @@
+## 2026-11-04 — Observe storage identity and destination context in smoke coverage
+
+The right rows crop can remain 0.927765 alike after a correct swap because
+its common focus fill dominates the words. The selected-item masks differ
+at 0.261183. Keep the same 0.85 identity threshold, verify both selected items
+through the global info bar as their panes swap, and retain both exact row
+round-trip checks. Capture the original source name in its focused right
+pane so long labels have the same fit before and after the operation.
+
+The destination picker remembers an earlier source, not the right pane's
+memory card. Anchor its detected ring to the source name observed earlier in
+Change Source before selecting the missing-device fixture. Slot A/B names
+must not drive the whole-word "unlike" retry helper: one physical RIGHT and
+a settled caption preserve the intended step. When storage returns, require
+the old error words to disappear; a valid SD listing can occupy that box.
+
+A focused PAL/SD2SP2 controller replay passes 53 checks including the swap,
+both selected items, round trip, missing device, refused swap and original
+source restoration. The corresponding GC Loader/non-default diagnostic
+passes those storage operations; its full-smoke configuration postcondition
+is outside that shortened route and is not a complete smoke qualification.
+The full PAL/composite SD2SP2 replay now passes all 240 checks, including the
+app handoff and saved settings. Final source-bound CI is still required.
+These are observer/media corrections only; runtime C remains the initial
+disc fix.
+
+## 2026-11-04 — Keep the optical game with SD attached and verify header context
+
+Extend the optical fixture with genuine FST directories, including Data
+[GDIR01], and attach a populated SD2SP2 Library. Select Game Disc from that
+source and require single-card wrapping, Home re-entry and the actual probe
+handoff. The first corrected CI executable passes 19 checks without SD and
+23 with SD; both report GPRE01, 24 MB, stopped audio and zero stray writes.
+The verified published v2.6.0 executable fails the no-SD card check and the
+with-SD single-card check: the latter has fallen back to the SD Library.
+These are Dolphin results, not physical-drive qualification.
+
+The moved PAL smoke route exposes an observer error at File Browser Y:
+long SD2SP2 names fit differently in the left and right headers. Captures
+give 0.216418 overlap across panes and 1.0 within the same focused right
+pane. Record the source name in that pane before swapping; keep the 0.85
+threshold and the row/round-trip checks. Preserve the unavailable-device
+and refused-swap case on SD too, accounting for its extra drive menu row.
+The corrected full PAL smoke and exact new-head CI remain pending. The
+100-test observer suite passes with three existing skips. Runtime C source
+has not changed since the initial disc fix.
+
+## 2026-11-04 — Exercise a whole optical game and preserve the full smoke route
+
+The two DVD routes in the first disc-source CI attempt show the corrected
+single disc card, then fail because their old observers expect a multi-game
+/games folder. Keep that full navigation and damaged-image coverage on SD
+storage, and give the optical route a real GameCube-format probe image with
+no /games folder. Confirm the current Disc source through the picker, check
+single-card wrapping and Home re-entry, then launch the whole disc and read
+back its identity, 24 MB, stopped audio and quiet memory from the probe.
+
+The independent PAL/component replay passes those checks using the first
+candidate's checksum-verified CI executable. The emulator observer suite
+passes 99 tests with three existing skips; invalid media/route combinations
+fail before starting an emulator. Full PAL/composite smoke now runs on a
+fresh SD2SP2 card instead of the synthetic multi-game DVD. Its result and
+new-head CI remain pending. This is emulated optical qualification; physical
+drive recognition, media condition and the reporter's exact setup remain
+unmeasured. Runtime source is unchanged from the preceding fix.
+
+## 2026-11-04 — Open optical games from the selected disc
+
+Investigate #191 by replaying the actual source-routing, directory scan and
+Library dispatch against a readable disc fixture and an available SD library.
+The v2.6.0 implementation switches away from Disc because it looks for
+dvd:/games instead of the virtual game entry the optical handler exposes at
+dvd:/. The same source remains on beta.
+
+Use the optical device's root for Library entry, ignore its internal data
+folders when classifying games, and keep its folders in the explicit File
+Browser. Preserve storage fallback and startup device-selection behavior.
+Extend the existing executable navigation regression for retail/multi-game
+listings, both Library Folders settings, Home re-entry, a browsed disc
+subdirectory, File Browser access and a failed disc read. The release source
+fails the source-retention case; corrected plain and ASan/UBSan replays pass.
+Physical-drive recognition and game launch still need real-disc qualification.
+
 ## 2026-11-03 — Allow the watch's exact HTTPS destinations
 
 The first manual dry-run reaches the upstream comparison, then fails because
