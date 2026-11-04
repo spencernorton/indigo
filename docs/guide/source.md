@@ -50,6 +50,11 @@ The disc drive is called **Game Disc**.
 
 ## What the Library face opens
 
+With **Game Disc** selected, the Library shows the game on the disc, or the
+games on a multi-game disc. It reads them from the disc's root without
+looking for a `/games` folder or switching to another card. The game's data
+folders are available through the [File Browser](system.md#file-browser).
+
 Use a `/games` layout described in the [Library guide](library.md) to open
 the poster Library. Indigo skips unrelated files in that folder. When the
 Source has no `/games` folder, Indigo looks for one on the other storage

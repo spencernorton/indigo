@@ -1,3 +1,20 @@
+## 2026-11-04 — Open optical games from the selected disc
+
+Investigate #191 by replaying the actual source-routing, directory scan and
+Library dispatch against a readable disc fixture and an available SD library.
+The v2.6.0 implementation switches away from Disc because it looks for
+dvd:/games instead of the virtual game entry the optical handler exposes at
+dvd:/. The same source remains on beta.
+
+Use the optical device's root for Library entry, ignore its internal data
+folders when classifying games, and keep its folders in the explicit File
+Browser. Preserve storage fallback and startup device-selection behavior.
+Extend the existing executable navigation regression for retail/multi-game
+listings, both Library Folders settings, Home re-entry, a browsed disc
+subdirectory, File Browser access and a failed disc read. The release source
+fails the source-retention case; corrected plain and ASan/UBSan replays pass.
+Physical-drive recognition and game launch still need real-disc qualification.
+
 ## 2026-11-03 — Allow the watch's exact HTTPS destinations
 
 The first manual dry-run reaches the upstream comparison, then fails because

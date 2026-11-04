@@ -150,8 +150,10 @@ library_mode = extract_function(
     SWISS, "static uiGameflowLibraryMode_t gameflowLibraryMode("
 )
 assert "UIGameflowLibrary_Locate(gamesRoot, curDir.name)" in library_mode
-# Library Folders locates by its own rule only while it is on.
-assert ("location = swissSettings.libraryFolders ?\n"
+# Library Folders locates by its own rule only on storage, never inside a
+# disc's game data. Optical games are exposed at the device root.
+assert ("location = swissSettings.libraryFolders &&\n"
+        "\t\tdevices[DEVICE_CUR] != &__device_dvd ?\n"
         "\t\tUIGameflowLibrary_LocateFolders(gamesRoot, curDir.name) :\n"
         "\t\tUIGameflowLibrary_Locate(gamesRoot, curDir.name);") in library_mode
 assert "UIGameflowLibrary_ClassifierInit(&classifier, location);" in library_mode
