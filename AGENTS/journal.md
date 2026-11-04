@@ -1,3 +1,27 @@
+## 2026-11-03 — Allow the watch's exact HTTPS destinations
+
+The first manual dry-run reaches the upstream comparison, then fails because
+the runner proxy refuses its model API connection. Allow only the three exact
+hosts used by the existing watch: its assessment API, token endpoint and Graph
+mail endpoint. Retain HTTPS-only tunnels, public-address checks and rejection
+of other names, including sibling and nested subdomains. Add regression cases
+for the accepted hosts, deceptive names and forbidden ports. Runner images
+and the proxy refresh through the existing trusted-beta supervisor; no direct
+runner changes or sending test are required.
+
+## 2026-11-03 — Refresh scheduled checks and expose dispatcher validation
+
+Both weekly schedule definitions have no recorded runs and were last edited
+by the former workflow account. Re-save their cron minutes under the active
+maintainer while preserving their weekdays, hours and weekly cadence. Keep
+all jobs on the existing self-hosted pools.
+
+Add manual dispatch to Weekly. Scheduled invocations always request the
+existing extended fuzz run on beta; a manual test uses the normal short fuzz
+run unless extended fuzzing is selected. The upstream watch retains its
+existing dry-run mode for validation without email. Runtime sources, runner
+images, release tags and publication gates do not change.
+
 ## 2026-11-02 — Prepare the validated RAM-first and Swiss integration for v2.6.0
 
 Combine the artwork/renderer work, ten-commit Swiss intake, return loader

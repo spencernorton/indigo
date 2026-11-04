@@ -22,11 +22,14 @@ job is treated as untrusted:
   limits. There is no Docker socket, no host directory and no GPU in the
   container, which is why workflows use no `container:` or `services:` (the
   build runner already is the toolchain image).
-- **GitHub and nothing else.** Each slot's container sits on its own Docker
+- **Restricted HTTPS destinations.** Each slot's container sits on its own Docker
   network with no route out. The only way out is
   [`egress_proxy.py`](egress_proxy.py): it opens HTTPS tunnels to GitHub and
-  Sigstore (build provenance) and refuses every other host, port and address,
-  so a job cannot reach the machine's own network.
+  Sigstore (build provenance). Swiss watch also needs the exact hosts
+  `api.openai.com`, `login.microsoftonline.com` and `graph.microsoft.com` for
+  its assessment and configured mail. These are exact names, without wildcard
+  subdomains. The proxy refuses every other host, non-443 port and non-public
+  address, so a job cannot reach the machine's own network.
 - **Approval first.** A pull request from someone who has not contributed
   before waits for the maintainer to approve its workflow run
   (the repository's fork pull request setting), and `pull_request_target`

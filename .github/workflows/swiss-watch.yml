@@ -20,7 +20,7 @@ name: Swiss watch
 
 on:
   schedule:
-    - cron: '17 14 * * 2'
+    - cron: '19 14 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:

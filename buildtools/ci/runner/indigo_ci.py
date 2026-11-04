@@ -4,7 +4,7 @@
 Every runner is a fresh container that registers just in time, takes exactly
 one job and is thrown away. A job runs as an unprivileged user with no Docker
 socket, no host mounts and no capabilities, on a network of its own whose
-only way out is the egress proxy (GitHub and Sigstore). README.md beside this
+only way out is the restricted egress proxy. README.md beside this
 file has the design.
 
     indigo_ci.py run       keep every pool's slots filled (what the unit runs)
