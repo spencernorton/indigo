@@ -45,27 +45,32 @@ def status(host: str) -> dict:
     return result
 
 
-def decode_coordinates(raw: bytes, width: int, height: int, stride: int) -> dict:
+def decode_coordinates(raw: bytes, width: int, height: int, stride: int, tolerance: int = 0) -> dict:
     levels = {16: 0, 80: 1, 160: 2, 235: 3}
+    def level(value):
+        for expected, code in levels.items():
+            if abs(value - expected) <= tolerance:
+                return code
+        raise ValueError(f"unexpected coordinate luma {value}")
     columns, rows = [], []
     for x in range(width):
         value = 0
         for bit in range(10):
-            value |= (levels[raw[((bit * 6 + 2) * stride + x) * 2]] & 1) << bit
+            value |= (level(raw[((bit * 6 + 2) * stride + x) * 2]) & 1) << bit
         columns.append(value)
     for y in range(height):
         value = 0
         for bit in range(9):
-            value |= (levels[raw[(y * stride + bit * 6 + 2) * 2]] >> 1) << bit
+            value |= (level(raw[(y * stride + bit * 6 + 2) * 2]) >> 1) << bit
         rows.append(value)
     return {"columns_match": columns == list(range(width)),
             "rows_match": rows == list(range(height)),
             "distinct_columns": len(set(columns)), "distinct_rows": len(set(rows))}
 
 
-def capture(host: str, prefix: Path) -> dict:
+def capture(host: str, prefix: Path, *, path: str = "/xfb") -> dict:
     before = status(host)
-    raw, headers = exchange(host, "/xfb")
+    raw, headers = exchange(host, path)
     width, height = map(int, headers["X-Size"].split("x"))
     stride = int(headers["X-Stride-Pixels"])
     pattern, sequence = int(headers["X-Pattern"]), int(headers["X-Sequence"])
@@ -75,14 +80,16 @@ def capture(host: str, prefix: Path) -> dict:
         raise ValueError("the console restarted during capture")
     if len(raw) != stride * height * 2 or zlib.crc32(raw) != int(headers["X-CRC32"]):
         raise ValueError("framebuffer length/CRC differs from the snapshot metadata")
-    result = {"scope": "GameCube XFB memory only; not an HDMI capture",
+    renderer = headers.get("X-Renderer", "cpu")
+    result = {"scope": "GameCube XFB memory only; not an HDMI capture", "capture_path": path, "renderer": renderer,
               "before": before, "width": width, "height": height, "stride_pixels": stride,
               "pattern": pattern, "sequence": sequence, "sha256": hashlib.sha256(raw).hexdigest(),
               "crc32": zlib.crc32(raw), "bytes": len(raw)}
-    if raw[1::2] != bytes([128]) * (len(raw) // 2):
+    if any(abs(value - 128) > (1 if renderer == "gx" else 0) for value in raw[1::2]):
         raise ValueError("unexpected chroma in the grayscale pattern")
     if pattern == 3:
-        result["coordinate_decode"] = decode_coordinates(raw, width, height, stride)
+        result["coordinate_luma_tolerance"] = 2 if renderer == "gx" else 0
+        result["coordinate_decode"] = decode_coordinates(raw, width, height, stride, result["coordinate_luma_tolerance"])
         if not all(result["coordinate_decode"][key] for key in ("columns_match", "rows_match")):
             raise ValueError("source coordinate codes do not reconstruct the expected grid")
     prefix.parent.mkdir(parents=True, exist_ok=True)
@@ -99,7 +106,8 @@ def capture(host: str, prefix: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("host")
-    parser.add_argument("action", choices=("status", "capture", "baseline", "trial", "expire", "exit", "pattern"))
+    parser.add_argument("action", choices=("status", "capture", "baseline", "trial", "expire", "exit", "pattern",
+                                          "gx-status", "gx-start", "gx-show", "gx-capture", "gx-scene"))
     parser.add_argument("value", nargs="?")
     parser.add_argument("--expect-boot", type=int, help="refuse a command after a different boot")
     args = parser.parse_args()
@@ -108,15 +116,19 @@ def main() -> None:
         raise ValueError("boot identity changed")
     if args.action == "status":
         result = current
-    elif args.action == "capture":
+    elif args.action == "gx-status":
+        result = json.loads(exchange(args.host, "/gx/status")[0])
+    elif args.action in ("capture", "gx-capture", "gx-scene"):
         if not args.value:
             parser.error("capture needs an output prefix")
-        result = capture(args.host, Path(args.value))
+        path = "/gx/xfb" if args.action == "gx-capture" else "/gx/scene/0" if args.action == "gx-scene" else "/xfb"
+        result = capture(args.host, Path(args.value), path=path)
     else:
-        path = {"baseline": "/baseline", "trial": "/trial/P1", "expire": "/expire", "exit": "/exit"}
+        path = {"baseline": "/baseline", "trial": "/trial/P1", "expire": "/expire", "exit": "/exit",
+                "gx-start": "/gx/start", "gx-show": "/gx/show"}
         if args.action == "pattern":
-            if args.value not in tuple(map(str, range(5))):
-                parser.error("pattern must be 0 through 4")
+            if args.value not in tuple(map(str, range(6))):
+                parser.error("pattern must be 0 through 5")
             target = f"/pattern/{args.value}"
         else:
             target = path[args.action]

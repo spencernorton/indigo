@@ -37,6 +37,17 @@ class CoordinateDecodeTests(unittest.TestCase):
         self.assertFalse(result['rows_match'])
         self.assertEqual(result['distinct_rows'], 479)
 
+    def test_gpu_quantization_tolerance_is_explicit_and_bounded(self):
+        for i in range(0, len(self.image), 2):
+            self.image[i] += 1
+        with self.assertRaises(ValueError):
+            decode_coordinates(self.image, self.width, self.height, self.width)
+        result = decode_coordinates(self.image, self.width, self.height, self.width, tolerance=2)
+        self.assertTrue(result['columns_match'] and result['rows_match'])
+        self.image[2 * (2 * self.width)] = 24
+        with self.assertRaises(ValueError):
+            decode_coordinates(self.image, self.width, self.height, self.width, tolerance=2)
+
 
 if __name__ == '__main__':
     unittest.main()

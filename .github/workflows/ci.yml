@@ -170,6 +170,30 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  video-diagnostic:
+    name: Video diagnostic
+    needs: build
+    runs-on: [self-hosted, indigo-emulator]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: indigo-sd-card-${{ github.sha }}
+          path: build
+      - name: Compare tiled GPU copies and retained regions in Dolphin
+        run: python3 buildtools/video_lab/emulator.py build/video-lab.dol --out video-diagnostic
+      - name: Summary
+        if: always()
+        run: cat video-diagnostic/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: video-diagnostic-${{ github.sha }}
+          path: video-diagnostic/
+          if-no-files-found: warn
+          retention-days: 7
+
   emulator:
     name: ${{ matrix.name }}
     needs: build

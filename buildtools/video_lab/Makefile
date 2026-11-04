@@ -7,15 +7,19 @@ CFLAGS += -DVL_REVISION=\"$(REVISION)\" -ffile-prefix-map=$(CURDIR)=.
 LDFLAGS := $(MACHDEP) -Wl,--no-eh-frame-hdr -L$(LIBOGC_LIB)
 
 video-lab.dol: video-lab.elf
-video-lab.elf: main.o core.o
+video-lab.elf: main.o core.o scene.o gx_lab.o
 	$(CC) $^ $(LDFLAGS) -lbba -logc -lm -o $@
 
 main.o: main.c core.h
 	$(CC) $(CFLAGS) -c $< -o $@
 core.o: core.c core.h
 	$(CC) $(CFLAGS) -c $< -o $@
+scene.o: scene.c scene.h
+	$(CC) $(CFLAGS) -c $< -o $@
+gx_lab.o: gx_lab.c gx_lab.h scene.h core.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f main.o core.o video-lab.elf video-lab.dol
+	rm -f main.o core.o scene.o gx_lab.o video-lab.elf video-lab.dol
 
 .PHONY: clean

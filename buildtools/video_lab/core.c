@@ -123,6 +123,15 @@ uint32_t vl_crc32(const uint8_t *data, size_t length)
 	return ~crc;
 }
 
+void vl_report(uint8_t *buffer, const vl_mode *mode, const uint32_t words[8])
+{
+	unsigned x, y;
+	for(y = 32; y < 64; y++)
+		for(x = 0; x < mode->width; x++)
+			buffer[(y * mode->stride + x) * 2u] =
+				words[(y - 32) / 4] & (1u << (31u - x * 32u / mode->width)) ? 235 : 16;
+}
+
 static int equal_ci(const char *a, const char *b, size_t n)
 {
 	size_t i;
@@ -186,6 +195,15 @@ vl_request vl_parse_request(const char *data, size_t length)
 	if(!post && (!strcmp(path, "/status") || !strcmp(path, "/log")))
 		out.command = VL_STATUS;
 	else if(!post && !strcmp(path, "/xfb")) out.command = VL_XFB;
+	else if(!post && !strcmp(path, "/gx/status")) out.command = VL_GX_STATUS;
+	else if(!post && !strcmp(path, "/gx/xfb")) out.command = VL_GX_XFB;
+	else if(!post && !strncmp(path, "/gx/scene/", 10) && strlen(path) == 11 &&
+		path[10] >= '0' && path[10] <= '3') {
+		out.command = VL_GX_SCENE;
+		out.value = (unsigned)(path[10] - '0');
+	}
+	else if(post && !strcmp(path, "/gx/start")) out.command = VL_GX_START;
+	else if(post && !strcmp(path, "/gx/show")) out.command = VL_GX_SHOW;
 	else if(post && !strcmp(path, "/baseline")) out.command = VL_BASELINE;
 	else if(post && !strcmp(path, "/trial/P1")) out.command = VL_TRIAL;
 	else if(post && !strcmp(path, "/expire")) out.command = VL_EXPIRE;
