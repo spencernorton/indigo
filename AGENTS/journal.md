@@ -1,3 +1,14 @@
+## 2026-11-04 — Initialize every stroke-test icon choice
+
+The full host suite exposes an intermittent pre-existing failure on the
+native stroke fixture. Its eight-element icon masks implicitly select the
+new ninth Home face, Web, and some fixtures leave that unused transform
+uninitialized. Reproduce the failure on unchanged source, then make every
+unused face front-facing to turn the accidental extra icon into a reliable
+regression. Initialize all choices to None before selecting each fixture's
+intended faces, so the fixture also handles future additions to Home.
+Production geometry and its stream checks remain unchanged.
+
 ## 2026-11-04 — Keep the parked Library cube beyond the widescreen edge
 
 Real-console captures reveal part of the Home cube in the left margin of
