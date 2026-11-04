@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Keep the Home cube outside the screen in widescreen Grid, Spotlight and
+  Jewel Case layouts, including after changing the menu's screen shape.
+
 - Keep Game Disc selected when opening the Library and show the disc's game
   at its root. A disc no longer falls back to another card's `/games` folder,
   and its data folders stay in the File Browser.

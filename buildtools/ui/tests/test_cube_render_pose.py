@@ -256,7 +256,7 @@ class CubeRenderPose(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='swiss-cube-pose-') as folder:
             source=Path(folder)/'test.c'; binary=Path(folder)/'test'
             source.write_text(self.prefix+setup+'\n'+point+'\n'+main)
-            subprocess.run(shlex.split(os.environ.get('CC','cc'))+['-std=c11','-Wall','-Wextra','-Werror','-I'+str(GUI),str(source),str(GUI/'ui_home.c'),str(GUI/'ui_cube_motif.c'),str(GUI/'ui_scene.c'),str(GUI/'ui_motion.c'),'-lm','-o',str(binary)],check=True,capture_output=True,text=True)
+            subprocess.run(shlex.split(os.environ.get('CC','cc'))+['-std=c11','-Wall','-Wextra','-Werror','-I'+str(GUI),str(source),str(GUI/'ui_home.c'),str(GUI/'ui_cube_motif.c'),str(GUI/'ui_scene.c'),str(GUI/'ui_motion.c'),str(GUI/'ui_stage.c'),'-lm','-o',str(binary)],check=True,capture_output=True,text=True)
             return subprocess.run([str(binary)],capture_output=True,text=True,timeout=5)
     def test_actual_pipeline_and_face_binding(self):
         result=self.execute(self.setup,self.point)

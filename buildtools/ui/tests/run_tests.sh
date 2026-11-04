@@ -186,6 +186,7 @@ run_contracts() {
 	python3 ./test_gameflow_layout_mutants.py
 	echo "== cube orientation and visible face binding =="
 	python3 ./test_cube_render_pose.py
+	python3 ./test_library_cube_bounds.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
 	python3 ./test_jewel_lighting.py

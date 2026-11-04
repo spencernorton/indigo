@@ -216,16 +216,16 @@
   "vertices": 45668
  },
  "jewel-case-wide": {
-  "begins": 949,
-  "copy_pixels": 29824,
-  "hash": "5b4f83b26dc08efb",
-  "invalidations": 3,
-  "minmax": 3665,
+  "begins": 828,
+  "copy_pixels": 0,
+  "hash": "2b4bca20a7fbbb4d",
+  "invalidations": 1,
+  "minmax": 3319,
   "scene": "jewel-case-wide",
   "sqrtf": 0,
-  "state": 502,
-  "trig": 827,
-  "vertices": 30970
+  "state": 227,
+  "trig": 203,
+  "vertices": 23346
  },
  "library-grid": {
   "begins": 22,
@@ -240,16 +240,16 @@
   "vertices": 1140
  },
  "library-grid-wide": {
-  "begins": 143,
-  "copy_pixels": 29824,
-  "hash": "2e610dbe1bb739d8",
-  "invalidations": 2,
-  "minmax": 362,
+  "begins": 22,
+  "copy_pixels": 0,
+  "hash": "27b07c4ee8417f64",
+  "invalidations": 0,
+  "minmax": 16,
   "scene": "library-grid-wide",
   "sqrtf": 0,
-  "state": 351,
-  "trig": 655,
-  "vertices": 8764
+  "state": 77,
+  "trig": 31,
+  "vertices": 1140
  },
  "library-horizontal": {
   "begins": 138,
@@ -288,16 +288,16 @@
   "vertices": 1140
  },
  "library-spotlight-wide": {
-  "begins": 143,
-  "copy_pixels": 29824,
-  "hash": "182429780fd13b44",
-  "invalidations": 2,
-  "minmax": 356,
+  "begins": 22,
+  "copy_pixels": 0,
+  "hash": "63e066e2ff44229d",
+  "invalidations": 0,
+  "minmax": 16,
   "scene": "library-spotlight-wide",
   "sqrtf": 0,
-  "state": 351,
-  "trig": 655,
-  "vertices": 8748
+  "state": 77,
+  "trig": 31,
+  "vertices": 1140
  },
  "library-vertical": {
   "begins": 149,

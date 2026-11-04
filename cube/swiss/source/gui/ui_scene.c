@@ -4,6 +4,7 @@
 
 #include "ui_cube_motif.h"
 #include "ui_home_layout.h"
+#include "ui_stage.h"
 
 #include "ui_scene.h"
 
@@ -61,6 +62,7 @@ typedef struct {
 	uint32_t appliedHomeRevision;
 	uiMotionMode_t appliedMotionMode;
 	uiGameflowLayout_t libraryLayout;
+	float stagePixelWidth;
 	int homeTurnDirection;
 	bool active;
 	bool bootComplete;
@@ -461,7 +463,11 @@ static void retargetPose(uiSceneId_t scene, uiMotionMode_t motionMode)
 		(state.libraryLayout == UI_GAMEFLOW_LAYOUT_GRID ||
 		state.libraryLayout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT ||
 		state.libraryLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE)) {
-		pose = &gridLibraryPose;
+		/* The perspective widens with the stage. Keep the parked cube
+		 * beyond the actual left edge, including Menu Widescreen. */
+		resolvedHomePose = gridLibraryPose;
+		resolvedHomePose.cubeX *= UIStage_PixelWidth();
+		pose = &resolvedHomePose;
 		cubeYaw = pose->cubeYaw;
 	}
 	else {
@@ -709,10 +715,13 @@ void UIScene_Update(float deltaSeconds, uiMotionMode_t motionMode)
 	{
 		uiGameflowLayout_t layout = (uiGameflowLayout_t)__atomic_load_n(
 			&requestedLibraryLayout, __ATOMIC_RELAXED);
+		float stagePixelWidth = UIStage_PixelWidth();
 
-		if(layout != state.libraryLayout) {
-			/* A new layout moves the cube now if the Library is showing. */
+		if(layout != state.libraryLayout || stagePixelWidth != state.stagePixelWidth) {
+			/* Layout and screen-shape changes move the parked cube while
+			 * the Library is showing, through the existing spring. */
 			state.libraryLayout = layout;
+			state.stagePixelWidth = stagePixelWidth;
 			if(state.bootComplete && state.appliedScene == UI_SCENE_LIBRARY &&
 				targetScene == UI_SCENE_LIBRARY) {
 				retargetPose(UI_SCENE_LIBRARY, motionMode);
