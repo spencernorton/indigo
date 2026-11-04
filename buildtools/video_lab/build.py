@@ -30,7 +30,7 @@ def main() -> None:
     ])], text=True)
     (folder / "sdk-audit.txt").write_text(sdk)
     sources = {}
-    for name in ("core.c", "core.h", "main.c", "Makefile"):
+    for name in ("core.c", "core.h", "main.c", "scene.c", "scene.h", "gx_lab.c", "gx_lab.h", "Makefile"):
         sources[name] = hashlib.sha256((folder / name).read_bytes()).hexdigest()
     dol = (folder / "video-lab.dol").read_bytes()
     result = {"revision": revision, "dirty": dirty, "runtime_revision": label, "toolchain": image,

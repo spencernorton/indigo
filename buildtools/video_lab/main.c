@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "core.h"
+#include "gx_lab.h"
 
 #ifndef VL_REVISION
 #define VL_REVISION "unversioned"
@@ -41,6 +42,7 @@ static uint32_t render_us, last_reason;
 static uint64_t trial_started;
 static uint64_t published_trial_started;
 static int component;
+static int gx_enabled, current_gx;
 
 enum { WHY_BOOT, WHY_COMMAND, WHY_ALARM, WHY_DEADLINE, WHY_PAD };
 
@@ -94,15 +96,36 @@ static int apply_image(unsigned mode, unsigned pattern, unsigned reason)
 {
 	uint64_t started = gettime();
 	unsigned next = current_buffer ^ 1u;
+	int use_gx = mode && gx_enabled && vg_state() == 2;
 	size_t bytes;
 
 	if(mode >= VL_CASE_COUNT || pattern >= VL_PATTERN_COUNT) return 0;
 	bytes = vl_frame_bytes(&vl_modes[mode]);
 	LWP_MutexLock(image_mutex);
 	sequence++;
-	if(!vl_render(frame[mode][next], bytes, &vl_modes[mode], pattern, sequence)) {
+	if(use_gx) {
+		memcpy(frame[mode][next], vg_coordinates(), bytes);
+		pattern = 3;
+	} else if(!vl_render(frame[mode][next], bytes, &vl_modes[mode], pattern, sequence)) {
 		LWP_MutexUnlock(image_mutex);
 		return 0;
+	}
+	if(!use_gx && pattern == 5) {
+		uint32_t words[8] = {0x47585432u, vg_state(), 0, 0, 0, vg_progress(), 0, VS_FRAMES};
+		if(words[1] >= 2) {
+			const vg_result *result = vg_results();
+			words[2] = result->error;
+			words[3] = result->matched_frames;
+			words[4] = result->coordinate_crc;
+			words[6] = result->canaries_ok;
+			if(result->coordinate_fenced) {
+				unsigned y;
+				for(y = 64; y < 480; y++)
+					memcpy(frame[mode][next] + y * vl_modes[mode].stride * 2u,
+						vg_coordinates() + y * VS_WIDTH * 2u, vl_modes[mode].width * 2u);
+			}
+		}
+		vl_report(frame[mode][next], &vl_modes[mode], words);
 	}
 	image_crc = vl_crc32(frame[mode][next], bytes);
 	DCFlushRange(frame[mode][next], bytes);
@@ -112,6 +135,7 @@ static int apply_image(unsigned mode, unsigned pattern, unsigned reason)
 	VIDEO_Flush();
 	current_mode = mode;
 	current_pattern = pattern;
+	current_gx = use_gx;
 	current_buffer = next;
 	last_reason = reason;
 	changes++;
@@ -129,6 +153,7 @@ static void baseline(unsigned reason)
 	LWP_MutexUnlock(image_mutex);
 	trial_started = 0;
 	trial_expired = 0;
+	gx_enabled = 0;
 	apply_image(0, current_pattern, reason);
 }
 
@@ -155,6 +180,7 @@ static void begin_trial(void)
 static void *video_worker(void *unused)
 {
 	uint64_t last_pad = gettime();
+	unsigned last_gpu_state = 0;
 	(void)unused;
 	while(!exit_requested) {
 		uint32_t command = atomic_exchange(&pending_command, 0);
@@ -168,6 +194,9 @@ static void *video_worker(void *unused)
 				case VL_TRIAL: begin_trial(); break;
 				case VL_PATTERN:
 					apply_image(current_mode, command >> 16, WHY_COMMAND);
+					break;
+				case VL_GX_SHOW:
+					if(vg_state() == 2) { gx_enabled = 1; begin_trial(); }
 					break;
 				case VL_EXPIRE: {
 					const struct timespec soon = {0, 50000000};
@@ -190,6 +219,16 @@ static void *video_worker(void *unused)
 			else if(down & PAD_BUTTON_LEFT)
 				apply_image(current_mode, (current_pattern + VL_PATTERN_COUNT - 1u) % VL_PATTERN_COUNT, WHY_PAD);
 			if(down & PAD_BUTTON_START) exit_requested = 1;
+			if(down & PAD_BUTTON_X) {
+				baseline(WHY_PAD);
+				apply_image(0, 5, WHY_PAD);
+				vg_start();
+			}
+			if(down & PAD_BUTTON_Y && vg_state() == 2) { gx_enabled = 1; begin_trial(); }
+		}
+		if(last_gpu_state != vg_state()) {
+			last_gpu_state = vg_state();
+			if(!current_mode && current_pattern == 5) apply_image(0, 5, WHY_COMMAND);
 		}
 		usleep(1000);
 	}
@@ -242,7 +281,7 @@ static void status_response(s32 socket)
 		"\"crc32\":%u,\"frame_bytes\":%u,\"presented\":%s,"
 		"\"trial_remaining_ms\":%u,\"fallback_count\":%u,\"alarm_count\":%u,"
 		"\"changes\":%u,\"last_reason\":%u,\"render_and_crc_us\":%u,"
-		"\"retrace_count\":%u,\"vi_registers\":[",
+		"\"retrace_count\":%u,\"gx_state\":%u,\"gx_progress\":%u,\"renderer\":\"%s\",\"vi_registers\":[",
 		VL_REVISION, boot_nonce, current_mode, vl_modes[current_mode].width,
 		vl_modes[current_mode].stride, vl_modes[current_mode].vi_width,
 		component ? "true" : "false", current_pattern, sequence,
@@ -250,7 +289,8 @@ static void status_response(s32 socket)
 		VIDEO_GetCurrentFramebuffer() == frame[current_mode][current_buffer] ? "true" : "false",
 		current_mode && published_trial_started && milliseconds_since(published_trial_started) < VL_TRIAL_MS ?
 			VL_TRIAL_MS - milliseconds_since(published_trial_started) : 0,
-		fallback_count, alarm_count, changes, last_reason, render_us, VIDEO_GetRetraceCount());
+		fallback_count, alarm_count, changes, last_reason, render_us, VIDEO_GetRetraceCount(),
+		vg_state(), vg_progress(), current_gx ? "gx" : "cpu");
 	for(i = 0; i < 60 && used > 0 && used < (int)sizeof(body) - 16; i++)
 		used += snprintf(body + used, sizeof(body) - (size_t)used, "%s%u", i ? "," : "", vi[i]);
 	if(used > 0 && used < (int)sizeof(body) - 4) {
@@ -270,11 +310,54 @@ static void xfb_response(s32 socket)
 	memcpy(snapshot, frame[current_mode][current_buffer], bytes);
 	snprintf(extra, sizeof(extra),
 		"X-Size: %ux480\r\nX-Stride-Pixels: %u\r\nX-Pattern: %u\r\n"
-		"X-Sequence: %u\r\nX-CRC32: %u\r\nX-Boot-Nonce: %u\r\n",
+		"X-Sequence: %u\r\nX-CRC32: %u\r\nX-Boot-Nonce: %u\r\nX-Renderer: %s\r\n",
 		vl_modes[current_mode].width, vl_modes[current_mode].stride,
-		current_pattern, sequence, image_crc, boot_nonce);
+		current_pattern, sequence, image_crc, boot_nonce, current_gx ? "gx" : "cpu");
 	LWP_MutexUnlock(image_mutex);
 	response(socket, 200, "application/octet-stream", snapshot, bytes, extra);
+}
+
+static void gx_status_response(s32 socket)
+{
+	char body[4096];
+	unsigned state = vg_state(), v;
+	const vg_result *r = vg_results();
+	int used = snprintf(body, sizeof(body),
+		"{\"state\":%u,\"progress\":%u,\"error\":%u,\"matched_frames\":%u,"
+		"\"coordinate_crc\":%u,\"canaries_ok\":%u,\"oracle_max_error\":%u,\"variants\":[",
+		state, vg_progress(), state >= 2 ? r->error : 0,
+		state >= 2 ? r->matched_frames : 0, state >= 2 ? r->coordinate_crc : 0,
+		state >= 2 ? r->canaries_ok : 0, state >= 2 ? r->oracle_max_error : 0);
+	if(state >= 2) for(v = 0; v < VS_VARIANTS; v++) {
+		const vg_metric *m = &r->variant[v];
+		used += snprintf(body + used, sizeof(body) - (size_t)used,
+			"%s{\"id\":%u,\"frames\":%u,\"copies\":%u,\"copy_pixels\":%u,"
+			"\"vertices\":%u,\"texels\":%u,\"gpu_pixels_in\":%u,\"gpu_copy_clocks\":%u,"
+			"\"work_us\":%u,\"cache_us\":%u,\"compare_us\":%u,\"cache_builds\":%u,"
+			"\"crc32\":%u,\"mismatches\":%u}", v ? "," : "", v,
+			m->frames, m->copies, m->copy_pixels, m->vertices, m->texels,
+			m->gpu_pixels_in, m->gpu_copy_clocks, m->work_us, m->cache_us,
+			m->compare_us, m->cache_builds, m->crc32, m->mismatches);
+	}
+	if(used > 0 && used < (int)sizeof(body) - 4) { memcpy(body + used, "]}\n", 3); used += 3; }
+	else used = 0;
+	response(socket, used ? 200 : 500, "application/json", body, (size_t)used, NULL);
+}
+
+static void gx_xfb_response(s32 socket, int scene, unsigned variant)
+{
+	const uint8_t *image;
+	char extra[192];
+	if(vg_state() != 2) {
+		response(socket, 409, "text/plain", "GPU job not qualified\n", 22, NULL);
+		return;
+	}
+	image = scene ? vg_scene(variant) : vg_coordinates();
+	snprintf(extra, sizeof(extra),
+		"X-Size: 720x480\r\nX-Stride-Pixels: 720\r\nX-Pattern: %u\r\nX-Sequence: 0\r\n"
+		"X-CRC32: %u\r\nX-Boot-Nonce: %u\r\nX-Renderer: gx\r\n",
+		scene ? 6 : 3, vl_crc32(image, MAX_FRAME), boot_nonce);
+	response(socket, 200, "application/octet-stream", image, MAX_FRAME, extra);
 }
 
 static void serve(s32 server)
@@ -303,6 +386,15 @@ static void serve(s32 server)
 		response(client, (unsigned)parsed.status, "text/plain", "request refused\n", 16, NULL);
 	} else if(parsed.command == VL_STATUS) status_response(client);
 	else if(parsed.command == VL_XFB) xfb_response(client);
+	else if(parsed.command == VL_GX_STATUS) gx_status_response(client);
+	else if(parsed.command == VL_GX_XFB) gx_xfb_response(client, 0, 0);
+	else if(parsed.command == VL_GX_SCENE) gx_xfb_response(client, 1, parsed.value);
+	else if(parsed.command == VL_GX_START) {
+		int started = vg_start();
+		response(client, started ? 202 : 409, "text/plain", "single job per boot\n", 20, NULL);
+	}
+	else if(parsed.command == VL_GX_SHOW && (vg_state() != 2 || !component))
+		response(client, 409, "text/plain", "GPU job not qualified\n", 22, NULL);
 	else if(parsed.command == VL_TRIAL && !component)
 		response(client, 422, "text/plain", "P1 requires digital progressive output\n", 39, NULL);
 	else if(parsed.command == VL_EXIT) {
@@ -344,6 +436,7 @@ int main(void)
 	if(LWP_MutexInit(&image_mutex, false) != 0 ||
 		SYS_CreateAlarm(&trial_alarm) != 0 || SYS_CreateAlarm(&session_alarm) != 0)
 		return 1;
+	if(!vg_init()) return 1;
 	boot_nonce = (uint32_t)gettime();
 	current_pattern = 0;
 	apply_image(0, current_pattern, WHY_BOOT);

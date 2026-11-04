@@ -9,6 +9,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Add a standalone experimental video diagnostic for normal 480p source-width
   and recovery tests, with source-pattern captures and a pinned SDK audit.
   Indigo's menu video modes are unchanged.
+- Extend the diagnostic with tiled GX copies and frame-by-frame checks of
+  known-black skipping, dirty regions and cached static layers.
 
 - Keep the Home cube outside the screen in widescreen Grid, Spotlight and
   Jewel Case layouts, including after changing the menu's screen shape.

@@ -45,6 +45,10 @@ Use an existing RAM loader after completing emulator checks. The diagnostic
 uses DHCP and listens on TCP 4300. It does not contain a wiiload receiver.
 Physical controller controls: A = P1 trial, B = P0, Left/Right = pattern,
 Start = return to the installed boot program.
+X starts the single GPU experiment and shows its report; Y presents the
+qualified GPU coordinate image in a timed P1 trial. CPU fallback and HTTP
+service run separately from the GPU job. A GPU fence failure cannot make an
+unqualified GPU image available for presentation.
 
 ```sh
 python3 buildtools/video_lab/client.py CONSOLE_ADDRESS status
@@ -67,6 +71,9 @@ source grid, with a sequence stamp in the bottom-right corner. The host
 decoder checks every source column and row, including P1's additional
 columns. The other patterns include an eight-word barcode with source
 metadata at the top. All buffers use explicit legal YCbCr422 values.
+Pattern 5 adds a GPU report barcode. Its lower image is a cropped preview
+of the GPU coordinate test once that copy has fenced; it is not a full-width
+sample-fidelity measurement.
 
 The client retains raw YUYV, metadata/CRC/SHA-256, and an optional PNG when
 FFmpeg is available. `/status` includes the actual VI registers, revision,
@@ -77,11 +84,69 @@ the television displayed.** Qualifying independent HDMI samples requires a
 separate capture after GEM, and visual observations must be recorded
 separately. Emulator internal resolution is not native hardware evidence.
 
+## Tiled GPU and retained-region experiment
+
+```sh
+python3 buildtools/video_lab/client.py CONSOLE_ADDRESS gx-start
+python3 buildtools/video_lab/client.py CONSOLE_ADDRESS gx-status
+python3 buildtools/video_lab/client.py CONSOLE_ADDRESS gx-capture capture/gx-coordinates
+python3 buildtools/video_lab/client.py CONSOLE_ADDRESS gx-scene capture/gx-reference
+python3 buildtools/video_lab/client.py CONSOLE_ADDRESS gx-show
+```
+
+One job runs per boot. Wait for `state=2` before capturing or presenting its
+results. State 3 is a failed test; `error` and the report identify the failing
+stage. `gx-show` presents the GPU image for 15 seconds, then returns to CPU
+P0. Its returned image is copied into a display buffer; this presentation
+step is excluded from GPU benchmark timings.
+
+The coordinate image is rendered through 640- and 80-column EFB passes into
+a 720-pixel-stride XFB. The job decodes every copied column and row. GPU
+RGB-to-YCbCr quantization permits at most two luma levels of error in the
+four code levels; CPU source captures remain exact. Intensity textures use
+opaque replacement, since their intensity also supplies texture alpha.
+
+A separate synthetic scene uses twenty 160/80 × 120 tiles and 32 frames:
+
+| Variant | Work |
+| --- | --- |
+| R0 | Redraw and copy every tile every frame |
+| R1 | Skip only tiles proven black in both the previous and current frame |
+| R2 | Keep the XFB; redraw tiles touched by old/new dynamic bounds |
+| R3 | R2 plus per-tile RGBA8 textures of the static layer |
+
+The scene moves a shadowed cursor across tile joins and panel content,
+removes objects, moves/hides/restores a panel, and opens a translucent popup.
+Damage includes shadows and previous bounds. A static-scene change forces
+full invalidation. Every R1/R2/R3 frame must match the R0 XFB byte for byte
+(96 comparisons). A final independent CPU rectangle oracle checks R0 luma
+within three levels of quantization/blend rounding, and allocation canaries
+must remain intact. These grayscale tests do not qualify colored chroma
+edges, antialiasing, glass/blur dependencies or real Indigo scenes.
+
+`gx-status` reports XFB copy calls/source pixels, native GPU vertices,
+texels, pixels and copy clocks, time through the draw-done fence, separate
+cache construction time, and separate CPU comparison time. R3 cache builds
+perform twenty additional texture copies each; include `cache_us` with
+`work_us` for a total, rather than comparing only its warm drawing cost.
+GPU counters describe scene drawing, excluding that separately timed cache
+construction. These small synthetic workloads are not menu frame-rate or
+input-latency measurements, and unchanged pixels still use ordinary raster
+transport through VI/GEM.
+
+The repeatable Dolphin check uses native internal resolution, exact texture
+hashing, and explicit EFB/XFB RAM copies with deferred copies and early XFB
+output disabled. It reads the program's source-check report and exercises
+CPU/GPU presentation and fallback. CI retains its report and screenshots:
+
+```sh
+python3 buildtools/video_lab/emulator.py buildtools/video_lab/video-lab.dol --out video-diagnostic
+```
+
 ## What follows
 
 First qualify source patterns, controller commands, ordinary mode changes
 and both fallback mechanisms. Then audit complete custom timings and SDK
-compatibility before enabling another case. Tiled GX rendering, retained
-regions/static-layer caching, performance comparisons and real Indigo
-integration remain later experiments. This program does not establish a
-native 720p capability.
+compatibility before enabling another case. Real Indigo integration,
+representative menu performance and post-GEM fidelity remain later
+experiments. This program does not establish a native 720p capability.
