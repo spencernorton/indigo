@@ -169,6 +169,19 @@ class Disc(unittest.TestCase):
             self.assertEqual(card.library_order(False)[0], card.GAMES[0][1], "the route launches the first game")
             self.assertEqual((region(card.GAMES[0]), region(card.GAMES[1])), (2, 0))
 
+    def test_optical_probe_has_real_internal_folders_but_no_games_folder(self):
+        image = card.probe_image(bytes(range(256)), optical_data=True)
+        start, size = struct.unpack_from(">II", image, 0x424)
+        fst = image[start:start + size]
+        count = struct.unpack_from(">I", fst, 8)[0]
+        self.assertEqual(count, 4)
+        names = fst[count * 12:]
+        self.assertEqual(names.split(b"\0")[:-1], [b"opening.bnr", b"assets", b"Data [GDIR01]"])
+        for index in (2, 3):
+            kind_name, parent, end = struct.unpack_from(">III", fst, index * 12)
+            self.assertEqual(kind_name >> 24, 1)
+            self.assertEqual((parent, end), (0, index + 1))
+
     def test_where_the_probe_sits_in_the_library_and_in_apps(self):
         order = card.library_order(True)
         self.assertEqual(order[:3], card.library_order(False)[:3],
@@ -1897,7 +1910,7 @@ class MediaRouteTests(unittest.TestCase):
     def test_optical_requires_a_probe_and_the_disc_drive(self):
         cases = (
             ["--route", "optical"],
-            ["--route", "optical", "--probe", "probe.dol", "--storage", "sd2sp2",
+            ["--route", "optical", "--probe", "probe.dol", "--storage", "gcloader",
              "--card-zip", "release.zip"],
             ["--route", "game", "--probe", "probe.dol", "--storage", "dvd"],
             ["--route", "smoke", "--probe", "probe.dol", "--storage", "dvd"],

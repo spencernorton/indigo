@@ -204,7 +204,8 @@ PROBE_DOL_OFFSET = 0x10000
 BOOT_ISO = ("GSWE01", "Indigo")
 
 
-def probe_image(dol: bytes, game_id: str = PROBE_GAME[0], title: str = PROBE_GAME[1]) -> bytes:
+def probe_image(dol: bytes, game_id: str = PROBE_GAME[0], title: str = PROBE_GAME[1],
+                optical_data: bool = False) -> bytes:
     """A disc image whose boot program is the probe, laid out as Swiss reads a
     game: header, an apploader header at 0x2440 (Swiss patches the apploader
     too, but boots the DOL itself), the DOL, and a file table with the banner."""
@@ -216,8 +217,16 @@ def probe_image(dol: bytes, game_id: str = PROBE_GAME[0], title: str = PROBE_GAM
     bnr = banner(len(GAMES), title)
     bnr_offset = (PROBE_DOL_OFFSET + len(dol) + 0xFFF) & ~0xFFF
     fst_offset = (bnr_offset + len(bnr) + 0xFFF) & ~0xFFF
-    fst = struct.pack(">BBHII", 1, 0, 0, 0, 2) + struct.pack(">BBHII", 0, 0, 0, bnr_offset, len(bnr))
-    fst += b"opening.bnr\0"
+    names = bytearray(b"opening.bnr\0")
+    entries = [struct.pack(">BBHII", 0, 0, 0, bnr_offset, len(bnr))]
+    if optical_data:
+        # Ordinary game data, including a folder whose name resembles a
+        # strict Library game folder: neither may become a Library card.
+        for name in ("assets", "Data [GDIR01]"):
+            index = len(entries) + 1
+            entries.append(struct.pack(">III", 0x01000000 | len(names), 0, index + 1))
+            names.extend(name.encode() + b"\0")
+    fst = struct.pack(">BBHII", 1, 0, 0, 0, len(entries) + 1) + b"".join(entries) + names
     struct.pack_into(">IIII", header, 0x420, PROBE_DOL_OFFSET, fst_offset, len(fst), len(fst))
     image = bytearray((fst_offset + len(fst) + 0x7FFF) & ~0x7FFF)
     image[:0x440] = header

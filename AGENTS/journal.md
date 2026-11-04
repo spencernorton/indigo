@@ -1,3 +1,24 @@
+## 2026-11-04 — Keep the optical game with SD attached and verify header context
+
+Extend the optical fixture with genuine FST directories, including Data
+[GDIR01], and attach a populated SD2SP2 Library. Select Game Disc from that
+source and require single-card wrapping, Home re-entry and the actual probe
+handoff. The first corrected CI executable passes 19 checks without SD and
+23 with SD; both report GPRE01, 24 MB, stopped audio and zero stray writes.
+The verified published v2.6.0 executable fails the no-SD card check and the
+with-SD single-card check: the latter has fallen back to the SD Library.
+These are Dolphin results, not physical-drive qualification.
+
+The moved PAL smoke route exposes an observer error at File Browser Y:
+long SD2SP2 names fit differently in the left and right headers. Captures
+give 0.216418 overlap across panes and 1.0 within the same focused right
+pane. Record the source name in that pane before swapping; keep the 0.85
+threshold and the row/round-trip checks. Preserve the unavailable-device
+and refused-swap case on SD too, accounting for its extra drive menu row.
+The corrected full PAL smoke and exact new-head CI remain pending. The
+100-test observer suite passes with three existing skips. Runtime C source
+has not changed since the initial disc fix.
+
 ## 2026-11-04 — Exercise a whole optical game and preserve the full smoke route
 
 The two DVD routes in the first disc-source CI attempt show the corrected
