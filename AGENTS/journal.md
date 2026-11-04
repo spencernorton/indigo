@@ -1,3 +1,29 @@
+## 2026-11-04 — Observe storage identity and destination context in smoke coverage
+
+The right rows crop can remain 0.927765 alike after a correct swap because
+its common focus fill dominates the words. The selected-item masks differ
+at 0.261183. Keep the same 0.85 identity threshold, verify both selected items
+through the global info bar as their panes swap, and retain both exact row
+round-trip checks. Capture the original source name in its focused right
+pane so long labels have the same fit before and after the operation.
+
+The destination picker remembers an earlier source, not the right pane's
+memory card. Anchor its detected ring to the source name observed earlier in
+Change Source before selecting the missing-device fixture. Slot A/B names
+must not drive the whole-word "unlike" retry helper: one physical RIGHT and
+a settled caption preserve the intended step. When storage returns, require
+the old error words to disappear; a valid SD listing can occupy that box.
+
+A focused PAL/SD2SP2 controller replay passes 53 checks including the swap,
+both selected items, round trip, missing device, refused swap and original
+source restoration. The corresponding GC Loader/non-default diagnostic
+passes those storage operations; its full-smoke configuration postcondition
+is outside that shortened route and is not a complete smoke qualification.
+The full PAL/composite SD2SP2 replay now passes all 240 checks, including the
+app handoff and saved settings. Final source-bound CI is still required.
+These are observer/media corrections only; runtime C remains the initial
+disc fix.
+
 ## 2026-11-04 — Keep the optical game with SD attached and verify header context
 
 Extend the optical fixture with genuine FST directories, including Data

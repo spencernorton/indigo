@@ -1213,6 +1213,7 @@ class Route:
         self.shots: list[tuple[str, Path]] = []
         self.pad = emulator.pad
         self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
+        self.source_picker_name: np.ndarray | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -2182,6 +2183,7 @@ class Route:
         first, _ = self.settled_label(unlike=before, box=TITLE_BOX)
         self.shot("source-picker", self.last_rgb)
         self.check("Change Source opens the device picker", first is not None)
+        self.source_picker_name = first.copy()
         name, _ = self.press_until("RIGHT", unlike=first, box=TITLE_BOX)
         self.shot("source-picker-right", self.last_rgb)
         self.check("RIGHT shows the next device", name is not None)
@@ -2393,6 +2395,7 @@ class Route:
         self.press("RIGHT")
         self.check("RIGHT focuses the original source on the right", self.files_list(True, pane=1))
         source = self.files_path(right=True, box=FILES_NAME_BOXES[1])
+        self.shot("file-browser-source-reference", self.last_rgb)
         self.check("the focused right pane shows the original source name", source is not None)
         self.press("LEFT")
         self.check("LEFT restores the source pane before choosing storage", self.files_list(True, pane=0))
@@ -2420,19 +2423,46 @@ class Route:
         moved = self.files_path(unlike=name, right=True, box=FILES_INFO_TITLE_BOX) \
             if name is not None else None
         self.check("DOWN browses the second device", moved is not None)
+        card_item = moved
+        self.press("LEFT")
+        self.check("LEFT focuses the original source before swapping", self.files_list(True, pane=0))
+        source_item = self.files_path(unlike=card_item, box=FILES_INFO_TITLE_BOX)
+        self.check("the original source has a different selected item", source_item is not None)
+        self.press("RIGHT")
+        self.check("RIGHT restores the card's selected item before swapping",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
         left = self.files_rows(right=False)
         right = self.files_rows(right=True)
+        self.shot("file-browser-before-swap", self.last_rgb)
         self.press("Y")
         # The Source's name moves to the focused right pane once both sides
         # are mounted and read (a disc drive resets on the way).
         moved = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1]) \
             if source is not None else None
         swapped = self.files_rows(right=False, unlike=left) if left is not None else None
-        changed = self.files_rows(right=True, unlike=right) if right is not None else None
+        focused = self.files_list(True, pane=1)
+        item = self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX)
+        right_changed = right is not None and not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX), right)
         self.shot("file-browser-swapped", self.last_rgb)
+        # A common focus fill can dominate a short rows crop even when its
+        # text differs. Require the source's selected item in the global info
+        # bar instead, and prove the other item on the left before swapping
+        # back. Both complete row masks must still round-trip exactly below.
         self.check("Y swaps the sides: the card is the Source, the original source on the right",
-                   moved is not None and swapped is not None and changed is not None and
-                   self.files_list(True, pane=1))
+                   moved is not None and swapped is not None and item is not None and
+                   focused, source_name_matches=moved is not None,
+                   left_rows_changed=swapped is not None, right_rows_changed=right_changed,
+                   right_focused=focused, selected_item_matches=item is not None)
+        self.press("LEFT")
+        self.check("the card's selected item moved to the left pane",
+                   self.files_list(True, pane=0) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
+        self.press("RIGHT")
+        self.check("the original source's selected item moved to the right pane",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX) is not None)
         self.press("Y")
         home = self.files_path(like=other, right=True, box=FILES_NAME_BOXES[1]) \
             if other is not None else None
@@ -2459,9 +2489,37 @@ class Route:
         left = self.files_rows(right=False)
         self.press("R")
         self.files_storage_menu(1, True)
-        self.steps("UP UP A" if self.storage == "dvd" else "UP UP UP A")
-        self.pause(2.0)
-        self.steps("Z RIGHT RIGHT")
+        self.steps("UP UP" if self.storage == "dvd" else "UP UP UP")
+        self.shot("not-ready-menu-target", self.emulator.frame())
+        self.press("A")
+        picker, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("not-ready-picker", self.last_rgb)
+        self.check("Other devices opens the destination picker", picker is not None)
+        # The destination picker remembers a previous source, not the pane's
+        # memory card. Anchor its detected-only ring to the same source name
+        # observed in Change Source earlier in this boot. Our writable source
+        # is followed by Memory Card - Slot A in this fixture.
+        self.check("the boot has an observed source-picker reference", self.source_picker_name is not None)
+        for step in range(4):
+            if same_text(picker, self.source_picker_name):
+                break
+            picker, _ = self.press_until("LEFT", unlike=picker, box=TITLE_BOX)
+            self.check("find the original source in detected destinations", picker is not None, step=step)
+        self.check("the destination picker is anchored to the original source",
+                   same_text(picker, self.source_picker_name))
+        picker, _ = self.press_until("RIGHT", unlike=picker, box=TITLE_BOX)
+        self.check("the next detected destination is the memory card anchor", picker is not None)
+        self.press("Z")
+        all_devices, _ = self.settled_label(like=picker, box=TITLE_BOX)
+        self.shot("not-ready-all-devices", self.last_rgb)
+        self.check("Z keeps the focused destination while showing every device", all_devices is not None)
+        for step in range(2):
+            # Slot A and Slot B differ by one character; a whole-word
+            # "unlike" threshold must not turn one press into two here.
+            self.press("RIGHT")
+            picker, _ = self.settled_label(box=TITLE_BOX)
+            self.shot(f"not-ready-device-{step}", self.last_rgb)
+            self.check("the next destination name settles after RIGHT", picker is not None, step=step)
         self.press("A")
         message = self.files_path(right=True, box=FILES_RIGHT_MESSAGE_BOX)
         rows = files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX)
@@ -2480,10 +2538,13 @@ class Route:
         self.files_storage_menu(1, True)
         self.press("A")
         back = self.files_rows(right=True)
+        source_back = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1])
+        message_gone = not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_MESSAGE_BOX), message)
         self.check("R and A put the original source back on the right",
-                   back is not None and not files_text(self.last_rgb, self.menu_wide,
-                                                       box=FILES_RIGHT_MESSAGE_BOX).any() and
-                   self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1]) is not None)
+                   back is not None and message_gone and source_back is not None,
+                   rows_returned=back is not None, error_message_gone=message_gone,
+                   source_name_matches=source_back is not None)
 
     def files_goto(self, image: Path, focus: str, target: str, folder: str = "") -> None:
         """Moves the focused pane's focus from one entry to another, by their

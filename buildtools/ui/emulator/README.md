@@ -197,7 +197,7 @@ docker build -t indigo-emulator --build-arg RUNNER_VERSION=2.337.0 \
   -f buildtools/ci/runner/emulator.Dockerfile buildtools/ci/runner
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work --entrypoint python3 \
   indigo-emulator buildtools/ui/emulator/run.py cube/swiss/swiss.dol \
-  --probe buildtools/ui/emulator/probe/probe.dol --route game --region ntsc --out emulator
+  --probe buildtools/ui/emulator/probe/probe.dol --route optical --region ntsc --out emulator
 ```
 
 Without `--probe` the smoke route stops at the launch screen, as it did
