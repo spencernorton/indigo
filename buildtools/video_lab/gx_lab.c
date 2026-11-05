@@ -63,6 +63,7 @@ static void quad(float x, float y, float w, float h, GXColor color,
 
 static void solid(void)
 {
+	GX_SetNumTexGens(0);
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
@@ -71,6 +72,7 @@ static void solid(void)
 static void textured(void *data, unsigned w, unsigned h, unsigned format)
 {
 	GXTexObj object;
+	GX_SetNumTexGens(1);
 	/* I8 supplies intensity as alpha too. Source replacement must be
 	 * opaque, otherwise the coordinate levels would be multiplied twice. */
 	GX_SetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_COPY);
