@@ -129,8 +129,12 @@ texels, pixels and copy clocks, time through the draw-done fence, separate
 cache construction time, and separate CPU comparison time. R3 cache builds
 perform twenty additional texture copies each; include `cache_us` with
 `work_us` for a total, rather than comparing only its warm drawing cost.
-GPU counters describe scene drawing, excluding that separately timed cache
-construction. These small synthetic workloads are not menu frame-rate or
+GP counter readings describe scene drawing, excluding that separately timed
+cache construction. A four-vertex untextured probe and per-frame submitted
+vertex totals check the GP metric configuration. If
+`gp_metrics_calibrated=0`, retain vertex/texel readings as unqualified raw
+data and do not use them to claim work reductions. XFB copy calls/areas and
+fenced wall time are recorded separately. These small synthetic workloads are not menu frame-rate or
 input-latency measurements, and unchanged pixels still use ordinary raster
 transport through VI/GEM.
 

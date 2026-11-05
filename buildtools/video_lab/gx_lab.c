@@ -17,6 +17,7 @@ static char stack[65536] ATTRIBUTE_ALIGN(8);
 static lwp_t thread;
 static _Atomic uint32_t state, progress, done;
 static vg_result result;
+static uint32_t submitted;
 
 static uint32_t elapsed_us(uint64_t start)
 {
@@ -57,6 +58,7 @@ static void quad(float x, float y, float w, float h, GXColor color,
 	GX_Position3f32(x + w, y + h, 0); GX_Color4u8(color.r, color.g, color.b, color.a); GX_TexCoord2f32(u1, v1);
 	GX_Position3f32(x, y + h, 0); GX_Color4u8(color.r, color.g, color.b, color.a); GX_TexCoord2f32(u0, v1);
 	GX_End();
+	submitted += 4;
 }
 
 static void solid(void)
@@ -142,15 +144,20 @@ static int draw_scene(unsigned variant, unsigned frame)
 	}
 	GX_ClearGPMetric();
 	GX_ClearPixMetric();
+	submitted = 0;
 	start = gettime();
 	for(t = 0; t < VS_TILES; t++) {
 		vs_box b = vs_tile(t);
 		if(!vs_update(variant, frame, b)) continue;
-		clear_tile(b);
 		if(variant == 3) {
+			/* The opaque cached quad replaces every pixel in this tile. */
+			viewport(b.w, b.h);
 			textured(cached + texture_offset(t), b.w, b.h, GX_TF_RGBA8);
 			quad(0, 0, (float)b.w, (float)b.h, (GXColor){255, 255, 255, 255}, 0, 0, 1, 1);
-		} else layer(frame, 0, b);
+		} else {
+			clear_tile(b);
+			layer(frame, 0, b);
+		}
 		layer(frame, 1, b);
 		GX_SetDispCopySrc(0, 0, b.w, b.h);
 		GX_SetDispCopyDst(VS_WIDTH, VS_HEIGHT);
@@ -163,6 +170,8 @@ static int draw_scene(unsigned variant, unsigned frame)
 	GX_ReadGPMetric(&vertices, &texels);
 	GX_ReadPixMetric(&topin, &topout, &botin, &botout, &clearin, &copyclks);
 	metric->vertices += vertices;
+	metric->submitted_vertices += submitted;
+	if(vertices != submitted) result.gp_metrics_calibrated = 0;
 	metric->texels += texels;
 	metric->gpu_pixels_in += topin + botin;
 	metric->gpu_copy_clocks += copyclks;
@@ -301,6 +310,11 @@ static void run(void)
 	GX_SetCopyFilter(GX_FALSE, TVNtsc480Prog.sample_pattern, GX_FALSE, TVNtsc480Prog.vfilter);
 	GX_SetGPMetric(GX_PERF0_VERTICES, GX_PERF1_TEXELS);
 	if(!fence()) { result.error = 2; return; }
+	GX_ClearGPMetric();
+	clear_tile((vs_box){0, 0, 64, 64});
+	if(!fence()) { result.error = 2; return; }
+	GX_ReadGPMetric(&result.gp_vertices_probe, &result.gp_texels_probe);
+	result.gp_metrics_calibrated = result.gp_vertices_probe == 4 && result.gp_texels_probe == 0;
 	progress = 1;
 	if(!draw_coordinates()) { if(!result.error) result.error = 3; return; }
 	progress = 2;

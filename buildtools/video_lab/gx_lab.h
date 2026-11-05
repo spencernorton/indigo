@@ -10,11 +10,13 @@ typedef struct {
 	uint32_t gpu_pixels_in, gpu_copy_clocks;
 	uint32_t work_us, cache_us, compare_us, cache_builds;
 	uint32_t crc32, mismatches;
+	uint32_t submitted_vertices;
 } vg_metric;
 
 typedef struct {
 	uint32_t error, matched_frames, coordinate_crc, canaries_ok, coordinate_fenced;
 	uint32_t oracle_max_error;
+	uint32_t gp_vertices_probe, gp_texels_probe, gp_metrics_calibrated;
 	vg_metric variant[VS_VARIANTS];
 } vg_result;
 
