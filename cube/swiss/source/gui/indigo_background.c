@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "indigo_background.h"
+#include "ui_540p.h"
 #include "ui_anim.h"
 #include "ui_color.h"
 #include "ui_stage.h"
@@ -2861,6 +2862,11 @@ static float glassSceneStrength(const uiSceneFrame_t *scene)
  * glassCopyLeft and glassCopyTop keep where it starts, in EFB pixels. */
 static bool glassCopyFrame(float left, float top, float right, float bottom)
 {
+	/* Screen-space copies need a tile-aware pass; never sample the last
+	 * EFB tile as if it were a complete 720 x 540 frame. */
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Recording()) return false;
+#endif
 	float sx = (float)glassEfbWidth / 640.0f, sy = (float)glassEfbHeight / 480.0f;
 	int x0, y0, x1, y1;
 	u16 width, height;
@@ -3696,7 +3702,11 @@ void IndigoBackground_Draw(float seconds, bool backdropAnimated,
 
 	/* The turned faces' icon pictures go first: the backdrop paints over
 	 * the corner of the frame they are drawn in. */
-	if(scene->visible && scene->introProgress >= BOOT_CUBE_HANDOFF) {
+	bool facePictures = scene->visible && scene->introProgress >= BOOT_CUBE_HANDOFF;
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Recording()) facePictures = false;
+#endif
+	if(facePictures) {
 		UIColor_Select(layerColors[UI_COLOR_LAYER_MENU]);
 		renderFacePictures(scene, seconds, cubeMotionActive, clock, pad, icons);
 	}

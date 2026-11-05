@@ -14,6 +14,7 @@
 #include "mp3.h"
 #include "swiss.h"
 #include "ui_lab.h"
+#include "ui_540p.h"
 #include "video.h"
 
 #define LAB_SEND_PIECE 16384u
@@ -224,7 +225,7 @@ static s32 lab_read_head(s32 client, char *request, size_t capacity)
 
 static void lab_serve(s32 client)
 {
-	char request[1024], status[48];
+	char request[1024], status[384];
 	s32 got = lab_read_head(client, request, sizeof(request));
 	uiLabRequest_t parsed;
 	uiLabPress_t press;
@@ -239,7 +240,17 @@ static void lab_serve(s32 client)
 			lab_log_reply(client);
 			break;
 		case UI_LAB_PAD_STATUS:
+#if UI_EXPERIMENTAL_540P
+		{
+			ui540Stats_t s;
+			DrawWithVideoLocked(UI540_Stats, &s);
+			snprintf(status, sizeof(status), "{\"real_idle_ms\":%u,\"ui540\":{\"state\":%u,\"width\":%u,\"height\":%u,\"frames\":%u,\"work_mean_us\":%u,\"work_max_us\":%u,\"over_budget\":%u,\"frame_period_mean_us\":%u,\"list_bytes_max\":%u}}\n",
+				(unsigned)padsRealIdleMs(), s.state, s.width, s.height, s.frames,
+				s.work_mean_us, s.work_max_us, s.over_budget, s.frame_period_mean_us, s.list_bytes_max);
+		}
+#else
 			snprintf(status, sizeof(status), "{\"real_idle_ms\":%u}\n", (unsigned)padsRealIdleMs());
+#endif
 			lab_reply(client, "200 OK", "application/json", status, strlen(status));
 			break;
 		case UI_LAB_PAD_PRESS:

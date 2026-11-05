@@ -74,6 +74,12 @@ them. In a Setup section, B first goes back to the list of sections.
 
 ## Video changes ask first
 
+An optional developer build tests **720 x 540 progressive menus**. Its
+15-second trial uses **L + R + A** to keep the picture for the current session
+and **L + R + B** to return. It is separate from the saved video choices and
+is not 1280 x 720. See [the experimental build](../dev/experimental-540p.md)
+for its controls, visual limitations and validation requirements.
+
 On **Swiss Video Mode**, **System Video**, **AVE Compatibility**, **Force
 DTV Status** and **RetroTINK-4K HDMI Input**, Left and Right only choose a
 value. The setting shows it and the line above the buttons reads "Not

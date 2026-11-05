@@ -7,6 +7,8 @@ trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 "$test_dir/core"
 "${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror scene.c test_scene.c -o "$test_dir/scene"
 "$test_dir/scene"
+"${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror test_ui_540p.c -o "$test_dir/ui-540p"
+"$test_dir/ui-540p"
 if command -v clang >/dev/null 2>&1; then
     case "$(uname -s)" in Linux) set -- -no-pie ;; *) set -- ;; esac
     clang -std=c11 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined "$@" core.c test_core.c -o "$test_dir/sanitized"

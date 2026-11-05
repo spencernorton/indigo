@@ -11,6 +11,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
   Indigo's menu video modes are unchanged.
 - Extend the diagnostic with tiled GX copies and frame-by-frame checks of
   known-black skipping, dirty regions and cached static layers.
+- Add an opt-in experimental 720 x 540 progressive menu build, using four
+  GX tiles, a 15-second confirmation and normal-mode recovery. Its timing
+  driver is isolated from ordinary builds; screen-space glass effects and
+  supersampled Home face pictures await tile-aware rendering.
 
 - Add Arrmes and Endexis to the README suite links.
 - Recover a missed Right press in the virtual memory-card emulator test
