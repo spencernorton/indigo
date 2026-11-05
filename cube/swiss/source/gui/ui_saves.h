@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Saves' messages are in Menu Language. */
+#include "ui_lang.h"
+
 /* Physical slots are 0/1; SD columns keep independent positions at 2/3. */
 void UISaves_InitialStorage(bool slotA, bool slotB, bool sd, int stacks[2]);
 /* The storage menu lists Slot A, Slot B, then sdDevices SD devices (1, or 2

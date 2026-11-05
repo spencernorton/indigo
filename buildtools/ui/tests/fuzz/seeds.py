@@ -175,6 +175,16 @@ def lab(out: Path) -> None:
     (out / "log-host").write_bytes(b"192.168.1.57:4405")
 
 
+def lang(out: Path) -> None:
+    # Menu Language's file as Indigo ships it, and small ones by hand.
+    shutil.copyfile(ROOT / "cube/swiss/source/gui/lang/uk.po", out / "uk.po")
+    (out / "small.po").write_bytes(
+        'msgid ""\nmsgstr "Content-Type: text/plain; charset=UTF-8\\n"\n\n'
+        '#: gui/settings.c:1\nmsgid "%d enabled"\nmsgstr "Увімкнено: %d"\n'
+        'msgid "Loading\\205"\nmsgstr ""\n"Завантаження\\205"\n'.encode())
+    (out / "broken.po").write_bytes(b'msgid "%s of %d"\r\nmsgstr "%d \\x41\\101"\nmsgid "a\nmsgstr')
+
+
 def settings(out: Path) -> None:
     for example in sorted((ROOT / "docs/examples").rglob("*.ini")):
         shutil.copyfile(example, out / example.name)
@@ -251,7 +261,7 @@ def time_sync(out: Path) -> None:
 
 def main() -> int:
     out = Path(sys.argv[1])
-    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, cheats, wiiload, time_sync):
+    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, cheats, wiiload, time_sync, lang):
         folder = out / target.__name__
         folder.mkdir(parents=True, exist_ok=True)
         target(folder)

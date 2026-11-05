@@ -28,6 +28,8 @@ SETTINGS_C = (SWISS / "source/gui/settings.c").read_text()
 SETTINGS_H = (SWISS / "source/gui/settings.h").read_text()
 SWISS_H = (SWISS / "include/swiss.h").read_text()
 UI_HOME_H = (SWISS / "source/gui/ui_home.h").read_text()
+UI_LANG_H = (SWISS / "source/gui/ui_lang.h").read_text(encoding="utf-8")
+UI_LANG_C = (SWISS / "source/gui/ui_lang.c").read_text(encoding="utf-8")
 UI_GAMEFLOW_H = (SWISS / "source/gui/ui_gameflow.h").read_text()
 UI_GAMEFLOW_LIBRARY_H = (SWISS / "source/gui/ui_gameflow_library.h").read_text()
 MAIN_H = (SWISS / "include/main.h").read_text()
@@ -169,6 +171,9 @@ static bool getRawDTVStatus(void) { return false; }
     re.search(r"^#define UI_GAMEFLOW_LIBRARY_FOLDERS_FLATTEN .*$",
               UI_GAMEFLOW_LIBRARY_H, re.M).group(0),
     extract_function(CONFIG_C, "void config_set_library_folders("),
+    # Menu Language's names in the file, from gui/ui_lang.
+    re.search(r"^enum \{\n\tUI_LANG_ENGLISH,.*?\};", UI_LANG_H, re.S | re.M).group(0),
+    re.search(r"^const char \*uiLangKeys\[UI_LANG_MAX\] = .*$", UI_LANG_C, re.M).group(0),
     GLOBAL_PARSER,
     GAME_PARSER,
     # The legacy swiss.ini migration, counting the files it would write.

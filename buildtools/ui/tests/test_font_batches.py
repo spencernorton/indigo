@@ -80,6 +80,20 @@ static void GX_TexCoord2s16(int s,int t) {
 }
 '''
 
+LANG_STUBS = r'''
+static const char *UILang_Text(const char *english) {return english;}
+static unsigned UILang_Character(const char *text,int *bytes) {
+    *bytes=text[0]?1:0;return (unsigned char)text[0];
+}
+static bool cyrillicReady;
+#define UI_FONT_CYRILLIC_GLYPHS 1
+#define UI_FONT_CYRILLIC_COLUMNS 1
+#define UI_FONT_CYRILLIC_CELL 24
+static const unsigned short uiFontCyrillicCodes[1]={0x410};
+static const u8 uiFontCyrillicWidths[1]={10};
+static u8 uiFontCyrillicSheet[1];
+'''
+
 DRIVER = r'''
 int main(void) {
     char longText[600];memset(longText,'m',599);longText[599]=0;
@@ -131,7 +145,13 @@ def check_immutable_textures(path, command):
 typedef float Mtx[3][4];
 typedef float Mtx44[4][4];
 typedef struct {unsigned char r,g,b,a;} GXColor;
-static bool fontReady;
+static bool fontReady, cyrillicReady;
+static struct {int sheet_format,sheet_width,cell_height;} fontStorage={0,512,24}, *font=&fontStorage;
+#define GX_TF_I4 0
+#define UI_FONT_CYRILLIC_SHEET_WIDTH 512
+#define UI_FONT_CYRILLIC_CELL 24
+static unsigned char uiFontCyrillicSheet[32];
+#define DCFlushRange(...) ((void)0)
 static unsigned invalidations, loads, rects;
 static void note(const char *name) {
     if(!strcmp(name,"GX_InvalidateTexAll")) invalidations++;
@@ -176,7 +196,12 @@ def main():
     baseline = subprocess.check_output(["git", "-C", str(ROOT), "show", "v2.4.0:" + FONT], text=True)
     marker = "static void drawStringWeighted("
     old = extract_function(baseline, marker).replace("drawStringWeighted(", "reference(", 1)
-    current = extract_function((ROOT / FONT).read_text(), marker)
+    font = (ROOT / FONT).read_text(encoding="utf-8")
+    # The glyph lookup the emitter calls, with the language and the Cyrillic
+    # sheet stubbed out: these texts stay in the IPL's sheets.
+    current = LANG_STUBS + "\n".join(
+        extract_function(font, f"static int {name}(")
+        for name in ("fontCharacter", "fontCharacterWidth")) + extract_function(font, marker)
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp)
         (path / "font.c").write_text(STUBS + old + current + DRIVER)

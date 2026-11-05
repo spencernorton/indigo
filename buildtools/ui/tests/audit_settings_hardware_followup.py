@@ -13,7 +13,10 @@ GUI = ROOT / "cube/swiss/source/gui"
 
 
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    text = path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    # What is said, not the language it is drawn in: Menu Language's
+    # lookups (UI_T(...)) left out.
+    return re.sub(r'\bUI_T\(((?:"(?:\\.|[^"\\])*"|[^()"])*)\)', r"\1", text)
 
 
 def extract_function(source: str, marker: str) -> str:

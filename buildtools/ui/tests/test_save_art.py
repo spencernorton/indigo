@@ -136,7 +136,7 @@ class SaveArt(unittest.TestCase):
         (tmp / "driver.c").write_text(DRIVER)
         cc = os.environ.get("CC", "cc")
         subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-I", str(GUI),
-                        "-o", str(tmp / "driver"), str(tmp / "driver.c"), str(GUI / "ui_saves.c"),
+                        "-o", str(tmp / "driver"), str(tmp / "driver.c"), str(GUI / "ui_saves.c"), str(GUI / "ui_lang.c"),
                         str(GUI / "ui_saves_raw.c")],
                        check=True)
         cls.out = tmp / "saves"

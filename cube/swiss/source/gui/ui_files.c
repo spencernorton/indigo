@@ -1,4 +1,5 @@
 #include "ui_files.h"
+#include "ui_lang.h"
 #include "ui_motion.h"
 
 #include <inttypes.h>
@@ -33,7 +34,8 @@ static void format(char *out, size_t capacity, const char *pattern, ...)
 
 	if(out == NULL || capacity == 0u) return;
 	va_start(args, pattern);
-	vsnprintf(out, capacity, pattern, args);
+	/* Every pattern here is drawn: Menu Language has its own. */
+	vsnprintf(out, capacity, UILang_Text(pattern), args);
 	va_end(args);
 }
 
@@ -366,7 +368,7 @@ void UIFiles_RowName(char *out, size_t capacity, const char *entryName,
 		}
 		while(parent > 0u && below[parent - 1u] != '/') --parent;
 		if(parent == 0u) {
-			format(out, capacity, "Up to %s", deviceName != NULL ? deviceName : "the top");
+			format(out, capacity, "Up to %s", deviceName != NULL ? deviceName : UILang_Text("the top"));
 		}
 		else {
 			size_t start = parent - 1u;
@@ -422,7 +424,7 @@ void UIFiles_SizeText(char *out, size_t capacity, uint64_t bytes,
 	if(blockSize != 0u) {
 		uint64_t blocks = bytes / blockSize + (bytes % blockSize != 0u ? 1u : 0u);
 
-		format(out, capacity, "%" PRIu64 " %s", blocks, blocks == 1u ? "block" : "blocks");
+		format(out, capacity, "%" PRIu64 " %s", blocks, UILang_Text(blocks == 1u ? "block" : "blocks"));
 		return;
 	}
 	i = unitFor(bytes, metric);
@@ -722,7 +724,7 @@ void UIFiles_Hints(uiFilesHintMode_t mode, int pane, uiFilesKind_t kind,
 
 static const char *nameOf(const uiFilesDevice_t *device)
 {
-	return device->name != NULL && device->name[0] != '\0' ? device->name : "This storage";
+	return device->name != NULL && device->name[0] != '\0' ? device->name : UILang_Text("This storage");
 }
 
 bool UIFiles_StorageClash(const uiFilesDevice_t *choice,
@@ -764,10 +766,10 @@ void UIFiles_NotReady(char out[UI_FILES_MESSAGE_LINES][UI_FILES_MESSAGE_TEXT],
 	const char *name, const char *status, const char *folder)
 {
 	format(out[0], UI_FILES_MESSAGE_TEXT, "%s isn't ready.",
-		name != NULL && name[0] != '\0' ? name : "This storage");
+		name != NULL && name[0] != '\0' ? name : UILang_Text("This storage"));
 	if(folder != NULL) {
 		format(out[1], UI_FILES_MESSAGE_TEXT, "Couldn't read %s.",
-			folder[0] != '\0' ? folder : "its top folder");
+			folder[0] != '\0' ? folder : UILang_Text("its top folder"));
 	}
 	else if(status != NULL && status[0] != '\0') {
 		format(out[1], UI_FILES_MESSAGE_TEXT, "(%s)", status);
@@ -986,8 +988,8 @@ void UIFiles_StorageMenu(int pane, const uiFilesDevice_t *devices, int count,
 	const uiFilesDevice_t *current, const uiFilesDevice_t *other,
 	const char *otherPath, uiFilesStorageMenu_t *out)
 {
-	const char *here = pane == UI_FILES_RIGHT ? "right" : "left";
-	const char *there = pane == UI_FILES_RIGHT ? "left" : "right";
+	const char *here = UILang_Text(pane == UI_FILES_RIGHT ? "right" : "left");
+	const char *there = UILang_Text(pane == UI_FILES_RIGHT ? "left" : "right");
 	int i, focus = -1;
 
 	if(out == NULL) return;
@@ -1106,8 +1108,8 @@ void UIFiles_ActionLine(uiFilesAction_t action, bool hidden, const char *here,
 {
 	const char *place = folder != NULL && folder[0] != '\0' ? folder : "/";
 
-	if(here == NULL || here[0] == '\0') here = "This storage";
-	if(there == NULL || there[0] == '\0') there = "This storage";
+	if(here == NULL || here[0] == '\0') here = UILang_Text("This storage");
+	if(there == NULL || there[0] == '\0') there = UILang_Text("This storage");
 	switch(action) {
 	case UI_FILES_ACTION_COPY:
 		format(out, capacity, "Copy puts a copy in %s  \233  %s. It stays here.", there, place);

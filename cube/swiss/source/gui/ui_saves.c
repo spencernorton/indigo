@@ -1,4 +1,5 @@
 #include "ui_saves.h"
+#include "ui_lang.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -150,38 +151,39 @@ uiSavesVerdict_t UISaves_Verdict(bool move, bool fromCard, uint8_t permissions,
 	unsigned blocks, const uiSavesRoom_t *to, char *why, size_t size)
 {
 	uiSavesVerdict_t verdict = UI_SAVES_VERDICT_OK;
-	const char *name = to != NULL && to->name != NULL ? to->name : "";
-	char text[96] = "";
+	const char *name = to != NULL && to->name != NULL ? UI_T(to->name) : "";
+	char text[192] = "";
 
 	if(move && fromCard && (permissions & (VERDICT_NOCOPY | VERDICT_NOMOVE))) {
 		verdict = UI_SAVES_VERDICT_NO_MOVE;
-		(void)snprintf(text, sizeof(text), "This game doesn't let its save move");
+		(void)snprintf(text, sizeof(text), UI_T("This game doesn't let its save move"));
 	}
 	else if(to == NULL || (to->card && !to->image && !to->ready)) {
 		verdict = UI_SAVES_VERDICT_NO_CARD;
-		(void)snprintf(text, sizeof(text), "No memory card in %s", name);
+		(void)snprintf(text, sizeof(text), UI_T("No memory card in %s"), name);
 	}
 	else if((!to->card || to->image) && (!to->ready || !to->writable)) {
 		verdict = UI_SAVES_VERDICT_READ_ONLY;
-		(void)snprintf(text, sizeof(text), "%s can't be written", name);
+		(void)snprintf(text, sizeof(text), UI_T("%s can't be written"), name);
 	}
 	else if(!to->card) {
 		/* A folder numbers a name that's taken, and has room enough. */
 	}
 	else if(to->hasIt) {
 		verdict = UI_SAVES_VERDICT_HAS_IT;
-		(void)snprintf(text, sizeof(text), "%s already has this save", name);
+		(void)snprintf(text, sizeof(text), UI_T("%s already has this save"), name);
 	}
 	else if(to->saves >= (int)UI_SAVES_CARD_FILES) {
 		verdict = UI_SAVES_VERDICT_FULL;
-		(void)snprintf(text, sizeof(text), "%s has %u saves", name,
+		(void)snprintf(text, sizeof(text), UI_T("%s has %u saves"), name,
 			UI_SAVES_CARD_FILES);
 	}
 	else if((int)blocks > to->freeBlocks) {
 		verdict = UI_SAVES_VERDICT_ROOM;
-		(void)snprintf(text, sizeof(text), "%s has %d free block%s; this needs %u",
-			name, to->freeBlocks > 0 ? to->freeBlocks : 0,
-			to->freeBlocks == 1 ? "" : "s", blocks);
+		(void)snprintf(text, sizeof(text), to->freeBlocks == 1 ?
+			UI_T("%s has %d free block; this needs %u") :
+			UI_T("%s has %d free blocks; this needs %u"),
+			name, to->freeBlocks > 0 ? to->freeBlocks : 0, blocks);
 	}
 	if(why != NULL && size > 0u) {
 		(void)snprintf(why, size, "%s", text);

@@ -207,6 +207,9 @@ run_contracts() {
 	python3 ./test_config_save.py
 	echo "== settings views: every setting in exactly one view =="
 	python3 ./test_settings_views.py
+	echo "== Menu Language: uk.po against the code and the console's parser =="
+	python3 ./test_lang.py
+	python3 ./test_lang.py --sanitize
 	echo "== Menu Color: Indigo's colors turn, meanings and neutrals stay =="
 	python3 ./test_ui_color.py
 	echo "== Clock: the time and its dial take the corner Settings names =="

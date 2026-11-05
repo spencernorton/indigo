@@ -571,7 +571,7 @@ def build(work: Path, gui: Path, frame_c: str, frame_h: str, layouts: bool, name
     # The archived comparison predates save metadata. Only today's Detail
     # header uses the shared formatter; missing current sources still fail
     # compilation rather than quietly excluding the new feature.
-    metadata = (("ui_saves_metadata.c", "ui_saves.c") if
+    metadata = (("ui_saves_metadata.c", "ui_saves.c", "ui_lang.c") if
                 '#include "ui_saves_metadata.h"' in (gui / "ui_gameflow_detail.h").read_text() else ())
     result = subprocess.run(shlex.split(os.environ.get("CC", "cc")) + flags +
                             ["-o", str(binary), str(source)] +
