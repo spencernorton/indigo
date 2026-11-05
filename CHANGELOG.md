@@ -6,6 +6,13 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Setup › Console › Menu Language puts Indigo's own screens in Ukrainian.
+  Its words come from `swiss/indigo/uk.po`, which the download now carries,
+  and its letters from a Cyrillic sheet drawn from Noto Sans, since the
+  console's font has none. Games, their titles, System Language and the
+  settings files stay as they are; without the file the menus stay English.
+  File names in Cyrillic now show their letters too.
+
 - Allow the upstream watch to reach its three required API hosts through the
   runner's HTTPS proxy. Other destinations and private addresses stay blocked.
 

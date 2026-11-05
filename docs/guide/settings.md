@@ -209,6 +209,7 @@ The Settings tour above predates the Apps Video Mode row.
 
 | Setting | What it does |
 | --- | --- |
+| Menu Language | The language Indigo's own screens are in: **English** or **Українська** (Ukrainian). Ukrainian's words come from `swiss/indigo/uk.po` on the settings device, which the download's `swiss` folder puts there; without it the menus stay in English. Games and their titles, System Language and the settings files don't change. |
 | Menu Color | The color of the whole interface. See [Make it yours](personalize.md#menu-color). |
 | Backdrop Color, Wave Color | The backdrop behind the cube and the waves in front of it, each in Menu Color or a color of its own. See [Make it yours](personalize.md#backdrop-and-wave-color). |
 | Waves | **Off** takes the waves away, leaving the backdrop and its rings. Wave Color and Wave Speed apply while they're on. See [Make it yours](personalize.md#backdrop-and-wave-color). |

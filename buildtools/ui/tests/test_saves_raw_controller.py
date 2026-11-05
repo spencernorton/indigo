@@ -804,7 +804,7 @@ def main():
             if sys.platform.startswith('linux'):
                 flags += ['-fno-pie', '-no-pie']
         gui = root / 'cube/swiss/source/gui'
-        subprocess.run(shlex.split(os.environ.get('CC', 'cc')) + flags + ['-I', str(gui), str(source), str(gui / 'ui_saves.c'), str(gui / 'ui_saves_raw.c'), str(gui / 'ui_saves_metadata.c'), str(gui / 'ui_saves_details.c'), '-o', str(binary)], check=True)
+        subprocess.run(shlex.split(os.environ.get('CC', 'cc')) + flags + ['-I', str(gui), str(source), str(gui / 'ui_saves.c'), str(gui / 'ui_lang.c'), str(gui / 'ui_saves_raw.c'), str(gui / 'ui_saves_metadata.c'), str(gui / 'ui_saves_details.c'), '-o', str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
 
 

@@ -813,7 +813,7 @@ def main():
                 flags += ["-fno-pie", "-no-pie"]
         subprocess.run(shlex.split(os.environ.get("CC", "cc")) + flags +
                        ["-I", str(ROOT / "cube/swiss/source/gui"), str(source),
-                        str(ROOT / "cube/swiss/source/gui/ui_saves.c"),
+                        str(ROOT / "cube/swiss/source/gui/ui_saves.c"), str(ROOT / "cube/swiss/source/gui/ui_lang.c"),
                         str(ROOT / "cube/swiss/source/gui/ui_saves_metadata.c"),
                         str(ROOT / "cube/swiss/source/gui/ui_saves_raw.c"), "-o", str(binary)],
                        check=True)

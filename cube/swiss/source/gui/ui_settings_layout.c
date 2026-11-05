@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#include "ui_lang.h"
 #include "ui_settings_layout.h"
 
 /* The cheat browser's page: one column from x=40 to 600. */
@@ -164,17 +165,23 @@ size_t UISetLayout_EllipsizeText(const char *source, size_t sourceLength,
 		out[1] = '\0';
 		return 1u;
 	}
+	/* Neither cut splits a Cyrillic letter: the text comes out a byte
+	 * shorter instead. */
 	if (mode == UI_SETLAYOUT_ELLIPSIZE_MIDDLE) {
-		left = (maxText - 1u) / 2u;
-		right = maxText - 1u - left;
+		left = UILang_Head(source, (maxText - 1u) / 2u);
+		right = maxText - 1u - (maxText - 1u) / 2u;
+		if (UILang_Head(source, sourceLength - right) != sourceLength - right)
+			right--;
 		memcpy(out, source, left);
 		out[left] = (char)UI_SETLAYOUT_ELLIPSIS_BYTE;
 		memcpy(out + left + 1u, source + sourceLength - right, right);
+		maxText = left + 1u + right;
 	}
 	else {
-		left = maxText - 1u;
+		left = UILang_Head(source, maxText - 1u);
 		memcpy(out, source, left);
 		out[left] = (char)UI_SETLAYOUT_ELLIPSIS_BYTE;
+		maxText = left + 1u;
 	}
 	out[maxText] = '\0';
 	return maxText;
@@ -231,6 +238,17 @@ int UISetLayout_PrepareText(const char *source, size_t sourceLength,
 		floorScale <= 0.0f || preferredScale < floorScale ||
 		kind < UI_SETLAYOUT_TEXT_PLAIN || kind > UI_SETLAYOUT_TEXT_EDITABLE)
 		return 0;
+	/* A whole string in Menu Language; a slice of one stays as it is. */
+	if (source[sourceLength] == '\0' && UILang_Text(source) != source) {
+		size_t translated;
+
+		source = UILang_Text(source);
+		translated = strlen(source);
+		/* The caller's byte budget was set for the English text. */
+		if (maxSourceBytes >= sourceLength)
+			maxSourceBytes += translated > sourceLength ? translated - sourceLength : 0u;
+		sourceLength = translated;
+	}
 	if (sourceLength > UI_SETLAYOUT_VALUE_SOURCE_LIMIT)
 		sourceLength = UI_SETLAYOUT_VALUE_SOURCE_LIMIT;
 	if (maxSourceBytes > UI_SETLAYOUT_VALUE_SOURCE_LIMIT)

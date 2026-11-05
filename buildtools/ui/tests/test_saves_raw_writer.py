@@ -406,7 +406,7 @@ def main() -> None:
         harness.write_text(fixture + HARNESS.replace("/* WRITER */", writer))
         command = [os.environ.get("CC", "cc"), "-std=c11", "-Wall", "-Wextra", "-Werror",
                    "-O1", "-I", str(GUI), str(harness), str(GUI / "ui_saves_raw.c"),
-                   str(GUI / "ui_saves.c"), "-o", str(path / "writer")]
+                   str(GUI / "ui_saves.c"), str(GUI / "ui_lang.c"), "-o", str(path / "writer")]
         if args.sanitize:
             command += ["-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
             # Match the Linux host suite: high ASLR entropy can crash PIE ASan before main.

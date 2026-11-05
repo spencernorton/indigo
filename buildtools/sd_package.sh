@@ -7,6 +7,7 @@
 #     swiss/patches/apploader.img    In-Game Reset (Apploader) returns to Indigo
 #     swiss/ui/                      posters.pak, if you add one
 #     swiss/indigo/LICENSE.txt, NOTICE.txt
+#     swiss/indigo/uk.po             Menu Language Ukrainian's words
 #     swiss/indigo/cubebrowser.dol   the web browser the Web face launches (if bundled)
 #     gcbrowser/cacert.pem           the browser's trusted certificates (if bundled)
 #     swiss/indigo/LICENSE-mbedtls.txt  the licence of mbed TLS, built into the browser
@@ -31,6 +32,10 @@ python3 buildtools/dol2ipl.py "$card/swiss/patches/apploader.img" "$reboot" "*in
 cp LICENSE "$card/swiss/indigo/LICENSE.txt"
 cp NOTICE "$card/swiss/indigo/NOTICE.txt"
 cp docs/licenses/lwip.txt "$card/swiss/indigo/LICENSE-lwip.txt"
+# Menu Language Ukrainian's words, and the licence of the font its letters
+# are drawn from.
+cp cube/swiss/source/gui/lang/uk.po "$card/swiss/indigo/uk.po"
+cp docs/licenses/noto-sans-ofl.txt "$card/swiss/indigo/LICENSE-NotoSans.txt"
 # Web browser (optional): a separate program the Web face launches, built from
 # the hardened fork (docs/dev/web-browser.md). Its CA bundle goes in gcbrowser/
 # at the card root, where the browser looks for it. Without it the Web face

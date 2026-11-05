@@ -439,7 +439,7 @@ class SaveCubesGXStreamTests(unittest.TestCase):
         pure.write_text(cubes)
         command = shlex.split(os.environ.get("CC", "cc")) + [
             "-std=c99", "-Wall", "-Wextra", "-pedantic", "-Wno-unused-function", f"-I{GUI}",
-            str(harness), str(pure), str(GUI / "ui_motion.c"), str(GUI / "ui_saves.c"),
+            str(harness), str(pure), str(GUI / "ui_motion.c"), str(GUI / "ui_saves.c"), str(GUI / "ui_lang.c"),
             str(GUI / "ui_stage.c"), str(GUI / "ui_folder.c"), "-o", str(program), "-lm",
         ]
         compiled = subprocess.run(command, capture_output=True, text=True, timeout=60)
