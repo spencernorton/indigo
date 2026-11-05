@@ -1638,7 +1638,7 @@ class Route:
                    memory=f"{report['memsize']:08X}")
 
     def flip_apps_face(self, settings: np.ndarray, tag: str) -> None:
-        """Down Face, twelve DOWNs into Console (flip_console): five RIGHTs
+        """Down Face, thirteen DOWNs into Console (flip_console): five RIGHTs
         from Apps pass Memory Cards, Emulators, File Browser and Web to None
         ("off"), two LEFTs from None reach File Browser ("files"), and three
         LEFTs more come back to Apps ("on")."""
@@ -1646,12 +1646,12 @@ class Route:
         # Settings, System, Apps, Memory Cards, Emulators, File Browser, Web.
         # A face added to that list must update them.
         change, presses = {"off": ("RIGHT", 5), "files": ("LEFT", 2), "on": ("LEFT", 3)}[tag]
-        self.flip_console(settings, 12, "apps-face", tag, change=change, presses=presses)
+        self.flip_console(settings, 13, "apps-face", tag, change=change, presses=presses)
 
     def flip_console(self, settings: np.ndarray, downs: int, name: str, tag: str,
                      change: str = "RIGHT", presses: int = 1, named: bool = True) -> None:
         """From the Settings face: R and R to Setup, DOWN and A into Console,
-        downs DOWNs to a row and change (a direction) to change it. B goes back to Setup and
+        whose first row is Menu Language, downs DOWNs to a row and change (a direction) to change it. B goes back to Setup and
         B again saves and exits (the demo disc can't keep the file; the
         setting holds until Indigo restarts), back to the Settings face, or,
         not named (Face Labels off), to a Home without the face's name."""
@@ -1725,7 +1725,7 @@ class Route:
         A press that should go nowhere has had a second of the console's
         time to turn the cube when its face is checked."""
         library, source, settings, system, apps = faces[:5]
-        self.flip_console(settings, 13, "cube", "classic")
+        self.flip_console(settings, 14, "cube", "classic")
         walk = (("LEFT", "Settings", False), ("LEFT", "Settings", False), ("RIGHT", "Library", True),
                 ("RIGHT", "System", True), ("UP", "System", False), ("B", "Library", True),
                 ("UP", "Source", True), ("DOWN", "Library", True), ("DOWN", "Apps", True),
@@ -1742,15 +1742,15 @@ class Route:
             self.shot(f"classic-{n}-{button.lower()}", self.last_rgb)
             self.check(f"Cube Classic: {button} {'turns to' if turns else 'stays on'} {name}",
                        mask is not None, step=n)
-        self.flip_console(settings, 13, "cube", "infinite")
+        self.flip_console(settings, 14, "cube", "infinite")
 
     def face_labels_off_and_on(self, faces: list[np.ndarray]) -> None:
-        """From the Settings face: Setup > Console > Face Labels (fifteen
+        """From the Settings face: Setup > Console > Face Labels (sixteen
         DOWNs, after Cube and Idle Animation) Off takes the face's name from
         under the cube; On puts the Settings face's name back."""
         settings = faces[2]
-        self.flip_console(settings, 15, "face-labels", "off", named=False)
-        self.flip_console(settings, 15, "face-labels", "on")
+        self.flip_console(settings, 16, "face-labels", "off", named=False)
+        self.flip_console(settings, 16, "face-labels", "on")
 
     def apps_face_off_and_on(self, faces: list[np.ndarray]) -> None:
         """Setup > Console > Down Face: None takes Apps off the cube, so the
