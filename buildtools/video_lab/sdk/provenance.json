@@ -1,0 +1,8 @@
+{
+  "upstream": "https://github.com/extremscorner/libogc2",
+  "commit": "84fec1435413e72e31e7d3d61ed817970bc7f6c3",
+  "source_sha256": "63bd48d10db789da8f5a3baf9bf94757b0a31004c4721c0d5a4003e4a876df4c",
+  "timing_source": "https://github.com/extremscorner/libogc-rice/blob/5f3be28e50ca9ca2d1689a52139fd9ded78b6a5b/libogc/video.c",
+  "timing_index": 31,
+  "normal_modes_changed": false
+}
