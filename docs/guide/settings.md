@@ -256,7 +256,15 @@ The Settings tour above predates the Apps Video Mode row.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock, NTP Server IP, Time Zone | Shown only with a network adapter, and off until you turn it on. Sets the clock from a time server each time the network starts; the IPL and games see it too. Time Zone accepts a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` (US Mountain). The rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the zone the clock is in. |
+| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Off by default. |
+| NTP Server IP | The time server to use. An empty entry uses the default server. |
+| Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
+
+The clock settings appear with a network adapter. When you turn on **Sync
+Clock** with no zone set, Indigo opens **Time Zone**. Enter your location and
+choose **Save & Exit**. Restart Indigo with **Init network at startup**
+enabled to apply the change. Indigo uses your location's daylight saving rules
+when the clock syncs.
 
 Passwords are saved as plain text in `global.ini`.
 

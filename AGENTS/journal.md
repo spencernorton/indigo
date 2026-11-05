@@ -1,3 +1,14 @@
+## 2026-11-05 — Guide Sync Clock setup for daylight saving time
+
+Turning on Sync Clock with a blank Time Zone or an imported Etc/Unknown now
+opens the editor. Show Keep offset (no DST) for both unset values. Validate
+edits with the resolver used by startup sync and retain the previous value
+when editing is canceled or the entry is invalid.
+
+The regression exercises the actual Settings actions with named and POSIX
+zones, cancellation, a rejected edit and the offset fallback. The Settings
+guide explains when to save and restart. Track inclusion in issue #196.
+
 ## 2026-11-04 — Initialize every stroke-test icon choice
 
 The full host suite exposes an intermittent pre-existing failure on the
