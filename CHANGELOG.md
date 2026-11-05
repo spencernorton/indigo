@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Open Time Zone when turning on Sync Clock with no zone set. Enter your
+  location to follow its daylight saving rules at startup. Keep offset uses
+  the console's current UTC offset year-round.
+
 - Keep the Home cube outside the screen in widescreen Grid, Spotlight and
   Jewel Case layouts, including after changing the menu's screen shape.
 

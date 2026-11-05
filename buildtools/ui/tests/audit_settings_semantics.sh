@@ -27,9 +27,9 @@
 # hideDetailSaves and alwaysShowDetailSaves, and the Idle Animation, Waves, On-screen
 # Controls and Face Labels arms (SET_IDLE_ANIMATION, SET_WAVES,
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
-# the clock sync arms only flip swissSettings.ntpSync (SET_NTP_SYNC) or take
-# swissSettings.ntpHostIp and swissSettings.timeZone as text (SET_NTP_HOSTIP,
-# SET_TIME_ZONE). The three File Browser Type arms
+# the clock sync arms flip swissSettings.ntpSync and open the zone editor
+# when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
+# server and SET_TIME_ZONE opens the same validated editor. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
 #
@@ -235,16 +235,20 @@ for option, field in (("IDLE_ANIMATION", "idleAnimation"), ("WAVES", "hideWaves"
         r"\t+swissSettings\." + field + r" \^= 1;\n"
         r"\t+break;\n",
         "", normalized, count=1)
-# And the clock sync: Sync Clock flips, NTP Server IP and Time Zone take text.
+# Accept the original clock arms and the deliberate timezone setup flow.
 normalized = re.sub(
     r"(?ms)^\t+case SET_NTP_SYNC:\n"
     r"\t+swissSettings\.ntpSync \^= 1;\n"
+    r"(?:\t+if\(swissSettings\.ntpSync && UITimeSync_KeepsOffset\(swissSettings\.timeZone\)\) \{\n"
+    r"\t+settingsEditTimeZone\(\);\n"
+    r"\t+\}\n)?"
     r"\t+break;\n"
     r"\t+case SET_NTP_HOSTIP:\n"
     r"\t+DrawGetTextEntry\(ENTRYMODE_IP, \"NTP Server IP\", &swissSettings\.ntpHostIp, sizeof\(swissSettings\.ntpHostIp\) - 1\);\n"
     r"\t+break;\n"
     r"\t+case SET_TIME_ZONE:\n"
-    r"\t+DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\);\n"
+    r"\t+(?:settingsEditTimeZone\(\)|"
+    r"DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\));\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # Swiss's new clock controls map to Indigo's existing Network rows. Match
