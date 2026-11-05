@@ -324,20 +324,23 @@ static void gx_status_response(s32 socket)
 	const vg_result *r = vg_results();
 	int used = snprintf(body, sizeof(body),
 		"{\"state\":%u,\"progress\":%u,\"error\":%u,\"matched_frames\":%u,"
-		"\"coordinate_crc\":%u,\"canaries_ok\":%u,\"oracle_max_error\":%u,\"variants\":[",
+		"\"coordinate_crc\":%u,\"canaries_ok\":%u,\"oracle_max_error\":%u,"
+		"\"gp_metrics_calibrated\":%u,\"gp_vertices_probe\":%u,\"gp_texels_probe\":%u,\"variants\":[",
 		state, vg_progress(), state >= 2 ? r->error : 0,
 		state >= 2 ? r->matched_frames : 0, state >= 2 ? r->coordinate_crc : 0,
-		state >= 2 ? r->canaries_ok : 0, state >= 2 ? r->oracle_max_error : 0);
+		state >= 2 ? r->canaries_ok : 0, state >= 2 ? r->oracle_max_error : 0,
+		state >= 2 ? r->gp_metrics_calibrated : 0, state >= 2 ? r->gp_vertices_probe : 0,
+		state >= 2 ? r->gp_texels_probe : 0);
 	if(state >= 2) for(v = 0; v < VS_VARIANTS; v++) {
 		const vg_metric *m = &r->variant[v];
 		used += snprintf(body + used, sizeof(body) - (size_t)used,
 			"%s{\"id\":%u,\"frames\":%u,\"copies\":%u,\"copy_pixels\":%u,"
 			"\"vertices\":%u,\"texels\":%u,\"gpu_pixels_in\":%u,\"gpu_copy_clocks\":%u,"
 			"\"work_us\":%u,\"cache_us\":%u,\"compare_us\":%u,\"cache_builds\":%u,"
-			"\"crc32\":%u,\"mismatches\":%u}", v ? "," : "", v,
+			"\"crc32\":%u,\"mismatches\":%u,\"submitted_vertices\":%u}", v ? "," : "", v,
 			m->frames, m->copies, m->copy_pixels, m->vertices, m->texels,
 			m->gpu_pixels_in, m->gpu_copy_clocks, m->work_us, m->cache_us,
-			m->compare_us, m->cache_builds, m->crc32, m->mismatches);
+			m->compare_us, m->cache_builds, m->crc32, m->mismatches, m->submitted_vertices);
 	}
 	if(used > 0 && used < (int)sizeof(body) - 4) { memcpy(body + used, "]}\n", 3); used += 3; }
 	else used = 0;
