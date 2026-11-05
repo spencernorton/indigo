@@ -6,19 +6,18 @@ about 60 frames per second**, with a 16:9 presentation and a normal-mode
 fallback. It is not 1280 x 720 rendering. A scaler's HDMI output resolution
 does not establish the source resolution or how much source detail survives.
 
-**Current transport qualification is incomplete.** The tested console renders
-the real menus at a measured cadence close to 59.95 Hz, but its Retro GEM
-information display reports **720 x 480**, and the upper-left temperature
-indicator is clipped on the TV. The cube's proportions were reported correct.
-This does not yet establish that all 540 source rows reach the display. Keep
-this as an experimental build until the active-window discrepancy is resolved.
+**Retro GEM setup:** use **System > GCDigital Settings > Use Console DE >
+On (16:9)**. On the tested setup, the previous setting gave a 720 x 480 input
+readout and clipped the upper-left temperature indicator. Selecting 16:9
+corrected the framing and changed GEM's input readout to **720 x 540**. The
+cube's proportions were reported correct. Record the previous setting before
+changing it, plus the GEM firmware and input/output readouts when testing
+another setup. Firmware-specific and other-scaler compatibility remain open.
 
-Pixel FX documents **System > GCDigital Settings > Use Console DE** for
-following the GameCube's own active boundaries in its
+Pixel FX documents the console-boundary control in its
 [compatibility guide](https://wiki.pixelfx.co/index.php/Morph_4K_System_Compatibility#Swiss).
-Record its current value, firmware and input/output readouts when testing.
-Whether that setting resolves this custom timing remains to be established;
-moving a widget inward alone would not prove the extra rows are preserved.
+The input readout and visual check support transport compatibility on that
+setup; they are not a pixel-exact capture of the HDMI output.
 
 ![The experimental Home menu with its session-only 540p footer](images/experimental-540p-home.webp)
 
