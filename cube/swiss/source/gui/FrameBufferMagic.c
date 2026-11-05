@@ -35,6 +35,7 @@
 #include "ui_clock.h"
 #include "ui_color.h"
 #include "ui_perf.h"
+#include "ui_540p.h"
 #include "ui_scene.h"
 #include "ui_stage.h"
 #include "ui_hint.h"
@@ -8718,6 +8719,10 @@ static void *videoUpdate(void *videoEventQueue) {
 		UI_PERF_BEGIN(frameWorkStart);
 		//frames++;
 		LWP_MutexLock(_videomutex);
+#if UI_EXPERIMENTAL_540P
+		UI540_BeginFrame();
+		u64 experimentalWorkStart = gettime();
+#endif
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameStart();
 #endif
@@ -8763,7 +8768,13 @@ static void *videoUpdate(void *videoEventQueue) {
 			GX_SetViewportJitter(0.0f, 0.0f, vmode->fbWidth, vmode->efbHeight, 0.0f, 1.0f, VIDEO_GetNextField());
 		}
 		/* One shape for the whole frame, whatever Settings does meanwhile. */
-		UIStage_SetWide(swissSettings.menuWidescreen);
+		UIStage_SetWide(UI540_Active() || swissSettings.menuWidescreen);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			UI540_RecordBegin();
+			drawInit();
+		}
+#endif
 		// Draw out every event
 		videoEventQueueEntry = (uiDrawObjQueue_t*)videoEventQueue;
 		while(videoEventQueueEntry != NULL) {
@@ -8793,13 +8804,30 @@ static void *videoUpdate(void *videoEventQueue) {
 #endif
 		
 		//Copy EFB->XFB
+		u16 width = vmode->fbWidth;
+		u16 height;
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			drawInit();
+			UI540_DrawStatus();
+			if(!UI540_Present(xfb[whichfb])) {
+				LWP_MutexUnlock(_videomutex);
+				continue;
+			}
+			height = vmode->xfbHeight;
+		} else
+#endif
+		{
 		if(vmode->copy_interlaced == GX_COPY_INTERLACED) {
 			GX_SetDispCopyFrame2Field(GX_COPY_INTERLACED ^ VIDEO_GetNextField());
 		}
-		u16 width = vmode->fbWidth;
-		u16 height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
+		height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
 		copyDisplayFrame(xfb[whichfb]);
+		}
 		GX_DrawDone();
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) UI540_EndFrame(experimentalWorkStart);
+#endif
 		UI_PERF_END(UI_PERF_METRIC_FRAME_WORK, frameWorkStart);
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameEnd();
@@ -8921,6 +8949,7 @@ void DrawLoadBackdrop(DEVICEHANDLER_INTERFACE *device) {
 }
 
 void DrawShutdown() {
+	UI540_Leave();
 	mutex_t mutex;
 	lwp_t thread = video_thread;
 

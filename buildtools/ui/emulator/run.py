@@ -1054,7 +1054,8 @@ class Emulator:
                  storage: str = "dvd", card: Path | None = None, cable: str = "composite",
                  faults: str | None = None, cards: Path | None = None,
                  empty_slots: bool = False, folder_frames: bool = False,
-                 second: Path | None = None, exact_textures: bool = False) -> None:
+                 second: Path | None = None, exact_textures: bool = False,
+                 exact_copies: bool = False) -> None:
         self.out = out
         self.user = work / "dolphin"
         (self.user / "Config").mkdir(parents=True)
@@ -1076,7 +1077,9 @@ class Emulator:
         (self.user / "Config/GFX.ini").write_text("[Settings]\nInternalResolution = 1\nShowFPS = False\n" +
             ("SafeTextureCacheColorSamples = 0\n" if exact_textures else "") +
             ("DumpFramesAsImages = True\nFrameDumpsResolutionType = 2\nPNGCompressionLevel = 1\n"
-             if folder_frames else ""))
+             if folder_frames else "") +
+            ("[Hacks]\nEFBToTextureEnable = False\nXFBToTextureEnable = False\n"
+             "DeferEFBCopies = False\nEarlyXFBOutput = False\n" if exact_copies else ""))
         self.folder_frames = (PresentedFrames(self.user / "Dump/Frames", out / "folder-transitions")
                               if folder_frames else None)
         (self.user / "Config/GCPadNew.ini").write_text(dsu_pad.GCPAD_INI)
