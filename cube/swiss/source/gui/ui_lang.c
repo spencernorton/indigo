@@ -7,22 +7,20 @@ const char *uiLangKeys[UI_LANG_MAX] = {"English", "Ukrainian"};
 const char *uiLangNames[UI_LANG_MAX] = {"English", "Українська"};
 const char *uiLangFiles[UI_LANG_MAX] = {NULL, "uk.po"};
 
-/* A table's index: open addressing over its English strings, written once
- * as it loads and never again. A slot holds an entry's index plus one; 0 is
- * empty. Twice the most entries keeps every probe short. */
-#define UI_LANG_SLOTS 8192u
-typedef char uiLangSlotsFit[UI_LANG_MAX_ENTRIES < UI_LANG_SLOTS / 2u ? 1 : -1];
+/* A language's table, allocated as it loads and never written again: its
+ * entries with their strings packed behind them, and an index of open
+ * addressing over the English, a power of two at least twice the entries so
+ * every probe stays short. A slot holds an entry's index plus one; 0 is
+ * empty. */
+typedef char uiLangSlotsFit[UI_LANG_MAX_ENTRIES * 2u <= 65535u ? 1 : -1];
 
 typedef struct {
 	const uiLangEntry_t *entries;
-	uint16_t slots[UI_LANG_SLOTS];
+	size_t bytes;
+	uint32_t mask;
+	uint16_t slots[];
 } uiLangTable_t;
 
-/* One table, Ukrainian's: English needs none. */
-static uiLangTable_t ukrainian;
-static uiLangTable_t *const storage[UI_LANG_MAX] = {
-	[UI_LANG_UKRAINIAN] = &ukrainian,
-};
 /* Each language's table once it is whole; read by the video thread. */
 static uiLangTable_t *published[UI_LANG_MAX];
 static volatile int selected = UI_LANG_ENGLISH;
@@ -184,12 +182,13 @@ size_t UILang_Parse(char *data, size_t size, uiLangEntry_t *entries,
 {
 	enum { NONE, ID, TEXT } state = NONE;
 	char *english = NULL, *text = NULL, *out = NULL;
-	char *line = data, *end = data + size;
+	char *line = data, *end;
 	size_t count = 0;
 
 	if(data == NULL || entries == NULL) {
 		return 0;
 	}
+	end = data + size;
 	/* Decoding writes behind what it reads (each line's quotes and newline
 	 * are dropped), so every string and its 0 fit where they lie. */
 	for(;;) {
@@ -255,39 +254,76 @@ size_t UILang_Parse(char *data, size_t size, uiLangEntry_t *entries,
 bool UILang_Load(int language, char *data, size_t size)
 {
 	uiLangTable_t *table;
-	uiLangEntry_t *entries;
-	size_t count;
+	uiLangEntry_t *parsed, *entries;
+	char *pool;
+	size_t count, strings = 0u, slotCount = 16u;
 
 	if(language <= UI_LANG_ENGLISH || language >= UI_LANG_MAX || data == NULL ||
 		size > UI_LANG_FILE_MAX || UILang_Loaded(language)) {
 		free(data);
 		return UILang_Loaded(language);
 	}
-	entries = malloc(UI_LANG_MAX_ENTRIES * sizeof(*entries));
-	count = entries != NULL ? UILang_Parse(data, size, entries, UI_LANG_MAX_ENTRIES) : 0u;
-	if(count == 0u) {
+	parsed = malloc(UI_LANG_MAX_ENTRIES * sizeof(*parsed));
+	count = parsed != NULL ? UILang_Parse(data, size, parsed, UI_LANG_MAX_ENTRIES) : 0u;
+	for(size_t entry = 0; entry < count; entry++) {
+		strings += strlen(parsed[entry].english) + strlen(parsed[entry].text) + 2u;
+	}
+	while(slotCount < count * 2u) {
+		slotCount <<= 1;
+	}
+	entries = count > 0u ? malloc(count * sizeof(*entries) + strings) : NULL;
+	table = entries != NULL ?
+		calloc(1, sizeof(*table) + slotCount * sizeof(table->slots[0])) : NULL;
+	if(table == NULL) {
 		free(entries);
+		free(parsed);
 		free(data);
 		return false;
 	}
-	table = storage[language];
-	table->entries = entries;
-	memset(table->slots, 0, sizeof(table->slots));
+	/* Only the strings are kept, packed behind the entries: the file, with
+	 * its comments, quotes and escapes, goes. */
+	pool = (char *)(entries + count);
 	for(size_t entry = 0; entry < count; entry++) {
-		uint32_t slot = hashText(entries[entry].english) & (UI_LANG_SLOTS - 1u);
+		size_t english = strlen(parsed[entry].english) + 1u;
+		size_t text = strlen(parsed[entry].text) + 1u;
+
+		entries[entry].english = memcpy(pool, parsed[entry].english, english);
+		entries[entry].text = memcpy(pool + english, parsed[entry].text, text);
+		pool += english + text;
+	}
+	free(parsed);
+	free(data);
+	table->entries = entries;
+	table->mask = (uint32_t)slotCount - 1u;
+	table->bytes = sizeof(*table) + slotCount * sizeof(table->slots[0]) +
+		count * sizeof(*entries) + strings;
+	for(size_t entry = 0; entry < count; entry++) {
+		uint32_t slot = hashText(entries[entry].english) & table->mask;
 
 		/* The first of two equal strings wins. */
 		while(table->slots[slot] &&
 			strcmp(entries[table->slots[slot] - 1u].english, entries[entry].english)) {
-			slot = (slot + 1u) & (UI_LANG_SLOTS - 1u);
+			slot = (slot + 1u) & table->mask;
 		}
 		if(!table->slots[slot]) {
 			table->slots[slot] = (uint16_t)(entry + 1u);
 		}
 	}
-	/* data and entries stay for good. */
+	/* The table and its entries stay for good. */
 	__atomic_store_n(&published[language], table, __ATOMIC_RELEASE);
 	return true;
+}
+
+size_t UILang_MemoryFootprint(void)
+{
+	size_t bytes = 0u;
+
+	for(int language = 0; language < UI_LANG_MAX; language++) {
+		const uiLangTable_t *table = __atomic_load_n(&published[language], __ATOMIC_ACQUIRE);
+
+		bytes += table != NULL ? table->bytes : 0u;
+	}
+	return bytes;
 }
 
 bool UILang_Loaded(int language)
@@ -320,49 +356,14 @@ const char *UILang_Text(const char *english)
 	if(table == NULL) {
 		return english;
 	}
-	slot = hashText(english) & (UI_LANG_SLOTS - 1u);
+	slot = hashText(english) & table->mask;
 	while(table->slots[slot]) {
 		const uiLangEntry_t *entry = &table->entries[table->slots[slot] - 1u];
 
 		if(!strcmp(entry->english, english)) {
 			return entry->text;
 		}
-		slot = (slot + 1u) & (UI_LANG_SLOTS - 1u);
+		slot = (slot + 1u) & table->mask;
 	}
 	return english;
-}
-
-/* The Cyrillic sheet's letters (ui_font_cyrillic.inc): А..я, Є, І, Ї, є, і,
- * ї, Ґ and ґ. */
-static bool sheetLetter(unsigned code)
-{
-	return (code >= 0x410u && code <= 0x44fu) || code == 0x404u || code == 0x406u ||
-		code == 0x407u || code == 0x454u || code == 0x456u || code == 0x457u ||
-		code == 0x490u || code == 0x491u;
-}
-
-unsigned UILang_Character(const char *text, int *bytes)
-{
-	const uint8_t *c = (const uint8_t *)text;
-
-	if(c[0] >= 0xd0u && c[0] <= 0xd2u && (c[1] & 0xc0u) == 0x80u) {
-		unsigned code = ((c[0] & 0x1fu) << 6) | (c[1] & 0x3fu);
-
-		if(sheetLetter(code)) {
-			*bytes = 2;
-			return code;
-		}
-	}
-	*bytes = c[0] ? 1 : 0;
-	return c[0];
-}
-
-size_t UILang_Head(const char *text, size_t length)
-{
-	int bytes;
-
-	if(length > 0u && UILang_Character(text + length - 1u, &bytes) && bytes == 2) {
-		length--;
-	}
-	return length;
 }

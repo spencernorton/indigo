@@ -1,4 +1,5 @@
 #include "ui_home_text.h"
+#include "ui_lang.h"
 
 static float readableMax(float maxScale)
 {
@@ -68,7 +69,10 @@ float UIHomeText_CopyFitted(char *destination, size_t capacity,
 	destination[length] = '\0';
 	truncated = source[length] != '\0';
 	if(truncated && length > 0u) {
+		/* The ellipsis never follows half a Cyrillic letter. */
+		length = UILang_Head(source, length - 1u) + 1u;
 		destination[length - 1u] = (char)UI_HOME_TEXT_ELLIPSIS_BYTE;
+		destination[length] = '\0';
 	}
 	if(ellipsized != NULL) {
 		*ellipsized = truncated;
@@ -90,6 +94,7 @@ float UIHomeText_CopyFitted(char *destination, size_t capacity,
 	 * ellipsis, preserve its prefix; otherwise replace the final source byte. */
 	prefixLength = length - 1u;
 	for(;;) {
+		prefixLength = UILang_Head(source, prefixLength);
 		destination[prefixLength] = (char)UI_HOME_TEXT_ELLIPSIS_BYTE;
 		destination[prefixLength + 1u] = '\0';
 		if(fitsAtFloor(destination, maxWidth, measure)) {

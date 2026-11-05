@@ -2929,16 +2929,18 @@ msgid ""
 "Yes - Set the clock from the NTP server when the network starts\n"
 "No - Leave the clock as it is (default)\n"
 "\n"
-"The IPL and games see the new time too. The network starts with\n"
-"Indigo when Init network at startup is on."
+"Choose a Time Zone to follow daylight saving time. The IPL and\n"
+"games see the new time too. Init network at startup runs the sync\n"
+"when Indigo starts."
 msgstr ""
 "Синхронізація годинника:\n"
 "\n"
 "Так - Брати час із NTP-сервера під час запуску мережі\n"
 "Ні - Не змінювати годинник (типово)\n"
 "\n"
-"Новий час бачать також IPL та ігри. Мережа запускається\n"
-"разом з Indigo, якщо ввімкнено Мережа при запуску."
+"Щоб враховувати літній час, оберіть Часовий пояс. Новий час\n"
+"бачать також IPL та ігри. Мережа при запуску синхронізує\n"
+"годинник під час запуску Indigo."
 
 #: cube/swiss/source/gui/settings.c:192
 msgid ""
@@ -2954,26 +2956,28 @@ msgstr ""
 "порожньо - сервер Cloudflare, 162.159.200.123 (типово).\n"
 "Ім'я не підійде: консоль не має DNS."
 
-#: cube/swiss/source/gui/settings.c:193
+#: cube/swiss/source/gui/settings.c:194
 msgid ""
 "Time Zone:\n"
 "\n"
-"A location, such as America/Denver, Europe/London or Asia/Kolkata,\n"
-"or a POSIX TZ string such as MST7MDT,M3.2.0,M11.1.0. The rules\n"
-"choose the offset when Sync Clock runs.\n"
+"Choose a location to follow its daylight saving rules.\n"
 "\n"
-"Empty keeps the zone the clock is already in: its offset from UTC,\n"
-"snapped to a real time zone. Set daylight time in the IPL."
+"Enter a name such as America/Denver or Europe/London, or a POSIX\n"
+"rule such as MST7MDT,M3.2.0,M11.1.0. The rules apply at each sync.\n"
+"\n"
+"Keep offset (no DST) preserves the console's current UTC offset.\n"
+"Leave the entry empty to use it."
 msgstr ""
 "Часовий пояс:\n"
 "\n"
-"Місцевість, як-от America/Denver, Europe/London чи\n"
-"Asia/Kolkata, або рядок POSIX TZ, як-от MST7MDT,M3.2.0,M11.1.0.\n"
-"За цими правилами Синхронізація годинника обирає зсув.\n"
+"Оберіть місцевість, щоб діяли її правила літнього часу.\n"
 "\n"
-"Якщо порожньо, лишається поточний пояс годинника:\n"
-"його зсув від UTC, наближений до справжнього поясу.\n"
-"Літній час задається в IPL."
+"Введіть назву, як-от America/Denver чи Europe/London, або\n"
+"правило POSIX, як-от MST7MDT,M3.2.0,M11.1.0. Правила діють\n"
+"під час кожної синхронізації.\n"
+"\n"
+"Зсув консолі (без DST) лишає поточний зсув консолі від UTC.\n"
+"Щоб обрати його, залиште поле порожнім."
 
 #: cube/swiss/source/gui/settings.c:194
 msgid ""
@@ -4014,9 +4018,9 @@ msgstr "IP сервера NTP:"
 msgid "Time Zone:"
 msgstr "Часовий пояс:"
 
-#: cube/swiss/source/gui/settings.c:1163
-msgid "Keep console's"
-msgstr "Як у консолі"
+#: cube/swiss/source/gui/settings.c:1165
+msgid "Keep offset (no DST)"
+msgstr "Зсув консолі (без DST)"
 
 #: cube/swiss/source/gui/settings.c:1164
 msgid "FSP Host IP:"
@@ -4326,9 +4330,9 @@ msgstr "Шлюз IPv4"
 msgid "NTP Server IP"
 msgstr "IP сервера NTP"
 
-#: cube/swiss/source/gui/settings.c:1857
-msgid "Time Zone"
-msgstr "Часовий пояс"
+#: cube/swiss/source/gui/settings.c:1477
+msgid "Time Zone (e.g. America/Denver)"
+msgstr "Часовий пояс (напр. America/Denver)"
 
 #: cube/swiss/source/gui/settings.c:1860
 msgid "FSP Host IP"
@@ -6633,3 +6637,13 @@ msgstr "Перенесення налаштувань у новий формат
 #: cube/swiss/source/config/config.c:2185
 msgid "Loading settings"
 msgstr "Читання налаштувань"
+
+#: cube/swiss/source/gui/settings.c:1484
+msgid ""
+"Time Zone not recognized.\n"
+"Check the location name and capitalization,\n"
+"or leave it blank to keep the current offset."
+msgstr ""
+"Часовий пояс не розпізнано.\n"
+"Перевірте назву місцевості та великі літери\n"
+"або залиште поле порожнім, щоб лишити поточний зсув."

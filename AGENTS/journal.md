@@ -1,3 +1,33 @@
+## 2026-11-05 — Bring Menu Language onto beta and trim what it keeps
+
+A contributed Menu Language (Ukrainian) arrives on beta from a main base; only
+CHANGELOG.md conflicts, but uk.po still translated beta's old Sync Clock and
+Time Zone wording, so test_lang.py failed there. Those entries now follow the
+current text, and the new Time Zone strings have their own.
+
+Ukrainian kept its whole 212 KB file, a 4,000-entry array and a fixed 16 KB
+index in RAM, about 260 KB, with 16 KB held even in English. Load now copies
+only the strings behind their entries and frees the file; the index is sized
+to the entries. The console keeps 142,816 bytes for uk.po and nothing for
+English; test_lang.py measures that and holds it under 192 KiB. UBSan in the
+sanitized lane found the parser offsetting a null pointer before its check.
+The source checks wanted -no-pie on test_lang.py's ASan build, and the
+whitespace check a trailing space gone from the OFL text.
+
+Byte cuts that end in the IPL ellipsis could split a Cyrillic letter, and a
+cut after the 0xd1 lead byte draws as "х" with no ellipsis, a byte pair the
+draw loop cannot tell from the real letter. Home and Save Details fitting,
+Library folder headings, short names and Settings path tails now cut on
+whole letters (UILang_Head, now inline so pure modules need only the
+header), each with a host test that fails without it; the draw loop's guess
+before an ellipsis is gone. Text the Home fitter cuts and text entry labels
+are looked up before they are cut or formatted, as ui_lang.h requires.
+
+Not changed: drawString still looks up every string it draws, so a folder or
+game named exactly like a translated label (Music, Covers, Apps) is shown
+translated. No Ukrainian screen has been recorded in Dolphin or timed on a
+console yet.
+
 ## 2026-11-05 — Guide Sync Clock setup for daylight saving time
 
 Turning on Sync Clock with a blank Time Zone or an imported Etc/Unknown now

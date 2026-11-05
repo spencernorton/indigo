@@ -27,6 +27,9 @@ sys.path.insert(0, str(ROOT / "buildtools/ui"))
 import lang_strings  # noqa: E402
 
 UKRAINIAN = set("АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя")
+# The bytes Ukrainian's table may hold on the console: its strings, entries and
+# index, about 140 KB in all, with room for the strings still in English.
+RAM_BUDGET = 192 * 1024
 PROMPTS = ("Press L + A to continue, or B to cancel.", "Press A to continue.",
            "Press A to continue", "Press A.", "Press A")
 
@@ -131,7 +134,7 @@ int main(int argc, char **argv) {
         if(strcmp(found, entries[i].text)) { printf("lookup %zu\n", i); return 4; }
     }
     if(strcmp(UILang_Text("No such string"), "No such string")) return 5;
-    printf("%zu\n", count);
+    printf("%zu %zu %zu\n", count, UILang_MemoryFootprint(), sizeof(uiLangEntry_t));
     return 0;
 }
 '''
@@ -144,11 +147,18 @@ int main(int argc, char **argv) {
             str(GUI / "ui_lang.c"), "-o", str(binary)]
         if "--sanitize" in sys.argv:
             command[1:1] = ["-fsanitize=address,undefined", "-fno-omit-frame-pointer", "-g"]
+            if os.uname().sysname == "Linux":
+                command += ["-fno-pie", "-no-pie"]
         subprocess.run(command, check=True)
         out = subprocess.run([str(binary), str(PO)], capture_output=True, text=True, timeout=30)
         assert out.returncode == 0, f"parser driver failed ({out.returncode}): {out.stdout}"
-        kept = int(out.stdout.strip())
+        kept, held, entry = (int(n) for n in out.stdout.split())
         assert kept == count, f"the console's parser keeps {kept} of {count} entries"
+    # What the console keeps in RAM with the language on: an entry there is two
+    # 4-byte pointers. The file itself is let go once it is read.
+    held -= kept * (entry - 8)
+    assert held <= RAM_BUDGET, f"uk.po's table holds {held} bytes, over {RAM_BUDGET}"
+    return held
 
 
 def main():
@@ -168,10 +178,10 @@ def main():
     for failure in failures:
         print(failure)
     assert not failures, f"{len(failures)} problems in uk.po"
-    parse_on_host(len(found))
+    held = parse_on_host(len(found))
     missing = [t for t in drawn if t not in seen]
     print(f"Menu Language: uk.po's {len(found)} entries hold, and the console's parser keeps "
-          f"them all ({len(missing)} drawn strings stay English) PASS")
+          f"them all ({len(missing)} drawn strings stay English) in {held:,} bytes of RAM PASS")
 
 
 if __name__ == "__main__":

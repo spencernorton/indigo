@@ -257,6 +257,15 @@ char* getAutoLoadDeviceName(SwissSettings *settings) {
 	return entryDevice != NULL ? (char*)(entryDevice->deviceName) : "None";
 }
 
+/* The end of a path too long for a value: its last max bytes, or one fewer
+ * where the cut would start inside a Cyrillic letter. */
+static const char *pathTail(const char *path, size_t length, size_t max)
+{
+	size_t start = length - max;
+
+	return path + start + (UILang_Head(path, start) != start);
+}
+
 char* getLibraryPathName(SwissSettings *settings) {
 	static char formatted[UI_SETLAYOUT_VALUE_TEXT_MAX + 1];
 	DEVICEHANDLER_INTERFACE *sourceDevice = getDeviceFromPath(settings->libraryPath);
@@ -269,7 +278,7 @@ char* getLibraryPathName(SwissSettings *settings) {
 	snprintf(formatted, sizeof(formatted), "%s%s",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ?
-			settings->libraryPath + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
+			pathTail(settings->libraryPath, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
 			settings->libraryPath);
 	return formatted;
 }
@@ -1080,7 +1089,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 				snprintf(path, sizeof(path), "/%s", strcmp(saves_folder(), "/") ? saves_folder() : "");
 				length = strlen(path);
 				snprintf(folder, sizeof(folder), "%s%s", length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
-					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? path + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
+					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? pathTail(path, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
 				rowText(row, "Save Folder:", folder, devices[DEVICE_CONFIG] != NULL);
 			}
 			break;

@@ -1350,16 +1350,16 @@ static bool _PreparePresentation(drawPresentationEvent_t *data,
 	memset(data, 0, sizeof(*data));
 	data->snapshot.kind = snapshot->kind;
 	data->titleScale = UIHomeText_CopyFitted(data->snapshot.title,
-		sizeof(data->snapshot.title), snapshot->title, 392, 0.76f,
+		sizeof(data->snapshot.title), UI_T(snapshot->title), 392, 0.76f,
 		GetTextSizeInPixels, NULL);
 	data->messageScale = UIHomeText_CopyFitted(data->snapshot.message,
-		sizeof(data->snapshot.message), snapshot->message, 432, 0.54f,
+		sizeof(data->snapshot.message), UI_T(snapshot->message), 432, 0.54f,
 		GetTextSizeInPixels, NULL);
 	data->detailScale = UIHomeText_CopyFitted(data->snapshot.detail,
-		sizeof(data->snapshot.detail), snapshot->detail, 432, 0.46f,
+		sizeof(data->snapshot.detail), UI_T(snapshot->detail), 432, 0.46f,
 		GetTextSizeInPixels, NULL);
 	data->actionScale = UIHomeText_CopyFitted(data->snapshot.action,
-		sizeof(data->snapshot.action), snapshot->action, 432, 0.50f,
+		sizeof(data->snapshot.action), UI_T(snapshot->action), 432, 0.50f,
 		GetTextSizeInPixels, NULL);
 	return UIPresentation_Valid(&data->snapshot);
 }
@@ -1468,16 +1468,16 @@ static bool _PrepareSaveDetails(drawSaveDetailsEvent_t *data,
 	data->snapshot.blocks = snapshot->blocks;
 	data->snapshot.estimated = snapshot->estimated;
 	data->nameScale = UIHomeText_CopyFitted(data->snapshot.name,
-		sizeof(data->snapshot.name), snapshot->name, 432, 0.86f,
+		sizeof(data->snapshot.name), UI_T(snapshot->name), 432, 0.86f,
 		GetTextSizeInPixels, NULL);
 	data->sourceScale = UIHomeText_CopyFitted(data->snapshot.source,
-		sizeof(data->snapshot.source), snapshot->source, 286, 0.60f,
+		sizeof(data->snapshot.source), UI_T(snapshot->source), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	data->updatedScale = UIHomeText_CopyFitted(data->snapshot.updated,
-		sizeof(data->snapshot.updated), snapshot->updated, 286, 0.60f,
+		sizeof(data->snapshot.updated), UI_T(snapshot->updated), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	data->iconScale = UIHomeText_CopyFitted(data->snapshot.icon,
-		sizeof(data->snapshot.icon), snapshot->icon, 286, 0.60f,
+		sizeof(data->snapshot.icon), UI_T(snapshot->icon), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	snprintf(data->blocks, sizeof(data->blocks), "%u", (unsigned)snapshot->blocks);
 	snprintf(data->kib, sizeof(data->kib), "%u", (unsigned)(snapshot->blocks * 8u));
@@ -2608,6 +2608,7 @@ static void _GameflowShortName(const char *title,
 		name[k] = c >= 'a' && c <= 'z' ? (char)(c - 'a' + 'A') : c;
 	}
 	if(title[k] != '\0') {
+		k = UILang_Head(title, k);
 		name[k++] = '\205';
 	}
 	name[k] = '\0';
@@ -5112,7 +5113,7 @@ static void _PrepareHomeText(drawHomeEvent_t *data)
 		headingSource[sizeof(headingSource) - 1u] = '\0';
 	}
 	data->headingScale = UIHomeText_CopyFitted(data->heading,
-		sizeof(data->heading), headingSource, titleWidth, 0.58f,
+		sizeof(data->heading), UI_T(headingSource), titleWidth, 0.58f,
 		GetTextSizeInPixels, NULL);
 	for(row = 0; row < UI_HOME_LAYOUT_MAX_ROWS; ++row) {
 		const char *label = UIHome_RowLabel(data->state.surface, row);
@@ -8425,7 +8426,7 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 		// Double box for extra darkness
 		uiDrawObj_t *newPanel = DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440);
 		DrawAddChild(newPanel, DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440));
-		sprintf(txtbuffer, UI_T("%s - Please enter a value"), label);
+		sprintf(txtbuffer, UI_T("%s - Please enter a value"), UI_T(label));
 		DrawAddChild(newPanel, DrawStyledLabel(25, 74, txtbuffer, GetTextScaleToFitInWidth(txtbuffer, getVideoMode()->fbWidth-50), ALIGN_LEFT, defaultColor));
 
 		// Draw the text entry box (TODO: mask chars if the mode says to do so)

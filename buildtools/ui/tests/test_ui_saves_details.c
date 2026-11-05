@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "ui_saves_details.h"
+#include "ui_lang.h"
 
 int main(void)
 {
@@ -34,6 +35,20 @@ int main(void)
 	assert(strlen(snapshot.name) == sizeof(snapshot.name) - 1u);
 	assert((unsigned char)snapshot.name[sizeof(snapshot.name) - 2u] == 0x85u);
 	assert(snapshot.estimated && UISaveDetails_Valid(&snapshot));
+	/* A Cyrillic name is cut between letters before its ellipsis. */
+	longName[0] = 'a';
+	for(size_t i = 1u; i + 2u < sizeof(longName); i += 2u) {
+		longName[i] = (char)0xd1;
+		longName[i + 1u] = (char)0x8f; /* я */
+	}
+	longName[sizeof(longName) - 1u] = '\0';
+	assert(UISaveDetails_Build(&snapshot, longName, 1u, false, "SD save", "Unknown", "None stored"));
+	{
+		size_t at = strlen(snapshot.name) - 1u;
+
+		assert((unsigned char)snapshot.name[at] == 0x85u);
+		assert(UILang_Head(snapshot.name, at) == at);
+	}
 	assert(!UISaveDetails_Build(&snapshot, "Save", UINT32_MAX / 8u + 1u,
 		false, "SD save", "Unknown", "None stored"));
 	assert(!UISaveDetails_Valid(&snapshot));

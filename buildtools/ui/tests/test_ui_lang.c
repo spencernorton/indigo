@@ -124,17 +124,24 @@ static void test_lookup(void)
 		"msgid \"Settings\"\nmsgstr \"Налаштування\"\n"
 		"msgid \"Settings\"\nmsgstr \"Друге\"\n"
 		"msgid \"%d enabled\"\nmsgstr \"Увімкнено: %d\"\n";
-	char *data = malloc(sizeof(file));
+	/* A comment far longer than the entries, which the table doesn't keep. */
+	const size_t comment = 8192u;
+	char *data = malloc(comment + sizeof(file));
 	char line[32];
 
 	CHECK(!UILang_Loaded(UI_LANG_UKRAINIAN));
+	CHECK(UILang_MemoryFootprint() == 0u);
 	UILang_Select(UI_LANG_UKRAINIAN);
 	/* No table yet: English. */
 	CHECK(!strcmp(UILang_Text("Settings"), "Settings"));
 	CHECK(UILang_Text(NULL) == NULL);
-	memcpy(data, file, sizeof(file));
-	CHECK(UILang_Load(UI_LANG_UKRAINIAN, data, sizeof(file) - 1u));
+	memset(data, '#', comment - 1u);
+	data[comment - 1u] = '\n';
+	memcpy(data + comment, file, sizeof(file));
+	CHECK(UILang_Load(UI_LANG_UKRAINIAN, data, comment + sizeof(file) - 1u));
 	CHECK(UILang_Loaded(UI_LANG_UKRAINIAN));
+	/* The strings, three entries and a 16-slot index; data is freed. */
+	CHECK(UILang_MemoryFootprint() > 0u && UILang_MemoryFootprint() < 512u);
 	CHECK(!strcmp(UILang_Text("Settings"), "Налаштування")); /* the first wins */
 	CHECK(!strcmp(UILang_Text("Library"), "Library"));
 	snprintf(line, sizeof(line), UI_T("%d enabled"), 3);

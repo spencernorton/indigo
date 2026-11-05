@@ -70,10 +70,10 @@ static int fontCharacter(const char *text, void **sheet, int *s0, int *t0,
 		}
 		code = '?';
 	}
-	else if(code >= 0xd0u && code <= 0xd2u &&
-		(text[1] == '\0' || (unsigned char)text[1] == 0x85u)) {
-		/* Half a letter, where a byte budget cut the text (before its
-		 * ellipsis, or at its end): nothing, not an IPL letter. */
+	else if(code >= 0xd0u && code <= 0xd2u && text[1] == '\0') {
+		/* Half a letter, where a byte budget (snprintf's) cut the text at
+		 * its end: nothing, not an IPL letter. Cuts before an ellipsis
+		 * keep whole letters (UILang_Head). */
 		SYS_GetFontTexture(' ', sheet, s0, t0, width);
 		*width = 1;
 		return bytes;
