@@ -25,6 +25,7 @@
 #include "ui_time_sync.h"
 #include "input.h"
 #include "ui_color.h"
+#include "ui_lang.h"
 #include "ui_motion.h"
 #include "ui_settings_layout.h"
 #include "saves.h"
@@ -169,6 +170,7 @@ static char *tooltips_interface[PAGE_INTERFACE_MAX+1] = {
 	[SET_WAVES] = "Waves:\n\nOn - Waves drift behind the cube (default)\nOff - No waves: the backdrop and its rings only\n\nWave Color and Wave Speed apply while they are on.",
 	[SET_HOME_CONTROLS] = "On-screen Controls:\n\nOn - Home shows its button hints under the cube (default)\nOff - Home shows none\n\nOther screens, and Restart's question, keep theirs.\nY on Home always opens Settings.",
 	[SET_FACE_LABELS] = "Face Labels:\n\nOn - Home names the face in front under the cube (default)\nOff - The cube shows only its icons.",
+	[SET_MENU_LANGUAGE] = "Menu Language:\n\nThe language Indigo's menus are in: English (default) or\nUkrainian. Ukrainian's words come from swiss/indigo/uk.po on\nthe settings device; without that file the menus stay English.\n\nGames, their titles and System Language don't change, and\nthe settings files stay in English.",
 	[SET_WAVE_SPEED] = "Wave Speed:\n\nHow fast the waves behind the cube drift.\nSlow - Half as fast\nNormal - As they always have (default)\nFast - Three times as fast\n\nUI Motion Off or Reduced, or Animated Backdrop off (Setup >\nLibrary), still stops them.",
 	[SET_CLOCK_POSITION] = "Clock:\n\nRight - The time sits in the top right corner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nTemperature places the temperature dial on its own.",
 	[SET_TEMPERATURE_POSITION] = "Temperature:\n\nRight - The CPU temperature dial sits in the top right\ncorner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nIn the clock's corner, the dial sits nearer the edge.",
@@ -255,6 +257,17 @@ char* getAutoLoadDeviceName(SwissSettings *settings) {
 	return entryDevice != NULL ? (char*)(entryDevice->deviceName) : "None";
 }
 
+/* The end of a path too long for a value: its last max bytes, or one fewer
+ * where the cut would start inside a Cyrillic letter. */
+static const char *pathTail(const char *path, size_t length, size_t max)
+{
+	size_t start = length - max;
+	int bytes;
+
+	UILang_Character(path + start - 1u, &bytes);
+	return path + start + (bytes == 2);
+}
+
 char* getLibraryPathName(SwissSettings *settings) {
 	static char formatted[UI_SETLAYOUT_VALUE_TEXT_MAX + 1];
 	DEVICEHANDLER_INTERFACE *sourceDevice = getDeviceFromPath(settings->libraryPath);
@@ -267,7 +280,7 @@ char* getLibraryPathName(SwissSettings *settings) {
 	snprintf(formatted, sizeof(formatted), "%s%s",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ?
-			settings->libraryPath + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
+			pathTail(settings->libraryPath, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
 			settings->libraryPath);
 	return formatted;
 }
@@ -506,7 +519,7 @@ static void drawSettingsChrome(uiSetPageSnapshot_t *page, int page_num,
 	if(layout->tabCount == 0) {
 		n = settings_game_custom_count(gameConfig);
 		if(n > 0) {
-			snprintf(text, sizeof(text), "%d custom", n);
+			snprintf(text, sizeof(text), UI_T("%d custom"), n);
 		}
 		(void)prepareSettingText(n > 0 ? text : "No custom settings",
 			sizeof(text) - 1u, UI_SETLAYOUT_ELLIPSIZE_TAIL,
@@ -615,6 +628,7 @@ static const settingsRowRef_t displayRows[] = {
 };
 
 static const settingsRowRef_t consoleRows[] = {
+	{PAGE_INTERFACE, SET_MENU_LANGUAGE},
 	{PAGE_INTERFACE, SET_UI_COLOR},
 	{PAGE_INTERFACE, SET_UI_BACKDROP_COLOR},
 	{PAGE_INTERFACE, SET_WAVES},
@@ -990,7 +1004,7 @@ static void rowShow(settingRowView_t *row, uiSettingRowKind_t kind,
 	const char *label, const char *value, bool enabled)
 {
 	row->kind = kind;
-	row->label = label;
+	row->label = UI_T(label);
 	row->value = value;
 	row->enabled = enabled;
 	row->on = false;
@@ -1020,7 +1034,7 @@ static void rowOnOff(settingRowView_t *row, const char *label, bool on,
 static void rowNumber(settingRowView_t *row, const char *label,
 	const char *format, int value, bool enabled)
 {
-	snprintf(row->text, sizeof(row->text), format, value);
+	snprintf(row->text, sizeof(row->text), UI_T(format), value);
 	rowShow(row, SET_ROWKIND_CYCLE, label, row->text, enabled);
 }
 
@@ -1077,7 +1091,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 				snprintf(path, sizeof(path), "/%s", strcmp(saves_folder(), "/") ? saves_folder() : "");
 				length = strlen(path);
 				snprintf(folder, sizeof(folder), "%s%s", length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
-					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? path + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
+					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? pathTail(path, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
 				rowText(row, "Save Folder:", folder, devices[DEVICE_CONFIG] != NULL);
 			}
 			break;
@@ -1145,6 +1159,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_LIBRARY_FOLDERS: rowOnOff(row, "Library Folders:", swissSettings.libraryFolders, true); break;
 			case SET_DETAIL_SAVES: rowCycle(row, "Saves on Details:", swissSettings.hideDetailSaves ? "Off" : swissSettings.alwaysShowDetailSaves ? "Always" : "On", true); break;
 			case SET_MENU_WIDESCREEN: rowYesNo(row, "Menu Widescreen:", swissSettings.menuWidescreen, true); break;
+			case SET_MENU_LANGUAGE: rowCycle(row, "Menu Language:", uiLangNames[swissSettings.menuLanguage], true); break;
 		}
 	}
 	else if(page == PAGE_NETWORK) {
@@ -1633,10 +1648,10 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 					swissSettings.rt4kOptim ^= 1;
 					switch(swissSettings.aveCompat) {
 						case GCDIGITAL_COMPAT:
-							sprintf(txtbuffer, "In the \223GCDigital Settings\224 menu,\nset \223Use console DE\224 to %s.", swissSettings.rt4kOptim ? "on (4:3)" : "off");
+							sprintf(txtbuffer, UI_T("In the \223GCDigital Settings\224 menu,\nset \223Use console DE\224 to %s."), swissSettings.rt4kOptim ? "on (4:3)" : "off");
 						break;
 						case GCVIDEO_COMPAT:
-							sprintf(txtbuffer, "In the GCVideo \223Advanced Settings\224\nmenu, set \223Fix Resolution\224 to %s.", swissSettings.rt4kOptim ? "Off" : "On");
+							sprintf(txtbuffer, UI_T("In the GCVideo \223Advanced Settings\224\nmenu, set \223Fix Resolution\224 to %s."), swissSettings.rt4kOptim ? "Off" : "On");
 						break;
 					}
 					uiDrawObj_t *msgBox = DrawPublish(DrawMessageBox(D_INFO, txtbuffer));
@@ -1838,6 +1853,13 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_MENU_WIDESCREEN:
 				swissSettings.menuWidescreen ^= 1;
+			break;
+			case SET_MENU_LANGUAGE:
+				swissSettings.menuLanguage += direction;
+				swissSettings.menuLanguage = (swissSettings.menuLanguage + UI_LANG_MAX) % UI_LANG_MAX;
+				config_load_language(swissSettings.menuLanguage, true);
+				/* The page is rebuilt before the next frame selects it. */
+				UILang_Select(swissSettings.menuLanguage);
 			break;
 		}
 	}
@@ -2475,14 +2497,14 @@ static bool settingsKeepVideoMode(const settingRowView_t *row)
 
 		if(seconds != shown) {
 			/* DrawMessageBox copies into txtbuffer, so format elsewhere. */
-			char message[128];
+			char message[256];
 
 			/* Three lines: a fourth runs past the 125 px box. The first names
 			 * the new value, as the row behind shows it. The last is the
 			 * buttons, which DrawMessageBox draws as icons. */
-			snprintf(message, sizeof(message), "Keep %s %s?\n"
+			snprintf(message, sizeof(message), UI_T("Keep %s %s?\n"
 				"It changes back by itself in %d s.\n"
-				"A  KEEP    B  CHANGE BACK", row->label, row->value, seconds);
+				"A  KEEP    B  CHANGE BACK"), row->label, UI_T(row->value), seconds);
 			box = box == NULL ?
 				DrawPublish(DrawMessageBox(D_WARN, message)) :
 				DrawRepublish(box, DrawMessageBox(D_WARN, message));

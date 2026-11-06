@@ -514,7 +514,7 @@ def main():
         (path / "test.c").write_text(HARNESS + "\n".join(sources) + MAIN)
         command = [os.environ.get("CC", "cc"), "-std=c11", "-D_POSIX_C_SOURCE=200112L",
                    "-Wall", "-Wextra", "-Werror", "-g", "-I", str(GUI),
-                   str(path / "test.c"), str(GUI / "ui_saves.c"),
+                   str(path / "test.c"), str(GUI / "ui_saves.c"), str(GUI / "ui_lang.c"),
                    str(GUI / "ui_saves_metadata.c"), str(GUI / "ui_saves_raw.c"),
                    "-o", str(path / "test")]
         if args.sanitize:

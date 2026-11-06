@@ -1,0 +1,6649 @@
+# Indigo's interface in Ukrainian: Menu Language reads this file from
+# swiss/indigo/uk.po on the settings device (gui/ui_lang.h).
+#
+# Each msgid is an English string exactly as the code spells it; bytes
+# above 127 in it are the IPL font's (\205 is its ellipsis). A msgstr is
+# UTF-8 and may use ASCII, Ukrainian letters and those IPL bytes. It keeps
+# its msgid's printf conversions in order, its trailing colon, and
+# Swiss's English button prompts ("Press A to continue."), which are drawn
+# as icons. buildtools/ui/tests/test_lang.py checks all of this, and
+# buildtools/ui/lang_strings.py --missing lists what is left to translate.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: uk\n"
+
+#: cube/swiss/source/gui/apps.c:47
+msgid "No apps in /apps on this device"
+msgstr "На цьому пристрої немає програм у /apps"
+
+#: cube/swiss/source/gui/apps.c:48 cube/swiss/source/gui/ui_home.c:9
+msgid "EMULATORS"
+msgstr "ЕМУЛЯТОРИ"
+
+#: cube/swiss/source/gui/apps.c:49
+msgid "No emulators in /emulators on this device"
+msgstr "На цьому пристрої немає емуляторів у /emulators"
+
+#: cube/swiss/source/gui/apps.c:337
+msgid "This app couldn't start"
+msgstr "Програма не запустилася"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:310
+msgid "D-PAD  SELECT    A  OPEN    B  BACK"
+msgstr "D-PAD  ВИБРАТИ    A  ВІДКРИТИ    B  НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:310 cube/swiss/source/gui/FrameBufferMagic.c:312 cube/swiss/source/gui/FrameBufferMagic.c:5026
+msgid "SELECT"
+msgstr "ВИБРАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:310 cube/swiss/source/gui/FrameBufferMagic.c:4445 cube/swiss/source/gui/FrameBufferMagic.c:4446
+msgid "OPEN"
+msgstr "ВІДКРИТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:310 cube/swiss/source/gui/FrameBufferMagic.c:4445 cube/swiss/source/gui/FrameBufferMagic.c:4446
+msgid "BACK"
+msgstr "НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:312
+msgid "\213  \233  CHOOSE    A  SELECT    B  CANCEL"
+msgstr "\213  \233  ОБРАТИ    A  ВИБРАТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:312
+msgid "CHOOSE"
+msgstr "ОБРАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:312 cube/swiss/source/gui/ui_hint.c:186 cube/swiss/source/gui/ui_home.c:764
+msgid "CANCEL"
+msgstr "СКАСУВАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:314
+msgid "RELOADS INDIGO AND ENDS THIS SESSION"
+msgstr "ПЕРЕЗАВАНТАЖУЄ INDIGO І ЗАВЕРШУЄ СЕАНС"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:964
+msgid "Game Disc"
+msgstr "Ігровий диск"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1110
+msgid "Loading\205"
+msgstr "Завантаження"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1120
+msgid "B  Stop"
+msgstr "B  Стоп"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1120
+msgid "Stop"
+msgstr "Стоп"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1163
+msgid "Elapsed: %02i:%02i:%02i"
+msgstr "Минуло: %02i:%02i:%02i"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1165
+msgid "Remain: %02i:%02i:%02i"
+msgstr "Залишилось: %02i:%02i:%02i"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1435
+msgid "SAVE DETAILS"
+msgstr "ПРО ЗБЕРЕЖЕННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1437
+msgid "Estimated size"
+msgstr "Орієнтовний розмір"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1443
+msgid "Blocks"
+msgstr "Блоки"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1446 cube/swiss/source/gui/ui_files.c:404
+msgid "KiB"
+msgstr "KiB"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1447 cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99
+msgid "Source"
+msgstr "Джерело"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1450
+msgid "Last updated"
+msgstr "Оновлено"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1453
+msgid "Save icon"
+msgstr "Значок"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1456
+msgid "A  Actions"
+msgstr "A  Дії"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1456 cube/swiss/source/gui/ui_files.c:671 cube/swiss/source/gui/ui_files.c:717
+msgid "Actions"
+msgstr "Дії"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1457 cube/swiss/source/gui/FrameBufferMagic.c:6166 cube/swiss/source/gui/settings.c:1372
+msgid "B  Back"
+msgstr "B  Назад"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:1457 cube/swiss/source/gui/FrameBufferMagic.c:6166 cube/swiss/source/gui/FrameBufferMagic.c:8459
+msgid "Back"
+msgstr "Назад"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:2844 cube/swiss/source/swiss.c:4083 cube/swiss/source/swiss.c:4083
+msgid "RETURN"
+msgstr "НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:2844
+msgid "GAME DISC"
+msgstr "ІГРОВИЙ ДИСК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:2846 cube/swiss/source/gui/FrameBufferMagic.c:4419 cube/swiss/source/swiss.c:4081
+msgid "GAME LIBRARY"
+msgstr "БІБЛІОТЕКА ІГОР"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:2857 cube/swiss/source/gui/FrameBufferMagic.c:6927 cube/swiss/source/swiss.c:4092
+msgid "FOLDER"
+msgstr "ТЕКА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:2857
+msgid "APP"
+msgstr "ПРОГРАМА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3651
+msgid "LAUNCHING"
+msgstr "ЗАПУСК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3651
+msgid "GAME DETAIL"
+msgstr "ПРО ГРУ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3663
+msgid "LAST PLAYED"
+msgstr "ОСТАННЯ ГРА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3679
+msgid "\253 SAVES \273"
+msgstr "\253 ЗБЕРЕЖЕННЯ \273"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3679
+msgid "SAVES"
+msgstr "ЗБЕРЕЖЕННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3688
+msgid "MANUAL"
+msgstr "ПОСІБНИК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3693
+msgid "A  Read the manual"
+msgstr "A  Читати посібник"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3693
+msgid "Read the manual"
+msgstr "Читати посібник"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3701 cube/swiss/source/gui/FrameBufferMagic.c:4448 cube/swiss/source/gui/FrameBufferMagic.c:4449
+msgid "SETTINGS"
+msgstr "НАЛАШТУВАННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3718 cube/swiss/source/gui/ui_gameflow_detail.c:222
+msgid "CHEATS"
+msgstr "ЧИТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3738
+msgid "STARTING GAME..."
+msgstr "ЗАПУСК ГРИ..."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:3752
+msgid "SHORTCUTS"
+msgstr "ШВИДКІ ДІЇ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4419 cube/swiss/source/gui/ui_home.c:8
+msgid "APPS"
+msgstr "ПРОГРАМИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4442
+msgid "D-PAD  BROWSE   A  START   B  HOME"
+msgstr "D-PAD  ГОРТАТИ   A  ПУСК   B  ГОЛОВНА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4442 cube/swiss/source/gui/FrameBufferMagic.c:4445 cube/swiss/source/gui/FrameBufferMagic.c:4446
+msgid "BROWSE"
+msgstr "ГОРТАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4442 cube/swiss/source/gui/FrameBufferMagic.c:4446 cube/swiss/source/gui/FrameBufferMagic.c:4449
+msgid "HOME"
+msgstr "ГОЛОВНА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4445
+msgid "D-PAD  BROWSE   A  OPEN   B  BACK"
+msgstr "D-PAD  ГОРТАТИ   A  ВІДКРИТИ   B  НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4446
+msgid "D-PAD  BROWSE   A  OPEN   X  BACK   B  HOME"
+msgstr "D-PAD  ГОРТАТИ   A  ВІДКРИТИ   X  НАЗАД   B  ГОЛОВНА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4448
+msgid "D-PAD  BROWSE   A  OPEN   Y  SETTINGS   B  BACK"
+msgstr "D-PAD  ГОРТАТИ   A  ВІДКРИТИ   Y  НАЛАШТУВАННЯ   B  НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4449
+msgid "D-PAD  BROWSE   A  OPEN   Y  SETTINGS   X  BACK   B  HOME"
+msgstr "D-PAD  ГОРТАТИ   A  ВІДКРИТИ   Y  НАЛАШТУВАННЯ   X  НАЗАД   B  ГОЛОВНА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4645 cube/swiss/source/gui/ui_home.c:742
+msgid "RESTART INDIGO?"
+msgstr "ПЕРЕЗАПУСТИТИ INDIGO?"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4927
+msgid "DESTINATION"
+msgstr "ПРИЗНАЧЕННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4927 cube/swiss/source/gui/FrameBufferMagic.c:7944 cube/swiss/source/gui/info.c:432
+msgid "SOURCE"
+msgstr "ДЖЕРЕЛО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4953
+msgid "SLOT A"
+msgstr "СЛОТ A"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4953
+msgid "SLOT B"
+msgstr "СЛОТ B"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4954 cube/swiss/source/gui/info.c:490
+msgid "SERIAL PORT 1"
+msgstr "ПОСЛІДОВНИЙ ПОРТ 1"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4955 cube/swiss/source/gui/info.c:491
+msgid "SERIAL PORT 2"
+msgstr "ПОСЛІДОВНИЙ ПОРТ 2"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4955
+msgid "HI-SPEED PORT"
+msgstr "ШВИДКІСНИЙ ПОРТ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4956
+msgid "DISC DRIVE"
+msgstr "ПРИВІД ДИСКІВ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4956 cube/swiss/source/gui/ui_system_info.c:9
+msgid "CONSOLE"
+msgstr "КОНСОЛЬ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4970
+msgid "FILES"
+msgstr "ФАЙЛИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4971
+msgid "BOOT + STREAM"
+msgstr "ЗАПУСК + ПОТІК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4971
+msgid "BOOT"
+msgstr "ЗАПУСК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4975 cube/swiss/source/gui/FrameBufferMagic.c:5029
+msgid "DETECTED"
+msgstr "ВИЯВЛЕНО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4975
+msgid "NOT DETECTED"
+msgstr "НЕ ВИЯВЛЕНО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4976
+msgid "  \267  CURRENT"
+msgstr "  \267  ПОТОЧНИЙ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:4976
+msgid "  \267  SETTINGS"
+msgstr "  \267  НАЛАШТУВАННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5020
+msgid "STICK / D-PAD  SPEED   A  DONE   B  BACK"
+msgstr "STICK / D-PAD  ШВИДКІСТЬ   A  ГОТОВО   B  НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5020
+msgid "SPEED"
+msgstr "ШВИДКІСТЬ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5020
+msgid "DONE"
+msgstr "ГОТОВО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5024
+msgid "%sA  %s%s%s   Z  %s   B  BACK"
+msgstr "%sA  %s%s%s   Z  %s   B  НАЗАД"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5024 cube/swiss/source/gui/saves.c:1215 cube/swiss/source/gui/saves.c:1215
+msgid "%s"
+msgstr "%s"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5025
+msgid "STICK / D-PAD  CHANGE   "
+msgstr "STICK / D-PAD  ЗМІНИТИ   "
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5025
+msgid "CHANGE"
+msgstr "ЗМІНИТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5026
+msgid "TRY"
+msgstr "СПРОБУВАТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5027
+msgid "   Y  INFO"
+msgstr "   Y  ІНФО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5027
+msgid "INFO"
+msgstr "ІНФО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5029
+msgid "ALL"
+msgstr "УСІ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5093
+msgid "STICK / D-PAD  TURN    "
+msgstr "STICK / D-PAD  КРУТИТИ    "
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5093
+msgid "TURN"
+msgstr "КРУТИТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5095
+msgid "    START  RECENT"
+msgstr "    START  НЕЩОДАВНІ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5095
+msgid "RECENT"
+msgstr "НЕЩОДАВНІ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5097
+msgid "    Y  SETTINGS"
+msgstr "    Y  НАЛАШТУВАННЯ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5102
+msgid "SOURCE   %s"
+msgstr "ДЖЕРЕЛО   %s"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5106
+msgid "SOURCE   NO SOURCE"
+msgstr "ДЖЕРЕЛО   НЕМАЄ ДЖЕРЕЛА"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5879
+msgid "%s Parameters:"
+msgstr "Параметри %s:"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5894
+msgid "Default values will be used by the DOL being loaded if a"
+msgstr "Якщо параметр не ввімкнено, DOL, що завантажується,"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5895
+msgid "parameter is not enabled. Please check the documentation"
+msgstr "використає типове значення. Якщо ви не впевнені щодо"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5896
+msgid "for this DOL if you are unsure of the default values."
+msgstr "типових значень, перегляньте документацію до цього DOL."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5897
+msgid "A  Toggle Param    START  Load the DOL"
+msgstr "A  Перемкнути    START  Запустити DOL"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5897
+msgid "Toggle Param"
+msgstr "Перемкнути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5897
+msgid "Load the DOL"
+msgstr "Запустити DOL"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5973 cube/swiss/source/gui/settings.c:66 cube/swiss/source/gui/ui_settings_layout.c:94
+msgid "Game"
+msgstr "Гра"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5982
+msgid "%d enabled"
+msgstr "Увімкнено: %d"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:5989
+msgid "Cheat memory   %d of %d bytes"
+msgstr "Пам'ять читів   %d з %d байт"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6002 cube/swiss/source/gui/ui_gameflow_detail.c:477
+msgid "Unnamed cheat"
+msgstr "Чит без назви"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6009
+msgid "No cheat selected"
+msgstr "Чит не вибрано"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6078
+msgid "ON"
+msgstr "УВІМК."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6078
+msgid "OFF"
+msgstr "ВИМК."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6111
+msgid "ADVANCED"
+msgstr "ДОДАТКОВО"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6112
+msgid "Selected cheat"
+msgstr "Вибраний чит"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6119
+msgid "WiiRD Debug"
+msgstr "Налагодження WiiRD"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6121
+msgid "For compatible debugging tools."
+msgstr "Для сумісних засобів налагодження."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6128
+msgid "ENABLED ONLY"
+msgstr "ЛИШЕ УВІМКНЕНІ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6128
+msgid "ALL CHEATS"
+msgstr "УСІ ЧИТИ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6154
+msgid "No cheats enabled"
+msgstr "Немає увімкнених читів"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6154
+msgid "No cheats available"
+msgstr "Немає доступних читів"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6157
+msgid "X  Browse all cheats"
+msgstr "X  Усі чити"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6157
+msgid "Browse all cheats"
+msgstr "Усі чити"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6157
+msgid "B  Return to your game"
+msgstr "B  Назад до гри"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6157
+msgid "Return to your game"
+msgstr "Назад до гри"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6165
+msgid "A  Toggle debug"
+msgstr "A  Перемкнути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6165
+msgid "Toggle debug"
+msgstr "Перемкнути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6169
+msgid "A  Toggle"
+msgstr "A  Перемкнути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6169
+msgid "Toggle"
+msgstr "Перемкнути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6170 cube/swiss/source/gui/settings.c:1372
+msgid "B  Done"
+msgstr "B  Готово"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6170 cube/swiss/source/gui/settings.c:1372
+msgid "Done"
+msgstr "Готово"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6171
+msgid "X  Show all"
+msgstr "X  Показати всі"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6171
+msgid "Show all"
+msgstr "Показати всі"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6171
+msgid "X  Enabled only"
+msgstr "X  Лише увімкнені"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6171
+msgid "Enabled only"
+msgstr "Лише увімкнені"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6173
+msgid "Z  Advanced"
+msgstr "Z  Додатково"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6173
+msgid "Advanced"
+msgstr "Додатково"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6277
+msgid "Turn off a cheat to make room for debugging."
+msgstr "Вимкніть чит, щоб звільнити місце для налагодження."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6283
+msgid "Not enough room. Turn off another cheat first."
+msgstr "Бракує місця. Спершу вимкніть інший чит."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6586
+msgid "CUSTOM"
+msgstr "ВЛАСНЕ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6770
+msgid "CURRENT"
+msgstr "ПОТОЧНЕ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6883
+msgid "B  Close"
+msgstr "B  Закрити"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6883
+msgid "Close"
+msgstr "Закрити"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6928
+msgid "FULL PATH"
+msgstr "ПОВНИЙ ШЛЯХ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6933
+msgid "%u-%u of %u"
+msgstr "%u-%u з %u"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6937
+msgid "UP/DOWN  Scroll path"
+msgstr "UP/DOWN  Гортати шлях"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6949
+msgid "COLOR"
+msgstr "КОЛІР"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6952
+msgid "Left/Right previews a color; Default keeps the original folder cube."
+msgstr "Вліво/вправо - перегляд кольору; Типово - звичайний куб теки."
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6954
+msgid "LEFT/RIGHT  Color   Y  Reset   A  Save   B  Cancel"
+msgstr "LEFT/RIGHT  Колір   Y  Скинути   A  Зберегти   B  Скасувати"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6954 cube/swiss/source/gui/settings.c:1318
+msgid "Reset"
+msgstr "Скинути"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6954 cube/swiss/source/gui/settings.c:1365
+msgid "Save"
+msgstr "Зберегти"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:6954 cube/swiss/source/gui/saves.c:1203 cube/swiss/source/gui/saves.c:1206
+msgid "Cancel"
+msgstr "Скасувати"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:7306
+msgid "Open "
+msgstr "Вільно "
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:7960 cube/swiss/source/gui/ui_gameflow_detail.c:169 cube/swiss/source/gui/ui_gameflow_detail.c:229
+msgid "AUTOLOAD"
+msgstr "АВТОЗАПУСК"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8272 cube/swiss/source/swiss.c:6700
+msgid "Reading\205"
+msgstr "Читання\205"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8302
+msgid "UPPERCASE"
+msgstr "ВЕЛИКІ"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8428
+msgid "%s - Please enter a value"
+msgstr "%s - введіть значення"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8434
+msgid "L/R  Cursor    START  Accept    B  Discard"
+msgstr "L/R  Курсор    START  Готово    B  Скасувати"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8434
+msgid "Cursor"
+msgstr "Курсор"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8434
+msgid "Accept"
+msgstr "Готово"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8434 cube/swiss/source/gui/settings.c:1369
+msgid "Discard"
+msgstr "Скасувати"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8442
+msgid "X  Change to [%s], current mode is [%s]"
+msgstr "X  Змінити на [%s], поточний режим [%s]"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8442
+msgid "Change to [%s], current mode is [%s]"
+msgstr "Змінити на [%s], поточний режим [%s]"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8459
+msgid "Space"
+msgstr "Пробіл"
+
+#: cube/swiss/source/gui/FrameBufferMagic.c:8459
+msgid "Y  Back"
+msgstr "Y  Назад"
+
+#: cube/swiss/source/gui/info.c:45 cube/swiss/source/gui/ui_system_info.c:217 cube/swiss/source/gui/ui_system_info.c:271
+msgid "UNAVAILABLE"
+msgstr "НЕДОСТУПНО"
+
+#: cube/swiss/source/gui/info.c:175
+msgid "Unknown (0x%08X)"
+msgstr "Невідомо (0x%08X)"
+
+#: cube/swiss/source/gui/info.c:185
+msgid "NOT CONNECTED"
+msgstr "НЕ ПІДКЛЮЧЕНО"
+
+#: cube/swiss/source/gui/info.c:188
+msgid "TARUKONGA CONTROLLER"
+msgstr "КОНТРОЛЕР TARUKONGA"
+
+#: cube/swiss/source/gui/info.c:258
+msgid "%.*s (%s MODE)"
+msgstr "%.*s (%s РЕЖИМ)"
+
+#: cube/swiss/source/gui/info.c:259
+msgid "PRODUCTION"
+msgstr "ВИРОБНИЧИЙ"
+
+#: cube/swiss/source/gui/info.c:259
+msgid "DEVELOPMENT"
+msgstr "РОЗРОБНИЦЬКИЙ"
+
+#: cube/swiss/source/gui/info.c:263
+msgid "DUMMY IPL"
+msgstr "IPL-ЗАГЛУШКА"
+
+#: cube/swiss/source/gui/info.c:293 cube/swiss/source/gui/info.c:312
+msgid "UNKNOWN (0x%08X)"
+msgstr "НЕВІДОМО (0x%08X)"
+
+#: cube/swiss/source/gui/info.c:411
+msgid "LOCAL TIME"
+msgstr "МІСЦЕВИЙ ЧАС"
+
+#: cube/swiss/source/gui/info.c:419
+msgid "CPU THERMAL / MINUTE SAMPLE"
+msgstr "ТЕМПЕРАТУРА CPU / ЩОХВИЛИНИ"
+
+#: cube/swiss/source/gui/info.c:423
+msgid "CALIBRATION"
+msgstr "КАЛІБРУВАННЯ"
+
+#: cube/swiss/source/gui/info.c:427
+msgid "ADJUST IN SETUP / CONSOLE"
+msgstr "ЗМІНИТИ: ПАРАМЕТРИ / КОНСОЛЬ"
+
+#: cube/swiss/source/gui/info.c:430
+msgid "ACTIVE SESSION"
+msgstr "ПОТОЧНИЙ СЕАНС"
+
+#: cube/swiss/source/gui/info.c:433 cube/swiss/source/gui/info.c:502 cube/swiss/source/gui/info.c:504
+msgid "NONE"
+msgstr "НЕМАЄ"
+
+#: cube/swiss/source/gui/info.c:434
+msgid "SOURCE STATUS"
+msgstr "СТАН ДЖЕРЕЛА"
+
+#: cube/swiss/source/gui/info.c:436
+msgid "VIDEO"
+msgstr "ВІДЕО"
+
+#: cube/swiss/source/gui/info.c:437 cube/swiss/source/gui/info.c:534
+msgid "REGION"
+msgstr "РЕГІОН"
+
+#: cube/swiss/source/gui/info.c:439
+msgid "BUILD"
+msgstr "ЗБІРКА"
+
+#: cube/swiss/source/gui/info.c:458
+msgid "MODEL"
+msgstr "МОДЕЛЬ"
+
+#: cube/swiss/source/gui/info.c:459
+msgid "IPL VERSION"
+msgstr "ВЕРСІЯ IPL"
+
+#: cube/swiss/source/gui/info.c:461
+msgid "SYSTEM-ON-CHIP"
+msgstr "СИСТЕМА НА ЧИПІ"
+
+#: cube/swiss/source/gui/info.c:486
+msgid "EXTERNAL PORTS"
+msgstr "ЗОВНІШНІ ПОРТИ"
+
+#: cube/swiss/source/gui/info.c:488
+msgid "SLOT-A"
+msgstr "СЛОТ A"
+
+#: cube/swiss/source/gui/info.c:489
+msgid "SLOT-B"
+msgstr "СЛОТ B"
+
+#: cube/swiss/source/gui/info.c:492
+msgid "DVD INTERFACE"
+msgstr "ІНТЕРФЕЙС DVD"
+
+#: cube/swiss/source/gui/info.c:493
+msgid "HIGH SPEED PORT"
+msgstr "ШВИДКІСНИЙ ПОРТ"
+
+#: cube/swiss/source/gui/info.c:495
+msgid "LIVE SNAPSHOT"
+msgstr "ПОТОЧНИЙ СТАН"
+
+#: cube/swiss/source/gui/info.c:497
+msgid "SLOT-A HOTPLUG"
+msgstr "СЛОТ A (ГАРЯЧЕ ПІДКЛ.)"
+
+#: cube/swiss/source/gui/info.c:499
+msgid "SLOT-B HOTPLUG"
+msgstr "СЛОТ B (ГАРЯЧЕ ПІДКЛ.)"
+
+#: cube/swiss/source/gui/info.c:501
+msgid "CURRENT SOURCE"
+msgstr "ПОТОЧНЕ ДЖЕРЕЛО"
+
+#: cube/swiss/source/gui/info.c:503
+msgid "CONFIGURATION"
+msgstr "КОНФІГУРАЦІЯ"
+
+#: cube/swiss/source/gui/info.c:505 cube/swiss/source/gui/info.c:540
+msgid "REOPEN PAGE TO REFRESH"
+msgstr "ВІДКРИЙТЕ ЗНОВУ, ЩОБ ОНОВИТИ"
+
+#: cube/swiss/source/gui/info.c:517
+msgid "CONTROLLERS"
+msgstr "КОНТРОЛЕРИ"
+
+#: cube/swiss/source/gui/info.c:519
+msgid "SOCKET 1"
+msgstr "ГНІЗДО 1"
+
+#: cube/swiss/source/gui/info.c:521
+msgid "SOCKET 2"
+msgstr "ГНІЗДО 2"
+
+#: cube/swiss/source/gui/info.c:523
+msgid "SOCKET 3"
+msgstr "ГНІЗДО 3"
+
+#: cube/swiss/source/gui/info.c:525
+msgid "SOCKET 4"
+msgstr "ГНІЗДО 4"
+
+#: cube/swiss/source/gui/info.c:528
+msgid "VIDEO & REGION"
+msgstr "ВІДЕО І РЕГІОН"
+
+#: cube/swiss/source/gui/info.c:530
+msgid "VIDEO MODE"
+msgstr "ВІДЕОРЕЖИМ"
+
+#: cube/swiss/source/gui/info.c:531
+msgid "PROGRESSIVE"
+msgstr "ПРОГРЕСИВНА"
+
+#: cube/swiss/source/gui/info.c:532
+msgid "ENABLED"
+msgstr "УВІМКНЕНО"
+
+#: cube/swiss/source/gui/info.c:532
+msgid "FORCED"
+msgstr "ПРИМУСОВО"
+
+#: cube/swiss/source/gui/info.c:533
+msgid "DISABLED"
+msgstr "ВИМКНЕНО"
+
+#: cube/swiss/source/gui/info.c:536
+msgid "AUDIO"
+msgstr "ЗВУК"
+
+#: cube/swiss/source/gui/info.c:537
+msgid "STEREO"
+msgstr "СТЕРЕО"
+
+#: cube/swiss/source/gui/info.c:537
+msgid "MONO"
+msgstr "МОНО"
+
+#: cube/swiss/source/gui/info.c:538
+msgid "LANGUAGE"
+msgstr "МОВА"
+
+#: cube/swiss/source/gui/info.c:550
+msgid "COMMIT %s  /  REVISION %s"
+msgstr "КОМІТ %s  /  РЕВІЗІЯ %s"
+
+#: cube/swiss/source/gui/info.c:552
+msgid "BUILT WITH %s"
+msgstr "КОМПІЛЯТОР: %s"
+
+#: cube/swiss/source/gui/info.c:558
+msgid "BY EMU_KIDID & EXTREMS, 2026"
+msgstr "АВТОРИ: EMU_KIDID & EXTREMS, 2026"
+
+#: cube/swiss/source/gui/info.c:561
+msgid "INDIGO - UNOFFICIAL SWISS FORK"
+msgstr "INDIGO - НЕОФІЦІЙНИЙ ФОРК SWISS"
+
+#: cube/swiss/source/gui/info.c:566
+msgid "SOURCE / UPDATES"
+msgstr "КОД / ОНОВЛЕННЯ"
+
+#: cube/swiss/source/gui/info.c:580
+msgid "CURRENT PATREON SUPPORTERS"
+msgstr "ПОТОЧНІ ПРИХИЛЬНИКИ НА PATREON"
+
+#: cube/swiss/source/gui/info.c:595
+msgid "HISTORICAL PATREON SUPPORTERS"
+msgstr "КОЛИШНІ ПРИХИЛЬНИКИ НА PATREON"
+
+#: cube/swiss/source/gui/info.c:609
+msgid "LIBRARY DESIGNS"
+msgstr "ДИЗАЙНИ БІБЛІОТЕКИ"
+
+#: cube/swiss/source/gui/info.c:611
+msgid "GAMEPLAY SPOTLIGHT BY MVIZENSK"
+msgstr "GAMEPLAY SPOTLIGHT - АВТОР MVIZENSK"
+
+#: cube/swiss/source/gui/info.c:614
+msgid "JEWEL CASE BY PORTLANDHODL, AFTER CD CASE BY ANN NGUYEN"
+msgstr "JEWEL CASE - PORTLANDHODL, ЗА МОТИВАМИ CD CASE ВІД ANN NGUYEN"
+
+#: cube/swiss/source/gui/info.c:617
+msgid "EXTRA GREETZ: FIX94, MEGALOMANIAC, SEPP256, NOVENARY"
+msgstr "ОКРЕМІ ВІТАННЯ: FIX94, MEGALOMANIAC, SEPP256, NOVENARY"
+
+#: cube/swiss/source/gui/info.c:620
+msgid "AND A BIG THANKS TO YOU, FOR USING SWISS!"
+msgstr "І ВЕЛИКЕ ДЯКУЮ ВАМ, ЩО КОРИСТУЄТЕСЯ SWISS!"
+
+#: cube/swiss/source/gui/info.c:643 cube/swiss/source/gui/ui_home.c:751
+msgid "SYSTEM INFORMATION"
+msgstr "ВІДОМОСТІ ПРО СИСТЕМУ"
+
+#: cube/swiss/source/gui/info.c:649
+msgid "%d OF %d"
+msgstr "%d З %d"
+
+#: cube/swiss/source/gui/manual.c:31
+msgid "STICK / D-PAD  SCROLL   \213 \233  PAGE   L/R  FIRST, LAST   Y  WHOLE PAGE   B  BACK"
+msgstr "STICK / D-PAD  ГОРТАТИ   \213 \233  СТОР.   L/R  ПЕРША, ОСТАННЯ   Y  УСЯ СТОРІНКА   B  НАЗАД"
+
+#: cube/swiss/source/gui/manual.c:31
+msgid "SCROLL"
+msgstr "ГОРТАТИ"
+
+#: cube/swiss/source/gui/manual.c:31 cube/swiss/source/gui/manual.c:33
+msgid "FIRST, LAST"
+msgstr "ПЕРША, ОСТАННЯ"
+
+#: cube/swiss/source/gui/manual.c:31
+msgid "WHOLE PAGE"
+msgstr "УСЯ СТОРІНКА"
+
+#: cube/swiss/source/gui/manual.c:33
+msgid "\213 \233  PAGE   L/R  FIRST, LAST   Y  FULL WIDTH   B  BACK"
+msgstr "\213 \233  СТОР.   L/R  ПЕРША, ОСТАННЯ   Y  ПО ШИРИНІ   B  НАЗАД"
+
+#: cube/swiss/source/gui/manual.c:33
+msgid "FULL WIDTH"
+msgstr "ПО ШИРИНІ"
+
+#: cube/swiss/source/gui/manual.c:268
+msgid ""
+"This game's manual isn't on the card any more.\n"
+"Press A to continue."
+msgstr ""
+"Посібника цієї гри більше немає на карті.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/manual.c:272
+msgid ""
+"This game's manual can't be read.\n"
+"Convert it again.\n"
+"Press A to continue."
+msgstr ""
+"Посібник цієї гри не читається.\n"
+"Конвертуйте його знову.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/manual.c:285
+msgid ""
+"Not enough memory to open the manual.\n"
+"Press A to continue."
+msgstr ""
+"Замало пам'яті, щоб відкрити посібник.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/manual.c:380
+msgid "PAGE %u / %u"
+msgstr "СТОР. %u / %u"
+
+#: cube/swiss/source/gui/manual.c:383
+msgid "Page %u can't be read."
+msgstr "Сторінка %u не читається."
+
+#: cube/swiss/source/gui/manual.c:383
+msgid "Reading page %u\205"
+msgstr "Читання сторінки %u"
+
+#: cube/swiss/source/gui/saves.c:152 cube/swiss/source/gui/saves.c:2687 cube/swiss/source/gui/settings.c:52
+msgid "Slot B"
+msgstr "Слот B"
+
+#: cube/swiss/source/gui/saves.c:152 cube/swiss/source/gui/saves.c:2687 cube/swiss/source/gui/settings.c:52
+msgid "Slot A"
+msgstr "Слот A"
+
+#: cube/swiss/source/gui/saves.c:235 cube/swiss/source/gui/saves.c:959 cube/swiss/source/gui/saves.c:968
+msgid "Unnamed save"
+msgstr "Без назви"
+
+#: cube/swiss/source/gui/saves.c:254
+msgid "%u saves. %s"
+msgstr "Збережень: %u. %s"
+
+#: cube/swiss/source/gui/saves.c:256
+msgid "Card image."
+msgstr "Образ карти."
+
+#: cube/swiss/source/gui/saves.c:256
+msgid "Read-only card image."
+msgstr "Образ лише для читання."
+
+#: cube/swiss/source/gui/saves.c:259
+msgid "This card image has no saves."
+msgstr "У цьому образі немає збережень."
+
+#: cube/swiss/source/gui/saves.c:262
+msgid "Card image. Contents unavailable."
+msgstr "Образ карти. Вміст недоступний."
+
+#: cube/swiss/source/gui/saves.c:265
+msgid "Color is saved in Indigo settings, not in the card image."
+msgstr "Колір зберігається в налаштуваннях Indigo, не в образі."
+
+#: cube/swiss/source/gui/saves.c:273
+msgid "This folder's contents could not be read."
+msgstr "Не вдалося прочитати вміст цієї теки."
+
+#: cube/swiss/source/gui/saves.c:291
+msgid "%u save files, %u card images, %u folders%s"
+msgstr "Збережень: %u, образів карт: %u, тек: %u%s"
+
+#: cube/swiss/source/gui/saves.c:292
+msgid " (preview limit)"
+msgstr " (межа перегляду)"
+
+#: cube/swiss/source/gui/saves.c:294
+msgid "Open a card image to browse its saves."
+msgstr "Відкрийте образ карти, щоб побачити збереження."
+
+#: cube/swiss/source/gui/saves.c:294
+msgid "No save files in this folder."
+msgstr "У цій теці немає збережень."
+
+#: cube/swiss/source/gui/saves.c:686
+msgid "%s holds the %s"
+msgstr "%s зайнято: %s"
+
+#: cube/swiss/source/gui/saves.c:689
+msgid "It's in use, so Memory Cards leaves it alone."
+msgstr "Він використовується, тож Карти пам'яті його не чіпають."
+
+#: cube/swiss/source/gui/saves.c:698
+msgid "Nothing is inserted in %s."
+msgstr "%s порожній."
+
+#: cube/swiss/source/gui/saves.c:700
+msgid "Choose storage above to browse virtual cards."
+msgstr "Виберіть сховище вгорі, щоб переглянути віртуальні карти."
+
+#: cube/swiss/source/gui/saves.c:704
+msgid "%s holds something else"
+msgstr "%s: інший пристрій"
+
+#: cube/swiss/source/gui/saves.c:706
+msgid "It isn't a Memory Card."
+msgstr "Це не карта пам'яті."
+
+#: cube/swiss/source/gui/saves.c:710 cube/swiss/source/gui/saves.c:722
+msgid "The Memory Card in %s can't be read"
+msgstr "%s: карта пам'яті не читається"
+
+#: cube/swiss/source/gui/saves.c:712
+msgid "It may need checking on the console's own screen."
+msgstr "Можливо, її варто перевірити в меню самої консолі."
+
+#: cube/swiss/source/gui/saves.c:776 cube/swiss/source/gui/saves.c:2765
+msgid "No device for settings and saves"
+msgstr "Немає пристрою налаштувань і збережень"
+
+#: cube/swiss/source/gui/saves.c:778 cube/swiss/source/gui/saves.c:2767
+msgid "Choose one in Settings, Storage."
+msgstr "Виберіть його: Налаштування, Сховище."
+
+#: cube/swiss/source/gui/saves.c:785
+msgid "This folder can't be read"
+msgstr "Ця тека не читається"
+
+#: cube/swiss/source/gui/saves.c:810
+msgid "No folders in here"
+msgstr "Тут немає тек"
+
+#: cube/swiss/source/gui/saves.c:810
+msgid "No saves in this folder"
+msgstr "У цій теці немає збережень"
+
+#: cube/swiss/source/gui/saves.c:838 cube/swiss/source/gui/saves.c:847
+msgid "B  Back to the SD folder"
+msgstr "B  Назад до теки SD"
+
+#: cube/swiss/source/gui/saves.c:838 cube/swiss/source/gui/saves.c:847
+msgid "Back to the SD folder"
+msgstr "Назад до теки SD"
+
+#: cube/swiss/source/gui/saves.c:846
+msgid "Not enough memory to list saves"
+msgstr "Замало пам'яті для списку збережень"
+
+#: cube/swiss/source/gui/saves.c:1059 cube/swiss/source/gui/saves.c:1219 cube/swiss/source/gui/saves.c:2236
+msgid "Folder"
+msgstr "Тека"
+
+#: cube/swiss/source/gui/saves.c:1061
+msgid "A  Open virtual memory card"
+msgstr "A  Відкрити віртуальну карту"
+
+#: cube/swiss/source/gui/saves.c:1061
+msgid "Open virtual memory card"
+msgstr "Відкрити віртуальну карту"
+
+#: cube/swiss/source/gui/saves.c:1081
+msgid "Read-only card image. Copy exports a .gci save."
+msgstr "Образ лише для читання. Копіювання експортує .gci."
+
+#: cube/swiss/source/gui/saves.c:1133
+msgid "%c  Choose storage"
+msgstr "%c  Вибрати сховище"
+
+#: cube/swiss/source/gui/saves.c:1193
+msgid "Accessing. Do not touch the Memory Card or the POWER Button."
+msgstr "Доступ до даних. Не торкайтеся карти пам'яті та кнопки POWER."
+
+#: cube/swiss/source/gui/saves.c:1203 cube/swiss/source/gui/saves.c:2278 cube/swiss/source/gui/settings.c:2752
+msgid "B  Cancel"
+msgstr "B  Скасувати"
+
+#: cube/swiss/source/gui/saves.c:1206 cube/swiss/source/gui/saves.c:1210
+msgid "B  Cancel   A  Confirm"
+msgstr "B  Скасувати   A  Підтвердити"
+
+#: cube/swiss/source/gui/saves.c:1206 cube/swiss/source/gui/saves.c:1210 cube/swiss/source/gui/saves.c:1217
+msgid "Confirm"
+msgstr "Підтвердити"
+
+#: cube/swiss/source/gui/saves.c:1215
+msgid "STICK / D-PAD  Select   B  %s   A  %s"
+msgstr "STICK / D-PAD  Вибрати   B  %s   A  %s"
+
+#: cube/swiss/source/gui/saves.c:1215
+msgid "Select"
+msgstr "Вибрати"
+
+#: cube/swiss/source/gui/saves.c:1216 cube/swiss/source/gui/ui_files.c:699
+msgid "Up"
+msgstr "Вгору"
+
+#: cube/swiss/source/gui/saves.c:1216
+msgid "Finish"
+msgstr "Готово"
+
+#: cube/swiss/source/gui/saves.c:1217 cube/swiss/source/gui/saves.c:2277 cube/swiss/source/gui/settings.c:1302
+msgid "Open"
+msgstr "Відкрити"
+
+#: cube/swiss/source/gui/saves.c:1219
+msgid "Y  Folder"
+msgstr "Y  Тека"
+
+#: cube/swiss/source/gui/saves.c:1219
+msgid "L  Left storage   R  Right storage"
+msgstr "L  Ліве сховище   R  Праве сховище"
+
+#: cube/swiss/source/gui/saves.c:1219 cube/swiss/source/gui/saves.c:2708 cube/swiss/source/gui/ui_files.c:998
+msgid "Left storage"
+msgstr "Ліве сховище"
+
+#: cube/swiss/source/gui/saves.c:1219 cube/swiss/source/gui/saves.c:2708 cube/swiss/source/gui/ui_files.c:998
+msgid "Right storage"
+msgstr "Праве сховище"
+
+#: cube/swiss/source/gui/saves.c:1344
+msgid "Could not save. Check the Configuration Device or the 32-folder limit."
+msgstr "Не вдалося зберегти. Перевірте Пристрій налаштувань або ліміт у 32 теки."
+
+#: cube/swiss/source/gui/saves.c:1630
+msgid "not enough free blocks"
+msgstr "замало вільних блоків"
+
+#: cube/swiss/source/gui/saves.c:1631
+msgid "no room for another save"
+msgstr "немає місця для збереження"
+
+#: cube/swiss/source/gui/saves.c:1632
+msgid "it already has this save"
+msgstr "це збереження вже є"
+
+#: cube/swiss/source/gui/saves.c:1633
+msgid "the card was taken out"
+msgstr "карту вийнято"
+
+#: cube/swiss/source/gui/saves.c:1634
+msgid "the card didn't take it"
+msgstr "карта не прийняла запис"
+
+#: cube/swiss/source/gui/saves.c:1659
+msgid "This save's game or maker code can't be written."
+msgstr "Код гри чи видавця цього збереження не можна записати."
+
+#: cube/swiss/source/gui/saves.c:1664 cube/swiss/source/gui/saves.c:1847 cube/swiss/source/gui/saves.c:2069
+msgid "%s has no memory card."
+msgstr "%s: немає карти пам'яті."
+
+#: cube/swiss/source/gui/saves.c:1673 cube/swiss/source/gui/saves.c:1707
+msgid "The card in %s changed, so nothing was written."
+msgstr "%s: карту змінено, нічого не записано."
+
+#: cube/swiss/source/gui/saves.c:1684
+msgid "The memory card in %s can't be read."
+msgstr "%s: карта пам'яті не читається."
+
+#: cube/swiss/source/gui/saves.c:1689
+msgid "%s already has this save."
+msgstr "%s: це збереження вже є."
+
+#: cube/swiss/source/gui/saves.c:1693
+msgid "%s has no room for another save."
+msgstr "%s: немає місця для нового збереження."
+
+#: cube/swiss/source/gui/saves.c:1699
+msgid "%s has %d free block; this needs %u."
+msgstr "%s: вільний лише %d блок, потрібно %u."
+
+#: cube/swiss/source/gui/saves.c:1700
+msgid "%s has %d free blocks; this needs %u."
+msgstr "%s: вільних блоків %d, потрібно %u."
+
+#: cube/swiss/source/gui/saves.c:1725
+msgid "the card changed meanwhile"
+msgstr "карту тим часом змінено"
+
+#: cube/swiss/source/gui/saves.c:1740
+msgid "The card in %s changed while the save was written."
+msgstr "%s: карту змінено під час запису."
+
+#: cube/swiss/source/gui/saves.c:1748
+msgid "The copy on %s didn't read back the same."
+msgstr "%s: копія не збіглася під час перевірки."
+
+#: cube/swiss/source/gui/saves.c:1782
+msgid "That folder has 99 copies of this save."
+msgstr "У цій теці вже 99 копій цього збереження."
+
+#: cube/swiss/source/gui/saves.c:1792
+msgid "The SD card didn't take the save."
+msgstr "SD-карта не прийняла збереження."
+
+#: cube/swiss/source/gui/saves.c:1803
+msgid "The copy didn't read back the same."
+msgstr "Копія не збіглася під час перевірки."
+
+#: cube/swiss/source/gui/saves.c:1869
+msgid "The card in %s changed, so nothing was replaced."
+msgstr "%s: карту змінено, нічого не замінено."
+
+#: cube/swiss/source/gui/saves.c:1870
+msgid "%s's own copy couldn't be read again."
+msgstr "%s: стару копію не вдалося перечитати."
+
+#: cube/swiss/source/gui/saves.c:1874
+msgid "%s's own copy couldn't be replaced."
+msgstr "%s: стару копію не вдалося замінити."
+
+#: cube/swiss/source/gui/saves.c:1888
+msgid ""
+"%s\n"
+"%s's own copy went back."
+msgstr ""
+"%s\n"
+"%s: стару копію повернуто."
+
+#: cube/swiss/source/gui/saves.c:1892
+msgid ""
+"%s\n"
+"%s's own copy is in the Save Folder."
+msgstr ""
+"%s\n"
+"%s: стара копія - у Теці збережень."
+
+#: cube/swiss/source/gui/saves.c:2054
+msgid "There's no save to put on a card."
+msgstr "Немає збереження для запису на карту."
+
+#: cube/swiss/source/gui/saves.c:2059
+msgid "There's no SD card to keep the card's own copy on."
+msgstr "Немає SD-карти, щоб зберегти копію даних карти."
+
+#: cube/swiss/source/gui/saves.c:2066
+msgid "The chosen save couldn't be read."
+msgstr "Не вдалося прочитати вибране збереження."
+
+#: cube/swiss/source/gui/saves.c:2076
+msgid "%s's own copy couldn't be read."
+msgstr "Не вдалося прочитати копію з %s."
+
+#: cube/swiss/source/gui/saves.c:2136
+msgid ""
+"This game doesn't let its save move.\n"
+"Copy it instead.\n"
+"Press A to continue."
+msgstr ""
+"Ця гра не дає перемістити збереження.\n"
+"Скопіюйте його.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2156
+msgid "The save couldn't be read."
+msgstr "Не вдалося прочитати збереження."
+
+#: cube/swiss/source/gui/saves.c:2160
+msgid "This file isn't a GameCube save."
+msgstr "Цей файл не є збереженням GameCube."
+
+#: cube/swiss/source/gui/saves.c:2166 cube/swiss/source/gui/saves.c:2181
+msgid "Finished %s."
+msgstr "Завершено %s."
+
+#: cube/swiss/source/gui/saves.c:2166 cube/swiss/source/gui/saves.c:2181 cube/swiss/source/gui/saves.c:2195
+msgid "moving"
+msgstr "переміщення"
+
+#: cube/swiss/source/gui/saves.c:2166 cube/swiss/source/gui/saves.c:2181 cube/swiss/source/gui/saves.c:2195
+msgid "copying"
+msgstr "копіювання"
+
+#: cube/swiss/source/gui/saves.c:2195
+msgid "Finished %s to %s."
+msgstr "Завершено %s у %s."
+
+#: cube/swiss/source/gui/saves.c:2201
+msgid ""
+"Copied, but the original couldn't be removed.\n"
+"Press A to continue."
+msgstr ""
+"Скопійовано, але оригінал не видалено.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2210
+msgid ""
+"%s\n"
+"Nothing was %s.\n"
+"Press A to continue."
+msgstr ""
+"%s\n"
+"Нічого не %s.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2211
+msgid "moved"
+msgstr "переміщено"
+
+#: cube/swiss/source/gui/saves.c:2211
+msgid "changed"
+msgstr "змінено"
+
+#: cube/swiss/source/gui/saves.c:2232 cube/swiss/source/gui/ui_files.c:371 cube/swiss/source/swiss.c:3332
+msgid "Up to %s"
+msgstr "Вгору до %s"
+
+#: cube/swiss/source/gui/saves.c:2252 cube/swiss/source/swiss.c:3309
+msgid "Choose a Folder"
+msgstr "Виберіть теку"
+
+#: cube/swiss/source/gui/saves.c:2276
+msgid "%sX  Choose this folder"
+msgstr "%sX  Вибрати цю теку"
+
+#: cube/swiss/source/gui/saves.c:2277
+msgid "A  Open   "
+msgstr "A  Відкрити   "
+
+#: cube/swiss/source/gui/saves.c:2378
+msgid ""
+"There's no device for settings and saves.\n"
+"Press A to continue."
+msgstr ""
+"Немає пристрою для налаштувань і збережень.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2429
+msgid "The card image"
+msgstr "Образ карти"
+
+#: cube/swiss/source/gui/saves.c:2440
+msgid "The SD card"
+msgstr "SD-карта"
+
+#: cube/swiss/source/gui/saves.c:2513
+msgid "Card image"
+msgstr "Образ карти"
+
+#: cube/swiss/source/gui/saves.c:2513
+msgid "Read-only card image"
+msgstr "Образ карти (лише читання)"
+
+#: cube/swiss/source/gui/saves.c:2514
+msgid "SD save"
+msgstr "Файл на SD"
+
+#: cube/swiss/source/gui/saves.c:2527
+msgid "Unable to read metadata"
+msgstr "Не вдалося прочитати дані"
+
+#: cube/swiss/source/gui/saves.c:2528 cube/swiss/source/config/config.c:904
+msgid "Unknown"
+msgstr "Невідомо"
+
+#: cube/swiss/source/gui/saves.c:2533 cube/swiss/source/gui/ui_saves.c:381
+msgid "Preview unavailable"
+msgstr "Перегляд недоступний"
+
+#: cube/swiss/source/gui/saves.c:2536 cube/swiss/source/gui/saves.c:2541
+msgid ""
+"Save details couldn't be opened.\n"
+"Press A to continue."
+msgstr ""
+"Не вдалося відкрити подробиці.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2568 cube/swiss/source/gui/saves.c:2640 cube/swiss/source/gui/saves.c:2648
+msgid "Move"
+msgstr "Перемістити"
+
+#: cube/swiss/source/gui/saves.c:2568 cube/swiss/source/gui/saves.c:2640 cube/swiss/source/gui/saves.c:2648
+msgid "Copy"
+msgstr "Копіювати"
+
+#: cube/swiss/source/gui/saves.c:2568
+msgid "Erase"
+msgstr "Стерти"
+
+#: cube/swiss/source/gui/saves.c:2569 cube/swiss/source/gui/settings.c:67 cube/swiss/source/gui/settings.c:69
+msgid "Yes"
+msgstr "Так"
+
+#: cube/swiss/source/gui/saves.c:2569 cube/swiss/source/gui/settings.c:52 cube/swiss/source/gui/settings.c:59
+msgid "No"
+msgstr "Ні"
+
+#: cube/swiss/source/gui/saves.c:2580
+msgid "This folder lists 256 already; the save may not show"
+msgstr "У теці вже 256 записів; збереження може не з'явитися"
+
+#: cube/swiss/source/gui/saves.c:2581
+msgid "Another folder\205"
+msgstr "Інша тека"
+
+#: cube/swiss/source/gui/saves.c:2601
+msgid "This card image is read-only here. Use Copy to export a save."
+msgstr "Цей образ карти тут лише для читання. Експортуйте через Копіювати."
+
+#: cube/swiss/source/gui/saves.c:2602
+msgid "This card image is read-only here. Saves cannot be erased."
+msgstr "Цей образ карти тут лише для читання. Стерти збереження не можна."
+
+#: cube/swiss/source/gui/saves.c:2611
+msgid "Erase this save?"
+msgstr "Стерти це збереження?"
+
+#: cube/swiss/source/gui/saves.c:2618
+msgid "The data was erased."
+msgstr "Дані стерто."
+
+#: cube/swiss/source/gui/saves.c:2622
+msgid ""
+"The save couldn't be deleted.\n"
+"Press A to continue."
+msgstr ""
+"Не вдалося видалити збереження.\n"
+"Press A to continue."
+
+#: cube/swiss/source/gui/saves.c:2640
+msgid "%s to %s?"
+msgstr "%s у %s?"
+
+#: cube/swiss/source/gui/saves.c:2648
+msgid "%s to the card image?"
+msgstr "%s в образ карти?"
+
+#: cube/swiss/source/gui/saves.c:2663
+msgid "Move to"
+msgstr "Перемістити в"
+
+#: cube/swiss/source/gui/saves.c:2663
+msgid "Copy to"
+msgstr "Копіювати в"
+
+#: cube/swiss/source/gui/saves.c:2671
+msgid "%s to the SD card?"
+msgstr "%s на SD-карту?"
+
+#: cube/swiss/source/gui/saves.c:2687
+msgid "SD card"
+msgstr "SD-карта"
+
+#: cube/swiss/source/gui/saves.c:2701
+msgid "This slot is displayed in the other column."
+msgstr "Цей слот показано в іншому стовпці."
+
+#: cube/swiss/source/gui/saves.c:2705
+msgid "Choose a device for settings and saves in Settings, Storage."
+msgstr "Виберіть пристрій для налаштувань і збережень: Налаштування, Сховище."
+
+#: cube/swiss/source/gui/settings.c:52
+msgid "Serial Port 2"
+msgstr "Серійний порт 2"
+
+#: cube/swiss/source/gui/settings.c:53 cube/swiss/source/gui/settings.c:66 cube/swiss/source/gui/settings.c:98
+msgid "None"
+msgstr "Немає"
+
+#: cube/swiss/source/gui/settings.c:54 cube/swiss/source/gui/settings.c:55 cube/swiss/source/gui/settings.c:56
+msgid "Auto"
+msgstr "Авто"
+
+#: cube/swiss/source/gui/settings.c:58 cube/swiss/source/gui/settings.c:64 cube/swiss/source/gui/settings.c:68
+msgid "On"
+msgstr "Увімк."
+
+#: cube/swiss/source/gui/settings.c:58 cube/swiss/source/gui/settings.c:64 cube/swiss/source/gui/settings.c:68
+msgid "Off"
+msgstr "Вимк."
+
+#: cube/swiss/source/gui/settings.c:65
+msgid "Slot A&B"
+msgstr "Слоти A і B"
+
+#: cube/swiss/source/gui/settings.c:66
+msgid "All"
+msgstr "Усі"
+
+#: cube/swiss/source/gui/settings.c:67
+msgid "Region Switch"
+msgstr "Зміна регіону"
+
+#: cube/swiss/source/gui/settings.c:71 cube/swiss/source/gui/ui_lang.c:6 cube/swiss/source/gui/ui_lang.c:7
+msgid "English"
+msgstr "Англійська"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "German"
+msgstr "Німецька"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "French"
+msgstr "Французька"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "Spanish"
+msgstr "Іспанська"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "Italian"
+msgstr "Італійська"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "Dutch"
+msgstr "Нідерландська"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "Japanese"
+msgstr "Японська"
+
+#: cube/swiss/source/gui/settings.c:71
+msgid "English (US)"
+msgstr "Англ. (США)"
+
+#: cube/swiss/source/gui/settings.c:71 cube/swiss/source/gui/settings.c:1066 cube/swiss/source/gui/settings.c:1361
+msgid "Default"
+msgstr "Типово"
+
+#: cube/swiss/source/gui/settings.c:73 cube/swiss/source/swiss.c:7283
+msgid "Disabled"
+msgstr "Вимкнено"
+
+#: cube/swiss/source/gui/settings.c:73
+msgid "Reboot"
+msgstr "Перезапуск"
+
+#: cube/swiss/source/gui/settings.c:75
+msgid "Standard"
+msgstr "Стандартний"
+
+#: cube/swiss/source/gui/settings.c:75
+msgid "Fullwidth"
+msgstr "Широкий"
+
+#: cube/swiss/source/gui/settings.c:75
+msgid "Carousel"
+msgstr "Карусель"
+
+#: cube/swiss/source/gui/settings.c:76
+msgid "Sound 1"
+msgstr "Звук 1"
+
+#: cube/swiss/source/gui/settings.c:76
+msgid "Sound 2"
+msgstr "Звук 2"
+
+#: cube/swiss/source/gui/settings.c:77
+msgid "Lazy"
+msgstr "Лише нові"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Indigo"
+msgstr "Індиго"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Azure"
+msgstr "Блакитний"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Emerald"
+msgstr "Смарагдовий"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Gold"
+msgstr "Золотий"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Spice"
+msgstr "Помаранчевий"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Crimson"
+msgstr "Багряний"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Rose"
+msgstr "Рожевий"
+
+#: cube/swiss/source/gui/settings.c:78 cube/swiss/source/gui/settings.c:81 cube/swiss/source/gui/ui_folder.c:142
+msgid "Jet Black"
+msgstr "Чорний"
+
+#: cube/swiss/source/gui/settings.c:81
+msgid "Menu Color"
+msgstr "Колір меню"
+
+#: cube/swiss/source/gui/settings.c:83
+msgid "Right"
+msgstr "Праворуч"
+
+#: cube/swiss/source/gui/settings.c:83
+msgid "Left"
+msgstr "Ліворуч"
+
+#: cube/swiss/source/gui/settings.c:85
+msgid "Normal"
+msgstr "Звичайна"
+
+#: cube/swiss/source/gui/settings.c:85
+msgid "Fast"
+msgstr "Швидка"
+
+#: cube/swiss/source/gui/settings.c:85
+msgid "Slow"
+msgstr "Повільна"
+
+#: cube/swiss/source/gui/settings.c:87
+msgid "Controller"
+msgstr "Контролер"
+
+#: cube/swiss/source/gui/settings.c:87
+msgid "Books"
+msgstr "Книги"
+
+#: cube/swiss/source/gui/settings.c:87
+msgid "Covers"
+msgstr "Обкладинки"
+
+#: cube/swiss/source/gui/settings.c:87
+msgid "Play"
+msgstr "Грати"
+
+#: cube/swiss/source/gui/settings.c:88
+msgid "Hub"
+msgstr "Хаб"
+
+#: cube/swiss/source/gui/settings.c:88
+msgid "Disc"
+msgstr "Диск"
+
+#: cube/swiss/source/gui/settings.c:88
+msgid "SD Card"
+msgstr "SD-карта"
+
+#: cube/swiss/source/gui/settings.c:89
+msgid "Sliders"
+msgstr "Повзунки"
+
+#: cube/swiss/source/gui/settings.c:89
+msgid "Gear"
+msgstr "Шестерня"
+
+#: cube/swiss/source/gui/settings.c:89
+msgid "Toggles"
+msgstr "Перемикачі"
+
+#: cube/swiss/source/gui/settings.c:89
+msgid "Dial"
+msgstr "Регулятор"
+
+#: cube/swiss/source/gui/settings.c:90
+msgid "Clock"
+msgstr "Годинник"
+
+#: cube/swiss/source/gui/settings.c:90
+msgid "Info"
+msgstr "Інфо"
+
+#: cube/swiss/source/gui/settings.c:90
+msgid "Power"
+msgstr "Живлення"
+
+#: cube/swiss/source/gui/settings.c:90
+msgid "Chip"
+msgstr "Чип"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "System"
+msgstr "Система"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "Apps"
+msgstr "Програми"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "Memory Cards"
+msgstr "Карти пам'яті"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "Emulators"
+msgstr "Емулятори"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "File Browser"
+msgstr "Файли"
+
+#: cube/swiss/source/gui/settings.c:98 cube/swiss/source/gui/settings.c:99 cube/swiss/source/gui/settings.c:100
+msgid "Web"
+msgstr "Інтернет"
+
+#: cube/swiss/source/gui/settings.c:106
+msgid "Horizontal"
+msgstr "Горизонтальний"
+
+#: cube/swiss/source/gui/settings.c:106
+msgid "Vertical"
+msgstr "Вертикальний"
+
+#: cube/swiss/source/gui/settings.c:106
+msgid "Grid"
+msgstr "Сітка"
+
+#: cube/swiss/source/gui/settings.c:106
+msgid "Spotlight"
+msgstr "У фокусі"
+
+#: cube/swiss/source/gui/settings.c:106
+msgid "Jewel Case"
+msgstr "Футляр"
+
+#: cube/swiss/source/gui/settings.c:108
+msgid "Full"
+msgstr "Повний"
+
+#: cube/swiss/source/gui/settings.c:108
+msgid "Reduced"
+msgstr "Зменшений"
+
+#: cube/swiss/source/gui/settings.c:120
+msgid ""
+"System Boot Mode:\n"
+"\n"
+"Sets development or production mode on development hardware.\n"
+"On retail hardware with GC Loader or PicoLoader, the default\n"
+"skips the GameCube logo screen."
+msgstr ""
+"Режим запуску системи:\n"
+"\n"
+"Вмикає режим розробки чи продукції на обладнанні\n"
+"розробника. На звичайній консолі з GC Loader або PicoLoader\n"
+"типове значення пропускає заставку з логотипом GameCube."
+
+#: cube/swiss/source/gui/settings.c:121
+msgid ""
+"Apps Video Mode:\n"
+"\n"
+"Sets the video mode passed to homebrew apps. Auto keeps Indigo's\n"
+"mode. Applies to libogc2 apps; other apps may choose their own.\n"
+"A program sent over the network keeps Indigo's mode."
+msgstr ""
+"Відеорежим програм:\n"
+"\n"
+"Відеорежим, що передається homebrew-програмам. Авто\n"
+"зберігає режим Indigo. Діє для програм libogc2; інші можуть\n"
+"обрати свій. Програма з мережі зберігає режим Indigo."
+
+#: cube/swiss/source/gui/settings.c:122
+msgid ""
+"System Sound:\n"
+"\n"
+"Sets the default audio output type used by most games"
+msgstr ""
+"Звук системи:\n"
+"\n"
+"Типовий тип аудіовиходу для більшості ігор"
+
+#: cube/swiss/source/gui/settings.c:123
+msgid ""
+"System Video:\n"
+"\n"
+"Intended to select between NTSC and PAL-M on DOL-002(BRA)"
+msgstr ""
+"Відео системи:\n"
+"\n"
+"Для вибору між NTSC і PAL-M на DOL-002(BRA)"
+
+#: cube/swiss/source/gui/settings.c:124
+msgid ""
+"Screen Position:\n"
+"\n"
+"Adjusts the horizontal screen position in games"
+msgstr ""
+"Положення екрана:\n"
+"\n"
+"Зсуває зображення в іграх по горизонталі"
+
+#: cube/swiss/source/gui/settings.c:125
+msgid ""
+"System Language:\n"
+"\n"
+"System language used in games, primarily multi-5 PAL games"
+msgstr ""
+"Мова системи:\n"
+"\n"
+"Мова системи в іграх, переважно в PAL-іграх multi-5"
+
+#: cube/swiss/source/gui/settings.c:126
+msgid ""
+"Configuration Device:\n"
+"\n"
+"The device Indigo loads settings from and saves them to, in\n"
+"swiss/settings/global.ini. The choice is stored in SRAM, and it\n"
+"changes only once Save & Exit has written the settings there.\n"
+"The line under the Storage title says whether that file loaded."
+msgstr ""
+"Пристрій налаштувань:\n"
+"\n"
+"Пристрій, з якого Indigo читає налаштування і куди їх\n"
+"зберігає, у swiss/settings/global.ini. Вибір зберігається в\n"
+"SRAM і змінюється лише після того, як Зберегти й\n"
+"вийти запише туди налаштування. Рядок під\n"
+"заголовком Сховище показує, чи завантажено файл."
+
+#: cube/swiss/source/gui/settings.c:127
+msgid ""
+"Library Path:\n"
+"\n"
+"Where the Library finds your games. Auto looks for a /games\n"
+"folder on the boot device, then on the other storage connected,\n"
+"and starts on the first it finds. Or choose a folder, such as\n"
+"sdc:/games: Left and Right step through devices, A opens the\n"
+"folder chooser, where X chooses a folder and Y switches devices."
+msgstr ""
+"Шлях до Бібліотеки:\n"
+"\n"
+"Де Бібліотека шукає ігри. Авто шукає теку /games на\n"
+"завантажувальному пристрої, потім на інших\n"
+"підключених сховищах і починає з першої знайденої. Або\n"
+"виберіть теку, наприклад sdc:/games: Ліворуч і Праворуч\n"
+"перебирають пристрої, A відкриває вибір теки, де X\n"
+"вибирає теку, а Y змінює пристрій."
+
+#: cube/swiss/source/gui/settings.c:128
+msgid ""
+"Save Folder:\n"
+"\n"
+"The folder Memory Cards (Home > System) opens on the SD\n"
+"card: saves copied off a memory card go there, unless you\n"
+"open or pick another. It's a folder on the Configuration\n"
+"Device; swiss/saves until you choose another.\n"
+"\n"
+"A opens its folders: A goes into one, X chooses the one open."
+msgstr ""
+"Тека збережень:\n"
+"\n"
+"Тека на SD-карті, яку відкривають Карти пам'яті\n"
+"(Головна > Система): туди потрапляють збереження,\n"
+"скопійовані з карти пам'яті, якщо не відкрити або не\n"
+"вибрати іншу. Це тека на Пристрої налаштувань;\n"
+"swiss/saves, доки не виберете іншу.\n"
+"\n"
+"A відкриває теки: A заходить у теку, X вибирає відкриту."
+
+#: cube/swiss/source/gui/settings.c:129
+msgid ""
+"Init DVD Drive at startup:\n"
+"\n"
+"Disabled - Leave it as-is (default)\n"
+"Enabled - Deassert reset signal when Swiss starts\n"
+"\n"
+"This is necessary for the eject button to function on the\n"
+"Panasonic Q when Swiss is used as IPL replacement."
+msgstr ""
+"Ініціалізувати привід DVD при запуску:\n"
+"\n"
+"Вимкнено - Не змінювати (типово)\n"
+"Увімкнено - Зняти скидання при запуску Swiss\n"
+"\n"
+"Це потрібно, щоб кнопка виймання працювала на\n"
+"Panasonic Q, коли Swiss замінює IPL."
+
+#: cube/swiss/source/gui/settings.c:130
+msgid ""
+"Stop DVD Drive motor:\n"
+"\n"
+"Disabled - Leave it as-is (default)\n"
+"Enabled - Stop the disc from spinning when Swiss starts\n"
+"\n"
+"This option is mostly for users booting from game save exploits\n"
+"where the disc will already be spinning."
+msgstr ""
+"Зупиняти двигун DVD:\n"
+"\n"
+"Вимкнено - Не змінювати (типово)\n"
+"Увімкнено - Зупинити диск під час запуску Swiss\n"
+"\n"
+"Це здебільшого для тих, хто запускається через експлойти\n"
+"збережень ігор, коли диск уже обертається."
+
+#: cube/swiss/source/gui/settings.c:131
+msgid ""
+"Configure Audio Buffer:\n"
+"\n"
+"Off - Disable audio streaming\n"
+"Auto - Enable audio streaming if the disc is known to use it\n"
+"On - Enable audio streaming if the disc asks for it (default)\n"
+"\n"
+"The audio buffer consumes a large portion of the GameCube\n"
+"disc drive's read-ahead cache, lengthening load times."
+msgstr ""
+"Аудіобуфер:\n"
+"\n"
+"Вимк. - Вимкнути потокове аудіо\n"
+"Авто - Увімкнути для відомих дисків із ним\n"
+"Увімк. - Увімкнути, якщо диск його запитує (типово)\n"
+"\n"
+"Аудіобуфер займає значну частину кешу\n"
+"випереджального читання приводу GameCube і\n"
+"подовжує завантаження."
+
+#: cube/swiss/source/gui/settings.c:132
+msgid ""
+"SD/IDE-EXI Speed:\n"
+"\n"
+"The clock speed to try using on the EXI bus for SD cards and\n"
+"IDE-EXI devices. 27 MHz may not work with some SD cards or\n"
+"SD card adapters."
+msgstr ""
+"Швидкість SD/IDE-EXI:\n"
+"\n"
+"Тактова частота, яку слід спробувати на шині EXI для\n"
+"SD-карт і пристроїв IDE-EXI. 27 MHz може не працювати з\n"
+"деякими SD-картами або адаптерами SD-карт."
+
+#: cube/swiss/source/gui/settings.c:133
+msgid ""
+"AVE Compatibility:\n"
+"\n"
+"Sets the compatibility mode for the used audio/video encoder.\n"
+"\n"
+"AVE N-DOL - Output PAL as NTSC 50\n"
+"AVE P-DOL - Disable progressive scan mode\n"
+"CMPV-DOL - Enable 1080i & 540p\n"
+"GCDigital - Apply input filtering in OSD\n"
+"GCVideo - Apply general workarounds for GCVideo (default)\n"
+"AVE-RVL - Support 960i & 1152i without WiiVideo"
+msgstr ""
+"Сумісність AVE:\n"
+"\n"
+"Режим сумісності для наявного аудіо/відеокодера.\n"
+"\n"
+"AVE N-DOL - Виводити PAL як NTSC 50\n"
+"AVE P-DOL - Вимкнути прогресивну розгортку\n"
+"CMPV-DOL - Увімкнути 1080i і 540p\n"
+"GCDigital - Фільтрувати введення в OSD\n"
+"GCVideo - Загальні обхідні рішення для GCVideo (типово)\n"
+"AVE-RVL - Підтримка 960i і 1152i без WiiVideo"
+
+#: cube/swiss/source/gui/settings.c:134
+msgid ""
+"Force DTV Status:\n"
+"\n"
+"Disabled - Use detect signal from the Digital AV Out (default)\n"
+"Enabled - Force detection in the case of a hardware fault\n"
+"Region Switch - Ease transition between SD/ED TV setups"
+msgstr ""
+"Примусовий статус DTV:\n"
+"\n"
+"Вимкнено - Сигнал виявлення з Digital AV Out (типово)\n"
+"Увімкнено - Примусово при збої обладнання\n"
+"Зміна регіону - Легший перехід між SD/ED TV"
+
+#: cube/swiss/source/gui/settings.c:135
+msgid ""
+"RetroTINK-4K HDMI Input:\n"
+"\n"
+"For GCDigital compatibility mode:\n"
+" Requires FX-Framework firmware version 3.9.46.178 or later\n"
+" and RetroTINK-4K firmware version 1.9.4 or later, and using\n"
+" DV1-Direct mode.\n"
+"\n"
+"For GCVideo compatibility mode:\n"
+" Requires GCVideo-DVI firmware version 3.0 or later."
+msgstr ""
+"Вхід HDMI RetroTINK-4K:\n"
+"\n"
+"Для режиму сумісності GCDigital:\n"
+" Потрібна прошивка FX-Framework 3.9.46.178 або\n"
+" новіша і прошивка RetroTINK-4K 1.9.4 або новіша, а\n"
+" також режим DV1-Direct.\n"
+"\n"
+"Для режиму сумісності GCVideo:\n"
+" Потрібна прошивка GCVideo-DVI 3.0 або новіша."
+
+#: cube/swiss/source/gui/settings.c:136
+msgid ""
+"Controller Recalibration:\n"
+"\n"
+"On - Controllers are recalibrated as usual (default)\n"
+"Off - Skips recalibration. This avoids problems with\n"
+"non-compliant GameCube Controller implementations."
+msgstr ""
+"Перекалібрування контролерів:\n"
+"\n"
+"Увімк. - Звичайне перекалібрування (типово)\n"
+"Вимк. - Без перекалібрування; уникає проблем із\n"
+"нестандартними контролерами GameCube."
+
+#: cube/swiss/source/gui/settings.c:137
+msgid ""
+"Enable USB Gecko:\n"
+"\n"
+"If a USB Gecko is present, messages output to the debug UART\n"
+"will be redirected. When the USB host isn't actively reading from\n"
+"the USB Gecko, it may cause the system to hang.\n"
+"\n"
+"wiiload is also made available for iterative development."
+msgstr ""
+"Увімкнути USB Gecko:\n"
+"\n"
+"Якщо є USB Gecko, повідомлення налагоджувального UART\n"
+"буде перенаправлено. Коли USB-хост не читає активно з\n"
+"USB Gecko, система може зависнути.\n"
+"\n"
+"Також стає доступним wiiload для ітеративної розробки."
+
+#: cube/swiss/source/gui/settings.c:138
+msgid ""
+"Wait for USB Gecko:\n"
+"\n"
+"Wait for the transmit buffer to be read by the USB host when full."
+msgstr ""
+"Чекати на USB Gecko:\n"
+"\n"
+"Коли буфер передавання заповнений, чекати, доки його\n"
+"прочитає USB-хост."
+
+#: cube/swiss/source/gui/settings.c:139
+msgid ""
+"Simulated MRAM Size:\n"
+"\n"
+"Limits the amount of memory available on development hardware."
+msgstr ""
+"Розмір імітованої MRAM:\n"
+"\n"
+"Обмежує обсяг пам'яті, доступної на обладнанні розробника."
+
+#: cube/swiss/source/gui/settings.c:140
+msgid ""
+"CPU Temperature Calibration:\n"
+"\n"
+"On a cold boot, adjust this value so that the CPU temperature\n"
+"reading in the title bar is around room temperature.\n"
+"\n"
+"There is no factory calibration."
+msgstr ""
+"Калібрування температури CPU:\n"
+"\n"
+"Після холодного запуску налаштуйте це значення так,\n"
+"щоб температура CPU в рядку заголовка була близька\n"
+"до кімнатної.\n"
+"\n"
+"Заводського калібрування немає."
+
+#: cube/swiss/source/gui/settings.c:141
+msgid ""
+"Swiss Video Mode:\n"
+"\n"
+"The video mode Indigo's own screens use. Auto picks 480p with a\n"
+"digital cable and otherwise follows the console's region.\n"
+"\n"
+"Left and Right choose a mode and A switches to it. Press A\n"
+"again within 10 seconds to keep it; otherwise it changes back\n"
+"by itself."
+msgstr ""
+"Відеорежим Swiss:\n"
+"\n"
+"Відеорежим власних екранів Indigo. Авто вибирає 480p з\n"
+"цифровим кабелем, інакше - за регіоном консолі.\n"
+"\n"
+"Ліворуч і Праворуч вибирають режим, A вмикає його.\n"
+"Натисніть A ще раз протягом 10 секунд, щоб залишити його;\n"
+"інакше режим повернеться сам."
+
+#: cube/swiss/source/gui/settings.c:142
+msgid ""
+"Controller Rumble:\n"
+"\n"
+"On - Controllers can rumble in games (default)\n"
+"Off - Rumble is turned off in games"
+msgstr ""
+"Вібрація контролера:\n"
+"\n"
+"Увімк. - Контролери вібрують в іграх (типово)\n"
+"Вимк. - Вібрацію в іграх вимкнено"
+
+#: cube/swiss/source/gui/settings.c:146
+msgid ""
+"File Management:\n"
+"\n"
+"When enabled, pressing Z on an entry in the file browser will\n"
+"allow it to be managed."
+msgstr ""
+"Керування файлами:\n"
+"\n"
+"Якщо увімкнено, натискання Z на записі у файловому\n"
+"браузері дозволяє керувати ним."
+
+#: cube/swiss/source/gui/settings.c:147
+msgid ""
+"Recent List:\n"
+"\n"
+"(On) - Press Start while browsing to show a recent list.\n"
+"(Lazy) - Same as On but list updates only for new entries.\n"
+"(Off) - Recent list is completely disabled.\n"
+"\n"
+"The lazy/off options exist to minimise SD card writes."
+msgstr ""
+"Список нещодавніх:\n"
+"\n"
+"(Увімк.) - Start під час перегляду показує нещодавні.\n"
+"(Лише нові) - Як Увімк., але додає лише нові.\n"
+"(Вимк.) - Список нещодавніх повністю вимкнено.\n"
+"\n"
+"Лише нові та Вимк. зменшують запис на SD-карту."
+
+#: cube/swiss/source/gui/settings.c:148
+msgid ""
+"Hide unknown file types:\n"
+"\n"
+"Disabled - Show all files (default)\n"
+"Enabled - Hide unknown file types from being displayed\n"
+"\n"
+"Known file types are:\n"
+" GameCube Executables (.bin/.dol/.elf)\n"
+" Disc images (.gcm/.iso/.nkit.iso/.tgc)\n"
+" MP3 Music (.mp3)\n"
+" WASP/WKF Flash files (.fzn)\n"
+" GameCube Memory Card files (.gci/.gcs/.sav)\n"
+" GameCube Executables with parameters appended (.dol+cli)"
+msgstr ""
+"Ховати невідомі типи файлів:\n"
+"\n"
+"Вимкнено - Показувати всі файли (типово)\n"
+"Увімкнено - Не показувати невідомі типи файлів\n"
+"\n"
+"Відомі типи файлів:\n"
+" Виконувані файли GameCube (.bin/.dol/.elf)\n"
+" Образи дисків (.gcm/.iso/.nkit.iso/.tgc)\n"
+" Музика MP3 (.mp3)\n"
+" Флеш-файли WASP/WKF (.fzn)\n"
+" Файли карт пам'яті GameCube (.gci/.gcs/.sav)\n"
+" Виконувані файли GameCube з параметрами (.dol+cli)"
+
+#: cube/swiss/source/gui/settings.c:149
+msgid ""
+"UI Motion:\n"
+"\n"
+"Full - Calm spatial motion and ambient detail (default)\n"
+"Reduced - Faster transitions without decorative travel\n"
+"Off - Menu elements move instantly\n"
+"\n"
+"Motion never delays input or changes the destination."
+msgstr ""
+"Рух інтерфейсу:\n"
+"\n"
+"Повний - Спокійний просторовий рух і фонові\n"
+"деталі (типово)\n"
+"Зменшений - Швидші переходи без\n"
+"декоративного руху\n"
+"Вимк. - Елементи меню переміщуються миттєво\n"
+"\n"
+"Рух ніколи не затримує введення і не змінює\n"
+"місце призначення."
+
+#: cube/swiss/source/gui/settings.c:150
+msgid ""
+"Menu Color:\n"
+"\n"
+"Colors the cube, its light, the panels and the text, and\n"
+"the backdrop and waves while they follow it.\n"
+"Indigo (default) is the GameCube's own color; Spice and\n"
+"Jet Black are GameCube colors too.\n"
+"\n"
+"Cover art, button icons, warnings and enabled cheats\n"
+"keep their own colors."
+msgstr ""
+"Колір меню:\n"
+"\n"
+"Фарбує куб, його світло, панелі й текст, а також тло\n"
+"і хвилі, поки вони слідують за ним.\n"
+"Індиго (типово) - власний колір GameCube;\n"
+"Помаранчевий і Чорний - теж кольори GameCube.\n"
+"\n"
+"Обкладинки, значки кнопок, попередження й\n"
+"увімкнені чити зберігають свої кольори."
+
+#: cube/swiss/source/gui/settings.c:151
+msgid ""
+"Backdrop Color:\n"
+"\n"
+"Colors the backdrop behind the cube and its faint rings.\n"
+"Menu Color (default) - The backdrop follows Menu Color.\n"
+"A color - The backdrop keeps that color whatever Menu\n"
+"Color is.\n"
+"\n"
+"Every color keeps the backdrop as dark, so the cube and\n"
+"the text stand out as before."
+msgstr ""
+"Колір тла:\n"
+"\n"
+"Фарбує тло за кубом і його ледь помітні кільця.\n"
+"Колір меню (типово) - Тло слідує за кольором меню.\n"
+"Колір - Тло зберігає цей колір за будь-якого кольору\n"
+"меню.\n"
+"\n"
+"З будь-яким кольором тло лишається таким же\n"
+"темним, тож куб і текст виділяються, як і раніше."
+
+#: cube/swiss/source/gui/settings.c:152
+msgid ""
+"Wave Color:\n"
+"\n"
+"Colors the waves that drift behind the cube.\n"
+"Menu Color (default) - The waves follow Menu Color.\n"
+"A color - The waves keep that color whatever Menu Color\n"
+"is."
+msgstr ""
+"Колір хвиль:\n"
+"\n"
+"Фарбує хвилі, що пливуть за кубом.\n"
+"Колір меню (типово) - Хвилі слідують за кольором\n"
+"меню.\n"
+"Колір - Хвилі зберігають цей колір за будь-якого\n"
+"кольору меню."
+
+#: cube/swiss/source/gui/settings.c:153
+msgid ""
+"Library Icon:\n"
+"\n"
+"The picture on the cube's Library face: Controller (default),\n"
+"Books, Covers or Play. Each face has its own four icons.\n"
+"\n"
+"Controller mirrors your controller.\n"
+"Every icon glows in the same shade, and the face keeps its\n"
+"name and what A opens."
+msgstr ""
+"Значок Бібліотеки:\n"
+"\n"
+"Зображення на грані Бібліотеки: Контролер (типово),\n"
+"Книги, Обкладинки або Грати. Кожна грань має\n"
+"чотири власні значки.\n"
+"\n"
+"Контролер повторює ваш контролер.\n"
+"Усі значки світяться одним відтінком, а грань\n"
+"зберігає свою назву і те, що відкриває A."
+
+#: cube/swiss/source/gui/settings.c:154
+msgid ""
+"Source Icon:\n"
+"\n"
+"The picture on the cube's Source face: Hub (default),\n"
+"Disc, SD Card or Folder. Each face has its own four icons.\n"
+"\n"
+"The Disc's glints turn while the menu moves.\n"
+"Every icon glows in the same shade, and the face keeps its\n"
+"name and what A opens."
+msgstr ""
+"Значок Джерела:\n"
+"\n"
+"Зображення на грані Джерела: Хаб (типово), Диск,\n"
+"SD-карта або Тека. Кожна грань має чотири власні\n"
+"значки.\n"
+"\n"
+"Відблиски Диска обертаються, поки меню рухається.\n"
+"Усі значки світяться одним відтінком, а грань\n"
+"зберігає свою назву і те, що відкриває A."
+
+#: cube/swiss/source/gui/settings.c:155
+msgid ""
+"Settings Icon:\n"
+"\n"
+"The picture on the cube's Settings face: Sliders (default),\n"
+"Gear, Toggles or Dial. Each face has its own four icons.\n"
+"\n"
+"Sliders, Gear and Dial move while the menu does.\n"
+"Every icon glows in the same shade, and the face keeps its\n"
+"name and what A opens."
+msgstr ""
+"Значок Налаштувань:\n"
+"\n"
+"Зображення на грані Налаштувань: Повзунки\n"
+"(типово), Шестерня, Перемикачі або Регулятор.\n"
+"Кожна грань має чотири власні значки.\n"
+"\n"
+"Повзунки, Шестерня і Регулятор рухаються разом із\n"
+"меню.\n"
+"Усі значки світяться одним відтінком, а грань\n"
+"зберігає свою назву і те, що відкриває A."
+
+#: cube/swiss/source/gui/settings.c:156
+msgid ""
+"System Icon:\n"
+"\n"
+"The picture on the cube's System face: Clock (default),\n"
+"Info, Power or Chip. Each face has its own four icons.\n"
+"\n"
+"Clock tells the time.\n"
+"Every icon glows in the same shade, and the face keeps its\n"
+"name and what A opens."
+msgstr ""
+"Значок Системи:\n"
+"\n"
+"Зображення на грані Системи: Годинник (типово),\n"
+"Інфо, Живлення або Чип. Кожна грань має чотири\n"
+"власні значки.\n"
+"\n"
+"Годинник показує час.\n"
+"Усі значки світяться одним відтінком, а грань\n"
+"зберігає свою назву і те, що відкриває A."
+
+#: cube/swiss/source/gui/settings.c:157
+msgid ""
+"Panel Transparency:\n"
+"\n"
+"Enabled - Menu panels are translucent so the backdrop\n"
+"shows through, GameCube-menu style (default)\n"
+"Disabled - Panels are solid."
+msgstr ""
+"Прозорість панелей:\n"
+"\n"
+"Увімкнено - Панелі меню напівпрозорі, крізь них\n"
+"видно тло, як у меню GameCube (типово)\n"
+"Вимкнено - Панелі непрозорі."
+
+#: cube/swiss/source/gui/settings.c:158
+msgid ""
+"Animated Backdrop:\n"
+"\n"
+"Enabled - The backdrop gently drifts (default)\n"
+"Disabled - The backdrop is static."
+msgstr ""
+"Анімоване тло:\n"
+"\n"
+"Увімкнено - Тло плавно рухається (типово)\n"
+"Вимкнено - Тло нерухоме."
+
+#: cube/swiss/source/gui/settings.c:159
+msgid ""
+"Menu Music:\n"
+"\n"
+"Enabled - Play Up in the Sky, Indigo's menu music (default)\n"
+"Disabled - Silent.\n"
+"\n"
+"Changes take effect immediately."
+msgstr ""
+"Музика меню:\n"
+"\n"
+"Увімкнено - Грає Up in the Sky, музика меню Indigo\n"
+"(типово)\n"
+"Вимкнено - Тиша.\n"
+"\n"
+"Зміни діють одразу."
+
+#: cube/swiss/source/gui/settings.c:160
+msgid ""
+"Menu Sounds:\n"
+"\n"
+"Enabled - Soft blip/confirm sounds on navigation (default)\n"
+"Disabled - Silent."
+msgstr ""
+"Звуки меню:\n"
+"\n"
+"Увімкнено - Тихі звуки переходів і підтвердження\n"
+"(типово)\n"
+"Вимкнено - Тиша."
+
+#: cube/swiss/source/gui/settings.c:161
+msgid ""
+"Load at startup:\n"
+"\n"
+"What Indigo opens when it starts.\n"
+"\n"
+"A chooses a device, then a folder on it: X picks the folder\n"
+"you are in. Z on a game's details sets a game instead; Z on\n"
+"that game again, or on .. in the folder's file list, turns\n"
+"it off."
+msgstr ""
+"Відкривати при запуску:\n"
+"\n"
+"Що Indigo відкриває, коли запускається.\n"
+"\n"
+"A вибирає пристрій, потім теку на ньому: X вибирає\n"
+"теку, в якій ви перебуваєте. Z на сторінці гри задає\n"
+"натомість гру; Z на тій самій грі ще раз або на .. у\n"
+"списку файлів теки вимикає це."
+
+#: cube/swiss/source/gui/settings.c:162
+msgid ""
+"Flatten directory:\n"
+"\n"
+"Flattens a directory structure matching a glob pattern.\n"
+"\n"
+"While Library Folders is on, it sets this itself."
+msgstr ""
+"Звести теки:\n"
+"\n"
+"Зводить в один рівень структуру тек, що\n"
+"відповідає шаблону glob.\n"
+"\n"
+"Поки увімкнено Теки в Бібліотеці, це задається\n"
+"автоматично."
+
+#: cube/swiss/source/gui/settings.c:163
+msgid ""
+"Show hidden files:\n"
+"\n"
+"Lists files and folders marked hidden, such as the /swiss folder\n"
+"that holds Indigo's settings."
+msgstr ""
+"Показувати приховані файли:\n"
+"\n"
+"Показує приховані файли й теки, наприклад теку /swiss,\n"
+"де зберігаються налаштування Indigo."
+
+#: cube/swiss/source/gui/settings.c:164
+msgid ""
+"Menu Widescreen:\n"
+"\n"
+"Yes - Drawn for a TV set to 16:9: the background fills the\n"
+"screen and the menus keep their shape.\n"
+"No - Drawn for a 4:3 picture (default)\n"
+"\n"
+"Set your TV or HDMI adapter to 16:9 too. Games follow Force\n"
+"Widescreen in Game Defaults, not this."
+msgstr ""
+"Широкий екран меню:\n"
+"\n"
+"Так - Для телевізора в режимі 16:9: фон заповнює екран,\n"
+"а меню зберігають пропорції.\n"
+"Ні - Для зображення 4:3 (типово)\n"
+"\n"
+"Також увімкніть 16:9 на телевізорі або HDMI-адаптері.\n"
+"Ігри керуються параметром Примусовий широкий\n"
+"екран у Типових для ігор, а не цим."
+
+#: cube/swiss/source/gui/settings.c:165
+msgid ""
+"Library Layout:\n"
+"\n"
+"Horizontal - A row of covers; Left and Right move (default)\n"
+"Vertical - A column of covers; Up and Down move\n"
+"Grid - Rows of five covers; every direction moves\n"
+"Spotlight - A gameplay still over banners; Left and Right move\n"
+"Jewel Case - A CD case, its disc spinning; Left and Right move\n"
+"\n"
+"The selected game's title and details show beside its cover in\n"
+"Vertical and its still in Spotlight, and above the controls in Grid.\n"
+"Every layout wraps round from the last game to the first; L and R\n"
+"jump a page. Y opens the focused game's settings. In Jewel Case the\n"
+"C-stick turns the case."
+msgstr ""
+"Вигляд Бібліотеки:\n"
+"\n"
+"Горизонтальний - Ряд обкладинок; рух Вліво і Вправо (типово)\n"
+"Вертикальний - Стовпчик обкладинок; рух Вгору і Вниз\n"
+"Сітка - Ряди по п'ять обкладинок; рух у всі боки\n"
+"У фокусі - Кадр із гри над банерами; рух Вліво і Вправо\n"
+"Футляр - Коробка CD, диск крутиться; рух Вліво і Вправо\n"
+"\n"
+"Назва і дані вибраної гри: у Вертикальному - біля обкладинки,\n"
+"У фокусі - біля кадру, у Сітці - над підказками. Список\n"
+"іде по колу від останньої гри до першої; L і R гортають\n"
+"сторінку. Y відкриває налаштування вибраної гри. У Футлярі\n"
+"C-стік обертає коробку."
+
+#: cube/swiss/source/gui/settings.c:166
+msgid ""
+"Library Folders:\n"
+"\n"
+"Off - The Library is one list of every game in /games, however\n"
+"they sit in folders there (default)\n"
+"On - The Library shows the folders in /games beside the games:\n"
+"A opens one, B goes back. A folder in a folder is the deepest;\n"
+"it lists every game below it.\n"
+"\n"
+"Keep a game's discs in the same folder."
+msgstr ""
+"Теки в Бібліотеці:\n"
+"\n"
+"Вимк. - Бібліотека - один список усіх ігор у /games, хоч би\n"
+"як вони лежали в теках (типово)\n"
+"Увімк. - Бібліотека показує теки з /games поряд з іграми: A\n"
+"відкриває теку, B повертає назад. Тека в теці - найглибший\n"
+"рівень; вона показує всі ігри під собою.\n"
+"\n"
+"Тримайте диски однієї гри в одній теці."
+
+#: cube/swiss/source/gui/settings.c:167
+msgid ""
+"Saves on Details:\n"
+"\n"
+"On - Show saves when there are two or more copies (default).\n"
+"Always - Show saves even with one copy or none.\n"
+"Off - Leave the memory cards alone.\n"
+"\n"
+"On and Always read both slots and the Save Folder.\n"
+"With multiple copies, Left and Right choose one to start with."
+msgstr ""
+"Збереження в Подробицях:\n"
+"\n"
+"Увімк. - Показувати збереження, коли є дві чи більше\n"
+"копії (типово).\n"
+"Завжди - Показувати збереження навіть з однією копією\n"
+"або без неї.\n"
+"Вимк. - Не чіпати карти пам'яті.\n"
+"\n"
+"Увімк. і Завжди читають обидва слоти і Теку збережень.\n"
+"Якщо копій кілька, Вліво і Вправо вибирають, з якої\n"
+"почати."
+
+#: cube/swiss/source/gui/settings.c:168
+msgid ""
+"Idle Animation:\n"
+"\n"
+"How the cube moves while Home rests.\n"
+"Calm - A slight drift, turned a little to the right (default)\n"
+"Sway - It turns slowly left and right, so the faces beside\n"
+"the one in front peek round its edges\n"
+"\n"
+"UI Motion Reduced or Off keeps the cube still."
+msgstr ""
+"Анімація простою:\n"
+"\n"
+"Як рухається куб, поки Головна в спокої.\n"
+"Спокій - Легкий дрейф із поворотом трохи\n"
+"праворуч (типово)\n"
+"Гойдання - Куб повільно повертається ліворуч і\n"
+"праворуч, і сусідні грані визирають з-за його\n"
+"країв\n"
+"\n"
+"Рух інтерфейсу Зменшений або Вимк. тримає куб\n"
+"нерухомим."
+
+#: cube/swiss/source/gui/settings.c:169
+msgid ""
+"Waves:\n"
+"\n"
+"On - Waves drift behind the cube (default)\n"
+"Off - No waves: the backdrop and its rings only\n"
+"\n"
+"Wave Color and Wave Speed apply while they are on."
+msgstr ""
+"Хвилі:\n"
+"\n"
+"Увімк. - Хвилі пливуть за кубом (типово)\n"
+"Вимк. - Без хвиль: лише тло і його кільця\n"
+"\n"
+"Колір хвиль і Швидкість хвиль діють, поки хвилі\n"
+"увімкнено."
+
+#: cube/swiss/source/gui/settings.c:170
+msgid ""
+"On-screen Controls:\n"
+"\n"
+"On - Home shows its button hints under the cube (default)\n"
+"Off - Home shows none\n"
+"\n"
+"Other screens, and Restart's question, keep theirs.\n"
+"Y on Home always opens Settings."
+msgstr ""
+"Підказки кнопок:\n"
+"\n"
+"Увімк. - Головна показує підказки кнопок під кубом\n"
+"(типово)\n"
+"Вимк. - Головна їх не показує\n"
+"\n"
+"Інші екрани і питання Перезапуску зберігають свої.\n"
+"Y на Головній завжди відкриває Налаштування."
+
+#: cube/swiss/source/gui/settings.c:171
+msgid ""
+"Face Labels:\n"
+"\n"
+"On - Home names the face in front under the cube (default)\n"
+"Off - The cube shows only its icons."
+msgstr ""
+"Назви граней:\n"
+"\n"
+"Увімк. - Головна показує під кубом назву передньої\n"
+"грані (типово)\n"
+"Вимк. - Куб показує лише значки."
+
+#: cube/swiss/source/gui/settings.c:172
+msgid ""
+"Menu Language:\n"
+"\n"
+"The language Indigo's menus are in: English (default) or\n"
+"Ukrainian. Ukrainian's words come from swiss/indigo/uk.po on\n"
+"the settings device; without that file the menus stay English.\n"
+"\n"
+"Games, their titles and System Language don't change, and\n"
+"the settings files stay in English."
+msgstr ""
+"Мова меню:\n"
+"\n"
+"Мова меню Indigo: англійська (типово) або українська.\n"
+"Українські слова беруться з файлу swiss/indigo/uk.po на\n"
+"пристрої налаштувань; без цього файлу меню лишаються\n"
+"англійською.\n"
+"\n"
+"Ігри, їхні назви і Мова системи не змінюються, а файли\n"
+"налаштувань лишаються англійською."
+
+#: cube/swiss/source/gui/settings.c:173
+msgid ""
+"Wave Speed:\n"
+"\n"
+"How fast the waves behind the cube drift.\n"
+"Slow - Half as fast\n"
+"Normal - As they always have (default)\n"
+"Fast - Three times as fast\n"
+"\n"
+"UI Motion Off or Reduced, or Animated Backdrop off (Setup >\n"
+"Library), still stops them."
+msgstr ""
+"Швидкість хвиль:\n"
+"\n"
+"Як швидко пливуть хвилі за кубом.\n"
+"Повільна - Удвічі повільніше\n"
+"Звичайна - Як завжди (типово)\n"
+"Швидка - Утричі швидше\n"
+"\n"
+"Рух інтерфейсу Вимк. чи Зменшений або вимкнене\n"
+"Анімоване тло (Параметри > Бібліотека) все одно їх\n"
+"зупиняють."
+
+#: cube/swiss/source/gui/settings.c:174
+msgid ""
+"Clock:\n"
+"\n"
+"Right - The time sits in the top right corner (default)\n"
+"Left - It sits in the top left corner instead\n"
+"Off - It is not shown\n"
+"\n"
+"Temperature places the temperature dial on its own."
+msgstr ""
+"Годинник:\n"
+"\n"
+"Праворуч - Час у правому верхньому куті\n"
+"(типово)\n"
+"Ліворуч - Натомість у лівому верхньому куті\n"
+"Вимк. - Не показується\n"
+"\n"
+"Температура розміщує свій індикатор окремо."
+
+#: cube/swiss/source/gui/settings.c:175
+msgid ""
+"Temperature:\n"
+"\n"
+"Right - The CPU temperature dial sits in the top right\n"
+"corner (default)\n"
+"Left - It sits in the top left corner instead\n"
+"Off - It is not shown\n"
+"\n"
+"In the clock's corner, the dial sits nearer the edge."
+msgstr ""
+"Температура:\n"
+"\n"
+"Праворуч - Індикатор температури CPU у\n"
+"правому верхньому куті (типово)\n"
+"Ліворуч - Натомість у лівому верхньому куті\n"
+"Вимк. - Не показується\n"
+"\n"
+"У куті годинника індикатор стоїть ближче до\n"
+"краю."
+
+#: cube/swiss/source/gui/settings.c:176
+msgid ""
+"Up Face:\n"
+"\n"
+"The menu above Library: Source (default), another\n"
+"menu, or None.\n"
+"\n"
+"The menus: Source, Settings, System, Apps, Memory Cards,\n"
+"Emulators, File Browser and Web. Classic turns Up to it; Infinite\n"
+"turns through the faces above, left, right and below Library,\n"
+"in that order. A menu on no side is off the cube. Y on Home\n"
+"always opens Settings, and Apps and Emulators show while the\n"
+"source has a program in /apps or /emulators."
+msgstr ""
+"Верхня грань:\n"
+"\n"
+"Меню над Бібліотекою: Джерело (типово), інше меню або\n"
+"Немає.\n"
+"\n"
+"Меню: Джерело, Налаштування, Система, Програми, Карти\n"
+"пам'яті, Емулятори, Файли та Інтернет. У Класичному до\n"
+"нього веде Вгору; Безмежний обертає грані над\n"
+"Бібліотекою, ліворуч, праворуч і під нею, у цьому порядку.\n"
+"Меню, якого немає на жодній грані, прибрано з куба. Y на\n"
+"Головній завжди відкриває Налаштування, а Програми й\n"
+"Емулятори показуються, коли в джерелі є програма в\n"
+"/apps чи /emulators."
+
+#: cube/swiss/source/gui/settings.c:177
+msgid ""
+"Left Face:\n"
+"\n"
+"The menu left of Library: Settings (default), another\n"
+"menu, or None.\n"
+"\n"
+"The menus: Source, Settings, System, Apps, Memory Cards,\n"
+"Emulators, File Browser and Web. Classic turns Left to it; Infinite\n"
+"turns through the faces above, left, right and below Library,\n"
+"in that order. A menu on no side is off the cube. Y on Home\n"
+"always opens Settings, and Apps and Emulators show while the\n"
+"source has a program in /apps or /emulators."
+msgstr ""
+"Ліва грань:\n"
+"\n"
+"Меню ліворуч від Бібліотеки: Налаштування (типово), інше\n"
+"меню або Немає.\n"
+"\n"
+"Меню: Джерело, Налаштування, Система, Програми, Карти\n"
+"пам'яті, Емулятори, Файли та Інтернет. У Класичному до\n"
+"нього веде Вліво; Безмежний обертає грані над\n"
+"Бібліотекою, ліворуч, праворуч і під нею, у цьому порядку.\n"
+"Меню, якого немає на жодній грані, прибрано з куба. Y на\n"
+"Головній завжди відкриває Налаштування, а Програми й\n"
+"Емулятори показуються, коли в джерелі є програма в\n"
+"/apps чи /emulators."
+
+#: cube/swiss/source/gui/settings.c:178
+msgid ""
+"Right Face:\n"
+"\n"
+"The menu right of Library: System (default), another\n"
+"menu, or None.\n"
+"\n"
+"The menus: Source, Settings, System, Apps, Memory Cards,\n"
+"Emulators, File Browser and Web. Classic turns Right to it; Infinite\n"
+"turns through the faces above, left, right and below Library,\n"
+"in that order. A menu on no side is off the cube. Y on Home\n"
+"always opens Settings, and Apps and Emulators show while the\n"
+"source has a program in /apps or /emulators."
+msgstr ""
+"Права грань:\n"
+"\n"
+"Меню праворуч від Бібліотеки: Система (типово), інше\n"
+"меню або Немає.\n"
+"\n"
+"Меню: Джерело, Налаштування, Система, Програми, Карти\n"
+"пам'яті, Емулятори, Файли та Інтернет. У Класичному до\n"
+"нього веде Вправо; Безмежний обертає грані над\n"
+"Бібліотекою, ліворуч, праворуч і під нею, у цьому порядку.\n"
+"Меню, якого немає на жодній грані, прибрано з куба. Y на\n"
+"Головній завжди відкриває Налаштування, а Програми й\n"
+"Емулятори показуються, коли в джерелі є програма в /apps\n"
+"чи /emulators."
+
+#: cube/swiss/source/gui/settings.c:179
+msgid ""
+"Down Face:\n"
+"\n"
+"The menu below Library: Apps (default), another\n"
+"menu, or None.\n"
+"\n"
+"The menus: Source, Settings, System, Apps, Memory Cards,\n"
+"Emulators, File Browser and Web. Classic turns Down to it; Infinite\n"
+"turns through the faces above, left, right and below Library,\n"
+"in that order. A menu on no side is off the cube. Y on Home\n"
+"always opens Settings, and Apps and Emulators show while the\n"
+"source has a program in /apps or /emulators."
+msgstr ""
+"Нижня грань:\n"
+"\n"
+"Меню під Бібліотекою: Програми (типово), інше меню або\n"
+"Немає.\n"
+"\n"
+"Меню: Джерело, Налаштування, Система, Програми, Карти\n"
+"пам'яті, Емулятори, Файли та Інтернет. У Класичному до\n"
+"нього веде Вниз; Безмежний обертає грані над\n"
+"Бібліотекою, ліворуч, праворуч і під нею, у цьому порядку.\n"
+"Меню, якого немає на жодній грані, прибрано з куба. Y на\n"
+"Головній завжди відкриває Налаштування, а Програми й\n"
+"Емулятори показуються, коли в джерелі є програма в /apps\n"
+"чи /emulators."
+
+#: cube/swiss/source/gui/settings.c:180
+msgid ""
+"Cube:\n"
+"\n"
+"Infinite - Left and Right turn round every face in a ring (default)\n"
+"Classic - Every menu sits on its own side of the cube, as on\n"
+"the GameCube\n"
+"\n"
+"In Classic, turn to a side, and back to Library to reach the\n"
+"others; Up Face, Left Face, Right Face and Down Face say\n"
+"what is on each side. B turns back to Library."
+msgstr ""
+"Куб:\n"
+"\n"
+"Безмежний - Вліво і Вправо обертають усі грані по колу\n"
+"(типово)\n"
+"Класичний - Кожне меню на своїй грані куба, як на\n"
+"GameCube\n"
+"\n"
+"У Класичному поверніть до грані, а до інших - через\n"
+"Бібліотеку; Верхня, Ліва, Права і Нижня грань задають,\n"
+"що на кожному боці. B повертає до Бібліотеки."
+
+#: cube/swiss/source/gui/settings.c:181
+msgid ""
+"Boot without prompts:\n"
+"\n"
+"Starts a game as soon as you choose it, without its detail screen.\n"
+"Hold B while choosing a game to see the screen instead; that turns\n"
+"this off for the rest of the session."
+msgstr ""
+"Запуск без запитань:\n"
+"\n"
+"Запускає гру одразу після вибору, без сторінки з\n"
+"подробицями. Щоб побачити її, тримайте B під час вибору\n"
+"гри; це вимикає параметр до кінця сеансу."
+
+#: cube/swiss/source/gui/settings.c:185
+msgid ""
+"Init network at startup:\n"
+"\n"
+"Disabled - Do not initialise the BBA even if present (default)\n"
+"Enabled - If a BBA is present, it will be initialised at startup\n"
+"\n"
+"If initialised, navigate to the IP in a web browser to backup\n"
+"various data. wiiload is available for iterative development."
+msgstr ""
+"Мережа при запуску:\n"
+"\n"
+"Вимкнено - Не ініціалізувати BBA, навіть якщо він є\n"
+"(типово)\n"
+"Увімкнено - Якщо BBA є, його буде ініціалізовано під\n"
+"час запуску\n"
+"\n"
+"Після ініціалізації відкрийте IP у веб-браузері, щоб\n"
+"створити резервні копії даних. Для ітеративної\n"
+"розробки доступний wiiload."
+
+#: cube/swiss/source/gui/settings.c:186
+msgid ""
+"FSP Path MTU:\n"
+"\n"
+"The valid range is between 576 and 2030 bytes (default: 1500).\n"
+"Increasing this value may provide a performance enhancement.\n"
+"\n"
+"The maximum packet size on the server should be set to at least\n"
+"this value, minus 40 bytes. The Layer 2 MTU on all involved\n"
+"network interfaces must be set to at least this value.\n"
+"\n"
+"Misconfiguration will result in read errors. Users of USB Dolphin\n"
+"need to observe limitations specific to their USB Ethernet adapter."
+msgstr ""
+"MTU шляху FSP:\n"
+"\n"
+"Допустимий діапазон - від 576 до 2030 байтів (типово: 1500).\n"
+"Більше значення може підвищити швидкодію.\n"
+"\n"
+"Максимальний розмір пакета на сервері має бути не\n"
+"менший за це значення мінус 40 байтів. MTU рівня 2 на всіх\n"
+"задіяних мережевих інтерфейсах має бути не менший за це\n"
+"значення.\n"
+"\n"
+"Неправильні налаштування спричинять помилки читання.\n"
+"Користувачам USB Dolphin слід зважати на обмеження\n"
+"свого USB Ethernet-адаптера."
+
+#: cube/swiss/source/gui/settings.c:187
+msgid ""
+"IPv4 Address:\n"
+"\n"
+"The console's address when DHCP is off. With DHCP on, the address\n"
+"your router hands out is shown here instead.\n"
+"\n"
+"Takes effect the next time the network starts."
+msgstr ""
+"Адреса IPv4:\n"
+"\n"
+"Адреса консолі, коли DHCP вимкнено. З увімкненим DHCP тут\n"
+"показується адреса, яку видав роутер.\n"
+"\n"
+"Діє під час наступного запуску мережі."
+
+#: cube/swiss/source/gui/settings.c:188
+msgid ""
+"IPv4 Netmask:\n"
+"\n"
+"The network's prefix length when DHCP is off, such as 24 on a\n"
+"typical home network."
+msgstr ""
+"Маска IPv4:\n"
+"\n"
+"Довжина префікса мережі, коли DHCP вимкнено,\n"
+"наприклад 24 у типовій домашній мережі."
+
+#: cube/swiss/source/gui/settings.c:189
+msgid ""
+"IPv4 Gateway:\n"
+"\n"
+"Your router's address when DHCP is off."
+msgstr ""
+"Шлюз IPv4:\n"
+"\n"
+"Адреса роутера, коли DHCP вимкнено."
+
+#: cube/swiss/source/gui/settings.c:190
+msgid ""
+"IPv4 uses DHCP:\n"
+"\n"
+"Yes - Your router assigns the address, netmask and gateway (default)\n"
+"No - Use the address, netmask and gateway set above"
+msgstr ""
+"IPv4 через DHCP:\n"
+"\n"
+"Так - Адресу, маску й шлюз задає роутер (типово)\n"
+"Ні - Використати адресу, маску й шлюз, задані вище"
+
+#: cube/swiss/source/gui/settings.c:191
+msgid ""
+"Sync Clock:\n"
+"\n"
+"Yes - Set the clock from the NTP server when the network starts\n"
+"No - Leave the clock as it is (default)\n"
+"\n"
+"Choose a Time Zone to follow daylight saving time. The IPL and\n"
+"games see the new time too. Init network at startup runs the sync\n"
+"when Indigo starts."
+msgstr ""
+"Синхронізація годинника:\n"
+"\n"
+"Так - Брати час із NTP-сервера під час запуску мережі\n"
+"Ні - Не змінювати годинник (типово)\n"
+"\n"
+"Щоб враховувати літній час, оберіть Часовий пояс. Новий час\n"
+"бачать також IPL та ігри. Мережа при запуску синхронізує\n"
+"годинник під час запуску Indigo."
+
+#: cube/swiss/source/gui/settings.c:192
+msgid ""
+"NTP Server IP:\n"
+"\n"
+"Address of the time server Sync Clock asks. Empty asks\n"
+"Cloudflare's, 162.159.200.123 (default). A name won't work: the\n"
+"console has no DNS."
+msgstr ""
+"IP сервера NTP:\n"
+"\n"
+"Адреса сервера часу для Синхронізації годинника. Якщо\n"
+"порожньо - сервер Cloudflare, 162.159.200.123 (типово).\n"
+"Ім'я не підійде: консоль не має DNS."
+
+#: cube/swiss/source/gui/settings.c:194
+msgid ""
+"Time Zone:\n"
+"\n"
+"Choose a location to follow its daylight saving rules.\n"
+"\n"
+"Enter a name such as America/Denver or Europe/London, or a POSIX\n"
+"rule such as MST7MDT,M3.2.0,M11.1.0. The rules apply at each sync.\n"
+"\n"
+"Keep offset (no DST) preserves the console's current UTC offset.\n"
+"Leave the entry empty to use it."
+msgstr ""
+"Часовий пояс:\n"
+"\n"
+"Оберіть місцевість, щоб діяли її правила літнього часу.\n"
+"\n"
+"Введіть назву, як-от America/Denver чи Europe/London, або\n"
+"правило POSIX, як-от MST7MDT,M3.2.0,M11.1.0. Правила діють\n"
+"під час кожної синхронізації.\n"
+"\n"
+"Зсув консолі (без DST) лишає поточний зсув консолі від UTC.\n"
+"Щоб обрати його, залиште поле порожнім."
+
+#: cube/swiss/source/gui/settings.c:194
+msgid ""
+"FSP Host IP:\n"
+"\n"
+"Address of the computer running the FSP server with your games."
+msgstr ""
+"IP хоста FSP:\n"
+"\n"
+"Адреса комп'ютера з FSP-сервером, на якому ваші ігри."
+
+#: cube/swiss/source/gui/settings.c:195
+msgid ""
+"FSP Port:\n"
+"\n"
+"Port of the FSP server (21 by default)."
+msgstr ""
+"Порт FSP:\n"
+"\n"
+"Порт FSP-сервера (типово 21)."
+
+#: cube/swiss/source/gui/settings.c:196
+msgid ""
+"FSP Password:\n"
+"\n"
+"Password for the FSP server, if it has one. It is stored as plain\n"
+"text in global.ini."
+msgstr ""
+"Пароль FSP:\n"
+"\n"
+"Пароль FSP-сервера, якщо він є. Зберігається\n"
+"відкритим текстом у global.ini."
+
+#: cube/swiss/source/gui/settings.c:197
+msgid ""
+"FTP Host IP:\n"
+"\n"
+"Address of the FTP server with your games."
+msgstr ""
+"IP хоста FTP:\n"
+"\n"
+"Адреса FTP-сервера з вашими іграми."
+
+#: cube/swiss/source/gui/settings.c:198
+msgid ""
+"FTP Port:\n"
+"\n"
+"Port of the FTP server (21 by default)."
+msgstr ""
+"Порт FTP:\n"
+"\n"
+"Порт FTP-сервера (типово 21)."
+
+#: cube/swiss/source/gui/settings.c:199
+msgid ""
+"FTP Username:\n"
+"\n"
+"User name for the FTP server."
+msgstr ""
+"Користувач FTP:\n"
+"\n"
+"Ім'я користувача на FTP-сервері."
+
+#: cube/swiss/source/gui/settings.c:200
+msgid ""
+"FTP Password:\n"
+"\n"
+"Password for the FTP server. It is stored as plain text in\n"
+"global.ini."
+msgstr ""
+"Пароль FTP:\n"
+"\n"
+"Пароль FTP-сервера. Зберігається відкритим\n"
+"текстом у global.ini."
+
+#: cube/swiss/source/gui/settings.c:201
+msgid ""
+"FTP PASV Mode:\n"
+"\n"
+"Use passive mode, where the console opens the data connection.\n"
+"Try it if listings stall behind a firewall or router."
+msgstr ""
+"Пасивний режим FTP:\n"
+"\n"
+"Пасивний режим: з'єднання для даних відкриває\n"
+"консоль. Спробуйте, якщо списки зависають за\n"
+"брандмауером чи роутером."
+
+#: cube/swiss/source/gui/settings.c:202
+msgid ""
+"SMB Host IP:\n"
+"\n"
+"Address of the computer sharing your games over SMB."
+msgstr ""
+"IP хоста SMB:\n"
+"\n"
+"Адреса комп'ютера, що надає ігри через SMB."
+
+#: cube/swiss/source/gui/settings.c:203
+msgid ""
+"SMB Share:\n"
+"\n"
+"Name of the shared folder on that computer."
+msgstr ""
+"Спільна тека SMB:\n"
+"\n"
+"Назва спільної теки на тому комп'ютері."
+
+#: cube/swiss/source/gui/settings.c:204
+msgid ""
+"SMB Username:\n"
+"\n"
+"User name for the share."
+msgstr ""
+"Користувач SMB:\n"
+"\n"
+"Ім'я користувача для спільної теки."
+
+#: cube/swiss/source/gui/settings.c:205
+msgid ""
+"SMB Password:\n"
+"\n"
+"Password for the share. It is stored as plain text in global.ini."
+msgstr ""
+"Пароль SMB:\n"
+"\n"
+"Пароль спільної теки. Зберігається відкритим\n"
+"текстом у global.ini."
+
+#: cube/swiss/source/gui/settings.c:206
+msgid ""
+"RetroTINK-4K Host IP:\n"
+"\n"
+"Address of a RetroTINK-4K on your network. Indigo switches it to\n"
+"each game's RetroTINK-4K profile."
+msgstr ""
+"IP хоста RetroTINK-4K:\n"
+"\n"
+"Адреса RetroTINK-4K у вашій мережі. Indigo вмикає\n"
+"на ньому профіль RetroTINK-4K кожної гри."
+
+#: cube/swiss/source/gui/settings.c:207
+msgid ""
+"RetroTINK-4K Port:\n"
+"\n"
+"Port of the RetroTINK-4K's network control."
+msgstr ""
+"Порт RetroTINK-4K:\n"
+"\n"
+"Порт мережевого керування RetroTINK-4K."
+
+#: cube/swiss/source/gui/settings.c:211
+msgid ""
+"In-Game Reset: (A + Z + Start)\n"
+"\n"
+"Reboot - Perform hot reset with a compatible device\n"
+"Apploader - Requires /swiss/patches/apploader.img"
+msgstr ""
+"Скидання в грі: (A + Z + Start)\n"
+"\n"
+"Перезапуск - Гаряче скидання на сумісному пристрої\n"
+"Apploader - Потрібен /swiss/patches/apploader.img"
+
+#: cube/swiss/source/gui/settings.c:212
+msgid ""
+"Load GameCube Main Menu:\n"
+"\n"
+"When enabled, games will be booted with the GameCube logo\n"
+"screen and Main Menu accessible with patches applied.\n"
+"\n"
+"Requires /swiss/patches/ipl.bin on Wii."
+msgstr ""
+"Головне меню GameCube:\n"
+"\n"
+"Якщо ввімкнено, ігри запускаються з екраном\n"
+"логотипа GameCube і доступним головним меню,\n"
+"з накладеними патчами.\n"
+"\n"
+"На Wii потрібен /swiss/patches/ipl.bin."
+
+#: cube/swiss/source/gui/settings.c:213
+msgid ""
+"Force Video Active:\n"
+"\n"
+"A workaround for GCVideo-DVI firmware version series 3.0,\n"
+"rendered obsolete by 3.1 and later."
+msgstr ""
+"Примусово активне відео:\n"
+"\n"
+"Обхідне рішення для прошивок GCVideo-DVI серії 3.0,\n"
+"непотрібне з версії 3.1 і новіших."
+
+#: cube/swiss/source/gui/settings.c:214
+msgid ""
+"Pause for resolution change:\n"
+"\n"
+"When enabled, a change in active video resolution will pause the\n"
+"game for 2 seconds."
+msgstr ""
+"Пауза при зміні роздільності:\n"
+"\n"
+"Якщо ввімкнено, зміна активної роздільності відео ставить\n"
+"гру на паузу на 2 секунди."
+
+#: cube/swiss/source/gui/settings.c:215
+msgid ""
+"Auto-load cheats:\n"
+"\n"
+"If enabled, and a cheats file for a particular game is found\n"
+"e.g. /swiss/cheats/GPOP8D.txt (on a compatible device)\n"
+"then all previously enabled cheats will be re-enabled"
+msgstr ""
+"Автозавантаження читів:\n"
+"\n"
+"Якщо ввімкнено і знайдено файл читів для гри,\n"
+"напр. /swiss/cheats/GPOP8D.txt (на сумісному\n"
+"пристрої), то всі раніше ввімкнені чити буде\n"
+"ввімкнено знову"
+
+#: cube/swiss/source/gui/settings.c:216
+msgid ""
+"WiiRD debugging:\n"
+"\n"
+"Disabled - Boot as normal (default)\n"
+"Enabled - This will start a game with the WiiRD debugger enabled\n"
+"& paused\n"
+"\n"
+"The WiiRD debugger takes up more memory and can cause issues."
+msgstr ""
+"Налагодження WiiRD:\n"
+"\n"
+"Вимкнено - Звичайний запуск (типово)\n"
+"Увімкнено - Гра запуститься з увімкненим налагоджувачем\n"
+"WiiRD і на паузі\n"
+"\n"
+"Налагоджувач WiiRD займає більше пам'яті й може\n"
+"спричиняти проблеми."
+
+#: cube/swiss/source/gui/settings.c:217
+msgid ""
+"Emulate Memory Card:\n"
+"\n"
+"Games save to a memory card image on the device they start from\n"
+"instead of a real memory card. Needs a device that supports it."
+msgstr ""
+"Емуляція карти пам'яті:\n"
+"\n"
+"Ігри зберігаються в образ карти пам'яті на пристрої,\n"
+"з якого запущені, а не на справжню карту.\n"
+"Потрібен сумісний пристрій."
+
+#: cube/swiss/source/gui/settings.c:218
+msgid ""
+"Disable MemCard PRO GameID:\n"
+"\n"
+"Stops Indigo telling a MemCard PRO or compatible card in that\n"
+"slot which game is starting, so it stays on its current card."
+msgstr ""
+"Вимкнути GameID MemCard PRO:\n"
+"\n"
+"Indigo не повідомлятиме MemCard PRO чи сумісній\n"
+"карті в цьому слоті, яка гра запускається, тож\n"
+"карта лишиться на поточній."
+
+#: cube/swiss/source/gui/settings.c:219
+msgid ""
+"Disable Video Patches:\n"
+"\n"
+"None - Apply Swiss's video patches, including fixes for\n"
+"particular games (default)\n"
+"Game - Skip only the fixes for particular games\n"
+"All - Patch no video at all. Forced video modes and the other\n"
+"picture settings then have no effect."
+msgstr ""
+"Вимкнути відеопатчі:\n"
+"\n"
+"Немає - Застосовувати відеопатчі Swiss, зокрема\n"
+"виправлення для окремих ігор (типово)\n"
+"Гра - Пропускати лише виправлення для окремих ігор\n"
+"Усі - Не патчити відео зовсім. Примусові\n"
+"відеорежими та інші налаштування зображення\n"
+"тоді не діють."
+
+#: cube/swiss/source/gui/settings.c:223
+msgid ""
+"Force Vertical Offset:\n"
+"\n"
+"+0 - Standard value (default)\n"
+"-2 - GCVideo-DVI compatible (480i)\n"
+"-3 - GCVideo-DVI compatible\n"
+"-4 - GCVideo-DVI compatible (240p)\n"
+"-12 - Datapath VisionRGB (480p)"
+msgstr ""
+"Примусовий вертикальний зсув:\n"
+"\n"
+"+0 - Стандартне значення (типово)\n"
+"-2 - Сумісно з GCVideo-DVI (480i)\n"
+"-3 - Сумісно з GCVideo-DVI\n"
+"-4 - Сумісно з GCVideo-DVI (240p)\n"
+"-12 - Datapath VisionRGB (480p)"
+
+#: cube/swiss/source/gui/settings.c:224
+msgid ""
+"Force Vertical Filter:\n"
+"\n"
+"For 480i & 576i:\n"
+" Auto - Do nothing (default)\n"
+"\n"
+"For 240p & 288p:\n"
+" Auto - Equivalent to 0 (default)\n"
+" 0 - 50%/50% blend with lower lines\n"
+" 1 - 50%/50% blend with upper lines\n"
+" 2 - Discard even lines\n"
+"\n"
+"For other video modes:\n"
+" Auto - Equivalent to 0 (default)\n"
+" 0 - 3\327MSAA resolve only\n"
+" 1 - 18.75%/62.5%/18.75% blend\n"
+" 2 - 25%/50%/25% blend (deflicker)"
+msgstr ""
+"Примусовий вертикальний фільтр:\n"
+"\n"
+"Для 480i і 576i:\n"
+" Авто - Нічого не робити (типово)\n"
+"\n"
+"Для 240p і 288p:\n"
+" Авто - Те саме, що 0 (типово)\n"
+" 0 - 50%/50% blend з нижніми рядками\n"
+" 1 - 50%/50% blend з верхніми рядками\n"
+" 2 - Відкидати парні рядки\n"
+"\n"
+"Для інших відеорежимів:\n"
+" Авто - Те саме, що 0 (типово)\n"
+" 0 - Лише згладжування 3\327MSAA\n"
+" 1 - 18.75%/62.5%/18.75% blend\n"
+" 2 - 25%/50%/25% blend (антимерехтіння)"
+
+#: cube/swiss/source/gui/settings.c:225
+msgid ""
+"Fix Pixel Center:\n"
+"\n"
+"Not to be confused with the \223480p Pixel Fix\224 on Wii."
+msgstr ""
+"Виправити центр пікселя:\n"
+"\n"
+"Не плутати з 480p Pixel Fix на Wii."
+
+#: cube/swiss/source/gui/settings.c:226
+msgid ""
+"Force Anisotropic Filter:\n"
+"\n"
+"The GameCube's texture sampling hardware is optimised for the\n"
+"trilinear filtering of 16 bpp textures and the bilinear filtering of\n"
+"32 bpp textures.\n"
+"\n"
+"It is not unusual for the performance to randomly plummet once\n"
+"anisotropic filtering is enabled, so do so sparingly."
+msgstr ""
+"Примусовий анізотропний фільтр:\n"
+"\n"
+"Апаратна вибірка текстур GameCube оптимізована для\n"
+"трилінійної фільтрації текстур 16 bpp і білінійної\n"
+"фільтрації текстур 32 bpp.\n"
+"\n"
+"Після ввімкнення анізотропної фільтрації продуктивність\n"
+"нерідко раптово падає, тож вмикайте її обачно."
+
+#: cube/swiss/source/gui/settings.c:227
+msgid ""
+"Force Polling Rate:\n"
+"\n"
+"VSync - Highest compatibility\n"
+"1000Hz - Lowest input latency"
+msgstr ""
+"Примусова частота опитування:\n"
+"\n"
+"VSync - Найкраща сумісність\n"
+"1000Hz - Найменша затримка вводу"
+
+#: cube/swiss/source/gui/settings.c:228
+msgid ""
+"Invert Camera Stick:\n"
+"\n"
+"No - Leave C Stick as-is (default)\n"
+"X - Invert X-axis of the C Stick\n"
+"Y - Invert Y-axis of the C Stick\n"
+"X&Y - Invert both axes of the C Stick"
+msgstr ""
+"Інвертувати стік камери:\n"
+"\n"
+"Ні - Не змінювати C-стік (типово)\n"
+"X - Інвертувати вісь X C-стіка\n"
+"Y - Інвертувати вісь Y C-стіка\n"
+"X&Y - Інвертувати обидві осі C-стіка"
+
+#: cube/swiss/source/gui/settings.c:229
+msgid ""
+"Swap Camera Stick:\n"
+"\n"
+"No - Leave C Stick as-is (default)\n"
+"X - Swap X-axis of the C Stick with the Control Stick\n"
+"Y - Swap Y-axis of the C Stick with the Control Stick\n"
+"X&Y - Swap both axes of the C Stick with the Control Stick"
+msgstr ""
+"Поміняти стік камери:\n"
+"\n"
+"Ні - Не змінювати C-стік (типово)\n"
+"X - Поміняти вісь X C-стіка з основним стіком\n"
+"Y - Поміняти вісь Y C-стіка з основним стіком\n"
+"X&Y - Поміняти обидві осі C-стіка з основним стіком"
+
+#: cube/swiss/source/gui/settings.c:230
+msgid ""
+"Digital Trigger Level:\n"
+"\n"
+"Sets the threshold where the L/R Button is fully pressed."
+msgstr ""
+"Поріг цифрового тригера:\n"
+"\n"
+"Поріг, за якого кнопка L/R вважається\n"
+"натиснутою повністю."
+
+#: cube/swiss/source/gui/settings.c:231
+msgid ""
+"Emulate Audio Streaming:\n"
+"\n"
+"Audio streaming is a hardware feature that allows a compressed\n"
+"audio track to be played in the background by the disc drive.\n"
+"\n"
+"Emulation is necessary for devices not attached to the\n"
+"DVD Interface, or for those not implementing it regardless."
+msgstr ""
+"Емуляція аудіопотоку:\n"
+"\n"
+"Аудіопотік - апаратна функція, що дає приводу\n"
+"відтворювати стиснену звукову доріжку у фоні.\n"
+"\n"
+"Емуляція потрібна для пристроїв, не під'єднаних до\n"
+"DVD-інтерфейсу, або тих, що його не реалізують."
+
+#: cube/swiss/source/gui/settings.c:232
+msgid ""
+"Emulate Read Speed:\n"
+"\n"
+"No - Start transfer immediately (default)\n"
+"Yes - Delay transfer to simulate the GameCube disc drive\n"
+"Wii - Delay transfer to simulate the Wii disc drive\n"
+"\n"
+"This is necessary to avoid programming mistakes obfuscated by\n"
+"the original medium, or for speedrunning."
+msgstr ""
+"Емуляція швидкості читання:\n"
+"\n"
+"Ні - Передавати дані одразу (типово)\n"
+"Так - Затримка, як у приводі GameCube\n"
+"Wii - Затримка, як у приводі Wii\n"
+"\n"
+"Потрібно, щоб уникнути помилок програм, прихованих\n"
+"оригінальним носієм, або для спідранів."
+
+#: cube/swiss/source/gui/settings.c:233
+msgid ""
+"Emulate Broadband Adapter:\n"
+"\n"
+"Only available with the File Service Protocol or an initialised\n"
+"ETH2GC/GCNET module, where memory constraints permit.\n"
+"\n"
+"Packets not destined for the hypervisor are forwarded to the\n"
+"virtual MAC. The virtual MAC address is the same as the\n"
+"physical MAC. The physical MAC/PHY retain their configuration\n"
+"from Swiss, including link speed."
+msgstr ""
+"Емуляція Broadband Adapter:\n"
+"\n"
+"Доступно лише з File Service Protocol або ініціалізованим\n"
+"модулем ETH2GC/GCNET, якщо дозволяє пам'ять.\n"
+"\n"
+"Пакети, не призначені гіпервізору, пересилаються на\n"
+"віртуальний MAC. Віртуальна MAC-адреса збігається з\n"
+"фізичною. Фізичні MAC/PHY зберігають налаштування\n"
+"зі Swiss, зокрема швидкість з'єднання."
+
+#: cube/swiss/source/gui/settings.c:234
+msgid ""
+"Disable Memory Card:\n"
+"\n"
+"Some games misbehave when unexpected devices are present in\n"
+"the memory card slots. When selected, the device will be hidden\n"
+"from the game if present at boot time."
+msgstr ""
+"Вимкнути карту пам'яті:\n"
+"\n"
+"Деякі ігри працюють неправильно, коли в слотах\n"
+"карт пам'яті є неочікувані пристрої. Якщо вибрано,\n"
+"пристрій, наявний під час запуску, буде приховано\n"
+"від гри."
+
+#: cube/swiss/source/gui/settings.c:235
+msgid ""
+"Hypervisor:\n"
+"\n"
+"On - Features and bugfixes that rely on the hypervisor work,\n"
+"along with prepatching and patch persistence (default)\n"
+"Off - Turns all of them off\n"
+"\n"
+"Only available to devices attached to the DVD Interface."
+msgstr ""
+"Гіпервізор:\n"
+"\n"
+"Увімк. - Працюють функції й виправлення, що\n"
+"залежать від гіпервізора, а також попереднє\n"
+"й постійне патчення (типово)\n"
+"Вимк. - Вимикає їх усі\n"
+"\n"
+"Доступно лише для пристроїв на DVD-інтерфейсі."
+
+#: cube/swiss/source/gui/settings.c:236
+msgid ""
+"Prefer Clean Boot:\n"
+"\n"
+"When enabled, the GameCube will be reset and the game booted\n"
+"through normal processes with no changes applied.\n"
+"Region restrictions may be applicable.\n"
+"\n"
+"Only available to devices attached to the DVD Interface."
+msgstr ""
+"Чистий запуск типово:\n"
+"\n"
+"Якщо ввімкнено, GameCube буде скинуто, а гру запущено\n"
+"звичайним способом без жодних змін.\n"
+"Можуть діяти регіональні обмеження.\n"
+"\n"
+"Доступно лише для пристроїв на DVD-інтерфейсі."
+
+#: cube/swiss/source/gui/settings.c:237
+msgid ""
+"RetroTINK-4K Profile:\n"
+"\n"
+"Presses a profile button through a configured ser2net TCP\n"
+"connection to the RetroTINK-4K's serial port."
+msgstr ""
+"Профіль RetroTINK-4K:\n"
+"\n"
+"Натискає кнопку профілю через налаштоване\n"
+"TCP-з'єднання ser2net з послідовним портом\n"
+"RetroTINK-4K."
+
+#: cube/swiss/source/gui/settings.c:238
+msgid ""
+"Game Language:\n"
+"\n"
+"The language this game uses. Default follows System Language.\n"
+"Mostly matters for PAL games that include several languages."
+msgstr ""
+"Мова гри:\n"
+"\n"
+"Мова, якою працює гра. Типово - як Мова системи.\n"
+"Важливо переважно для PAL-ігор з кількома мовами."
+
+#: cube/swiss/source/gui/settings.c:239
+msgid ""
+"Force Video Mode:\n"
+"\n"
+"The video mode this game starts in. Auto keeps the game's own\n"
+"mode. Some modes only appear with a component or digital cable."
+msgstr ""
+"Примусовий відеорежим:\n"
+"\n"
+"Відеорежим, у якому запускається гра. Авто лишає\n"
+"власний режим гри. Деякі режими є лише\n"
+"з компонентним чи цифровим кабелем."
+
+#: cube/swiss/source/gui/settings.c:240
+msgid ""
+"Force Horizontal Scale:\n"
+"\n"
+"How the video output scales the picture across.\n"
+"Auto - Keep the game's own scaling (default)\n"
+"1:1 - No horizontal scaling\n"
+"11:10, 9:8 - Fixed ratios\n"
+"640px to 720px - A fixed output width"
+msgstr ""
+"Примусовий горизонтальний масштаб:\n"
+"\n"
+"Як відеовихід масштабує зображення вшир.\n"
+"Авто - Власне масштабування гри (типово)\n"
+"1:1 - Без горизонтального масштабування\n"
+"11:10, 9:8 - Фіксовані пропорції\n"
+"Від 640px до 720px - Фіксована ширина виходу"
+
+#: cube/swiss/source/gui/settings.c:241
+msgid ""
+"Force Field Rendering:\n"
+"\n"
+"Auto - Keep the game's own choice (default)\n"
+"On - Draw each field of an interlaced picture separately\n"
+"Off - Draw whole frames\n"
+"TAA - The jittered rendering some games use for anti-aliasing"
+msgstr ""
+"Примусовий рендеринг полів:\n"
+"\n"
+"Авто - Як вирішить гра (типово)\n"
+"Увімк. - Малювати кожне поле черезрядкового\n"
+"кадру окремо\n"
+"Вимк. - Малювати цілі кадри\n"
+"TAA - Зміщений рендеринг, яким деякі ігри\n"
+"згладжують краї"
+
+#: cube/swiss/source/gui/settings.c:242
+msgid ""
+"Alpha Dithering:\n"
+"\n"
+"On - The dithering the GameCube adds to blended effects stays\n"
+"(default)\n"
+"Off - Turns it off. It can show as a fine dot pattern on digital\n"
+"video."
+msgstr ""
+"Альфа-дизеринг:\n"
+"\n"
+"Увімк. - Дизеринг, який GameCube додає до змішаних\n"
+"ефектів, лишається (типово)\n"
+"Вимк. - Вимикає його. Він може бути помітний як дрібний\n"
+"візерунок точок на цифровому відео."
+
+#: cube/swiss/source/gui/settings.c:243
+msgid ""
+"Force Widescreen:\n"
+"\n"
+"Stretches games made for 4:3 to fill a 16:9 screen.\n"
+"3D - Widen the 3D view only\n"
+"2D+3D - Also widen 2D menus and on-screen displays\n"
+"Set your TV to 16:9. Edges can look wrong in some games."
+msgstr ""
+"Примусовий широкий екран:\n"
+"\n"
+"Розтягує ігри для 4:3 на екран 16:9.\n"
+"3D - Розширити лише 3D-сцену\n"
+"2D+3D - Також 2D-меню та екранні елементи\n"
+"Виставте на телевізорі 16:9. Краї в деяких\n"
+"іграх можуть виглядати неправильно."
+
+#: cube/swiss/source/gui/settings.c:244
+msgid ""
+"Reset to defaults:\n"
+"\n"
+"Puts every setting on this screen back to its default.\n"
+"It asks first, and Discard & Exit still undoes it."
+msgstr ""
+"Скинути до типових:\n"
+"\n"
+"Повертає всі налаштування цього екрана\n"
+"до типових. Спершу буде запит, а Скасувати\n"
+"й вийти все одно це скасує."
+
+#: cube/swiss/source/gui/settings.c:277
+msgid "Auto (Progressive)"
+msgstr "Авто (прогресивна)"
+
+#: cube/swiss/source/gui/settings.c:277
+msgid "Auto (Interlaced)"
+msgstr "Авто (черезрядкова)"
+
+#: cube/swiss/source/gui/settings.c:283
+msgid ""
+"Force NTSC Video Mode:\n"
+"\n"
+"The video mode games that aren't PAL start in, unless a game's\n"
+"own settings say otherwise. Auto keeps each game's own mode."
+msgstr ""
+"Примусовий відеорежим NTSC:\n"
+"\n"
+"Відеорежим, у якому запускаються не-PAL ігри,\n"
+"якщо власні налаштування гри не кажуть іншого.\n"
+"Авто лишає режим кожної гри."
+
+#: cube/swiss/source/gui/settings.c:284
+msgid ""
+"Force PAL Video Mode:\n"
+"\n"
+"The video mode PAL games start in, unless a game's own settings\n"
+"say otherwise. Auto keeps each game's own mode."
+msgstr ""
+"Примусовий відеорежим PAL:\n"
+"\n"
+"Відеорежим, у якому запускаються PAL-ігри,\n"
+"якщо власні налаштування гри не кажуть іншого.\n"
+"Авто лишає режим кожної гри."
+
+#: cube/swiss/source/gui/settings.c:459
+msgid "Not set"
+msgstr "Не задано"
+
+#: cube/swiss/source/gui/settings.c:471
+msgid "Save & Exit"
+msgstr "Зберегти й вийти"
+
+#: cube/swiss/source/gui/settings.c:471
+msgid "Discard & Exit"
+msgstr "Скасувати й вийти"
+
+#: cube/swiss/source/gui/settings.c:510
+msgid "%d custom"
+msgstr "Змінено: %d"
+
+#: cube/swiss/source/gui/settings.c:512
+msgid "No custom settings"
+msgstr "Без змін"
+
+#: cube/swiss/source/gui/settings.c:521
+msgid "SETUP  \273  "
+msgstr "ПАРАМЕТРИ  \273  "
+
+#: cube/swiss/source/gui/settings.c:973
+msgid "Video mode, cable, TV"
+msgstr "Відеорежим, кабель, ТВ"
+
+#: cube/swiss/source/gui/settings.c:974
+msgid "Color, icons, language"
+msgstr "Колір, значки, мова"
+
+#: cube/swiss/source/gui/settings.c:975
+msgid "Settings file, SD, disc"
+msgstr "Файл налашт., SD, диск"
+
+#: cube/swiss/source/gui/settings.c:976
+msgid "Adapter, file servers"
+msgstr "Адаптер, файл-сервери"
+
+#: cube/swiss/source/gui/settings.c:977
+msgid "Browser, recent, look"
+msgstr "Файли, нещодавні, вигляд"
+
+#: cube/swiss/source/gui/settings.c:978
+msgid "USB Gecko, memory, debug"
+msgstr "USB Gecko, пам'ять, налагодж."
+
+#: cube/swiss/source/gui/settings.c:1066
+msgid "System Boot Mode:"
+msgstr "Режим запуску системи:"
+
+#: cube/swiss/source/gui/settings.c:1066
+msgid "Production"
+msgstr "Робочий"
+
+#: cube/swiss/source/gui/settings.c:1067
+msgid "System Sound:"
+msgstr "Звук системи:"
+
+#: cube/swiss/source/gui/settings.c:1067
+msgid "Stereo"
+msgstr "Стерео"
+
+#: cube/swiss/source/gui/settings.c:1067
+msgid "Mono"
+msgstr "Моно"
+
+#: cube/swiss/source/gui/settings.c:1068
+msgid "System Video:"
+msgstr "Відео системи:"
+
+#: cube/swiss/source/gui/settings.c:1069
+msgid "Screen Position:"
+msgstr "Положення екрана:"
+
+#: cube/swiss/source/gui/settings.c:1070
+msgid "System Language:"
+msgstr "Мова системи:"
+
+#: cube/swiss/source/gui/settings.c:1071
+msgid "Configuration Device:"
+msgstr "Пристрій налаштувань:"
+
+#: cube/swiss/source/gui/settings.c:1072
+msgid "Library Path:"
+msgstr "Шлях до Бібліотеки:"
+
+#: cube/swiss/source/gui/settings.c:1083
+msgid "Save Folder:"
+msgstr "Тека збережень:"
+
+#: cube/swiss/source/gui/settings.c:1087 cube/swiss/source/gui/settings.c:1091
+msgid " (Auto) "
+msgstr " (Авто) "
+
+#: cube/swiss/source/gui/settings.c:1088
+msgid "Swiss Video Mode:"
+msgstr "Відеорежим Swiss:"
+
+#: cube/swiss/source/gui/settings.c:1092
+msgid "Apps Video Mode:"
+msgstr "Відеорежим програм:"
+
+#: cube/swiss/source/gui/settings.c:1094
+msgid "Init DVD Drive at startup:"
+msgstr "Ініціалізувати привід DVD при запуску:"
+
+#: cube/swiss/source/gui/settings.c:1095
+msgid "Stop DVD Drive motor:"
+msgstr "Зупиняти двигун DVD:"
+
+#: cube/swiss/source/gui/settings.c:1096
+msgid "Configure Audio Buffer:"
+msgstr "Аудіобуфер:"
+
+#: cube/swiss/source/gui/settings.c:1097
+msgid "SD/IDE-EXI Speed:"
+msgstr "Швидкість SD/IDE-EXI:"
+
+#: cube/swiss/source/gui/settings.c:1098
+msgid "AVE Compatibility:"
+msgstr "Сумісність AVE:"
+
+#: cube/swiss/source/gui/settings.c:1099
+msgid "Force DTV Status:"
+msgstr "Примусовий статус DTV:"
+
+#: cube/swiss/source/gui/settings.c:1100
+msgid "RetroTINK-4K HDMI Input:"
+msgstr "Вхід HDMI RetroTINK-4K:"
+
+#: cube/swiss/source/gui/settings.c:1101
+msgid "Controller Recalibration:"
+msgstr "Перекалібрування контролерів:"
+
+#: cube/swiss/source/gui/settings.c:1103
+msgid "Controller Rumble:"
+msgstr "Вібрація контролера:"
+
+#: cube/swiss/source/gui/settings.c:1104
+msgid "Enable USB Gecko:"
+msgstr "Увімкнути USB Gecko:"
+
+#: cube/swiss/source/gui/settings.c:1105
+msgid "Wait for USB Gecko:"
+msgstr "Чекати на USB Gecko:"
+
+#: cube/swiss/source/gui/settings.c:1106
+msgid "Simulated MRAM Size:"
+msgstr "Розмір імітованої MRAM:"
+
+#: cube/swiss/source/gui/settings.c:1107
+msgid "CPU Temperature Calibration:"
+msgstr "Калібрування температури CPU:"
+
+#: cube/swiss/source/gui/settings.c:1112
+msgid "File Management:"
+msgstr "Керування файлами:"
+
+#: cube/swiss/source/gui/settings.c:1113
+msgid "Recent List:"
+msgstr "Список нещодавніх:"
+
+#: cube/swiss/source/gui/settings.c:1114
+msgid "Show hidden files:"
+msgstr "Показувати приховані файли:"
+
+#: cube/swiss/source/gui/settings.c:1115
+msgid "Hide unknown file types:"
+msgstr "Ховати невідомі типи файлів:"
+
+#: cube/swiss/source/gui/settings.c:1117
+msgid "UI Motion:"
+msgstr "Рух інтерфейсу:"
+
+#: cube/swiss/source/gui/settings.c:1120
+msgid "Menu Color:"
+msgstr "Колір меню:"
+
+#: cube/swiss/source/gui/settings.c:1121
+msgid "Backdrop Color:"
+msgstr "Колір тла:"
+
+#: cube/swiss/source/gui/settings.c:1122
+msgid "Wave Color:"
+msgstr "Колір хвиль:"
+
+#: cube/swiss/source/gui/settings.c:1123
+msgid "Library Icon:"
+msgstr "Значок Бібліотеки:"
+
+#: cube/swiss/source/gui/settings.c:1124
+msgid "Source Icon:"
+msgstr "Значок Джерела:"
+
+#: cube/swiss/source/gui/settings.c:1125
+msgid "Settings Icon:"
+msgstr "Значок Налаштувань:"
+
+#: cube/swiss/source/gui/settings.c:1126
+msgid "System Icon:"
+msgstr "Значок Системи:"
+
+#: cube/swiss/source/gui/settings.c:1127
+msgid "Up Face:"
+msgstr "Верхня грань:"
+
+#: cube/swiss/source/gui/settings.c:1128
+msgid "Left Face:"
+msgstr "Ліва грань:"
+
+#: cube/swiss/source/gui/settings.c:1129
+msgid "Right Face:"
+msgstr "Права грань:"
+
+#: cube/swiss/source/gui/settings.c:1130
+msgid "Down Face:"
+msgstr "Нижня грань:"
+
+#: cube/swiss/source/gui/settings.c:1131
+msgid "Cube:"
+msgstr "Куб:"
+
+#: cube/swiss/source/gui/settings.c:1131
+msgid "Classic"
+msgstr "Класичний"
+
+#: cube/swiss/source/gui/settings.c:1131
+msgid "Infinite"
+msgstr "Безмежний"
+
+#: cube/swiss/source/gui/settings.c:1132
+msgid "Idle Animation:"
+msgstr "Анімація простою:"
+
+#: cube/swiss/source/gui/settings.c:1132
+msgid "Sway"
+msgstr "Гойдання"
+
+#: cube/swiss/source/gui/settings.c:1132
+msgid "Calm"
+msgstr "Спокій"
+
+#: cube/swiss/source/gui/settings.c:1133
+msgid "Waves:"
+msgstr "Хвилі:"
+
+#: cube/swiss/source/gui/settings.c:1134
+msgid "On-screen Controls:"
+msgstr "Підказки кнопок:"
+
+#: cube/swiss/source/gui/settings.c:1135
+msgid "Face Labels:"
+msgstr "Назви граней:"
+
+#: cube/swiss/source/gui/settings.c:1136
+msgid "Clock:"
+msgstr "Годинник:"
+
+#: cube/swiss/source/gui/settings.c:1137
+msgid "Temperature:"
+msgstr "Температура:"
+
+#: cube/swiss/source/gui/settings.c:1138
+msgid "Wave Speed:"
+msgstr "Швидкість хвиль:"
+
+#: cube/swiss/source/gui/settings.c:1139
+msgid "Panel Transparency:"
+msgstr "Прозорість панелей:"
+
+#: cube/swiss/source/gui/settings.c:1140
+msgid "Animated Backdrop:"
+msgstr "Анімоване тло:"
+
+#: cube/swiss/source/gui/settings.c:1141
+msgid "Menu Music:"
+msgstr "Музика меню:"
+
+#: cube/swiss/source/gui/settings.c:1142
+msgid "Menu Sounds:"
+msgstr "Звуки меню:"
+
+#: cube/swiss/source/gui/settings.c:1143
+msgid "Boot without prompts:"
+msgstr "Запуск без запитань:"
+
+#: cube/swiss/source/gui/settings.c:1144
+msgid "Load at startup:"
+msgstr "Відкривати при запуску:"
+
+#: cube/swiss/source/gui/settings.c:1145
+msgid "Flatten directory:"
+msgstr "Звести теки:"
+
+#: cube/swiss/source/gui/settings.c:1146
+msgid "Library Layout:"
+msgstr "Вигляд Бібліотеки:"
+
+#: cube/swiss/source/gui/settings.c:1147
+msgid "Library Folders:"
+msgstr "Теки в Бібліотеці:"
+
+#: cube/swiss/source/gui/settings.c:1148
+msgid "Saves on Details:"
+msgstr "Збереження в Подробицях:"
+
+#: cube/swiss/source/gui/settings.c:1148
+msgid "Always"
+msgstr "Завжди"
+
+#: cube/swiss/source/gui/settings.c:1149
+msgid "Menu Widescreen:"
+msgstr "Широкий екран меню:"
+
+#: cube/swiss/source/gui/settings.c:1150
+msgid "Menu Language:"
+msgstr "Мова меню:"
+
+#: cube/swiss/source/gui/settings.c:1156
+msgid "Init network at startup:"
+msgstr "Мережа при запуску:"
+
+#: cube/swiss/source/gui/settings.c:1157
+msgid "IPv4 Address:"
+msgstr "Адреса IPv4:"
+
+#: cube/swiss/source/gui/settings.c:1158
+msgid "IPv4 Netmask:"
+msgstr "Маска IPv4:"
+
+#: cube/swiss/source/gui/settings.c:1159
+msgid "IPv4 Gateway:"
+msgstr "Шлюз IPv4:"
+
+#: cube/swiss/source/gui/settings.c:1160
+msgid "IPv4 uses DHCP:"
+msgstr "IPv4 через DHCP:"
+
+#: cube/swiss/source/gui/settings.c:1161
+msgid "Sync Clock:"
+msgstr "Синхронізація годинника:"
+
+#: cube/swiss/source/gui/settings.c:1162
+msgid "NTP Server IP:"
+msgstr "IP сервера NTP:"
+
+#: cube/swiss/source/gui/settings.c:1163
+msgid "Time Zone:"
+msgstr "Часовий пояс:"
+
+#: cube/swiss/source/gui/settings.c:1165
+msgid "Keep offset (no DST)"
+msgstr "Зсув консолі (без DST)"
+
+#: cube/swiss/source/gui/settings.c:1164
+msgid "FSP Host IP:"
+msgstr "IP хоста FSP:"
+
+#: cube/swiss/source/gui/settings.c:1165
+msgid "FSP Port:"
+msgstr "Порт FSP:"
+
+#: cube/swiss/source/gui/settings.c:1166
+msgid "FSP Password:"
+msgstr "Пароль FSP:"
+
+#: cube/swiss/source/gui/settings.c:1167
+msgid "FSP Path MTU:"
+msgstr "MTU шляху FSP:"
+
+#: cube/swiss/source/gui/settings.c:1168
+msgid "FTP Host IP:"
+msgstr "IP хоста FTP:"
+
+#: cube/swiss/source/gui/settings.c:1169
+msgid "FTP Port:"
+msgstr "Порт FTP:"
+
+#: cube/swiss/source/gui/settings.c:1170
+msgid "FTP Username:"
+msgstr "Користувач FTP:"
+
+#: cube/swiss/source/gui/settings.c:1171
+msgid "FTP Password:"
+msgstr "Пароль FTP:"
+
+#: cube/swiss/source/gui/settings.c:1172
+msgid "FTP PASV Mode:"
+msgstr "Пасивний режим FTP:"
+
+#: cube/swiss/source/gui/settings.c:1173
+msgid "SMB Host IP:"
+msgstr "IP хоста SMB:"
+
+#: cube/swiss/source/gui/settings.c:1174
+msgid "SMB Share:"
+msgstr "Спільна тека SMB:"
+
+#: cube/swiss/source/gui/settings.c:1175
+msgid "SMB Username:"
+msgstr "Користувач SMB:"
+
+#: cube/swiss/source/gui/settings.c:1176
+msgid "SMB Password:"
+msgstr "Пароль SMB:"
+
+#: cube/swiss/source/gui/settings.c:1177
+msgid "RetroTINK-4K Host IP:"
+msgstr "IP хоста RetroTINK-4K:"
+
+#: cube/swiss/source/gui/settings.c:1178
+msgid "RetroTINK-4K Port:"
+msgstr "Порт RetroTINK-4K:"
+
+#: cube/swiss/source/gui/settings.c:1185
+msgid "In-Game Reset:"
+msgstr "Скидання в грі:"
+
+#: cube/swiss/source/gui/settings.c:1186
+msgid "Load GameCube Main Menu:"
+msgstr "Головне меню GameCube:"
+
+#: cube/swiss/source/gui/settings.c:1187
+msgid "Emulate Memory Card:"
+msgstr "Емуляція карти пам'яті:"
+
+#: cube/swiss/source/gui/settings.c:1188
+msgid "Disable MemCard PRO GameID:"
+msgstr "Вимкнути GameID MemCard PRO:"
+
+#: cube/swiss/source/gui/settings.c:1189
+msgid "Disable Video Patches:"
+msgstr "Вимкнути відеопатчі:"
+
+#: cube/swiss/source/gui/settings.c:1190
+msgid "Force Video Active:"
+msgstr "Примусово активне відео:"
+
+#: cube/swiss/source/gui/settings.c:1191
+msgid "Pause for resolution change:"
+msgstr "Пауза при зміні роздільності:"
+
+#: cube/swiss/source/gui/settings.c:1192
+msgid "Auto-load cheats:"
+msgstr "Автозавантаження читів:"
+
+#: cube/swiss/source/gui/settings.c:1193
+msgid "WiiRD debugging:"
+msgstr "Налагодження WiiRD:"
+
+#: cube/swiss/source/gui/settings.c:1194 cube/swiss/source/gui/settings.c:1220 cube/swiss/source/gui/settings.c:1256
+msgid "Reset to defaults"
+msgstr "Скинути до типових"
+
+#: cube/swiss/source/gui/settings.c:1199
+msgid "Force NTSC Video Mode:"
+msgstr "Примусовий відеорежим NTSC:"
+
+#: cube/swiss/source/gui/settings.c:1200
+msgid "Force PAL Video Mode:"
+msgstr "Примусовий відеорежим PAL:"
+
+#: cube/swiss/source/gui/settings.c:1201 cube/swiss/source/gui/settings.c:1237
+msgid "Force Horizontal Scale:"
+msgstr "Примусовий горизонтальний масштаб:"
+
+#: cube/swiss/source/gui/settings.c:1202 cube/swiss/source/gui/settings.c:1238
+msgid "Force Vertical Offset:"
+msgstr "Примусовий вертикальний зсув:"
+
+#: cube/swiss/source/gui/settings.c:1203 cube/swiss/source/gui/settings.c:1239
+msgid "Force Vertical Filter:"
+msgstr "Примусовий вертикальний фільтр:"
+
+#: cube/swiss/source/gui/settings.c:1204 cube/swiss/source/gui/settings.c:1240
+msgid "Force Field Rendering:"
+msgstr "Примусовий рендеринг полів:"
+
+#: cube/swiss/source/gui/settings.c:1205 cube/swiss/source/gui/settings.c:1241
+msgid "Fix Pixel Center:"
+msgstr "Виправити центр пікселя:"
+
+#: cube/swiss/source/gui/settings.c:1206 cube/swiss/source/gui/settings.c:1242
+msgid "Alpha Dithering:"
+msgstr "Альфа-дизеринг:"
+
+#: cube/swiss/source/gui/settings.c:1207 cube/swiss/source/gui/settings.c:1243
+msgid "Force Anisotropic Filter:"
+msgstr "Примусовий анізотропний фільтр:"
+
+#: cube/swiss/source/gui/settings.c:1208 cube/swiss/source/gui/settings.c:1244
+msgid "Force Widescreen:"
+msgstr "Примусовий широкий екран:"
+
+#: cube/swiss/source/gui/settings.c:1209 cube/swiss/source/gui/settings.c:1245
+msgid "Force Polling Rate:"
+msgstr "Примусова частота опитування:"
+
+#: cube/swiss/source/gui/settings.c:1210 cube/swiss/source/gui/settings.c:1246
+msgid "Invert Camera Stick:"
+msgstr "Інвертувати стік камери:"
+
+#: cube/swiss/source/gui/settings.c:1211 cube/swiss/source/gui/settings.c:1247
+msgid "Swap Camera Stick:"
+msgstr "Поміняти стік камери:"
+
+#: cube/swiss/source/gui/settings.c:1212 cube/swiss/source/gui/settings.c:1248
+msgid "Digital Trigger Level:"
+msgstr "Поріг цифрового тригера:"
+
+#: cube/swiss/source/gui/settings.c:1213 cube/swiss/source/gui/settings.c:1249
+msgid "Emulate Audio Streaming:"
+msgstr "Емуляція аудіопотоку:"
+
+#: cube/swiss/source/gui/settings.c:1214 cube/swiss/source/gui/settings.c:1250
+msgid "Emulate Read Speed:"
+msgstr "Емуляція швидкості читання:"
+
+#: cube/swiss/source/gui/settings.c:1215 cube/swiss/source/gui/settings.c:1251
+msgid "Emulate Broadband Adapter:"
+msgstr "Емуляція Broadband Adapter:"
+
+#: cube/swiss/source/gui/settings.c:1216 cube/swiss/source/gui/settings.c:1252
+msgid "Disable Memory Card:"
+msgstr "Вимкнути карту пам'яті:"
+
+#: cube/swiss/source/gui/settings.c:1217 cube/swiss/source/gui/settings.c:1253
+msgid "Hypervisor:"
+msgstr "Гіпервізор:"
+
+#: cube/swiss/source/gui/settings.c:1218 cube/swiss/source/gui/settings.c:1254
+msgid "Prefer Clean Boot:"
+msgstr "Чистий запуск типово:"
+
+#: cube/swiss/source/gui/settings.c:1219 cube/swiss/source/gui/settings.c:1255
+msgid "RetroTINK-4K Profile:"
+msgstr "Профіль RetroTINK-4K:"
+
+#: cube/swiss/source/gui/settings.c:1235
+msgid "Game Language:"
+msgstr "Мова гри:"
+
+#: cube/swiss/source/gui/settings.c:1236
+msgid "Force Video Mode:"
+msgstr "Примусовий відеорежим:"
+
+#: cube/swiss/source/gui/settings.c:1302
+msgid "A  Open"
+msgstr "A  Відкрити"
+
+#: cube/swiss/source/gui/settings.c:1313
+msgid "A  Edit"
+msgstr "A  Редагувати"
+
+#: cube/swiss/source/gui/settings.c:1313
+msgid "Edit"
+msgstr "Редагувати"
+
+#: cube/swiss/source/gui/settings.c:1318
+msgid "A  Reset"
+msgstr "A  Скинути"
+
+#: cube/swiss/source/gui/settings.c:1324
+msgid "A  Apply"
+msgstr "A  Застосувати"
+
+#: cube/swiss/source/gui/settings.c:1324
+msgid "Apply"
+msgstr "Застосувати"
+
+#: cube/swiss/source/gui/settings.c:1330 cube/swiss/source/gui/settings.c:2752 cube/swiss/source/gui/ui_files.c:677
+msgid "A  Choose"
+msgstr "A  Вибрати"
+
+#: cube/swiss/source/gui/settings.c:1330 cube/swiss/source/gui/settings.c:2752 cube/swiss/source/gui/ui_files.c:677
+msgid "Choose"
+msgstr "Вибрати"
+
+#: cube/swiss/source/gui/settings.c:1330
+msgid "A  Change"
+msgstr "A  Змінити"
+
+#: cube/swiss/source/gui/settings.c:1330
+msgid "Change"
+msgstr "Змінити"
+
+#: cube/swiss/source/gui/settings.c:1333
+msgid "Y  Help"
+msgstr "Y  Довідка"
+
+#: cube/swiss/source/gui/settings.c:1333
+msgid "Help"
+msgstr "Довідка"
+
+#: cube/swiss/source/gui/settings.c:1344
+msgid "%s (%s) - A chooses a folder; Left/Right changes device."
+msgstr "%s (%s) - A вибирає теку; Вліво/Вправо змінює пристрій."
+
+#: cube/swiss/source/gui/settings.c:1350
+msgid "Auto: the first /games found - A chooses a folder instead."
+msgstr "Авто: перша знайдена /games - A вибирає іншу теку."
+
+#: cube/swiss/source/gui/settings.c:1356
+msgid "Not applied yet: A switches to it, then asks whether to keep it."
+msgstr "Ще не застосовано: A вмикає, потім питає, чи залишити."
+
+#: cube/swiss/source/gui/settings.c:1361
+msgid "X  Default"
+msgstr "X  Типово"
+
+#: cube/swiss/source/gui/settings.c:1365
+msgid "A  Save"
+msgstr "A  Зберегти"
+
+#: cube/swiss/source/gui/settings.c:1366
+msgid "Keeps every change and closes Settings."
+msgstr "Зберігає всі зміни й закриває Налаштування."
+
+#: cube/swiss/source/gui/settings.c:1369
+msgid "A  Discard"
+msgstr "A  Скасувати"
+
+#: cube/swiss/source/gui/settings.c:1370
+msgid "Puts back everything changed since Settings opened, and closes it."
+msgstr "Повертає все, що змінено з відкриття Налаштувань, і закриває їх."
+
+#: cube/swiss/source/gui/settings.c:1619
+msgid ""
+"In the \223GCDigital Settings\224 menu,\n"
+"set \223Use console DE\224 to %s."
+msgstr ""
+"У меню GCDigital Settings\n"
+"встановіть Use console DE на %s."
+
+#: cube/swiss/source/gui/settings.c:1622
+msgid ""
+"In the GCVideo \223Advanced Settings\224\n"
+"menu, set \223Fix Resolution\224 to %s."
+msgstr ""
+"У меню GCVideo Advanced Settings\n"
+"встановіть Fix Resolution на %s."
+
+#: cube/swiss/source/gui/settings.c:1816
+msgid "Flatten directory"
+msgstr "Звести теки"
+
+#: cube/swiss/source/gui/settings.c:1839
+msgid "IPv4 Address"
+msgstr "Адреса IPv4"
+
+#: cube/swiss/source/gui/settings.c:1842
+msgid "IPv4 Netmask"
+msgstr "Маска IPv4"
+
+#: cube/swiss/source/gui/settings.c:1845
+msgid "IPv4 Gateway"
+msgstr "Шлюз IPv4"
+
+#: cube/swiss/source/gui/settings.c:1854
+msgid "NTP Server IP"
+msgstr "IP сервера NTP"
+
+#: cube/swiss/source/gui/settings.c:1477
+msgid "Time Zone (e.g. America/Denver)"
+msgstr "Часовий пояс (напр. America/Denver)"
+
+#: cube/swiss/source/gui/settings.c:1860
+msgid "FSP Host IP"
+msgstr "IP хоста FSP"
+
+#: cube/swiss/source/gui/settings.c:1863
+msgid "FSP Port"
+msgstr "Порт FSP"
+
+#: cube/swiss/source/gui/settings.c:1866
+msgid "FSP Password"
+msgstr "Пароль FSP"
+
+#: cube/swiss/source/gui/settings.c:1869
+msgid "FSP Path MTU"
+msgstr "MTU шляху FSP"
+
+#: cube/swiss/source/gui/settings.c:1872
+msgid "FTP Host IP"
+msgstr "IP хоста FTP"
+
+#: cube/swiss/source/gui/settings.c:1875
+msgid "FTP Port"
+msgstr "Порт FTP"
+
+#: cube/swiss/source/gui/settings.c:1878
+msgid "FTP Username"
+msgstr "Користувач FTP"
+
+#: cube/swiss/source/gui/settings.c:1881
+msgid "FTP Password"
+msgstr "Пароль FTP"
+
+#: cube/swiss/source/gui/settings.c:1887
+msgid "SMB Host IP"
+msgstr "IP хоста SMB"
+
+#: cube/swiss/source/gui/settings.c:1890
+msgid "SMB Share"
+msgstr "Спільна тека SMB"
+
+#: cube/swiss/source/gui/settings.c:1893
+msgid "SMB Username"
+msgstr "Користувач SMB"
+
+#: cube/swiss/source/gui/settings.c:1896
+msgid "SMB Password"
+msgstr "Пароль SMB"
+
+#: cube/swiss/source/gui/settings.c:1899
+msgid "RetroTINK-4K Host IP"
+msgstr "IP хоста RetroTINK-4K"
+
+#: cube/swiss/source/gui/settings.c:1902
+msgid "RetroTINK-4K Port"
+msgstr "Порт RetroTINK-4K"
+
+#: cube/swiss/source/gui/settings.c:2117
+msgid ""
+"Turning this on globally may cause certain\n"
+"games to crash from resource exhaustion."
+msgstr ""
+"Якщо ввімкнути це для всіх ігор, деякі\n"
+"можуть падати через брак ресурсів."
+
+#: cube/swiss/source/gui/settings.c:2413
+msgid ""
+"Reset everything on this screen to its default?\n"
+"A  RESET    B  KEEP"
+msgstr ""
+"Скинути все на цьому екрані до типових?\n"
+"A  СКИНУТИ    B  ЗАЛИШИТИ"
+
+#: cube/swiss/source/gui/settings.c:2413 cube/swiss/source/swiss.c:7557 cube/swiss/source/swiss.c:7559
+msgid "KEEP"
+msgstr "ЗАЛИШИТИ"
+
+#: cube/swiss/source/gui/settings.c:2468
+msgid ""
+"Keep %s %s?\n"
+"It changes back by itself in %d s.\n"
+"A  KEEP    B  CHANGE BACK"
+msgstr ""
+"Залишити %s %s?\n"
+"Само повернеться через %d с.\n"
+"A  ЗАЛИШИТИ    B  ПОВЕРНУТИ"
+
+#: cube/swiss/source/gui/settings.c:2468
+msgid "CHANGE BACK"
+msgstr "ПОВЕРНУТИ"
+
+#: cube/swiss/source/gui/settings.c:3030
+msgid "Saving changes\205"
+msgstr "Збереження змін"
+
+#: cube/swiss/source/gui/settings.c:3057
+msgid "Successfully saved configuration!"
+msgstr "Налаштування збережено!"
+
+#: cube/swiss/source/gui/settings.c:3065
+msgid "Failed to save configuration!"
+msgstr "Не вдалося зберегти налаштування!"
+
+#: cube/swiss/source/gui/ui_files.c:366
+msgid "Other storage"
+msgstr "Інше сховище"
+
+#: cube/swiss/source/gui/ui_files.c:371
+msgid "the top"
+msgstr "кореня"
+
+#: cube/swiss/source/gui/ui_files.c:377
+msgid "Up to %.*s"
+msgstr "Вгору до %.*s"
+
+#: cube/swiss/source/gui/ui_files.c:427
+msgid "block"
+msgstr "блок"
+
+#: cube/swiss/source/gui/ui_files.c:427
+msgid "blocks"
+msgstr "блоків"
+
+#: cube/swiss/source/gui/ui_files.c:432 cube/swiss/source/gui/ui_files.c:470 cube/swiss/source/gui/ui_files.c:471
+msgid " bytes"
+msgstr " байтів"
+
+#: cube/swiss/source/gui/ui_files.c:441
+msgid "Partition %d, ISO %d"
+msgstr "Розділ %d, ISO %d"
+
+#: cube/swiss/source/gui/ui_files.c:452
+msgid "Can't start \267 %s"
+msgstr "Не запускається \267 %s"
+
+#: cube/swiss/source/gui/ui_files.c:671
+msgid "Z  Actions   "
+msgstr "Z  Дії   "
+
+#: cube/swiss/source/gui/ui_files.c:685
+msgid "L+A  Delete"
+msgstr "L+A  Видалити"
+
+#: cube/swiss/source/gui/ui_files.c:685 cube/swiss/source/gui/ui_files.c:834 cube/swiss/source/swiss.c:1865
+msgid "Delete"
+msgstr "Видалити"
+
+#: cube/swiss/source/gui/ui_files.c:694
+msgid "B  Home"
+msgstr "B  Головна"
+
+#: cube/swiss/source/gui/ui_files.c:699
+msgid "X  Up   B  Home"
+msgstr "X  Вгору   B  Головна"
+
+#: cube/swiss/source/gui/ui_files.c:703
+msgid "Z  Autoload off   "
+msgstr "Z  Автозапуск вимк.   "
+
+#: cube/swiss/source/gui/ui_files.c:703
+msgid "Autoload off"
+msgstr "Автозапуск вимк."
+
+#: cube/swiss/source/gui/ui_files.c:703
+msgid "Z  Autoload   "
+msgstr "Z  Автозапуск   "
+
+#: cube/swiss/source/gui/ui_files.c:703
+msgid "Autoload"
+msgstr "Автозапуск"
+
+#: cube/swiss/source/gui/ui_files.c:710
+msgid "A  Details"
+msgstr "A  Подробиці"
+
+#: cube/swiss/source/gui/ui_files.c:710
+msgid "Details"
+msgstr "Подробиці"
+
+#: cube/swiss/source/gui/ui_files.c:710
+msgid "A  Start"
+msgstr "A  Пуск"
+
+#: cube/swiss/source/gui/ui_files.c:710
+msgid "Start"
+msgstr "Пуск"
+
+#: cube/swiss/source/gui/ui_files.c:717
+msgid "A  Actions   "
+msgstr "A  Дії   "
+
+#: cube/swiss/source/gui/ui_files.c:727 cube/swiss/source/gui/ui_files.c:769 cube/swiss/source/gui/ui_files.c:1111
+msgid "This storage"
+msgstr "Це сховище"
+
+#: cube/swiss/source/gui/ui_files.c:739
+msgid "The network adapter is in use on the other side."
+msgstr "Мережевий адаптер зайнятий на іншому боці."
+
+#: cube/swiss/source/gui/ui_files.c:743
+msgid "%s is open on the other side."
+msgstr "%s відкрито на іншому боці."
+
+#: cube/swiss/source/gui/ui_files.c:768
+msgid "%s isn't ready."
+msgstr "%s: не готово."
+
+#: cube/swiss/source/gui/ui_files.c:771
+msgid "Couldn't read %s."
+msgstr "Не вдалося прочитати %s."
+
+#: cube/swiss/source/gui/ui_files.c:772
+msgid "its top folder"
+msgstr "його кореневу теку"
+
+#: cube/swiss/source/gui/ui_files.c:780
+msgid "Press R to choose storage."
+msgstr "Натисніть R, щоб вибрати сховище."
+
+#: cube/swiss/source/gui/ui_files.c:795
+msgid "Free space on %s is unknown."
+msgstr "Вільне місце на %s невідоме."
+
+#: cube/swiss/source/gui/ui_files.c:801
+msgid "Needs %s. It fits."
+msgstr "Потрібно %s. Вміщується."
+
+#: cube/swiss/source/gui/ui_files.c:806
+msgid "It fits only by replacing the copy already there."
+msgstr "Вміщується, лише якщо замінити наявну копію."
+
+#: cube/swiss/source/gui/ui_files.c:812
+msgid "%s has %s free; this needs %s."
+msgstr "На %s вільно %s; потрібно %s."
+
+#: cube/swiss/source/gui/ui_files.c:834 cube/swiss/source/swiss.c:6157 cube/swiss/source/swiss.c:6250
+msgid "Rename"
+msgstr "Перейменувати"
+
+#: cube/swiss/source/gui/ui_files.c:834 cube/swiss/source/swiss.c:6158
+msgid "Hide"
+msgstr "Сховати"
+
+#: cube/swiss/source/gui/ui_files.c:851 cube/swiss/source/swiss.c:6158
+msgid "Unhide"
+msgstr "Показати"
+
+#: cube/swiss/source/gui/ui_files.c:860
+msgid "Folders can't be moved yet."
+msgstr "Теки поки не можна переміщувати."
+
+#: cube/swiss/source/gui/ui_files.c:860
+msgid "Folders can't be copied yet."
+msgstr "Теки поки не можна копіювати."
+
+#: cube/swiss/source/gui/ui_files.c:863
+msgid "%s isn't ready. Choose storage with %c."
+msgstr "%s: не готово. Виберіть сховище кнопкою %c."
+
+#: cube/swiss/source/gui/ui_files.c:867
+msgid "It's already in this folder."
+msgstr "Уже в цій теці."
+
+#: cube/swiss/source/gui/ui_files.c:872
+msgid "Use Memory Cards to copy saves."
+msgstr "Збереження копіюйте в Картах пам'яті."
+
+#: cube/swiss/source/gui/ui_files.c:877
+msgid "Use Memory Cards to move saves."
+msgstr "Збереження переміщуйте в Картах пам'яті."
+
+#: cube/swiss/source/gui/ui_files.c:880
+msgid "A folder there has the same name."
+msgstr "Там уже є тека з такою назвою."
+
+#: cube/swiss/source/gui/ui_files.c:883
+msgid "%s is read-only, so it can't be moved off it."
+msgstr "%s лише для читання, тож звідти не перемістити."
+
+#: cube/swiss/source/gui/ui_files.c:887
+msgid "%s is read-only."
+msgstr "%s лише для читання."
+
+#: cube/swiss/source/gui/ui_files.c:904
+msgid "%s can't rename files."
+msgstr "%s не може перейменовувати файли."
+
+#: cube/swiss/source/gui/ui_files.c:908
+msgid "%s can't hide files."
+msgstr "%s не може ховати файли."
+
+#: cube/swiss/source/gui/ui_files.c:912
+msgid "%s can't delete files."
+msgstr "%s не може видаляти файли."
+
+#: cube/swiss/source/gui/ui_files.c:930
+msgid "Keep both"
+msgstr "Лишити обидва"
+
+#: cube/swiss/source/gui/ui_files.c:931
+msgid "Replace it"
+msgstr "Замінити"
+
+#: cube/swiss/source/gui/ui_files.c:935
+msgid "There isn't room for both."
+msgstr "Для обох не вистачає місця."
+
+#: cube/swiss/source/gui/ui_files.c:991 cube/swiss/source/gui/ui_files.c:992
+msgid "right"
+msgstr "правому"
+
+#: cube/swiss/source/gui/ui_files.c:991 cube/swiss/source/gui/ui_files.c:992
+msgid "left"
+msgstr "лівому"
+
+#: cube/swiss/source/gui/ui_files.c:1009
+msgid "Shown on the right now."
+msgstr "Тепер показано праворуч."
+
+#: cube/swiss/source/gui/ui_files.c:1009
+msgid "Shown on the left now. Games start from it."
+msgstr "Тепер показано ліворуч. Ігри запускаються з нього."
+
+#: cube/swiss/source/gui/ui_files.c:1014
+msgid "Also open on the %s, in %s. Both sides can show it, each in its own folder."
+msgstr "Також відкрито на %s боці, у %s. Обидва боки можуть його показувати, кожен у своїй теці."
+
+#: cube/swiss/source/gui/ui_files.c:1020
+msgid "Can't open on the %s while %s is open on the %s."
+msgstr "Не можна відкрити на %s боці, поки %s відкрито на %s боці."
+
+#: cube/swiss/source/gui/ui_files.c:1025
+msgid "Opens on the right."
+msgstr "Відкривається праворуч."
+
+#: cube/swiss/source/gui/ui_files.c:1025
+msgid "Becomes the Source: games start from it."
+msgstr "Стає Джерелом: ігри запускаються з нього."
+
+#: cube/swiss/source/gui/ui_files.c:1029
+msgid "Other devices\205"
+msgstr "Інші пристрої"
+
+#: cube/swiss/source/gui/ui_files.c:1031
+msgid "Every storage that can be written to."
+msgstr "Кожне сховище, доступне для запису."
+
+#: cube/swiss/source/gui/ui_files.c:1032
+msgid "Every storage, with each one's settings."
+msgstr "Кожне сховище з його налаштуваннями."
+
+#: cube/swiss/source/gui/ui_files.c:1115
+msgid "Copy puts a copy in %s  \233  %s. It stays here."
+msgstr "Копіювати: копія в %s  \233  %s. Тут теж лишиться."
+
+#: cube/swiss/source/gui/ui_files.c:1118
+msgid "Move puts it in %s  \233  %s and takes it off %s."
+msgstr "Перемістити: файл іде в %s  \233  %s і зникає з %s."
+
+#: cube/swiss/source/gui/ui_files.c:1122
+msgid "Rename gives it a new name."
+msgstr "Перейменувати: дати нову назву."
+
+#: cube/swiss/source/gui/ui_files.c:1125
+msgid "Unhide shows it again."
+msgstr "Показати: зробити видимим."
+
+#: cube/swiss/source/gui/ui_files.c:1126
+msgid "Hide keeps it out of sight until Show hidden files is on."
+msgstr "Сховати: не показувати, поки не ввімкнено Показувати приховані файли."
+
+#: cube/swiss/source/gui/ui_files.c:1129
+msgid "Delete takes it off %s for good."
+msgstr "Видалити: прибрати з %s назавжди."
+
+#: cube/swiss/source/gui/ui_files.c:1142
+msgid "Part of it is left in %s; the old file is gone."
+msgstr "Частина лишилася в %s; старого файлу немає."
+
+#: cube/swiss/source/gui/ui_files.c:1143
+msgid "Part of it is left in %s."
+msgstr "Частина лишилася в %s."
+
+#: cube/swiss/source/gui/ui_files.c:1146 cube/swiss/source/swiss.c:6448
+msgid "Finished moving."
+msgstr "Переміщено."
+
+#: cube/swiss/source/gui/ui_files.c:1146
+msgid "Finished copying."
+msgstr "Скопійовано."
+
+#: cube/swiss/source/gui/ui_files.c:1149
+msgid "Moving was stopped."
+msgstr "Переміщення зупинено."
+
+#: cube/swiss/source/gui/ui_files.c:1150
+msgid "Copying was stopped."
+msgstr "Копіювання зупинено."
+
+#: cube/swiss/source/gui/ui_files.c:1153 cube/swiss/source/gui/ui_files.c:1172
+msgid "The unfinished copy and the file it replaced are gone."
+msgstr "Незавершену копію і замінений нею файл видалено."
+
+#: cube/swiss/source/gui/ui_files.c:1156
+msgid "The unfinished copy was removed from %s."
+msgstr "Незавершену копію видалено з %s."
+
+#: cube/swiss/source/gui/ui_files.c:1166
+msgid "Couldn't write to %s. (%d)"
+msgstr "Не вдалося записати в %s. (%d)"
+
+#: cube/swiss/source/gui/ui_files.c:1169
+msgid "Couldn't read %s. (%d)"
+msgstr "Не вдалося прочитати %s. (%d)"
+
+#: cube/swiss/source/gui/ui_files.c:1173
+msgid "The unfinished copy was removed."
+msgstr "Незавершену копію видалено."
+
+#: cube/swiss/source/gui/ui_files.c:1174
+msgid " Nothing was moved."
+msgstr " Нічого не переміщено."
+
+#: cube/swiss/source/gui/ui_files.c:1177
+msgid "Copied, but couldn't take it off %s."
+msgstr "Скопійовано, але не вдалося видалити з %s."
+
+#: cube/swiss/source/gui/ui_files.c:1178
+msgid "It is in both places now."
+msgstr "Тепер копії є в обох місцях."
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "Jan"
+msgstr "Січ"
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "Feb"
+msgstr "Лют"
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "Mar"
+msgstr "Бер"
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "Apr"
+msgstr "Кві"
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "May"
+msgstr "Тра"
+
+#: cube/swiss/source/gui/ui_game_history.c:183
+msgid "Jun"
+msgstr "Чер"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Jul"
+msgstr "Лип"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Aug"
+msgstr "Сер"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Sep"
+msgstr "Вер"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Oct"
+msgstr "Жов"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Nov"
+msgstr "Лис"
+
+#: cube/swiss/source/gui/ui_game_history.c:184
+msgid "Dec"
+msgstr "Гру"
+
+#: cube/swiss/source/gui/ui_game_history.c:187
+msgid "History unavailable"
+msgstr "Історія недоступна"
+
+#: cube/swiss/source/gui/ui_game_history.c:188
+msgid "No play recorded"
+msgstr "Ще не грали"
+
+#: cube/swiss/source/gui/ui_game_history.c:188
+msgid "Date unavailable"
+msgstr "Дата недоступна"
+
+#: cube/swiss/source/gui/ui_game_history.c:205
+msgid "Save data found"
+msgstr "Збереження знайдено"
+
+#: cube/swiss/source/gui/ui_game_history.c:206
+msgid "No save found"
+msgstr "Збереження немає"
+
+#: cube/swiss/source/gui/ui_game_history.c:207
+msgid "Check in game"
+msgstr "Перевірте в грі"
+
+#: cube/swiss/source/gui/ui_game_history.c:208
+msgid "Status unavailable"
+msgstr "Стан недоступний"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:161
+msgid "AUDIO STREAMING"
+msgstr "ПОТОКОВЕ АУДІО"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:165
+msgid "DISC 2 READY"
+msgstr "ДИСК 2 ГОТОВИЙ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:174
+msgid "STATUS UNAVAILABLE"
+msgstr "СТАН НЕДОСТУПНИЙ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:178
+msgid "NO CHEATS FOUND"
+msgstr "ЧИТІВ НЕ ЗНАЙДЕНО"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:183
+msgid "%lu of %lu enabled"
+msgstr "Увімкнено %lu з %lu"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:188
+msgid "Y  Choose cheats"
+msgstr "Y  Вибрати чити"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:188
+msgid "Choose cheats"
+msgstr "Вибрати чити"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:197 cube/swiss/source/gui/ui_gameflow_detail.c:268
+msgid "%s  +%lu MORE"
+msgstr "%s  +%lu ЩЕ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:205 cube/swiss/source/gui/ui_gameflow_detail.c:237
+msgid "CLEAN BOOT"
+msgstr "ЧИСТИЙ ЗАПУСК"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:205
+msgid "LAUNCH GAME"
+msgstr "ЗАПУСК ГРИ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:207
+msgid "D-PAD  MOVE"
+msgstr "D-PAD  РУХ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:207
+msgid "MOVE"
+msgstr "РУХ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:209
+msgid "A  SELECT"
+msgstr "A  ВИБРАТИ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:214
+msgid "B  BACK"
+msgstr "B  НАЗАД"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:214
+msgid "B  LIBRARY"
+msgstr "B  БІБЛІОТЕКА"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:214 cube/swiss/source/gui/ui_home.c:8
+msgid "LIBRARY"
+msgstr "БІБЛІОТЕКА"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:218
+msgid "X  SETTINGS"
+msgstr "X  НАЛАШТУВАННЯ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:222
+msgid "Y  CHEATS"
+msgstr "Y  ЧИТИ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:229
+msgid "Z  AUTOLOAD ON"
+msgstr "Z  АВТОЗАПУСК УВІМК."
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:229
+msgid "AUTOLOAD ON"
+msgstr "АВТОЗАПУСК УВІМК."
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:229
+msgid "Z  AUTOLOAD"
+msgstr "Z  АВТОЗАПУСК"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:233
+msgid "R  VERIFY"
+msgstr "R  ПЕРЕВІРИТИ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:233
+msgid "VERIFY"
+msgstr "ПЕРЕВІРИТИ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:237
+msgid "L+A  CLEAN BOOT"
+msgstr "L+A  ЧИСТИЙ ЗАПУСК"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:251
+msgid "Custom settings"
+msgstr "Власні налаштування"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:255 cube/swiss/source/gui/ui_settings_layout.c:70
+msgid "Game Defaults"
+msgstr "Типові для ігор"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:257
+msgid "X  Change for this game"
+msgstr "X  Змінити для цієї гри"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:257
+msgid "Change for this game"
+msgstr "Змінити для цієї гри"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:261
+msgid "%lu custom"
+msgstr "власних: %lu"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:300 cube/swiss/source/gui/ui_gameflow_detail.c:337
+msgid "Memory card loading"
+msgstr "Карта пам'яті завантажується"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:300
+msgid "Memory card didn't load"
+msgstr "Карта пам'яті не завантажилась"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:302
+msgid "Reading it when it's ready"
+msgstr "Прочитаємо, коли буде готова"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:302
+msgid "Its saves weren't read"
+msgstr "Її збереження не прочитано"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:308
+msgid "Save scan incomplete"
+msgstr "Пошук не завершено"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:308
+msgid "No save copies found"
+msgstr "Копій не знайдено"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:316
+msgid "1 save | %lu %s"
+msgstr "1 збереження | %lu %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:320
+msgid "%lu copies | %lu %s"
+msgstr "Копій: %lu | %lu %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:325
+msgid "%lu files | %lu %s"
+msgstr "Файлів: %lu | %lu %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:330
+msgid "%lu files, %lu copies | %lu %s"
+msgstr "Файлів: %lu, копій: %lu | %lu %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:343
+msgid "%sUpdated %s%s%s"
+msgstr "%sОновлено %s%s%s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:343
+msgid "Partial scan | "
+msgstr "Неповний пошук | "
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:348
+msgid "Partial scan | Update date unavailable"
+msgstr "Неповний пошук | Дата оновлення невідома"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:349
+msgid "Update date unavailable"
+msgstr "Дата оновлення невідома"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:376
+msgid "Copy %lu of %lu | %s"
+msgstr "Копія %lu з %lu | %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:381
+msgid "%s %lu of %lu | %s"
+msgstr "%s %lu з %lu | %s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:389
+msgid "In use"
+msgstr "Активне"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:389
+msgid "Loads at launch"
+msgstr "При запуску"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:398
+msgid "%s | Date unavailable%s%s"
+msgstr "%s | Дата недоступна%s%s"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:413
+msgid "CAN'T BE READ"
+msgstr "НЕ ЧИТАЄТЬСЯ"
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:417
+msgid "PAGE"
+msgstr "СТОР."
+
+#: cube/swiss/source/gui/ui_gameflow_detail.c:417
+msgid "PAGES"
+msgstr "СТОР."
+
+#: cube/swiss/source/gui/ui_gameflow_library.c:488
+msgid "REGION FREE"
+msgstr "БЕЗ РЕГІОНУ"
+
+#: cube/swiss/source/gui/ui_hint.c:186
+msgid "L+A  CONTINUE    B  CANCEL"
+msgstr "L+A  ПРОДОВЖИТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/gui/ui_hint.c:186 cube/swiss/source/gui/ui_hint.c:187 cube/swiss/source/gui/ui_hint.c:188
+msgid "CONTINUE"
+msgstr "ПРОДОВЖИТИ"
+
+#: cube/swiss/source/gui/ui_hint.c:187 cube/swiss/source/gui/ui_hint.c:188 cube/swiss/source/gui/ui_hint.c:189
+msgid "A  CONTINUE"
+msgstr "A  ПРОДОВЖИТИ"
+
+#: cube/swiss/source/gui/ui_home.c:8 cube/swiss/source/gui/ui_home.c:740
+msgid "SYSTEM"
+msgstr "СИСТЕМА"
+
+#: cube/swiss/source/gui/ui_home.c:8 cube/swiss/source/gui/ui_home.c:751
+msgid "MEMORY CARDS"
+msgstr "КАРТИ ПАМ'ЯТІ"
+
+#: cube/swiss/source/gui/ui_home.c:9 cube/swiss/source/gui/ui_home.c:751
+msgid "FILE BROWSER"
+msgstr "ФАЙЛИ"
+
+#: cube/swiss/source/gui/ui_home.c:9
+msgid "WEB"
+msgstr "ІНТЕРНЕТ"
+
+#: cube/swiss/source/gui/ui_home.c:719 cube/swiss/source/gui/ui_home.c:728 cube/swiss/source/swiss.c:4094
+msgid "A  OPEN"
+msgstr "A  ВІДКРИТИ"
+
+#: cube/swiss/source/gui/ui_home.c:719
+msgid "A  SELECT SOURCE"
+msgstr "A  ВИБРАТИ ДЖЕРЕЛО"
+
+#: cube/swiss/source/gui/ui_home.c:719
+msgid "SELECT SOURCE"
+msgstr "ВИБРАТИ ДЖЕРЕЛО"
+
+#: cube/swiss/source/gui/ui_home.c:722
+msgid "A  ENTER"
+msgstr "A  УВІЙТИ"
+
+#: cube/swiss/source/gui/ui_home.c:722
+msgid "ENTER"
+msgstr "УВІЙТИ"
+
+#: cube/swiss/source/gui/ui_home.c:751
+msgid "RESTART INDIGO"
+msgstr "ПЕРЕЗАПУСТИТИ INDIGO"
+
+#: cube/swiss/source/gui/ui_home.c:762
+msgid "CHANGE SOURCE"
+msgstr "ЗМІНИТИ ДЖЕРЕЛО"
+
+#: cube/swiss/source/gui/ui_home.c:762
+msgid "REFRESH LIBRARY"
+msgstr "ОНОВИТИ БІБЛІОТЕКУ"
+
+#: cube/swiss/source/gui/ui_home.c:764
+msgid "RESTART"
+msgstr "ПЕРЕЗАПУСК"
+
+#: cube/swiss/source/gui/ui_launch.c:36
+msgid "Starting game"
+msgstr "Запуск гри"
+
+#: cube/swiss/source/gui/ui_launch.c:37
+msgid "Saving recent games"
+msgstr "Збереження нещодавніх"
+
+#: cube/swiss/source/gui/ui_launch.c:38
+msgid "Setting the video mode"
+msgstr "Встановлення відеорежиму"
+
+#: cube/swiss/source/gui/ui_launch.c:39
+msgid "Applying cheats"
+msgstr "Застосування читів"
+
+#: cube/swiss/source/gui/ui_launch.c:40
+msgid "Checking game"
+msgstr "Перевірка гри"
+
+#: cube/swiss/source/gui/ui_launch.c:41 cube/swiss/source/gui/ui_launch.c:42 cube/swiss/source/gui/ui_launch.c:43
+msgid "Preparing game files"
+msgstr "Підготовка файлів гри"
+
+#: cube/swiss/source/gui/ui_launch.c:44
+msgid "Setting up audio streaming"
+msgstr "Налаштування потокового аудіо"
+
+#: cube/swiss/source/gui/ui_launch.c:45
+msgid "Loading game"
+msgstr "Завантаження гри"
+
+#: cube/swiss/source/gui/ui_launch.c:54 cube/swiss/source/gui/ui_launch.c:172
+msgid "Saving recent list"
+msgstr "Запис нещодавніх"
+
+#: cube/swiss/source/gui/ui_launch.c:57
+msgid "Checking Game"
+msgstr "Перевірка гри"
+
+#: cube/swiss/source/gui/ui_launch.c:58 cube/swiss/source/swiss.c:5628 cube/swiss/source/swiss.c:5838
+msgid "Loading DOL"
+msgstr "Завантаження DOL"
+
+#: cube/swiss/source/gui/ui_launch.c:59 cube/swiss/source/swiss.c:5695
+msgid "Loading BS2"
+msgstr "Завантаження BS2"
+
+#: cube/swiss/source/gui/ui_launch.c:65
+msgid "One moment, setting up audio streaming"
+msgstr "Хвилинку, налаштування потокового аудіо"
+
+#: cube/swiss/source/gui/ui_launch.c:171
+msgid "Starting app"
+msgstr "Запуск програми"
+
+#: cube/swiss/source/gui/ui_launch.c:173
+msgid "Loading app"
+msgstr "Завантаження програми"
+
+#: cube/swiss/source/gui/ui_presentation.c:156
+msgid "NOTHING HERE YET"
+msgstr "ТУТ ЩЕ НІЧОГО НЕМАЄ"
+
+#: cube/swiss/source/gui/ui_presentation.c:158
+msgid "WORKING"
+msgstr "ВИКОНУЄТЬСЯ"
+
+#: cube/swiss/source/gui/ui_presentation.c:160
+msgid "NEEDS ATTENTION"
+msgstr "ПОТРЕБУЄ УВАГИ"
+
+#: cube/swiss/source/gui/ui_presentation.c:162
+msgid "INFORMATION"
+msgstr "ІНФОРМАЦІЯ"
+
+#: cube/swiss/source/gui/ui_saves.c:159
+msgid "This game doesn't let its save move"
+msgstr "Ця гра не дозволяє переміщати збереження"
+
+#: cube/swiss/source/gui/ui_saves.c:163
+msgid "No memory card in %s"
+msgstr "Немає карти пам'яті в %s"
+
+#: cube/swiss/source/gui/ui_saves.c:167
+msgid "%s can't be written"
+msgstr "%s лише для читання"
+
+#: cube/swiss/source/gui/ui_saves.c:174
+msgid "%s already has this save"
+msgstr "%s уже має це збереження"
+
+#: cube/swiss/source/gui/ui_saves.c:178
+msgid "%s has %u saves"
+msgstr "%s має %u збережень"
+
+#: cube/swiss/source/gui/ui_saves.c:184
+msgid "%s has %d free block; this needs %u"
+msgstr "%s: вільний лише %d блок, потрібно %u"
+
+#: cube/swiss/source/gui/ui_saves.c:185
+msgid "%s has %d free blocks; this needs %u"
+msgstr "%s: вільних блоків %d, потрібно %u"
+
+#: cube/swiss/source/gui/ui_saves.c:376
+msgid "Unavailable"
+msgstr "Недоступно"
+
+#: cube/swiss/source/gui/ui_saves.c:379
+msgid "None stored"
+msgstr "Не збережено"
+
+#: cube/swiss/source/gui/ui_saves.c:384
+msgid "Paused: UI Motion Off"
+msgstr "Пауза: Рух інтерфейсу Вимк."
+
+#: cube/swiss/source/gui/ui_saves.c:384
+msgid "Animated"
+msgstr "Анімований"
+
+#: cube/swiss/source/gui/ui_saves.c:387
+msgid "Static"
+msgstr "Статичний"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:457
+msgid "Card image ready"
+msgstr "Образ карти готовий"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:458
+msgid "This card image has not been formatted"
+msgstr "Цей образ карти не відформатовано"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:459
+msgid "This is not a supported card image"
+msgstr "Цей образ карти не підтримується"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:460
+msgid "This card image's header is invalid"
+msgstr "Заголовок цього образу карти недійсний"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:461
+msgid "This card image's directory or block map is invalid"
+msgstr "Каталог або карта блоків образу недійсні"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:462
+msgid "This card image's saves do not match its block map"
+msgstr "Збереження образу не збігаються з картою блоків"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:463
+msgid "This card image could not be read"
+msgstr "Не вдалося прочитати цей образ карти"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:464
+msgid "The card image already has this save"
+msgstr "Образ карти вже має це збереження"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:465
+msgid "The card image has 127 saves"
+msgstr "Образ карти має 127 збережень"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:466
+msgid "The card image has too few free blocks"
+msgstr "В образі карти замало вільних блоків"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:467
+msgid "The save is no longer on the card image"
+msgstr "Збереження вже немає в образі карти"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:468
+msgid "Card images on this device can't be changed"
+msgstr "Образи карт на цьому пристрої не змінити"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:469
+msgid "The card image couldn't be written"
+msgstr "Не вдалося записати образ карти"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:470
+msgid "The card image didn't read back the same"
+msgstr "Образ карти не прочитався так само"
+
+#: cube/swiss/source/gui/ui_saves_raw.c:471
+msgid "This card image could not be opened"
+msgstr "Не вдалося відкрити цей образ карти"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:66
+msgid "Quick"
+msgstr "Швидкі"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:66
+msgid "Quick Settings"
+msgstr "Швидкі налаштування"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:67
+msgid "What you change between games."
+msgstr "Те, що змінюєте між іграми."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:70
+msgid "Defaults"
+msgstr "Типово"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:71
+msgid "What every game starts with, unless it has its own."
+msgstr "З чим запускається кожна гра без власних."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:73 cube/swiss/source/gui/ui_settings_layout.c:73 cube/swiss/source/gui/ui_settings_layout.c:76
+msgid "Setup"
+msgstr "Параметри"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:74
+msgid "Set once. Press A to open a section."
+msgstr "Задається раз. A - відкрити розділ."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:76
+msgid "Display"
+msgstr "Екран"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:77
+msgid "Video mode, cable, and TV."
+msgstr "Відеорежим, кабель і телевізор."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:79
+msgid "Console"
+msgstr "Консоль"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:80
+msgid "Colors, cube icons, sound, language, and system."
+msgstr "Кольори, значки куба, звук, мова, система."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:82
+msgid "Storage"
+msgstr "Сховище"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:83
+msgid "Settings device, SD cards, and the disc drive."
+msgstr "Пристрій налаштувань, SD-карти, привід."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:85
+msgid "Network"
+msgstr "Мережа"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:86
+msgid "Adapter, file servers, and RetroTINK-4K."
+msgstr "Адаптер, файлові сервери, RetroTINK-4K."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:88
+msgid "Library"
+msgstr "Бібліотека"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:89
+msgid "Layout and folders, the recent list, and files."
+msgstr "Вигляд і теки, нещодавні, файли."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:91
+msgid "Developer"
+msgstr "Розробка"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:92
+msgid "USB Gecko, memory, and debugging."
+msgstr "USB Gecko, пам'ять і налагодження."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:94
+msgid "Game Settings"
+msgstr "Налаштування гри"
+
+#: cube/swiss/source/gui/ui_settings_layout.c:95
+msgid "Saved for this game only."
+msgstr "Зберігаються лише для цієї гри."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:107
+msgid "Settings are saved in swiss/settings/global.ini."
+msgstr "Налаштування в swiss/settings/global.ini."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:108
+msgid "No swiss/settings/global.ini yet: using defaults."
+msgstr "Немає swiss/settings/global.ini: типові."
+
+#: cube/swiss/source/gui/ui_settings_layout.c:109
+msgid "No device to save settings to."
+msgstr "Немає пристрою для налаштувань."
+
+#: cube/swiss/source/gui/ui_system_info.c:8
+msgid "OVERVIEW"
+msgstr "ОГЛЯД"
+
+#: cube/swiss/source/gui/ui_system_info.c:8
+msgid "Live console, source, output, and build summary."
+msgstr "Консоль, джерело, вихід і збірка наживо."
+
+#: cube/swiss/source/gui/ui_system_info.c:9
+msgid "Hardware identity and low-level revision details."
+msgstr "Апаратні дані та ревізії компонентів."
+
+#: cube/swiss/source/gui/ui_system_info.c:10
+msgid "CONNECTIONS"
+msgstr "З'ЄДНАННЯ"
+
+#: cube/swiss/source/gui/ui_system_info.c:10
+msgid "Storage and peripherals captured on page entry."
+msgstr "Сховища й периферія на момент входу."
+
+#: cube/swiss/source/gui/ui_system_info.c:11
+msgid "INPUT / OUTPUT"
+msgstr "ВВЕДЕННЯ / ВИВЕДЕННЯ"
+
+#: cube/swiss/source/gui/ui_system_info.c:11
+msgid "Controller sockets and active video state."
+msgstr "Порти контролерів і поточне відео."
+
+#: cube/swiss/source/gui/ui_system_info.c:12
+msgid "ABOUT INDIGO"
+msgstr "ПРО INDIGO"
+
+#: cube/swiss/source/gui/ui_system_info.c:12
+msgid "Version, toolchain, source, and support identity."
+msgstr "Версія, інструменти, джерело, підтримка."
+
+#: cube/swiss/source/gui/ui_system_info.c:13
+msgid "CREDITS"
+msgstr "ПОДЯКИ"
+
+#: cube/swiss/source/gui/ui_system_info.c:13
+msgid "People who made Swiss and Indigo possible."
+msgstr "Люди, завдяки яким є Swiss та Indigo."
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "SUN"
+msgstr "НД"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "MON"
+msgstr "ПН"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "TUE"
+msgstr "ВТ"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "WED"
+msgstr "СР"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "THU"
+msgstr "ЧТ"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "FRI"
+msgstr "ПТ"
+
+#: cube/swiss/source/gui/ui_system_info.c:19
+msgid "SAT"
+msgstr "СБ"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "JAN"
+msgstr "СІЧ"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "FEB"
+msgstr "ЛЮТ"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "MAR"
+msgstr "БЕР"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "APR"
+msgstr "КВІ"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "MAY"
+msgstr "ТРА"
+
+#: cube/swiss/source/gui/ui_system_info.c:23
+msgid "JUN"
+msgstr "ЧЕР"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "JUL"
+msgstr "ЛИП"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "AUG"
+msgstr "СЕР"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "SEP"
+msgstr "ВЕР"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "OCT"
+msgstr "ЖОВ"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "NOV"
+msgstr "ЛИС"
+
+#: cube/swiss/source/gui/ui_system_info.c:24
+msgid "DEC"
+msgstr "ГРУ"
+
+#: cube/swiss/source/gui/ui_system_info.c:189
+msgid "TIME UNAVAILABLE"
+msgstr "ЧАС НЕДОСТУПНИЙ"
+
+#: cube/swiss/source/gui/ui_system_info.c:203
+msgid "DATE UNAVAILABLE"
+msgstr "ДАТА НЕДОСТУПНА"
+
+#: cube/swiss/source/gui/ui_system_info.c:229
+msgid "INVALID OFFSET"
+msgstr "НЕДІЙСНИЙ ЗСУВ"
+
+#: cube/swiss/source/gui/ui_system_info.c:234
+msgid "%+d\260C OFFSET"
+msgstr "ЗСУВ %+d\260C"
+
+#: cube/swiss/source/gui/ui_system_info.c:262
+msgid "L/R  PAGE %d OF %d    B  BACK"
+msgstr "L/R  СТОР. %d З %d    B  НАЗАД"
+
+#: cube/swiss/source/gui/ui_system_info.c:262
+msgid "PAGE %d OF %d"
+msgstr "СТОР. %d З %d"
+
+#: cube/swiss/source/gui/ui_system_info.c:269
+msgid "NOT MOUNTED"
+msgstr "НЕ ПІДКЛЮЧЕНО"
+
+#: cube/swiss/source/gui/ui_system_info.c:271
+msgid "READY"
+msgstr "ГОТОВО"
+
+#: cube/swiss/source/gui/ui_system_info.c:278
+msgid "NTSC-J / JAPAN"
+msgstr "NTSC-J / ЯПОНІЯ"
+
+#: cube/swiss/source/gui/ui_system_info.c:280
+msgid "NTSC-U / AMERICAS"
+msgstr "NTSC-U / АМЕРИКА"
+
+#: cube/swiss/source/gui/ui_system_info.c:282
+msgid "PAL / EUROPE"
+msgstr "PAL / ЄВРОПА"
+
+#: cube/swiss/source/gui/ui_system_info.c:284
+msgid "MPAL / BRAZIL"
+msgstr "MPAL / БРАЗИЛІЯ"
+
+#: cube/swiss/source/gui/ui_system_info.c:287
+msgid "REGION UNKNOWN"
+msgstr "РЕГІОН НЕВІДОМИЙ"
+
+#: cube/swiss/source/swiss.c:180
+msgid ""
+"Open this folder at every start?\n"
+"Home is skipped until you turn it off.\n"
+"A  AUTOLOAD    B  CANCEL"
+msgstr ""
+"Відкривати цю теку щоразу?\n"
+"Головна пропускатиметься до вимкнення.\n"
+"A  АВТОЗАПУСК    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:181
+msgid ""
+"Open this game at every start?\n"
+"Home is skipped until you turn it off.\n"
+"A  AUTOLOAD    B  CANCEL"
+msgstr ""
+"Відкривати цю гру щоразу?\n"
+"Головна пропускатиметься до вимкнення.\n"
+"A  АВТОЗАПУСК    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:398
+msgid ""
+"Video Mode: %s\n"
+"%s Mode selected."
+msgstr ""
+"Відеорежим: %s\n"
+"Режим %s."
+
+#: cube/swiss/source/swiss.c:400
+msgid "Video Mode: %s"
+msgstr "Відеорежим: %s"
+
+#: cube/swiss/source/swiss.c:427
+msgid "Recent:"
+msgstr "Нещодавні:"
+
+#: cube/swiss/source/swiss.c:534
+msgid ""
+"Recent entry not found.\n"
+"Press A to continue."
+msgstr ""
+"Нещодавній запис не знайдено.\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:535
+msgid ""
+"Recent device not found.\n"
+"Press A to continue."
+msgstr ""
+"Нещодавній пристрій не знайдено.\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:668 cube/swiss/source/swiss.c:7949 cube/swiss/source/swiss.c:8036
+msgid "Saving autoload\205"
+msgstr "Запис автозапуску\205"
+
+#: cube/swiss/source/swiss.c:879
+msgid "read-only"
+msgstr "лише читання"
+
+#: cube/swiss/source/swiss.c:1206
+msgid "Program folder"
+msgstr "Тека програми"
+
+#: cube/swiss/source/swiss.c:1206
+msgid "GameCube disc"
+msgstr "Диск GameCube"
+
+#: cube/swiss/source/swiss.c:1206
+msgid "Compressed GameCube disc"
+msgstr "Стиснений диск GameCube"
+
+#: cube/swiss/source/swiss.c:1207
+msgid "Program"
+msgstr "Програма"
+
+#: cube/swiss/source/swiss.c:1207
+msgid "Firmware update"
+msgstr "Оновлення прошивки"
+
+#: cube/swiss/source/swiss.c:1207
+msgid "Music"
+msgstr "Музика"
+
+#: cube/swiss/source/swiss.c:1207
+msgid "Picture"
+msgstr "Картинка"
+
+#: cube/swiss/source/swiss.c:1207
+msgid "Text"
+msgstr "Текст"
+
+#: cube/swiss/source/swiss.c:1207 cube/swiss/source/swiss.c:6149 cube/swiss/source/swiss.c:6256
+msgid "File"
+msgstr "Файл"
+
+#: cube/swiss/source/swiss.c:1282
+msgid "L  Choose storage"
+msgstr "L  Вибрати сховище"
+
+#: cube/swiss/source/swiss.c:1282 cube/swiss/source/swiss.c:1282
+msgid "Choose storage"
+msgstr "Вибрати сховище"
+
+#: cube/swiss/source/swiss.c:1282
+msgid "R  Choose storage"
+msgstr "R  Вибрати сховище"
+
+#: cube/swiss/source/swiss.c:1311
+msgid "This folder is empty."
+msgstr "Ця тека порожня."
+
+#: cube/swiss/source/swiss.c:1314
+msgid "What it holds isn't shown here."
+msgstr "Її вміст тут не показано."
+
+#: cube/swiss/source/swiss.c:1377
+msgid "GameCube disc  \267  %.4s%.2s%s%.*s"
+msgstr "Диск GameCube  \267  %.4s%.2s%s%.*s"
+
+#: cube/swiss/source/swiss.c:1392
+msgid "HIDDEN"
+msgstr "СХОВАНО"
+
+#: cube/swiss/source/swiss.c:1402
+msgid "On %s  \233  %s"
+msgstr "На %s  \233  %s"
+
+#: cube/swiss/source/swiss.c:1406
+msgid "Swiss can't start a compressed disc."
+msgstr "Swiss не запускає стиснені диски."
+
+#: cube/swiss/source/swiss.c:1410 cube/swiss/source/swiss.c:2664
+msgid "Games start on the left. Y swaps the two sides."
+msgstr "Ігри запускаються зліва. Y міняє сторони."
+
+#: cube/swiss/source/swiss.c:1865
+msgid "Hold L and press A to delete."
+msgstr "Утримуйте L і натисніть A, щоб видалити."
+
+#: cube/swiss/source/swiss.c:1885
+msgid "It's already in %s."
+msgstr "Вже є в %s."
+
+#: cube/swiss/source/swiss.c:2022
+msgid "%s %s to %s"
+msgstr "%s %s у %s"
+
+#: cube/swiss/source/swiss.c:2022
+msgid "Moving"
+msgstr "Переміщення"
+
+#: cube/swiss/source/swiss.c:2022
+msgid "Copying"
+msgstr "Копіювання"
+
+#: cube/swiss/source/swiss.c:2226
+msgid "Copy to %s?"
+msgstr "Копіювати в %s?"
+
+#: cube/swiss/source/swiss.c:2231
+msgid "To %s  \233  %s  \267  %s free"
+msgstr "У %s  \233  %s  \267  вільно %s"
+
+#: cube/swiss/source/swiss.c:2232
+msgid "To %s  \233  %s"
+msgstr "У %s  \233  %s"
+
+#: cube/swiss/source/swiss.c:2363
+msgid "%s isn't ready, so the sides can't swap."
+msgstr "%s не готове, сторони не поміняти."
+
+#: cube/swiss/source/swiss.c:3158
+msgid "Choose a Device"
+msgstr "Виберіть пристрій"
+
+#: cube/swiss/source/swiss.c:3159
+msgid "Storage Devices"
+msgstr "Пристрої зберігання"
+
+#: cube/swiss/source/swiss.c:3161
+msgid "Select a storage device to browse its folders"
+msgstr "Виберіть пристрій, щоб переглянути його теки"
+
+#: cube/swiss/source/swiss.c:3178 cube/swiss/source/swiss.c:3352
+msgid "Auto (Find a Games Folder)"
+msgstr "Авто (знайти теку ігор)"
+
+#: cube/swiss/source/swiss.c:3179 cube/swiss/source/swiss.c:3353
+msgid "Clear"
+msgstr "Скинути"
+
+#: cube/swiss/source/swiss.c:3188
+msgid "A  Select Device"
+msgstr "A  Вибрати пристрій"
+
+#: cube/swiss/source/swiss.c:3188
+msgid "Select Device"
+msgstr "Вибрати пристрій"
+
+#: cube/swiss/source/swiss.c:3236
+msgid ""
+"This device could not be read.\n"
+"A  OK"
+msgstr ""
+"Не вдалося прочитати пристрій.\n"
+"A  OK"
+
+#: cube/swiss/source/swiss.c:3323
+msgid "Use %s"
+msgstr "Вибрати %s"
+
+#: cube/swiss/source/swiss.c:3326
+msgid "Current"
+msgstr "Поточна"
+
+#: cube/swiss/source/swiss.c:3335
+msgid "Parent"
+msgstr "Вище"
+
+#: cube/swiss/source/swiss.c:3347
+msgid "Switch Device..."
+msgstr "Змінити пристрій..."
+
+#: cube/swiss/source/swiss.c:3348 cube/swiss/source/swiss.c:3362
+msgid "Device"
+msgstr "Пристрій"
+
+#: cube/swiss/source/swiss.c:3362
+msgid "A  Open / Select   X  Use Folder   Y  Device"
+msgstr "A  Відкрити / вибрати   X  Ця тека   Y  Пристрій"
+
+#: cube/swiss/source/swiss.c:3362
+msgid "Open / Select"
+msgstr "Відкрити / вибрати"
+
+#: cube/swiss/source/swiss.c:3362
+msgid "Use Folder"
+msgstr "Ця тека"
+
+#: cube/swiss/source/swiss.c:3709
+msgid "Resetting RP2040"
+msgstr "Скидання RP2040"
+
+#: cube/swiss/source/swiss.c:3870
+msgid "The web browser isn't installed. Press A."
+msgstr "Веббраузер не встановлено. Press A."
+
+#: cube/swiss/source/swiss.c:3917
+msgid "The web browser couldn't start"
+msgstr "Не вдалося запустити веббраузер"
+
+#: cube/swiss/source/swiss.c:4079 cube/swiss/source/swiss.c:4079
+msgid "Return to parent"
+msgstr "Повернутися назад"
+
+#: cube/swiss/source/swiss.c:4083 cube/swiss/source/swiss.c:4083
+msgid "A  RETURN"
+msgstr "A  НАЗАД"
+
+#: cube/swiss/source/swiss.c:4103 cube/swiss/source/swiss.c:4103
+msgid "GAME FOLDER"
+msgstr "ТЕКА ГРИ"
+
+#: cube/swiss/source/swiss.c:4104
+msgid "%s  |  A OPEN"
+msgstr "%s  |  A ВІДКРИТИ"
+
+#: cube/swiss/source/swiss.c:4164
+msgid "GAME IMAGE  |  %s"
+msgstr "ОБРАЗ ГРИ  |  %s"
+
+#: cube/swiss/source/swiss.c:4461
+msgid "No supported game image was found in this folder."
+msgstr "У цій теці немає підтримуваного образу гри."
+
+#: cube/swiss/source/swiss.c:4463
+msgid "This folder contains more than one possible game image."
+msgstr "У цій теці кілька можливих образів гри."
+
+#: cube/swiss/source/swiss.c:4465
+msgid "The game image ID does not match the folder ID."
+msgstr "ID образу гри не збігається з ID теки."
+
+#: cube/swiss/source/swiss.c:4467
+msgid "A game image in this folder is invalid or unreadable."
+msgstr "Образ гри в цій теці хибний або не читається."
+
+#: cube/swiss/source/swiss.c:4469
+msgid "This game folder could not be opened safely."
+msgstr "Цю теку гри не вдалося безпечно відкрити."
+
+#: cube/swiss/source/swiss.c:4556
+msgid "OPENING GAME"
+msgstr "ВІДКРИТТЯ ГРИ"
+
+#: cube/swiss/source/swiss.c:4556
+msgid "Checking this folder for a safe game image."
+msgstr "Пошук безпечного образу гри в цій теці."
+
+#: cube/swiss/source/swiss.c:4557
+msgid "Your Library selection and source stay in place."
+msgstr "Вибір у Бібліотеці та джерело не зміняться."
+
+#: cube/swiss/source/swiss.c:4614
+msgid "CAN'T OPEN THIS GAME"
+msgstr "НЕ ВДАЛОСЯ ВІДКРИТИ ГРУ"
+
+#: cube/swiss/source/swiss.c:4616
+msgid "Nothing changed. Choose another title or repair the folder."
+msgstr "Нічого не змінено. Виберіть іншу гру або виправте теку."
+
+#: cube/swiss/source/swiss.c:4617
+msgid "A / B  RETURN TO LIBRARY"
+msgstr "A / B  ДО БІБЛІОТЕКИ"
+
+#: cube/swiss/source/swiss.c:5360
+msgid "X  Choose this folder"
+msgstr "X  Вибрати цю теку"
+
+#: cube/swiss/source/swiss.c:5360
+msgid "Choose this folder"
+msgstr "Вибрати цю теку"
+
+#: cube/swiss/source/swiss.c:5473
+msgid "Select a DOL    B  Boot normally"
+msgstr "Виберіть DOL    B  Звичайний запуск"
+
+#: cube/swiss/source/swiss.c:5473
+msgid "Boot normally"
+msgstr "Звичайний запуск"
+
+#: cube/swiss/source/swiss.c:5572 cube/swiss/source/swiss.c:5604
+msgid "Failed to read FST!"
+msgstr "Помилка читання FST!"
+
+#: cube/swiss/source/swiss.c:5624
+msgid ""
+"Loading DOL\n"
+"Do not remove %s"
+msgstr ""
+"Завантаження DOL\n"
+"Не виймайте %s"
+
+#: cube/swiss/source/swiss.c:5639
+msgid "Failed to read patched file!"
+msgstr "Помилка читання зміненого файлу!"
+
+#: cube/swiss/source/swiss.c:5648
+msgid ""
+"Failed integrity check in patched file!\n"
+"Please test %s for defects."
+msgstr ""
+"Змінений файл: помилка цілісності!\n"
+"Перевірте %s на дефекти."
+
+#: cube/swiss/source/swiss.c:5656
+msgid "Failed to read DOL!"
+msgstr "Помилка читання DOL!"
+
+#: cube/swiss/source/swiss.c:5662
+msgid "Failed integrity check!"
+msgstr "Помилка цілісності!"
+
+#: cube/swiss/source/swiss.c:5672
+msgid "Failed to decompress DOL!"
+msgstr "Не вдалося розпакувати DOL!"
+
+#: cube/swiss/source/swiss.c:5684
+msgid ""
+"Loading BS2\n"
+"Do not remove %s"
+msgstr ""
+"Завантаження BS2\n"
+"Не виймайте %s"
+
+#: cube/swiss/source/swiss.c:5690 cube/swiss/source/swiss.c:5699
+msgid "Failed to read BS2!"
+msgstr "Помилка читання BS2!"
+
+#: cube/swiss/source/swiss.c:5709
+msgid "Unknown BS2"
+msgstr "Невідомий BS2"
+
+#: cube/swiss/source/swiss.c:5732
+msgid ""
+"Exhausted reserved memory.\n"
+"An SD Card Adapter is necessary in order\n"
+"for patches to reserve additional memory."
+msgstr ""
+"Зарезервовану пам'ять вичерпано.\n"
+"Щоб патчі могли зарезервувати більше\n"
+"пам'яті, потрібен адаптер SD-карти."
+
+#: cube/swiss/source/swiss.c:5735
+msgid ""
+"Something went wrong.\n"
+"Please open an issue with your hardware\n"
+"configuration and Swiss settings."
+msgstr ""
+"Щось пішло не так.\n"
+"Створіть issue з описом обладнання\n"
+"та налаштувань Swiss."
+
+#: cube/swiss/source/swiss.c:5742
+msgid ""
+"Cheat engine safety check failed.\n"
+"No code list was installed."
+msgstr ""
+"Збій перевірки безпеки чит-рушія.\n"
+"Список кодів не встановлено."
+
+#: cube/swiss/source/swiss.c:5829
+msgid "DOL is too big. Press A."
+msgstr "DOL завеликий. Press A."
+
+#: cube/swiss/source/swiss.c:5849
+msgid "Failed to read DOL. Press A."
+msgstr "Не вдалося прочитати DOL. Press A."
+
+#: cube/swiss/source/swiss.c:5863
+msgid "DOL is corrupted. Press A."
+msgstr "DOL пошкоджено. Press A."
+
+#: cube/swiss/source/swiss.c:5875 cube/swiss/source/swiss.c:6809
+msgid "Saving recent list\205"
+msgstr "Запис нещодавніх\205"
+
+#: cube/swiss/source/swiss.c:6149
+msgid "Manage %s:"
+msgstr "Дії (%s):"
+
+#: cube/swiss/source/swiss.c:6149 cube/swiss/source/swiss.c:6256 cube/swiss/source/swiss.c:6270
+msgid "Directory"
+msgstr "Тека"
+
+#: cube/swiss/source/swiss.c:6154
+msgid "X  Copy    "
+msgstr "X  Копіювати    "
+
+#: cube/swiss/source/swiss.c:6155
+msgid "Y  Move    "
+msgstr "Y  Перемістити    "
+
+#: cube/swiss/source/swiss.c:6156
+msgid "Z  Delete    "
+msgstr "Z  Видалити    "
+
+#: cube/swiss/source/swiss.c:6157
+msgid "R  Rename    "
+msgstr "R  Перейменувати    "
+
+#: cube/swiss/source/swiss.c:6158
+msgid "L  Unhide"
+msgstr "L  Показати"
+
+#: cube/swiss/source/swiss.c:6158
+msgid "L  Hide"
+msgstr "L  Сховати"
+
+#: cube/swiss/source/swiss.c:6160 cube/swiss/source/swiss.c:6341
+msgid "B  Return"
+msgstr "B  Назад"
+
+#: cube/swiss/source/swiss.c:6160 cube/swiss/source/swiss.c:6341
+msgid "Return"
+msgstr "Назад"
+
+#: cube/swiss/source/swiss.c:6202
+msgid ""
+"Move this file?\n"
+"It is removed from here once copied.\n"
+"A  MOVE    B  CANCEL"
+msgstr ""
+"Перемістити цей файл?\n"
+"Після копіювання він зникне звідси.\n"
+"A  ПЕРЕМІСТИТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:6206
+msgid ""
+"Hide this file?\n"
+"It shows only with Show hidden files on.\n"
+"A  HIDE    B  CANCEL"
+msgstr ""
+"Сховати цей файл?\n"
+"Видно, коли ввімкнено\n"
+"Показувати приховані файли.\n"
+"A  СХОВАТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:6207
+msgid ""
+"Hide this folder?\n"
+"It shows only with Show hidden files on.\n"
+"A  HIDE    B  CANCEL"
+msgstr ""
+"Сховати цю теку?\n"
+"Видно, коли ввімкнено\n"
+"Показувати приховані файли.\n"
+"A  СХОВАТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:6211 cube/swiss/source/swiss.c:6218
+msgid ""
+"Delete this file?\n"
+" \n"
+"Press L + A to continue, or B to cancel."
+msgstr ""
+"Видалити цей файл?\n"
+" \n"
+"Press L + A to continue, or B to cancel."
+
+#: cube/swiss/source/swiss.c:6212 cube/swiss/source/swiss.c:6219
+msgid ""
+"Delete this folder and all it holds?\n"
+" \n"
+"Press L + A to continue, or B to cancel."
+msgstr ""
+"Видалити цю теку з усім вмістом?\n"
+" \n"
+"Press L + A to continue, or B to cancel."
+
+#: cube/swiss/source/swiss.c:6256
+msgid ""
+"%s renamed!\n"
+"Press A to continue."
+msgstr ""
+"%s перейменовано!\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6257 cube/swiss/source/swiss.c:6447
+msgid "Move Failed! Press A to continue"
+msgstr "Не вдалося перемістити! Press A to continue"
+
+#: cube/swiss/source/swiss.c:6258
+msgid "Couldn't rename it."
+msgstr "Не перейменовано."
+
+#: cube/swiss/source/swiss.c:6267
+msgid "Deleting\205"
+msgstr "Видалення\205"
+
+#: cube/swiss/source/swiss.c:6270
+msgid ""
+"%s %s\n"
+"Press A to continue."
+msgstr ""
+"%s %s\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6270
+msgid "deleted successfully"
+msgstr "успішно видалено"
+
+#: cube/swiss/source/swiss.c:6270
+msgid "failed to delete!"
+msgstr "не видалено!"
+
+#: cube/swiss/source/swiss.c:6271
+msgid "Couldn't delete it."
+msgstr "Не видалено."
+
+#: cube/swiss/source/swiss.c:6272
+msgid "The file was deleted."
+msgstr "Файл видалено."
+
+#: cube/swiss/source/swiss.c:6272
+msgid "The folder was deleted."
+msgstr "Теку видалено."
+
+#: cube/swiss/source/swiss.c:6293
+msgid ""
+"Failed to init destination device! (%u)\n"
+"Press A to continue."
+msgstr ""
+"Збій ініціалізації цільового пристрою! (%u)\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6337
+msgid "File exists:"
+msgstr "Файл існує:"
+
+#: cube/swiss/source/swiss.c:6340
+msgid "A  Rename    Z  Overwrite"
+msgstr "A  Перейменувати    Z  Замінити"
+
+#: cube/swiss/source/swiss.c:6340
+msgid "Overwrite"
+msgstr "Замінити"
+
+#: cube/swiss/source/swiss.c:6351
+msgid "Can't overwrite a file with itself!"
+msgstr "Не можна замінити файл самим собою!"
+
+#: cube/swiss/source/swiss.c:6351
+msgid "That's the same file."
+msgstr "Це той самий файл."
+
+#: cube/swiss/source/swiss.c:6360
+msgid ""
+"Failed to delete the existing file!\n"
+"Press A to continue."
+msgstr ""
+"Наявний файл не видалено!\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6361
+msgid "Couldn't replace it."
+msgstr "Не замінено."
+
+#: cube/swiss/source/swiss.c:6361
+msgid "The file there couldn't be removed."
+msgstr "Наявний файл не вдалося видалити."
+
+#: cube/swiss/source/swiss.c:6398
+msgid "File name too long!"
+msgstr "Задовга назва файлу!"
+
+#: cube/swiss/source/swiss.c:6398
+msgid "Its name is too long for another copy."
+msgstr "Назва задовга для ще однієї копії."
+
+#: cube/swiss/source/swiss.c:6414
+msgid "Too many copies!"
+msgstr "Забагато копій!"
+
+#: cube/swiss/source/swiss.c:6414
+msgid "There are 99 copies of it there already."
+msgstr "Там уже є 99 його копій."
+
+#: cube/swiss/source/swiss.c:6447
+msgid "File moved! Press A to continue"
+msgstr "Файл переміщено! Press A to continue"
+
+#: cube/swiss/source/swiss.c:6448
+msgid "Couldn't move it."
+msgstr "Не переміщено."
+
+#: cube/swiss/source/swiss.c:6449
+msgid "The file that was there is gone already."
+msgstr "Файлу, що був там, уже немає."
+
+#: cube/swiss/source/swiss.c:6484
+msgid "Copying to: %s"
+msgstr "Копіювання в: %s"
+
+#: cube/swiss/source/swiss.c:6527 cube/swiss/source/swiss.c:6655
+msgid ""
+"Failed to Read! (%d %d)\n"
+"%s"
+msgstr ""
+"Помилка читання! (%d %d)\n"
+"%s"
+
+#: cube/swiss/source/swiss.c:6543
+msgid ""
+"Failed to Write! (%d %d)\n"
+"%s"
+msgstr ""
+"Помилка запису! (%d %d)\n"
+"%s"
+
+#: cube/swiss/source/swiss.c:6561
+msgid ""
+"Failed to Write! (%d)\n"
+"%s"
+msgstr ""
+"Помилка запису! (%d)\n"
+"%s"
+
+#: cube/swiss/source/swiss.c:6584
+msgid "Move Complete!"
+msgstr "Переміщено!"
+
+#: cube/swiss/source/swiss.c:6588
+msgid ""
+"Copy Complete.\n"
+"Press A to continue"
+msgstr ""
+"Скопійовано.\n"
+"Press A to continue"
+
+#: cube/swiss/source/swiss.c:6592
+msgid ""
+"%s cancelled.\n"
+"Press A to continue"
+msgstr ""
+"%s: скасовано.\n"
+"Press A to continue"
+
+#: cube/swiss/source/swiss.c:6622
+msgid "Verifying\205"
+msgstr "Перевірка\205"
+
+#: cube/swiss/source/swiss.c:6670
+msgid ""
+"Passed verification!\n"
+"Press A to continue."
+msgstr ""
+"Перевірено!\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6673
+msgid ""
+"Failed verification!\n"
+"Press A to continue."
+msgstr ""
+"Збій перевірки!\n"
+"Press A to continue."
+
+#: cube/swiss/source/swiss.c:6695
+msgid "Setup base offset please Wait\205"
+msgstr "Налаштування базового зсуву, зачекайте\205"
+
+#: cube/swiss/source/swiss.c:6707 cube/swiss/source/swiss.c:6715 cube/swiss/source/swiss.c:6736
+msgid "Invalid or Corrupt File!"
+msgstr "Хибний чи пошкоджений файл!"
+
+#: cube/swiss/source/swiss.c:6730
+msgid "Invalid or Corrupt File! (Fake SD Card?)"
+msgstr "Хибний чи пошкоджений файл! (Підробна SD?)"
+
+#: cube/swiss/source/swiss.c:6745
+msgid ""
+"Please reconvert to NKit.iso using\n"
+"NKit bundled with this Swiss release."
+msgstr ""
+"Переконвертуйте в NKit.iso через\n"
+"NKit з цього випуску Swiss."
+
+#: cube/swiss/source/swiss.c:6751
+msgid ""
+"File is not playable in NKit.iso format.\n"
+"Please convert back to ISO using NKit."
+msgstr ""
+"Файл не запускається у форматі NKit.iso.\n"
+"Конвертуйте назад в ISO через NKit."
+
+#: cube/swiss/source/swiss.c:6758
+msgid ""
+"File is a bad dump and is not playable.\n"
+"Please attempt recovery using NKit."
+msgstr ""
+"Поганий дамп, файл не запускається.\n"
+"Спробуйте відновити через NKit."
+
+#: cube/swiss/source/swiss.c:6764
+msgid ""
+"File is a bad dump, but may be playable.\n"
+"Please attempt recovery using NKit."
+msgstr ""
+"Поганий дамп, але може працювати.\n"
+"Спробуйте відновити через NKit."
+
+#: cube/swiss/source/swiss.c:6770
+msgid ""
+"Device does not support audio streaming.\n"
+"This may impact playability."
+msgstr ""
+"Пристрій не підтримує потокове аудіо.\n"
+"Це може вплинути на гру."
+
+#: cube/swiss/source/swiss.c:6774
+msgid ""
+"Device is operating in a degraded state.\n"
+"This may impact playability."
+msgstr ""
+"Пристрій працює в погіршеному режимі.\n"
+"Це може вплинути на гру."
+
+#: cube/swiss/source/swiss.c:6827
+msgid "Device does not support clean boot."
+msgstr "Пристрій не підтримує чистий запуск."
+
+#: cube/swiss/source/swiss.c:6833 cube/swiss/source/swiss.c:6976
+msgid "Failed to setup the file (too fragmented?)"
+msgstr "Не вдалося підготувати файл (надто фрагментований?)"
+
+#: cube/swiss/source/swiss.c:6863
+msgid "Applied %i cheats"
+msgstr "Застосовано читів: %i"
+
+#: cube/swiss/source/swiss.c:6876
+msgid ""
+"Selected cheats exceed WiiRD capacity.\n"
+"No cheats will be applied."
+msgstr ""
+"Вибрані чити не вміщуються у WiiRD.\n"
+"Чити не буде застосовано."
+
+#: cube/swiss/source/swiss.c:7042
+msgid "Invalid DOL"
+msgstr "Хибний DOL"
+
+#: cube/swiss/source/swiss.c:7049
+msgid ""
+"Update the FlippyDrive with this file?\n"
+"A  UPDATE    B  CANCEL"
+msgstr ""
+"Оновити FlippyDrive цим файлом?\n"
+"A  ОНОВИТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:7060
+msgid "File Size must be 0x1D0000 bytes!"
+msgstr "Розмір файлу має бути 0x1D0000 байт!"
+
+#: cube/swiss/source/swiss.c:7065
+msgid ""
+"Write this file to the WiiKey's flash?\n"
+"A  FLASH    B  CANCEL"
+msgstr ""
+"Записати цей файл у флеш WiiKey?\n"
+"A  ЗАПИСАТИ    B  СКАСУВАТИ"
+
+#: cube/swiss/source/swiss.c:7068
+msgid "Reading Flash File\205"
+msgstr "Читання прошивки\205"
+
+#: cube/swiss/source/swiss.c:7080
+msgid "Didn't find a firmware file, flashing menu only."
+msgstr "Файл прошивки не знайдено, прошивається лише меню."
+
+#: cube/swiss/source/swiss.c:7083
+msgid "Found firmware file, this will be flashed too."
+msgstr "Знайдено файл прошивки, його теж буде прошито."
+
+#: cube/swiss/source/swiss.c:7088
+msgid "Flashing Complete !!"
+msgstr "Прошивку завершено !!"
+
+#: cube/swiss/source/swiss.c:7101
+msgid "Device does not support disc images."
+msgstr "Пристрій не підтримує образи дисків."
+
+#: cube/swiss/source/swiss.c:7108
+msgid ""
+"Compressed disc images must be\n"
+"decompressed using NKit or Dolphin."
+msgstr ""
+"Стиснені образи треба розпакувати\n"
+"через NKit або Dolphin."
+
+#: cube/swiss/source/swiss.c:7122
+msgid "Unknown File Type!"
+msgstr "Невідомий тип файлу!"
+
+#: cube/swiss/source/swiss.c:7138
+msgid "Checking Game\205"
+msgstr "Перевірка гри\205"
+
+#: cube/swiss/source/swiss.c:7238 cube/swiss/source/swiss.c:7249 cube/swiss/source/swiss.c:7255
+msgid "Size: "
+msgstr "Розмір: "
+
+#: cube/swiss/source/swiss.c:7240
+msgid "Position on Flash: %08X"
+msgstr "Позиція у флеш: %08X"
+
+#: cube/swiss/source/swiss.c:7245
+msgid "Partition: %i, ISO: %i"
+msgstr "Розділ: %i, ISO: %i"
+
+#: cube/swiss/source/swiss.c:7251
+msgid "Position on Card: %08X"
+msgstr "Позиція на карті: %08X"
+
+#: cube/swiss/source/swiss.c:7281
+msgid "(R) Verify data integrity"
+msgstr "(R) Перевірити цілісність даних"
+
+#: cube/swiss/source/swiss.c:7283
+msgid "Game ID: [%.6s] Audio Streaming: [%s]"
+msgstr "ID гри: [%.6s] Потокове аудіо: [%s]"
+
+#: cube/swiss/source/swiss.c:7283
+msgid "Enabled"
+msgstr "Увімкнено"
+
+#: cube/swiss/source/swiss.c:7283
+msgid "Unused"
+msgstr "Немає"
+
+#: cube/swiss/source/swiss.c:7288
+msgid "A firmware update is required."
+msgstr "Потрібне оновлення прошивки."
+
+#: cube/swiss/source/swiss.c:7291
+msgid "Disc %i/%i [Found: %s]"
+msgstr "Диск %i/%i [Знайдено: %s]"
+
+#: cube/swiss/source/swiss.c:7298 cube/swiss/source/swiss.c:7303
+msgid "Revision %X"
+msgstr "Ревізія %X"
+
+#: cube/swiss/source/swiss.c:7311
+msgid "Z  Load at startup [Current: %s]"
+msgstr "Z  Відкривати при запуску [Зараз: %s]"
+
+#: cube/swiss/source/swiss.c:7311
+msgid "Load at startup [Current: %s]"
+msgstr "Відкривати при запуску [Зараз: %s]"
+
+#: cube/swiss/source/swiss.c:7314
+msgid "L+A  Clean Boot"
+msgstr "L+A  Чистий запуск"
+
+#: cube/swiss/source/swiss.c:7314 cube/swiss/source/swiss.c:7314 cube/swiss/source/swiss.c:7325
+msgid "Clean Boot"
+msgstr "Чистий запуск"
+
+#: cube/swiss/source/swiss.c:7314
+msgid "    L+A  Clean Boot"
+msgstr "    L+A  Чистий запуск"
+
+#: cube/swiss/source/swiss.c:7319
+msgid "X  Settings    Y  Cheats"
+msgstr "X  Налаштування    Y  Чити"
+
+#: cube/swiss/source/swiss.c:7322
+msgid "    B  Exit"
+msgstr "    B  Вихід"
+
+#: cube/swiss/source/swiss.c:7322
+msgid "Exit"
+msgstr "Вихід"
+
+#: cube/swiss/source/swiss.c:7325
+msgid "    A  Clean Boot"
+msgstr "    A  Чистий запуск"
+
+#: cube/swiss/source/swiss.c:7328
+msgid "    A  Boot"
+msgstr "    A  Запуск"
+
+#: cube/swiss/source/swiss.c:7328
+msgid "Boot"
+msgstr "Запуск"
+
+#: cube/swiss/source/swiss.c:7375
+msgid "Save Folder"
+msgstr "Тека збережень"
+
+#: cube/swiss/source/swiss.c:7508
+msgid "Waiting for the memory card\205"
+msgstr "Очікування карти пам'яті\205"
+
+#: cube/swiss/source/swiss.c:7548 cube/swiss/source/swiss.c:7575
+msgid ""
+"The memory card is still changing to this game's\n"
+"card. Try again in a moment.\n"
+"A  OK"
+msgstr ""
+"Карта пам'яті ще перемикається на карту цієї гри.\n"
+"Спробуйте ще раз за мить.\n"
+"A  OK"
+
+#: cube/swiss/source/swiss.c:7555
+msgid "the save"
+msgstr "збереження"
+
+#: cube/swiss/source/swiss.c:7557
+msgid ""
+"Start with %s from %s?\n"
+"%s's own copy of it goes to the Save Folder first.\n"
+"A  LOAD    B  KEEP"
+msgstr ""
+"Почати з: %s (%s)?\n"
+"Власна копія (%s) спершу піде в Теку збережень.\n"
+"A  ЗАВАНТАЖИТИ    B  ЗАЛИШИТИ"
+
+#: cube/swiss/source/swiss.c:7559
+msgid ""
+"Start with %s from %s?\n"
+"It goes on the memory card in %s.\n"
+"A  LOAD    B  KEEP"
+msgstr ""
+"Почати з: %s (%s)?\n"
+"Воно піде на карту пам'яті в %s.\n"
+"A  ЗАВАНТАЖИТИ    B  ЗАЛИШИТИ"
+
+#: cube/swiss/source/swiss.c:7570
+msgid ""
+"A memory card changed while the question was up.\n"
+"Look at the saves again, then launch.\n"
+"A  OK"
+msgstr ""
+"Карту пам'яті змінено, поки було питання.\n"
+"Перегляньте збереження ще раз і запустіть.\n"
+"A  OK"
+
+#: cube/swiss/source/swiss.c:7579
+msgid "Loading save\205"
+msgstr "Завантаження збереження\205"
+
+#: cube/swiss/source/swiss.c:7583
+msgid ""
+"The save didn't go on the card.\n"
+"%s\n"
+"A  OK"
+msgstr ""
+"Збереження не записано.\n"
+"%s\n"
+"A  OK"
+
+#: cube/swiss/source/swiss.c:7623
+msgid "%.6s  |  %s  |  DISC %u/%u  |  REGION %c"
+msgstr "%.6s  |  %s  |  ДИСК %u/%u  |  РЕГІОН %c"
+
+#: cube/swiss/source/swiss.c:8112
+msgid "Can't load device while HTTP is processing!"
+msgstr "Не можна завантажити пристрій, поки працює HTTP!"
+
+#: cube/swiss/source/swiss.c:8282
+msgid "Setting up device"
+msgstr "Підготовка пристрою"
+
+#: cube/swiss/source/main.c:337
+msgid ""
+"You can set \223System Boot Mode\224 to Production\n"
+"to restore the GameCube logo screen."
+msgstr ""
+"Щоб повернути екран з логотипом GameCube,\n"
+"встановіть System Boot Mode на Production."
+
+#: cube/swiss/source/main.c:386
+msgid ""
+"A firmware update is required.\n"
+"flippydrive.com/updates"
+msgstr ""
+"Потрібне оновлення прошивки.\n"
+"flippydrive.com/updates"
+
+#: cube/swiss/source/main.c:391
+msgid ""
+"A firmware update is available.\n"
+"flippydrive.com/updates"
+msgstr ""
+"Доступне оновлення прошивки.\n"
+"flippydrive.com/updates"
+
+#: cube/swiss/source/main.c:406
+msgid ""
+"A firmware update is available.\n"
+"gc-loader.com/firmware-updates"
+msgstr ""
+"Доступне оновлення прошивки.\n"
+"gc-loader.com/firmware-updates"
+
+#: cube/swiss/source/main.c:415
+msgid ""
+"A firmware update is available.\n"
+"gc-loader.com/firmware-updates-hw2"
+msgstr ""
+"Доступне оновлення прошивки.\n"
+"gc-loader.com/firmware-updates-hw2"
+
+#: cube/swiss/source/main.c:446
+msgid ""
+"Detecting devices\205\n"
+"This can be skipped by holding B next time"
+msgstr ""
+"Пошук пристроїв\n"
+"Наступного разу пропустіть, утримуючи B"
+
+#: cube/swiss/source/main.c:463
+msgid "Please move %s to Slot B"
+msgstr "Перемістіть %s у слот B"
+
+#: cube/swiss/source/config/config.c:1272 cube/swiss/source/config/config.c:2200
+msgid "Migrating settings to new format."
+msgstr "Перенесення налаштувань у новий формат."
+
+#: cube/swiss/source/config/config.c:2185
+msgid "Loading settings"
+msgstr "Читання налаштувань"
+
+#: cube/swiss/source/gui/settings.c:1484
+msgid ""
+"Time Zone not recognized.\n"
+"Check the location name and capitalization,\n"
+"or leave it blank to keep the current offset."
+msgstr ""
+"Часовий пояс не розпізнано.\n"
+"Перевірте назву місцевості та великі літери\n"
+"або залиште поле порожнім, щоб лишити поточний зсув."

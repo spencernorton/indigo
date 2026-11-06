@@ -1,4 +1,5 @@
 #include "ui_hint.h"
+#include "ui_lang.h"
 
 #include <string.h>
 
@@ -94,7 +95,11 @@ int UIHint_Parse(const char *text, uiHintItem_t *items, int max)
 		size_t length;
 
 		while(*end != '\0' && separatorLength(end) == 0) {
-			end++;
+			int bytes;
+
+			/* Whole letters: "з" (d0 b7) ends in the "\267" separator. */
+			UILang_Character(end, &bytes);
+			end += bytes;
 		}
 		length = (size_t)(end - cursor);
 		while(length > 0 && cursor[length - 1] == ' ') {

@@ -32,6 +32,8 @@ HARNESS = r'''
 #include "ui_stage.h"
 #include "ui_color.h"
 #include "ui_hint.h"
+/* Menu Language is English here. */
+#define UI_T(english) (english)
 typedef struct {uint8_t r,g,b,a;} GXColor;
 typedef struct {int type;void *data;void *child;bool disposed;} uiDrawObj_t;
 enum {ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT, EV_SAVE_DETAILS, GX_QUADS, GX_VTXFMT0, GX_TEXMAP0};

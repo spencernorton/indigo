@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "ui_lang.h"
 #include "ui_saves_details.h"
 
 static bool textValid(const char *text, size_t capacity)
@@ -37,9 +38,11 @@ static bool copyText(char *out, size_t capacity, const char *source)
 		memcpy(out, source, length + 1u);
 	}
 	else {
-		memcpy(out, source, capacity - 2u);
-		out[capacity - 2u] = (char)0x85; /* IPL ellipsis */
-		out[capacity - 1u] = '\0';
+		/* The ellipsis never follows half a Cyrillic letter. */
+		length = UILang_Head(source, capacity - 2u);
+		memcpy(out, source, length);
+		out[length] = (char)0x85; /* IPL ellipsis */
+		out[length + 1u] = '\0';
 	}
 	return true;
 }

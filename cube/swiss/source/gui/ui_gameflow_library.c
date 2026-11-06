@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "ui_gameflow_library.h"
+#include "ui_lang.h"
 
 static unsigned char asciiLower(unsigned char value)
 {
@@ -284,7 +285,11 @@ bool UIGameflowLibrary_FolderHeading(const char *gamesRoot,
 			length = headingPut(heading, size, length, last, lastLength);
 		}
 		else {
+			size_t start = length;
+
 			length = headingPut(heading, size - 1u, length, last, lastLength);
+			/* The ellipsis never follows half a Cyrillic letter. */
+			length = start + UILang_Head(last, length - start);
 			heading[length++] = '\205';
 		}
 	}

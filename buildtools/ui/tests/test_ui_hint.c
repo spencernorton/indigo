@@ -116,6 +116,11 @@ static void test_text_stays_text(void)
 		CHECK(!items[0].chord);
 	}
 	EXPECT("LR  PAGE", {UI_HINT_GLYPH_NONE, UI_HINT_GLYPH_NONE, "LR  PAGE"});
+	/* A Cyrillic letter's second byte is no "\267" separator. */
+	EXPECT("B  Назад", {UI_HINT_GLYPH_B, UI_HINT_GLYPH_NONE, "Назад"});
+	EXPECT("A  Вибір \267 B  Назад",
+		{UI_HINT_GLYPH_A, UI_HINT_GLYPH_NONE, "Вибір"},
+		{UI_HINT_GLYPH_B, UI_HINT_GLYPH_NONE, "Назад"});
 	/* A bare name is an icon with no label. */
 	EXPECT("B", {UI_HINT_GLYPH_B, UI_HINT_GLYPH_NONE, ""});
 	/* Separators and edges trim; blanks make no items. */

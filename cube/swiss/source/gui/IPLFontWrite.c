@@ -14,11 +14,16 @@
 #include <string.h>
 #include "IPLFontWrite.h"
 #include "ui_color.h"
+#include "ui_lang.h"
 #include "ui_stage.h"
+#include "ui_font_cyrillic.inc"
 
 static u8 fontData[SYS_FONTSIZE_ANSI] ATTRIBUTE_ALIGN (32);
 static sys_fontheader *font = (sys_fontheader *)fontData;
 static bool fontReady;
+/* The Cyrillic sheet stands in for an IPL sheet, so it needs the IPL's
+ * layout: I4, as wide, and cells as tall. */
+static bool cyrillicReady;
 
 GXTexObj fontTexObj;
 GXColor defaultColor = (GXColor) {255,255,255,255};
@@ -32,9 +37,66 @@ void init_font(void)
 		fontReady = true;
 		GX_InitTexObj(&fontTexObj, NULL, font->sheet_width, font->sheet_height, font->sheet_format, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_TRUE, GX_TRUE, GX_ANISO_4);
+		cyrillicReady = font->sheet_format == GX_TF_I4 &&
+			font->sheet_width == UI_FONT_CYRILLIC_SHEET_WIDTH &&
+			font->cell_height == UI_FONT_CYRILLIC_CELL;
+		DCFlushRange(uiFontCyrillicSheet, sizeof(uiFontCyrillicSheet));
 		/* DrawInit publishes the immutable sheets before video starts. */
 		GX_InvalidateTexAll();
 	}
+}
+
+/* The character at text, from the IPL's sheets or the Cyrillic one: its
+ * sheet, its cell's corner and its width; how many bytes it takes. A
+ * Cyrillic letter without its sheet is drawn as '?'. */
+static int fontCharacter(const char *text, void **sheet, int *s0, int *t0,
+		int *width)
+{
+	int bytes;
+	unsigned code = UILang_Character(text, &bytes);
+
+	if(bytes == 2) {
+		int glyph = code >= 0x410u && code <= 0x44fu ? (int)code - 0x410 : 64;
+
+		while(glyph < UI_FONT_CYRILLIC_GLYPHS && uiFontCyrillicCodes[glyph] != code) {
+			glyph++;
+		}
+		if(cyrillicReady && glyph < UI_FONT_CYRILLIC_GLYPHS) {
+			*sheet = uiFontCyrillicSheet;
+			*s0 = glyph % UI_FONT_CYRILLIC_COLUMNS * UI_FONT_CYRILLIC_CELL;
+			*t0 = glyph / UI_FONT_CYRILLIC_COLUMNS * UI_FONT_CYRILLIC_CELL;
+			*width = uiFontCyrillicWidths[glyph];
+			return bytes;
+		}
+		code = '?';
+	}
+	else if(code >= 0xd0u && code <= 0xd2u && text[1] == '\0') {
+		/* Half a letter, where a byte budget (snprintf's) cut the text at
+		 * its end: nothing, not an IPL letter. Cuts before an ellipsis
+		 * keep whole letters (UILang_Head). */
+		SYS_GetFontTexture(' ', sheet, s0, t0, width);
+		*width = 1;
+		return bytes;
+	}
+	SYS_GetFontTexture((unsigned char)code, sheet, s0, t0, width);
+	return bytes;
+}
+
+/* The character at text's width, as fontCharacter draws it. A byte that
+ * can't start a Cyrillic letter reads its width alone, as before, so the
+ * measures text fitting repeats cost English nothing more. */
+static int fontCharacterWidth(const char *text, int *bytes)
+{
+	void *sheet;
+	int s0, t0, width;
+	unsigned char c = (unsigned char)*text;
+
+	if(c < 0xd0u || c > 0xd2u) {
+		*bytes = c ? 1 : 0;
+		return SYS_GetFontWidth(c);
+	}
+	*bytes = fontCharacter(text, &sheet, &s0, &t0, &width);
+	return width;
 }
 
 int fontCellHeight(void)
@@ -153,6 +215,7 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 	if(string == NULL) {
 		return;
 	}
+	string = UILang_Text(string);
 	drawFontInit();
 	Mtx GXmodelView2D;
 	int strWidth = 0;
@@ -164,9 +227,9 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 		const char* string_work = string;
 		while(*string_work)
 		{
-			unsigned char c = *string_work;
-			strWidth += SYS_GetFontWidth(c) - 1;
-			string_work++;
+			int bytes;
+			strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+			string_work += bytes;
 		}
 	}
 	for(pass=0; pass<passes; pass++) {
@@ -193,15 +256,15 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 			while(*end && *end != '\n' && count < 64) {
 				void *sheet;
 				int s0, t0, width;
+				int bytes = fontCharacter(end, &sheet, &s0, &t0, &width);
 
-				SYS_GetFontTexture((unsigned char)*end, &sheet, &s0, &t0, &width);
 				if(count > 0 && sheet != image) break;
 				image = sheet;
 				glyphs[count].s = s0;
 				glyphs[count].t = t0;
 				glyphs[count].width = width;
 				count++;
-				end++;
+				end += bytes;
 			}
 			if(GX_GetTexObjData(&fontTexObj) != (void *)MEM_VIRTUAL_TO_PHYSICAL(image)) {
 				GX_InitTexObjData(&fontTexObj, image);
@@ -320,25 +383,25 @@ int GetFontHeight(float scale)
 int GetTextSizeInPixels(const char *string)
 {
 	int strWidth = 0;
-	const char* string_work = string;
+	const char* string_work = UILang_Text(string);
 	while(*string_work)
 	{
-		unsigned char c = *string_work;
-		strWidth += SYS_GetFontWidth(c) - 1;
-		string_work++;
+		int bytes;
+		strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+		string_work += bytes;
 	}
 	return strWidth;
 }
 
 float GetTextScaleToFitInWidth(const char *string, int width) {
 	int strWidth = 0;
-	const char* string_work = string;
+	const char* string_work = UILang_Text(string);
 	while(*string_work)
 	{
-		unsigned char c = *string_work;
-		if(c == '\n') break;
-		strWidth += SYS_GetFontWidth(c) - 1;
-		string_work++;
+		int bytes;
+		if(*string_work == '\n') break;
+		strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+		string_work += bytes;
 	}
 	return width>strWidth ? 1.0f : (float)((float)width/(float)strWidth);
 }

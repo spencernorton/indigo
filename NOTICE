@@ -75,6 +75,13 @@ Third-party components redistributed in this tree:
     The DBCS conversion tables are removed; see the note in
     cube/swiss/source/fatfs/ffunicode.c.
 
+  Noto Sans — https://github.com/notofonts/latin-greek-cyrillic
+    Copyright 2022 The Noto Project Authors. SIL Open Font License 1.1; see
+    docs/licenses/noto-sans-ofl.txt. Menu Language's Ukrainian letters are
+    drawn from it into a glyph sheet in Indigo's DOL
+    (cube/swiss/source/gui/ui_font_cyrillic.inc, made by
+    buildtools/ui/generate_cyrillic_font.py); the font itself isn't carried.
+
   Up in the Sky — https://opengameart.org/content/up-in-the-sky
     Music by Memoraphile, released under CC0 1.0 (also offered under CC-BY 4.0
     and OGA-BY 3.0). Indigo's menu music is made from it; see

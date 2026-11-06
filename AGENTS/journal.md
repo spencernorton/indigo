@@ -1,3 +1,49 @@
+## 2026-11-05 — Bring Menu Language onto beta and trim what it keeps
+
+A contributed Menu Language (Ukrainian) arrives on beta from a main base; only
+CHANGELOG.md conflicts, but uk.po still translated beta's old Sync Clock and
+Time Zone wording, so test_lang.py failed there. Those entries now follow the
+current text, and the new Time Zone strings have their own.
+
+Ukrainian kept its whole 212 KB file, a 4,000-entry array and a fixed 16 KB
+index in RAM, about 260 KB, with 16 KB held even in English. Load now copies
+only the strings behind their entries and frees the file; the index is sized
+to the entries. The console keeps 142,816 bytes for uk.po and nothing for
+English; test_lang.py measures that and holds it under 192 KiB. UBSan in the
+sanitized lane found the parser offsetting a null pointer before its check.
+The source checks wanted -no-pie on test_lang.py's ASan build, and the
+whitespace check a trailing space gone from the OFL text.
+
+Byte cuts that end in the IPL ellipsis could split a Cyrillic letter, and a
+cut after the 0xd1 lead byte draws as "х" with no ellipsis, a byte pair the
+draw loop cannot tell from the real letter. Home and Save Details fitting,
+Library folder headings, short names and Settings path tails now cut on
+whole letters (UILang_Head, now inline so pure modules need only the
+header), each with a host test that fails without it; the draw loop's guess
+before an ellipsis is gone. Text the Home fitter cuts and text entry labels
+are looked up before they are cut or formatted, as ui_lang.h requires.
+
+A review of the whole branch found three more. An English title whose cut
+ended on an IPL Ñ (0xd1) also read as "х" before the ellipsis; UILang_Head
+now steps back over it. Turning Menu Language with the stick saved it but
+drew the old language until Settings closed; it now switches at once. The
+hint parser took the second byte of "з" (d0 b7) for the "·" separator, so
+the Settings footer drew "Назад" as "На ад"; it steps over whole letters.
+Menu Language is the first Console row, so the emulator's Console walks
+count one more. Text measures had gone through SYS_GetFontTexture for every
+character, English included; the widescreen virtual-cards route dropped a
+press in two of its three runs here and none of its fifteen elsewhere, so a
+byte that can't start a Cyrillic letter reads its width alone again. The smoke route passes 239 checks in Ukrainian and in English
+in the patched Dolphin, run locally with the cached interpreter on arm64.
+
+Not changed: drawString still looks up every string it draws, so a folder or
+game named exactly like a translated label (Music, Covers, Apps) is shown
+translated. About 340 strings have no Ukrainian yet and stay English ("Other
+side", "free", section captions, help lines, the Left Face value
+"Settings"). config_file_read, which reads uk.po as it reads global.ini,
+allocates size + 1 in a u32, so a file of 4 GiB less one byte wraps it; that
+predates this branch. Nothing has been timed on a console.
+
 ## 2026-11-05 — Guide Sync Clock setup for daylight saving time
 
 Turning on Sync Clock with a blank Time Zone or an imported Etc/Unknown now

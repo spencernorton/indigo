@@ -18,7 +18,9 @@
 # three layouts, the Save Folder arm (SET_SAVE_FOLDER) only sets
 # swissSettings.saveFolder to the folder Memory Cards' chooser returns, the
 # Menu Widescreen arm (SET_MENU_WIDESCREEN) only flips
-# swissSettings.menuWidescreen, the four side arms (SET_*_FACE) each only
+# swissSettings.menuWidescreen, the Menu Language arm (SET_MENU_LANGUAGE) only
+# steps swissSettings.menuLanguage round the languages, reads the new one's
+# file and selects it, the four side arms (SET_*_FACE) each only
 # step their own side round the faces and none, the Cube arm (SET_CUBE) only flips
 # swissSettings.cubeStyle between Infinite and Classic, the Library
 # Folders arm (SET_LIBRARY_FOLDERS) only turns Library Folders on or off
@@ -201,6 +203,20 @@ normalized = re.sub(
     r"\t+swissSettings\.menuWidescreen \^= 1;\n"
     r"\t+break;\n",
     "", normalized, count=1)
+# Menu Language looks a message's format up (UI_T("...")) before it is
+# formatted; the format and its arguments are the same.
+normalized = re.sub(r'UI_T\(("(?:\\.|[^"\\])*")\)', r"\1", normalized)
+# And the Menu Language arm: a step round the languages, reading the new
+# one's file once (config_load_language) and drawing in it at once.
+normalized = re.sub(
+    r"(?ms)^\t+case SET_MENU_LANGUAGE:\n"
+    r"\t+swissSettings\.menuLanguage \+= direction;\n"
+    r"\t+swissSettings\.menuLanguage = \(swissSettings\.menuLanguage \+ UI_LANG_MAX\) % UI_LANG_MAX;\n"
+    r"\t+config_load_language\(swissSettings\.menuLanguage, true\);\n"
+    r"\t+/\* The page is rebuilt before the next frame selects it\. \*/\n"
+    r"\t+UILang_Select\(swissSettings\.menuLanguage\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
 # And the four side arms, each round the faces and none.
 normalized, sides = re.subn(
     r"(?ms)^\t+case SET_(UP|LEFT|RIGHT|DOWN)_FACE:\n"
@@ -286,9 +302,9 @@ for fn in settings_toggle; do
 			normalize_intended_changes "$TMP/base_$fn" "$TMP/base_${fn}_normalized"
 			normalize_intended_changes "$TMP/head_$fn" "$TMP/head_${fn}_normalized"
 			if cmp -s "$TMP/base_${fn}_normalized" "$TMP/head_${fn}_normalized"; then
-				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
+				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
 			else
-				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
+				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
 				diff -u "$TMP/base_${fn}_normalized" \
 					"$TMP/head_${fn}_normalized" | head -40 >&2 || true
 				fail=1

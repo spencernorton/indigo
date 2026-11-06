@@ -20,6 +20,7 @@ LAYOUT = {
     "Indigo-README.txt", "ipl.dol", "swiss/", "swiss/ui/", "swiss/patches/",
     "swiss/patches/apploader.img", "swiss/indigo/", "swiss/indigo/LICENSE.txt",
     "swiss/indigo/NOTICE.txt", "swiss/indigo/LICENSE-lwip.txt",
+    "swiss/indigo/uk.po", "swiss/indigo/LICENSE-NotoSans.txt",
 }
 # Allowed but not required: the bundled web browser, which the Web face launches.
 # A release ships it; a plain build need not. mbed TLS is built into it, so its

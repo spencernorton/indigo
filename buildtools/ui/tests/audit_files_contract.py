@@ -42,9 +42,18 @@ if not __debug__:
     raise SystemExit("audit_files_contract.py needs Python assertions; run it without -O")
 
 ROOT = Path(__file__).resolve().parents[3]
-SWISS = (ROOT / "cube/swiss/source/swiss.c").read_text()
-FRAME = (ROOT / "cube/swiss/source/gui/FrameBufferMagic.c").read_text()
-FILES = (ROOT / "cube/swiss/source/gui/ui_files.c").read_text()
+
+
+def unlooked(text: str) -> str:
+    """text with its strings as written, without Menu Language's lookups
+    (UI_T("...") and UILang_Text("...")): the messages' meaning is checked,
+    not the language they are drawn in."""
+    return re.sub(r'(?:UI_T|UILang_Text)\(("(?:\\.|[^"\\])*")\)', r"\1", text)
+
+
+SWISS = unlooked((ROOT / "cube/swiss/source/swiss.c").read_text(encoding="latin-1"))
+FRAME = unlooked((ROOT / "cube/swiss/source/gui/FrameBufferMagic.c").read_text(encoding="latin-1"))
+FILES = unlooked((ROOT / "cube/swiss/source/gui/ui_files.c").read_text(encoding="latin-1"))
 TEST = (ROOT / "buildtools/ui/tests/test_ui_files.c").read_text()
 # Swiss's lines kept under the presets, one tab in and without trailing
 # blanks: its Z box (option = 0 where it declared it) and its destination
@@ -352,7 +361,9 @@ def check_second_device(swiss: str, screen: str, menu: str, dispatch: str, refre
 
 
 def kept(block: str) -> str:
-    """Swiss's lines as they were: one tab less, no trailing blanks."""
+    """Swiss's lines as they were: one tab less, no trailing blanks, and its
+    strings as written, without Menu Language's lookups (UI_T("..."))."""
+    block = re.sub(r'UI_T\(("(?:\\.|[^"\\])*")\)', r"\1", block)
     return "\n".join((line[1:] if line.startswith("\t") else line).rstrip()
                      for line in block.split("\n"))
 
