@@ -23,10 +23,23 @@ header), each with a host test that fails without it; the draw loop's guess
 before an ellipsis is gone. Text the Home fitter cuts and text entry labels
 are looked up before they are cut or formatted, as ui_lang.h requires.
 
+A review of the whole branch found three more. An English title whose cut
+ended on an IPL Ñ (0xd1) also read as "х" before the ellipsis; UILang_Head
+now steps back over it. Turning Menu Language with the stick saved it but
+drew the old language until Settings closed; it now switches at once. The
+hint parser took the second byte of "з" (d0 b7) for the "·" separator, so
+the Settings footer drew "Назад" as "На ад"; it steps over whole letters.
+Menu Language is the first Console row, so the emulator's Console walks
+count one more. The smoke route passes 239 checks in Ukrainian and in English
+in the patched Dolphin, run locally with the cached interpreter on arm64.
+
 Not changed: drawString still looks up every string it draws, so a folder or
 game named exactly like a translated label (Music, Covers, Apps) is shown
-translated. No Ukrainian screen has been recorded in Dolphin or timed on a
-console yet.
+translated. About 340 strings have no Ukrainian yet and stay English ("Other
+side", "free", section captions, help lines, the Left Face value
+"Settings"). config_file_read, which reads uk.po as it reads global.ini,
+allocates size + 1 in a u32, so a file of 4 GiB less one byte wraps it; that
+predates this branch. Nothing has been timed on a console.
 
 ## 2026-11-05 — Guide Sync Clock setup for daylight saving time
 
