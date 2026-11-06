@@ -1715,7 +1715,7 @@ class Route:
         self.check(name, moved == rows, moved=moved, **({"odd_steps": corrected} if corrected else {}), **detail)
 
     def classic_cube(self, faces: list[np.ndarray]) -> None:
-        """From the Settings face: Setup > Console > Cube (thirteen DOWNs, just
+        """From the Settings face: Setup > Console > Cube (fourteen DOWNs, just
         after the four sides) to Classic. The faces then sit as on the GameCube's
         menu, Library in front and the way between them: Settings is its
         left side, so LEFT goes nowhere, and RIGHT twice is Library and then

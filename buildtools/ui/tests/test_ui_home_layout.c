@@ -551,33 +551,39 @@ static void testHomeTextFloorAndMetricEllipsis(void)
 		(unsigned char)UI_HOME_TEXT_ELLIPSIS_BYTE);
 
 	/* Cyrillic text is cut between letters, never inside one: half of
-	 * "я" (0xd1 0x8f) before the ellipsis would read as "х" (0xd1 0x85). */
+	 * "я" (0xd1 0x8f) before the ellipsis would read as "х" (0xd1 0x85),
+	 * and so would an IPL title's Ñ (0xd1). */
 	{
 		static const char cyrillic[] = "яяяяяяяяяяяяяяяяяяяя";
+		static const char ipl[] = "a\321a\321a\321a\321a\321a\321a\321a\321a\321a\321";
 		char cut[7];
 		char fitted[sizeof(cyrillic)];
-		int cuts = 0;
 
 		(void)UIHomeText_CopyFitted(cut, sizeof(cut), cyrillic, 1000,
 			0.58f, fakeIplTextWidth, &ellipsized);
 		CHECK(ellipsized && strlen(cut) == 5u);
 		CHECK((unsigned char)cut[4] == (unsigned char)UI_HOME_TEXT_ELLIPSIS_BYTE);
 		CHECK(UILang_Head(cut, 4u) == 4u);
-		for(int width = 20; width <= 200; width += 3) {
-			size_t at;
+		for(int text = 0; text < 2; text++) {
+			int cuts = 0;
 
-			(void)UIHomeText_CopyFitted(fitted, sizeof(fitted), cyrillic,
-				width, 0.58f, fakeIplTextWidth, &ellipsized);
-			at = strlen(fitted);
-			if(!ellipsized || at == 0u) {
-				continue;
+			for(int width = 20; width <= 200; width += 3) {
+				size_t at;
+
+				(void)UIHomeText_CopyFitted(fitted, sizeof(fitted),
+					text == 0 ? cyrillic : ipl, width, 0.58f, fakeIplTextWidth,
+					&ellipsized);
+				at = strlen(fitted);
+				if(!ellipsized || at == 0u) {
+					continue;
+				}
+				CHECK((unsigned char)fitted[at - 1u] ==
+					(unsigned char)UI_HOME_TEXT_ELLIPSIS_BYTE);
+				CHECK(UILang_Head(fitted, at - 1u) == at - 1u);
+				cuts++;
 			}
-			CHECK((unsigned char)fitted[at - 1u] ==
-				(unsigned char)UI_HOME_TEXT_ELLIPSIS_BYTE);
-			CHECK(UILang_Head(fitted, at - 1u) == at - 1u);
-			cuts++;
+			CHECK(cuts > 10);
 		}
-		CHECK(cuts > 10);
 	}
 }
 

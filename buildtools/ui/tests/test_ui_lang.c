@@ -174,6 +174,11 @@ static void test_characters(void)
 	CHECK(UILang_Head("Ая", 2u) == 2u);
 	CHECK(UILang_Head("Ая", 3u) == 2u);
 	CHECK(UILang_Head("abc", 2u) == 2u);
+	/* An IPL Ñ (0xd1) and the ellipsis after it would read as "х". */
+	CHECK(UILang_Head("a\321b", 2u) == 1u);
+	CHECK(UILang_Head("a\321\321b", 3u) == 1u);
+	CHECK(UILang_Head("\321\321\217", 2u) == 0u); /* Ñ, then half of я */
+	CHECK(UILang_Head("a\320b", 2u) == 2u); /* Ð and 0x85 are no sheet letter */
 }
 
 int main(void)

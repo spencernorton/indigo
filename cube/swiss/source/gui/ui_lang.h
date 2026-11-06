@@ -119,14 +119,24 @@ static inline unsigned UILang_Character(const char *text, int *bytes)
 	return c[0];
 }
 
-/* The most of text's first length bytes that ends on a whole character:
- * length, or one less where a cut there would split a Cyrillic letter.
- * text must go on past length (a cut, not the end). */
+/* The most of text's first length bytes that ends on a whole character
+ * and that the IPL ellipsis (0x85) can follow: length, or less where a cut
+ * there would split a Cyrillic letter, or leave IPL bytes (Ñ, 0xd1) that
+ * the ellipsis would turn into a letter ("х"). text must go on past length
+ * (a cut, not the end). */
 static inline size_t UILang_Head(const char *text, size_t length)
 {
 	int bytes;
 
 	if(length > 0u && UILang_Character(text + length - 1u, &bytes) && bytes == 2) {
+		length--;
+	}
+	while(length > 0u) {
+		const char pair[3] = {text[length - 1u], (char)0x85, '\0'};
+
+		if(!UILang_Character(pair, &bytes) || bytes != 2) {
+			break;
+		}
 		length--;
 	}
 	return length;

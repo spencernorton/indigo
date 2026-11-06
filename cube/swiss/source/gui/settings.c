@@ -262,8 +262,10 @@ char* getAutoLoadDeviceName(SwissSettings *settings) {
 static const char *pathTail(const char *path, size_t length, size_t max)
 {
 	size_t start = length - max;
+	int bytes;
 
-	return path + start + (UILang_Head(path, start) != start);
+	UILang_Character(path + start - 1u, &bytes);
+	return path + start + (bytes == 2);
 }
 
 char* getLibraryPathName(SwissSettings *settings) {
@@ -1856,6 +1858,8 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 				swissSettings.menuLanguage += direction;
 				swissSettings.menuLanguage = (swissSettings.menuLanguage + UI_LANG_MAX) % UI_LANG_MAX;
 				config_load_language(swissSettings.menuLanguage, true);
+				/* The page is rebuilt before the next frame selects it. */
+				UILang_Select(swissSettings.menuLanguage);
 			break;
 		}
 	}
