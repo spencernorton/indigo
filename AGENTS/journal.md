@@ -30,7 +30,10 @@ drew the old language until Settings closed; it now switches at once. The
 hint parser took the second byte of "з" (d0 b7) for the "·" separator, so
 the Settings footer drew "Назад" as "На ад"; it steps over whole letters.
 Menu Language is the first Console row, so the emulator's Console walks
-count one more. The smoke route passes 239 checks in Ukrainian and in English
+count one more. Text measures had gone through SYS_GetFontTexture for every
+character, English included; the widescreen virtual-cards route dropped a
+press in two of its three runs here and none of its fifteen elsewhere, so a
+byte that can't start a Cyrillic letter reads its width alone again. The smoke route passes 239 checks in Ukrainian and in English
 in the patched Dolphin, run locally with the cached interpreter on arm64.
 
 Not changed: drawString still looks up every string it draws, so a folder or
