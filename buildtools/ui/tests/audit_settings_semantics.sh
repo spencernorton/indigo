@@ -19,8 +19,8 @@
 # swissSettings.saveFolder to the folder Memory Cards' chooser returns, the
 # Menu Widescreen arm (SET_MENU_WIDESCREEN) only flips
 # swissSettings.menuWidescreen, the Menu Language arm (SET_MENU_LANGUAGE) only
-# steps swissSettings.menuLanguage round the languages and reads the new one's
-# file, the four side arms (SET_*_FACE) each only
+# steps swissSettings.menuLanguage round the languages, reads the new one's
+# file and selects it, the four side arms (SET_*_FACE) each only
 # step their own side round the faces and none, the Cube arm (SET_CUBE) only flips
 # swissSettings.cubeStyle between Infinite and Classic, the Library
 # Folders arm (SET_LIBRARY_FOLDERS) only turns Library Folders on or off
@@ -207,12 +207,14 @@ normalized = re.sub(
 # formatted; the format and its arguments are the same.
 normalized = re.sub(r'UI_T\(("(?:\\.|[^"\\])*")\)', r"\1", normalized)
 # And the Menu Language arm: a step round the languages, reading the new
-# one's file once (config_load_language).
+# one's file once (config_load_language) and drawing in it at once.
 normalized = re.sub(
     r"(?ms)^\t+case SET_MENU_LANGUAGE:\n"
     r"\t+swissSettings\.menuLanguage \+= direction;\n"
     r"\t+swissSettings\.menuLanguage = \(swissSettings\.menuLanguage \+ UI_LANG_MAX\) % UI_LANG_MAX;\n"
     r"\t+config_load_language\(swissSettings\.menuLanguage, true\);\n"
+    r"\t+/\* The page is rebuilt before the next frame selects it\. \*/\n"
+    r"\t+UILang_Select\(swissSettings\.menuLanguage\);\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # And the four side arms, each round the faces and none.
