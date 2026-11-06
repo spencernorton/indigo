@@ -82,12 +82,19 @@ static int fontCharacter(const char *text, void **sheet, int *s0, int *t0,
 	return bytes;
 }
 
-/* The character at text's width, as fontCharacter draws it. */
+/* The character at text's width, as fontCharacter draws it. A byte that
+ * can't start a Cyrillic letter reads its width alone, as before, so the
+ * measures text fitting repeats cost English nothing more. */
 static int fontCharacterWidth(const char *text, int *bytes)
 {
 	void *sheet;
 	int s0, t0, width;
+	unsigned char c = (unsigned char)*text;
 
+	if(c < 0xd0u || c > 0xd2u) {
+		*bytes = c ? 1 : 0;
+		return SYS_GetFontWidth(c);
+	}
 	*bytes = fontCharacter(text, &sheet, &s0, &t0, &width);
 	return width;
 }
