@@ -1901,7 +1901,8 @@ class Route:
         return label
 
     def folder_color(self, like: np.ndarray | None = None,
-                     unlike: np.ndarray | None = None) -> np.ndarray | None:
+                     unlike: np.ndarray | None = None,
+                     seconds: float = SETTLE_SECONDS) -> np.ndarray | None:
         """Steady color words, with the folder value's own small-text bounds.
         A changed value must differ from the preceding words; it cannot pass
         on a stale frame. Other screens retain their existing title bounds.
@@ -1909,7 +1910,22 @@ class Route:
         return self.text_until(FOLDER_COLOR_BOX,
                                lambda mask: has_folder_color_label(mask)
                                and (like is None or same_text(mask, like))
-                               and (unlike is None or not same_text(mask, unlike)))
+                               and (unlike is None or not same_text(mask, unlike)),
+                               seconds)
+
+    def next_folder_color(self, before: np.ndarray, like: np.ndarray | None = None) -> np.ndarray | None:
+        """Repeat a missed Right only while the original color is still visible."""
+        for attempt in range(PRESSES):
+            self.press("RIGHT")
+            last = attempt == PRESSES - 1
+            color = self.folder_color(like=like, unlike=before,
+                                      seconds=SETTLE_SECONDS if last else MISSED_SECONDS)
+            if color is not None or last:
+                return color
+            if not same_text(text_mask(self.gray(), FOLDER_COLOR_BOX), before):
+                return self.folder_color(like=like, unlike=before)
+            self.pressed_again.append("RIGHT")
+        return None
 
     def folder_layout(self, faces: list[np.ndarray], name: str, first: bool) -> None:
         """From Home Settings, set the next layout and folders on, then browse."""
@@ -2190,10 +2206,11 @@ class Route:
         self.press("B")
         self.check("B leaves the device picker", self.covered(name, TITLE_BOX))
 
-    def text_until(self, box: tuple[int, int, int, int], wanted) -> np.ndarray | None:
+    def text_until(self, box: tuple[int, int, int, int], wanted,
+                   seconds: float = SETTLE_SECONDS) -> np.ndarray | None:
         """Steady text in a box, or none, that wanted(mask) accepts: None when
         it never comes."""
-        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        deadline = Deadline(self.emulator, seconds)
         previous = None
         while not deadline.expired():
             mask = text_mask(self.gray(), box)
@@ -3364,11 +3381,9 @@ class Route:
         self.press("Y")
         default = self.folder_color()
         self.check("Y resets the folder preview to Default", default is not None)
-        self.press("RIGHT")
-        indigo = self.folder_color(unlike=default)
+        indigo = self.next_folder_color(default)
         self.check("Right selects Indigo for the memory-card folder", indigo is not None)
-        self.press("RIGHT")
-        azure = self.folder_color(unlike=indigo)
+        azure = self.next_folder_color(indigo)
         self.check("Right selects Azure for the memory-card folder", azure is not None)
         self.shot("memory-folder-azure-preview", self.last_rgb)
         self.memory_folder_return("A", selected, "memory-folder-azure-saved")
@@ -3381,8 +3396,7 @@ class Route:
                    self.settled_label(box=FOLDER_PATH_BOX, like=path)[0] is not None and
                    self.settled_label(box=FOLDER_CONTENTS_BOX, like=contents)[0] is not None)
         self.check("reopening selects the saved Azure value", self.folder_color(like=azure) is not None)
-        self.press("RIGHT")
-        self.check("another color can be previewed", self.folder_color(unlike=azure) is not None)
+        self.check("another color can be previewed", self.next_folder_color(azure) is not None)
         self.memory_folder_return("B", selected, "memory-folder-cancel")
         self.memory_folder_saved(2)
         self.memory_folder_open("memory-folder-after-cancel", like=title)
@@ -3393,10 +3407,8 @@ class Route:
         self.memory_folder_return("A", selected, "memory-folder-default-saved")
         self.memory_folder_saved(None)
         self.memory_folder_open("memory-folder-before-restart", like=title)
-        self.press("RIGHT")
-        self.check("Indigo can be selected after reset", self.folder_color(like=indigo) is not None)
-        self.press("RIGHT")
-        self.check("Azure can be selected after reset", self.folder_color(like=azure) is not None)
+        self.check("Indigo can be selected after reset", self.next_folder_color(default, like=indigo) is not None)
+        self.check("Azure can be selected after reset", self.next_folder_color(indigo, like=azure) is not None)
         self.memory_folder_return("A", selected, "memory-folder-ready-for-restart")
         self.memory_folder_saved(2)
         self.memory_folder_reference = {"title": title, "path": path, "contents": contents,
