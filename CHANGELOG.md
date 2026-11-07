@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Add Arrmes and Endexis to the README suite links.
+- Recover a missed Right press in the virtual memory-card emulator test
+  only while the original folder colour is still visible.
+
 - Open Time Zone when turning on Sync Clock with no zone set. Enter your
   location to follow its daylight saving rules at startup. Keep offset uses
   the console's current UTC offset year-round.
@@ -176,7 +180,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
   changes for daylight time by itself; left empty, the clock keeps the
   zone it is in, snapped to the nearest real one so a clock that drifted
   a few minutes still lands on its own zone. NTP Server IP is an address
-  (the console has no DNS); empty asks Cloudflare's, `162.159.200.123`.
+  (the console has no DNS). An empty setting uses the
+  [default Cloudflare time server](docs/SETTINGS.md#setup--network).
 - Home has a Web face, which opens CubeBrowser, a web browser for the
   GameCube by Arial-Bold (used with permission). It ships in the zip as
   `swiss/indigo/cubebrowser.dol`, with its certificates in `gcbrowser/` at
