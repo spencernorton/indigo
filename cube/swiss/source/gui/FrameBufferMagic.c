@@ -940,8 +940,9 @@ static void _DrawBackground(uiDrawObj_t *evt)
 	(void)evt;
 	_HomeFaceIcons(icons);
 	/* The glass copies the frame it is drawn in. */
-	IndigoBackground_SetFramebuffer(getVideoMode()->fbWidth,
-		getVideoMode()->efbHeight);
+	IndigoBackground_SetFramebuffer(
+		UI540_Active() ? 640 : getVideoMode()->fbWidth,
+		UI540_Active() ? 480 : getVideoMode()->efbHeight);
 	IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
 	IndigoBackground_SetWaves(!swissSettings.hideWaves);
 	IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
@@ -8777,6 +8778,20 @@ static void *videoUpdate(void *videoEventQueue) {
 		UILang_Select(swissSettings.menuLanguage);
 #if UI_EXPERIMENTAL_540P
 		if(UI540_Active()) {
+			if(!backgroundCovered && sceneRenderingEnabled) {
+				static const float waveSpeeds[WAVE_SPEED_MAX] = {1.0f, 3.0f, 0.5f};
+				bool decorativeAnimated = _CurrentMotionMode() == UI_MOTION_FULL;
+				int icons[UI_HOME_FACE_COUNT];
+				_HomeFaceIcons(icons);
+				IndigoBackground_SetFramebuffer(640, 480);
+				IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
+				IndigoBackground_SetWaves(!swissSettings.hideWaves);
+				IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
+				IndigoBackground_Prepare540p(UIAnim_Seconds(),
+					decorativeAnimated && !swissSettings.disableAnimatedBackdrop,
+					decorativeAnimated, UIScene_Frame(),
+					&systemInstrument.clock, &padInstrument, icons);
+			}
 			UI540_RecordBegin();
 			drawInit();
 		}
@@ -8841,7 +8856,9 @@ static void *videoUpdate(void *videoEventQueue) {
 
 		LWP_MutexUnlock(_videomutex);
 		VIDEO_SetNextFramebuffer(xfb[whichfb]);
-		VIDEO_ConfigurePan(0, 0, width, height);
+		if(!UI540_Active()) {
+			VIDEO_ConfigurePan(0, 0, width, height);
+		}
 		VIDEO_Flush();
 		VIDEO_WaitForFlush();
 	}

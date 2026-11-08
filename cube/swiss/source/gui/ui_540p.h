@@ -20,6 +20,7 @@ typedef struct {
 } ui540Stats_t;
 
 #if UI_EXPERIMENTAL_540P
+void *UI540_VideoMode(void);
 void UI540_Request(int argc, char **argv);
 void UI540_BeginFrame(void);
 bool UI540_Active(void);
@@ -31,6 +32,7 @@ void UI540_DrawStatus(void);
 void UI540_Stats(void *stats);
 void UI540_Leave(void);
 #else
+static inline void *UI540_VideoMode(void) { return 0; }
 static inline bool UI540_Active(void) { return false; }
 static inline bool UI540_Recording(void) { return false; }
 static inline void UI540_Leave(void) {}

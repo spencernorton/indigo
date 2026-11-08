@@ -55,7 +55,7 @@ INCLUDES	:=	include $(SOURCES) .. aesnd/libogc2/include
 
 # The custom VI driver and tiled menus are confined to a separate test build.
 # Use a separate BUILD directory when changing this option.
-UI_540P ?= 0
+UI_540P ?= 1
 ifeq ($(UI_540P),1)
 SOURCES += ../../buildtools/video_lab/sdk
 endif

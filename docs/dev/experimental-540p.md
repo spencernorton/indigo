@@ -24,28 +24,23 @@ setup; they are not a pixel-exact capture of the HDMI output.
 Lossless Dolphin demonstration capture, displayed in its 640 x 480 window.
 This shows the UI presentation, not Retro GEM's HDMI result.
 
-## Build and run
+## Selecting 540p60 and building
 
-Use the pinned libogc2 image from CONTRIBUTING.md. Build the normal dependencies
-with `make dev`, then build into a separate object directory:
+`UI_540P` defaults to `1` in `cube/swiss/Makefile`, so standard `make dev` /
+release builds (`swiss.dol` / `ipl.dol`) include **NTSC 540p60** directly. When
+the console's digital/component cable detection flag is active, open
+**Settings › Setup › Display › Swiss Video Mode**, choose **NTSC 540p60**, and
+press **A**. Indigo switches to `720 x 540` progressive and shows the standard
+10-second confirmation prompt (**A** to keep, **B** or wait 10 seconds to
+return).
 
-```sh
-make -C cube/swiss BUILD=build-540p TARGET=swiss-540p UI_540P=1
-```
-
-The result is `cube/swiss/swiss-540p.dol`. `UI_540P` defaults to zero; ordinary
-builds retain the SDK's normal VIDEO driver. This experiment requires the
-console's digital/component detection flag. Load the DOL through a RAM loader
-with a known-good normal build available. An argument `Experimental540p=No`
-disables the automatic trial for that launch.
-
-The trial lasts **15 seconds**. Hold **L + R + A** to keep it for the current
-RAM session, or **L + R + B** to return to the previous menu mode. Without
-confirmation it returns automatically. The on-screen footer identifies the
-trial. Confirmation is not saved, and the experiment does not add a saved
-video-mode choice. It forces the drawing stage to 16:9 without changing the
-stored Menu Widescreen preference. Use a 16:9 presentation on the scaler/TV.
-Normal Settings actions still save settings as usual.
+At any time while in `540p60`, hold **L + R + B** to return immediately to
+`480p` and reset the in-memory `Swiss Video Mode` setting to `Auto`. For
+automated RAM-loader testing, passing `Experimental540p=Yes` starts directly in
+`540p60`, `Experimental540p=Trial` enables the 15-second boot countdown (**L +
+R + A** to keep), and `Experimental540p=No` disables boot-argument activation.
+While `540p60` is active, the drawing stage uses 16:9 presentation; set your
+scaler/TV to 16:9.
 
 A watchdog requests the fallback independently of rendering. If the render
 thread cannot process that request within two seconds, it requests a hot
@@ -73,12 +68,24 @@ tile strategies. Animated backgrounds can change most of the image. Reusing
 those pixels needs per-buffer history and correct invalidation before it can
 be enabled in the interface.
 
-Screen-space refraction, bloom and supersampled Home face pictures are
-temporarily bypassed while recording the tiled frame. Their existing EFB
-copies assume a complete frame; sampling one tile as a whole frame would be
-incorrect. Main cube geometry, direct face icons, text and the Jewel Case's
-own material rendering remain. These effects need a separate tile-aware pass
-before visual parity can be claimed.
+Before `UI540_RecordBegin()` opens the tiled frame display list,
+`IndigoBackground_Prepare540p()` runs a full-stage (`640 x 480`) EFB pre-pass
+that captures the backdrop wash, globe grid and silk waves into
+`s_glassSceneTex`, extracts the two-level bloom pyramid (`s_glassBloomATex` and
+`s_glassBloomBTex`), and renders the `4 x 2` supersampled Home face pictures
+(`s_homeFaceSlot`) when the cube is settled. During the four-tile `720 x 540`
+replay, the cube's front and visible side faces sample `s_glassSceneTex` and
+`s_glassBloomATex` through the 3-channel RGB prismatic dispersion and
+screen-space refraction shader (including view-ray refraction on angled side
+faces and camera-facing smoked plate weighting) without issuing mid-tile EFB
+copies.
+
+The `540p` build also enables an 8-bit (`GX_TF_I8`, `512 x 512`) contrast-shaped
+font sheet, 1:1 native-phase `GX_TF_RGB565` artwork decoding with flat-gradient
+block-seam deblocking and `GX_ANISO_4` mipmap filtering, finer Jewel Case curve
+tessellation (`128 x 128` radial glow and `256`-texel sheen), softened silk
+wave highlight dispersion, and hardware 6-bit RGB dithering
+(`GX_SetDither(GX_ENABLE)`).
 
 ## Timing and source provenance
 

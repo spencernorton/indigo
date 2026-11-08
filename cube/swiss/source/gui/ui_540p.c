@@ -20,13 +20,25 @@ static uint8_t list[LIST_CAPACITY + 64] ATTRIBUTE_ALIGN(32);
 static char watchdog_stack[16384] ATTRIBUTE_ALIGN(8);
 static lwp_t watchdog_thread;
 static _Atomic uint32_t state, started_ms, fallback_ms;
-static bool active, recording;
-static GXRModeObj high_mode, normal_mode;
+static bool active, recording, trial_mode, watchdog_started;
+static GXRModeObj high_mode;
 static ui540Stats_t stats;
 static uint64_t previous_frame, work_total, period_total;
 enum { OFF, REQUESTED, TRIAL, KEPT, FALLBACK, RETURNED, FAILED };
 
 static uint32_t now_ms(void) { return (uint32_t)ticks_to_millisecs(gettime()); }
+
+void *UI540_VideoMode(void)
+{
+	if(high_mode.viTVMode != UI540_TVMODE) {
+		high_mode = TVNtsc480Prog;
+		high_mode.viTVMode = UI540_TVMODE;
+		high_mode.fbWidth = high_mode.viWidth = UI540_WIDTH;
+		high_mode.efbHeight = high_mode.xfbHeight = high_mode.viHeight = UI540_HEIGHT;
+		high_mode.viXOrigin = high_mode.viYOrigin = 0;
+	}
+	return &high_mode;
+}
 
 static void request_fallback(void)
 {
@@ -51,24 +63,48 @@ static void *watchdog(void *unused)
 	return NULL;
 }
 
+static void ensure_watchdog(void)
+{
+	if(watchdog_started) return;
+	DCFlushRange(list, sizeof(list));
+	if(LWP_CreateThread(&watchdog_thread, watchdog, NULL, watchdog_stack,
+		sizeof(watchdog_stack), 70) == 0) {
+		watchdog_started = true;
+	}
+}
+
 void UI540_Request(int argc, char **argv)
 {
-	for(int i = 1; i < argc; i++)
-		if(!strcmp(argv[i], "Experimental540p=No")) return;
+	bool arg_request = false;
+	trial_mode = false;
+	ensure_watchdog();
+	for(int i = 1; i < argc; i++) {
+		if(!strcmp(argv[i], "Experimental540p=No")) {
+			if(swissSettings.uiVMode == 9) swissSettings.uiVMode = 0;
+			if(UI540_Active()) request_fallback();
+			return;
+		}
+		if(!strcmp(argv[i], "Experimental540p=Trial")) {
+			trial_mode = true;
+			arg_request = true;
+		}
+		if(!strcmp(argv[i], "Experimental540p=Yes")) {
+			arg_request = true;
+		}
+	}
+	if(!arg_request) return;
 	if(!getRawDTVStatus()) {
 		print_debug("Experimental 540p: digital progressive output required\n");
 		return;
 	}
-	DCFlushRange(list, sizeof(list));
-	if(LWP_CreateThread(&watchdog_thread, watchdog, NULL, watchdog_stack,
-		sizeof(watchdog_stack), 70) != 0) return;
+	if(!watchdog_started) return;
 	state = REQUESTED;
 }
 
 bool UI540_Active(void)
 {
 	const GXRModeObj *m = getVideoMode();
-	return active && m->viTVMode == UI540_TVMODE && m->fbWidth == UI540_WIDTH &&
+	return m != NULL && m->viTVMode == UI540_TVMODE && m->fbWidth == UI540_WIDTH &&
 		m->xfbHeight == UI540_HEIGHT;
 }
 
@@ -76,42 +112,53 @@ bool UI540_Recording(void) { return recording; }
 
 void UI540_BeginFrame(void)
 {
+	GX_SetCurrentGXThread();
 	if(state == REQUESTED) {
-		normal_mode = *getVideoMode();
-		high_mode = TVNtsc480Prog;
-		high_mode.viTVMode = UI540_TVMODE;
-		high_mode.fbWidth = high_mode.viWidth = UI540_WIDTH;
-		high_mode.efbHeight = high_mode.xfbHeight = high_mode.viHeight = UI540_HEIGHT;
-		high_mode.viXOrigin = high_mode.viYOrigin = 0;
+		UI540_VideoMode();
 		started_ms = now_ms();
-		state = TRIAL;
+		state = trial_mode ? TRIAL : KEPT;
 		setVideoMode(&high_mode);
-		active = getVideoMode() == &high_mode;
+		GX_SetCurrentGXThread();
+		active = UI540_Active();
 		if(!active) { state = FAILED; return; }
 		memset(&stats, 0, sizeof(stats));
 		previous_frame = work_total = period_total = 0;
 		print_debug("Experimental 540p:720x540,800x563 total,%.6fHz;15s trial\n", VIDEO_GetRetraceRate());
 	}
-	if(active && !UI540_Active()) { active = false; state = RETURNED; }
-	if(state == FALLBACK) {
-		setVideoMode(&normal_mode);
-		/* Leave the request live for the watchdog if memory pressure
-		 * prevents allocating normal buffers. Never run the 480p copy
-		 * path against a still-active 540-line framebuffer. */
-		if(getVideoMode() != &normal_mode) return;
-		active = false;
-		state = RETURNED;
-		print_debug("Experimental 540p: returned to normal menu mode\n");
+	if(!active && UI540_Active()) {
+		ensure_watchdog();
+		started_ms = now_ms();
+		state = trial_mode ? TRIAL : KEPT;
+		active = true;
+		memset(&stats, 0, sizeof(stats));
+		previous_frame = work_total = period_total = 0;
+		print_debug("Swiss Video Mode: NTSC 540p60 (720x540, %.6fHz)\n", VIDEO_GetRetraceRate());
 	}
+	if(active && !UI540_Active()) { active = false; state = RETURNED; }
 	if(UI540_Active()) {
 		u32 held = padsButtonsHeld();
 		if((held & BUTTON_L) && (held & BUTTON_R)) {
-			if(held & BUTTON_B) request_fallback();
+			if(held & BUTTON_B) {
+				if(swissSettings.uiVMode == 9) swissSettings.uiVMode = 0;
+				request_fallback();
+			}
 			else if((held & BUTTON_A) && state == TRIAL) {
 				state = KEPT;
 				print_debug("Experimental 540p: kept for this RAM session\n");
 			}
 		}
+	}
+	if(state == FALLBACK) {
+		GXRModeObj *fallback = getVideoModeFromSwissSetting(0);
+		setVideoMode(fallback);
+		GX_SetCurrentGXThread();
+		/* Leave the request live for the watchdog if memory pressure
+		 * prevents allocating normal buffers. Never run the 480p copy
+		 * path against a still-active 540-line framebuffer. */
+		if(getVideoMode() != fallback) return;
+		active = false;
+		state = RETURNED;
+		print_debug("Experimental 540p: returned to normal menu mode\n");
 	}
 }
 
@@ -208,8 +255,9 @@ void UI540_EndFrame(uint64_t started)
 
 void UI540_DrawStatus(void)
 {
-	const char *text = state == TRIAL ? "540p trial: L+R+A keep / L+R+B return" : "540p experimental / L+R+B return";
-	drawStringMedium(320, 464, text, 0.48f, ALIGN_CENTER, (GXColor){230, 228, 244, 255});
+	if(state != TRIAL) return;
+	drawStringMedium(320, 464, "540p trial: L+R+A keep / L+R+B return", 0.48f,
+		ALIGN_CENTER, (GXColor){230, 228, 244, 255});
 }
 
 void UI540_Stats(void *out)

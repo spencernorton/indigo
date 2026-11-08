@@ -196,7 +196,7 @@ jobs:
 
   emulator:
     name: ${{ matrix.name }}
-    needs: build
+    needs: [build, video-diagnostic]
     runs-on: [self-hosted, indigo-emulator]
     timeout-minutes: 25
     strategy:

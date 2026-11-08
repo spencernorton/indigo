@@ -37,7 +37,7 @@ int whichfb = 0;				//Frame buffer toggle
 char *getVideoModeString(GXRModeObj *m) {
 	switch(m->viTVMode) {
 #if UI_EXPERIMENTAL_540P
-		case UI540_TVMODE:            return "Experimental 540p";
+		case UI540_TVMODE:            return "NTSC 540p60";
 #endif
 		case VI_TVMODE_NTSC_INT:       return m->xfbMode == VI_XFBMODE_PSF ? NtscIntStr : NtscIntDfStr;
 		case VI_TVMODE_NTSC_DS:        return NtscDsStr;
@@ -166,6 +166,12 @@ GXRModeObj *getVideoModeFromSwissSetting(int uiVMode) {
 				case SYS_VIDEO_MPAL: return getDTVStatus() ? &TVNtsc240DsVf : &TVMpal240DsVf;
 				default:             return &TVNtsc240DsVf;
 			}
+		case 9:
+#if UI_EXPERIMENTAL_540P
+			if(getDTVStatus()) {
+				return UI540_VideoMode();
+			}
+#endif
 		case 4:
 			if(getDTVStatus()) {
 				return swissSettings.sramVideo == SYS_VIDEO_PAL ? &TVEurgb60Hz480Prog : &TVNtsc480Prog;
@@ -308,6 +314,9 @@ void setVideoMode(GXRModeObj *m) {
 		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
 	else
 		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+#if UI_EXPERIMENTAL_540P
+	if(tiled) GX_SetDither(GX_ENABLE);
+#endif
 	GX_SetCullMode (GX_CULL_NONE); // default in rsp init
 	GX_CopyDisp (xfb[0], GX_TRUE); // This clears the efb
 	GX_CopyDisp (xfb[0], GX_TRUE); // This clears the xfb
