@@ -1,3 +1,47 @@
+## 2026-11-08 — Complete 540p60 visual parity, prismatic side-face refraction and image-quality pass
+
+The experimental 720 x 540 progressive menu build (`UI_540P=1`) previously
+skipped screen-space glass refraction, bloom and supersampled Home face
+pictures because mid-frame EFB copies during a four-tile replay would sample a
+single tile rather than the whole stage. Add `IndigoBackground_Prepare540p()`
+before `UI540_RecordBegin()` so the full 640 x 480 stage renders the backdrop
+wash, globe grid and silk waves into `s_glassSceneTex`, builds the bloom
+pyramid (`s_glassBloomATex`), and populates the 4 x 2 supersampled Home face
+slots before the tiled display list begins. During the four-tile 720 x 540
+replay, the cube samples those pre-captured textures directly without issuing
+mid-tile EFB copies.
+
+Console inspection on a GameCube with Retro GEM (720 x 540p60 input) identified
+two shader artifacts on the rotating Home cube and background wave: angled
+side faces projected their refraction UV offset with the face normal's tiny
+camera-space XY components instead of the view ray (`eX / -eZ`, `eY / -eZ`),
+collapsing the 3-channel RGB prism back into an unsplit line on the hovering
+left face, while the inner smoked plate kept full opacity on glancing side
+views and hid the back-wall refraction seen through the front face. Computing
+the refraction tangent basis from the eye vector + surface normal and scaling
+the inner smoked plate alpha by `nZ * nZ` restores the 3-channel RGB prismatic
+split across both the exterior side faces and the interior side walls seen
+through the front face. Dispersing the main silk wave's core and rim widths and
+lowering its peak additive alpha removes the harsh stripe contrast against the
+secondary ribbons.
+
+Pair the 720 x 540 output with 540p-specific asset and text upgrades under
+`UI_EXPERIMENTAL_540P`: an 8-bit (`GX_TF_I8`, 512 x 512) unsharp + S-curve
+contrast-shaped font sheet integrated with the Cyrillic sheet switcher, 1:1
+native-phase `GX_TF_CMPR` to `GX_TF_RGB565` artwork decoding with flat-gradient
+block-seam deblocking and `GX_ANISO_4` mipmap filtering, finer Jewel Case curve
+tessellation (`128 x 128` radial glow and 256-texel sheen), hardware 6-bit RGB
+dithering, and direct selection as **NTSC 540p60** (`540p60` at index 9 of
+`uiVModeStr`) in **Settings › Setup › Display › Swiss Video Mode** in the
+standard `swiss.dol` build (`UI_540P ?= 1`). Call `GX_SetCurrentGXThread()` in
+`UI540_BeginFrame()` on `video_thread` so `_gxcurrentlwp` is reclaimed after
+`DrawVideoMode()` runs `setVideoMode()`/`GX_Init()` on the main thread, while
+retaining `L + R + B` immediate 480p recovery and the `Experimental540p=` boot
+arguments. Verified live on console hardware (including interactive switching
+to `NTSC 540p60` in Settings) at 59.95 fps (0 frames over the 16.682 ms budget
+across settled and rotating views) and across the full plain, sanitized,
+contract and video-lab host suites.
+
 ## 2026-11-05 — Bring Menu Language onto beta and trim what it keeps
 
 A contributed Menu Language (Ukrainian) arrives on beta from a main base; only

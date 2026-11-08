@@ -134,8 +134,8 @@ most use the same key there.
 | --- | --- | --- | --- |
 | `System Video` | `NTSC`, `PAL`, `PAL-M`. Ignored on a Wii (AVE-RVL). | the console's region | System Video |
 | `Screen Position` | A signed number, such as `+0` or `-2`. | the console's SRAM | Screen Position |
-| `Swiss Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p` | `Auto` | Swiss Video Mode |
-| `Apps Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`. Passed to homebrew Indigo starts, not to a program sent over the network; Auto keeps the menu mode. Applies to libogc2; other apps may choose their own. | `Auto` | Apps Video Mode |
+| `Swiss Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`, `540p60` | `Auto` | Swiss Video Mode |
+| `Apps Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`, `540p60`. Passed to homebrew Indigo starts, not to a program sent over the network; Auto keeps the menu mode. Applies to libogc2; other apps may choose their own. | `Auto` | Apps Video Mode |
 | `Menu Widescreen` | `Yes`, `No`. `Yes` draws Indigo's own screens for a TV set to 16:9; games follow `Force Widescreen`. | `No` | Menu Widescreen |
 | `Menu Language` | `English`, `Ukrainian`. The language of Indigo's own screens; `Ukrainian` reads its words from `swiss/indigo/uk.po` on the Configuration Device, and without that file the menus stay English. Any other value means `English`. | `English` | Menu Language |
 | `AVECompat` | `AVE N-DOL`, `AVE P-DOL`, `CMPV-DOL`, `GCDigital`, `GCVideo`, `AVE-RVL` | `GCVideo`, or what your loader reports | AVE Compatibility |

@@ -31,6 +31,7 @@
 #include "ui_color.h"
 #include "ui_jewel_case.h"
 #include "ui_stage.h"
+#include "ui_540p.h"
 
 #define VTXFMT_ROD GX_VTXFMT5
 #define VTXFMT_DIR GX_VTXFMT6
@@ -963,11 +964,8 @@ static bool rodPack(rodmesh_t *m)
 
 /* Record the strips in the display list: on the thread that owns GX, the
  * first time the case is drawn. */
-static bool rodRecord(rodmesh_t *m)
+static void rodEmit(const rodmesh_t *m)
 {
-	DCInvalidateRange(m->dl, m->dlCap);
-	rodSetupVtx();
-	GX_BeginDispList(m->dl, m->dlCap);
 	for(int i = 0; i < m->primLen; i += m->prims[i + 1] + 2) {
 		int n = m->prims[i + 1];
 		GX_Begin(m->prims[i], VTXFMT_ROD, n);
@@ -977,7 +975,16 @@ static bool rodRecord(rodmesh_t *m)
 		}
 		GX_End();
 	}
+}
+
+static bool rodRecord(rodmesh_t *m)
+{
+	DCInvalidateRange(m->dl, m->dlCap);
+	rodSetupVtx();
+	GX_BeginDispList(m->dl, m->dlCap);
+	rodEmit(m);
 	m->dlSize = GX_EndDispList();
+#if !UI_EXPERIMENTAL_540P
 	free(m->prims);
 	m->prims = NULL;
 	free(m->normalMap);
@@ -985,6 +992,7 @@ static bool rodRecord(rodmesh_t *m)
 	free(m->positionMap);
 	m->positionMap = NULL;
 	m->primLen = m->primCap = 0;
+#endif
 	return m->dlSize > 0;
 }
 
@@ -1742,7 +1750,8 @@ static void drawRods(rodmesh_t *m, Mtx mv, float scale, float fade)
 	GX_SetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_ONE, GX_BL_SRCALPHA, GX_LO_CLEAR);
 	GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_TRUE);
-	GX_CallDispList(m->dl, m->dlSize);
+	if(UI540_Recording()) rodEmit(m);
+	else GX_CallDispList(m->dl, m->dlSize);
 }
 
 /* A flat sheet: face on it takes almost nothing away, at a slant it turns to
@@ -2181,7 +2190,7 @@ void UIJewelCase_Draw(const uiJewelCaseShot_t *shots, int count, int direction,
 	float seconds, float turnX, float turnY, uiMotionMode_t motion, bool spin)
 {
 	if(!UIJewelCase_Ready()) return;
-	if(!recorded) {
+	if(!recorded && !UI540_Recording()) {
 		recorded = true;
 		if(!rodRecord(&trayRods) || !rodRecord(&lidRods)) {
 			recordFailed = true;

@@ -74,6 +74,13 @@ them. In a Setup section, B first goes back to the list of sections.
 
 ## Video changes ask first
 
+With a digital or component cable, **Swiss Video Mode** includes **NTSC 540p60**
+(**720 x 540 progressive at 60 Hz**, 16:9). Like the other video modes, pressing
+**A** switches to it for a 10-second confirmation trial; you can also hold
+**L + R + B** at any time to return immediately to 480p. See
+[the 540p60 technical notes](../dev/experimental-540p.md) for scaler setup and
+rendering details.
+
 On **Swiss Video Mode**, **System Video**, **AVE Compatibility**, **Force
 DTV Status** and **RetroTINK-4K HDMI Input**, Left and Right only choose a
 value. The setting shows it and the line above the buttons reads "Not
@@ -190,7 +197,7 @@ The Settings tour above predates the Apps Video Mode row.
 
 | Setting | What it does |
 | --- | --- |
-| Swiss Video Mode | The video mode of Indigo's own screens. Auto picks 480p with a digital cable and otherwise follows the console's region. A switches to a new mode and asks before it keeps it. |
+| Swiss Video Mode | The video mode of Indigo's own screens. Auto picks 480p with a digital cable and otherwise follows the console's region. With a digital cable, **NTSC 540p60** renders the menus at 720 x 540 progressive (hold **L + R + B** at any time to return to 480p). A switches to a new mode and asks before it keeps it. |
 | Apps Video Mode | The mode passed to homebrew that Indigo starts; a program sent over the network keeps Indigo's mode. **Auto** keeps Indigo’s mode. Libogc2 apps use it; other apps may choose their own. Changing it leaves Indigo’s own screens as they are. |
 | Menu Widescreen | Draws Indigo's own screens for a TV set to 16:9: the background fills the screen and the menus keep their shape in the middle. Set your TV or HDMI adapter to 16:9 too. Games follow **Force Widescreen** instead. |
 | System Video | NTSC, PAL or PAL-M, mainly for the Brazilian console. |

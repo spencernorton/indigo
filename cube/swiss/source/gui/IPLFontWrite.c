@@ -15,6 +15,7 @@
 #include "IPLFontWrite.h"
 #include "ui_color.h"
 #include "ui_lang.h"
+#include "ui_540p.h"
 #include "ui_stage.h"
 #include "ui_font_cyrillic.inc"
 
@@ -24,6 +25,79 @@ static bool fontReady;
 /* The Cyrillic sheet stands in for an IPL sheet, so it needs the IPL's
  * layout: I4, as wide, and cells as tall. */
 static bool cyrillicReady;
+#if UI_EXPERIMENTAL_540P
+#define FONT_I8_L0_BYTES (512 * 512)
+static u8 fontSheetI8[FONT_I8_L0_BYTES] ATTRIBUTE_ALIGN (32);
+static u8 fontFlatScratch[FONT_I8_L0_BYTES];
+static const void *rawFontSheet;
+static bool fontSheetI8Ready;
+static bool fontSheetI8Attempted;
+static u8 fontTexel(const u8 *sheet, int x, int y);
+
+static inline int clampCell(int v, int lo, int hi)
+{
+	return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static void buildSharpenedFontSheetI8(void)
+{
+	fontSheetI8Ready = false;
+	rawFontSheet = NULL;
+	if(!fontReady || font->sheet_format != GX_TF_I4 ||
+		font->sheet_width != 512 || font->sheet_height != 512 ||
+		font->cell_width < 1 || font->cell_height < 1) {
+		return;
+	}
+	void *sheetPtr = NULL;
+	int dummyS = 0, dummyT = 0, dummyW = 0;
+	SYS_GetFontTexture(' ', &sheetPtr, &dummyS, &dummyT, &dummyW);
+	if(!sheetPtr) return;
+	const u8 *src = (const u8 *)sheetPtr;
+	rawFontSheet = sheetPtr;
+	int cw = font->cell_width;
+	int ch = font->cell_height;
+
+	for(int y = 0; y < 512; y++) {
+		for(int x = 0; x < 512; x++) {
+			fontFlatScratch[y * 512 + x] = fontTexel(src, x, y);
+		}
+	}
+
+	int tilesX = 512 / 8;
+	for(int y = 0; y < 512; y++) {
+		int cellY0 = (y / ch) * ch;
+		int cellY1 = cellY0 + ch - 1;
+		if(cellY1 >= 512) cellY1 = 511;
+		int ym1 = clampCell(y - 1, cellY0, cellY1) * 512;
+		int y0  = y * 512;
+		int yp1 = clampCell(y + 1, cellY0, cellY1) * 512;
+		for(int x = 0; x < 512; x++) {
+			int cellX0 = (x / cw) * cw;
+			int cellX1 = cellX0 + cw - 1;
+			if(cellX1 >= 512) cellX1 = 511;
+			int xm1 = clampCell(x - 1, cellX0, cellX1);
+			int xp1 = clampCell(x + 1, cellX0, cellX1);
+
+			int c = fontFlatScratch[y0 + x];
+			int card = (fontFlatScratch[ym1 + x] + fontFlatScratch[yp1 + x] +
+			            fontFlatScratch[y0 + xm1] + fontFlatScratch[y0 + xp1] + 2) >> 2;
+			int sharp = c + (((c - card) * 6) >> 3);
+			if(sharp < 0) sharp = 0;
+			if(sharp > 255) sharp = 255;
+			if(sharp > 0 && sharp < 96) {
+				sharp = (sharp * sharp) / 96;
+			} else if(sharp >= 140 && sharp < 255) {
+				sharp = 140 + ((sharp - 140) * 140) / 115;
+				if(sharp > 255) sharp = 255;
+			}
+			int dstIdx = ((y >> 2) * tilesX + (x >> 3)) * 32 + ((y & 3) << 3) + (x & 7);
+			fontSheetI8[dstIdx] = (u8)sharp;
+		}
+	}
+	DCFlushRange(fontSheetI8, sizeof(fontSheetI8));
+	fontSheetI8Ready = true;
+}
+#endif
 
 GXTexObj fontTexObj;
 GXColor defaultColor = (GXColor) {255,255,255,255};
@@ -79,6 +153,17 @@ static int fontCharacter(const char *text, void **sheet, int *s0, int *t0,
 		return bytes;
 	}
 	SYS_GetFontTexture((unsigned char)code, sheet, s0, t0, width);
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Active()) {
+		if(!fontSheetI8Attempted) {
+			fontSheetI8Attempted = true;
+			buildSharpenedFontSheetI8();
+		}
+		if(fontSheetI8Ready && *sheet == rawFontSheet) {
+			*sheet = fontSheetI8;
+		}
+	}
+#endif
 	return bytes;
 }
 
@@ -267,7 +352,15 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 				end += bytes;
 			}
 			if(GX_GetTexObjData(&fontTexObj) != (void *)MEM_VIRTUAL_TO_PHYSICAL(image)) {
+#if UI_EXPERIMENTAL_540P
+				GX_InitTexObj(&fontTexObj, image, font->sheet_width, font->sheet_height,
+					(fontSheetI8Ready && image == fontSheetI8) ? GX_TF_I8 : font->sheet_format,
+					GX_CLAMP, GX_CLAMP, GX_FALSE);
+				GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+					GX_TRUE, GX_TRUE, GX_ANISO_4);
+#else
 				GX_InitTexObjData(&fontTexObj, image);
+#endif
 				GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 			}
 			GX_Begin(GX_QUADS, GX_VTXFMT1, (u16)(count * 4));
@@ -349,8 +442,25 @@ void drawStringWithCaret(int x, int y, const char *string, float scale, int alig
 		void *image;
 		int s0, t0, width;
 		SYS_GetFontTexture(c, &image, &s0, &t0, &width);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			if(!fontSheetI8Attempted) {
+				fontSheetI8Attempted = true;
+				buildSharpenedFontSheetI8();
+			}
+			if(fontSheetI8Ready && image == rawFontSheet) image = fontSheetI8;
+		}
+#endif
 		if (GX_GetTexObjData(&fontTexObj) != (void *)MEM_VIRTUAL_TO_PHYSICAL(image)) {
+#if UI_EXPERIMENTAL_540P
+			GX_InitTexObj(&fontTexObj, image, font->sheet_width, font->sheet_height,
+				(fontSheetI8Ready && image == fontSheetI8) ? GX_TF_I8 : font->sheet_format,
+				GX_CLAMP, GX_CLAMP, GX_FALSE);
+			GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+				GX_TRUE, GX_TRUE, GX_ANISO_4);
+#else
 			GX_InitTexObjData(&fontTexObj, image);
+#endif
 			GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 		}
 		int i;

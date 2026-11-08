@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "indigo_background.h"
+#include "ui_540p.h"
 #include "ui_anim.h"
 #include "ui_color.h"
 #include "ui_stage.h"
@@ -313,11 +314,26 @@ static void drawSilkWaves(float seconds, bool animated, float strength)
 	static const GXColor rearColors[3] = {
 		{55, 47, 140, 4}, {128, 105, 232, 48}, {42, 31, 105, 4}
 	};
-	static const float primaryRows[4] = {-1.0f, -0.28f, 0.30f, 1.0f};
-	static const GXColor primaryColors[4] = {
+	static const float primaryRows480[4] = {-1.0f, -0.28f, 0.30f, 1.0f};
+	static const GXColor primaryColors480[4] = {
 		{86, 60, 168, 6}, {196, 178, 255, 82},
 		{113, 85, 210, 46}, {45, 31, 103, 6}
 	};
+#if UI_EXPERIMENTAL_540P
+	static const float primaryRows540[4] = {-1.0f, -0.20f, 0.26f, 1.0f};
+	static const GXColor primaryColors540[4] = {
+		{72, 52, 162, 6}, {154, 128, 246, 58},
+		{116, 88, 218, 44}, {45, 31, 103, 6}
+	};
+	const bool wave540 = UI540_Active();
+	const float *primaryRows = wave540 ? primaryRows540 : primaryRows480;
+	const GXColor *primaryColors = wave540 ? primaryColors540 : primaryColors480;
+	const float primaryBaseHalfWidth = wave540 ? 33.0f : 24.0f;
+#else
+	const float *primaryRows = primaryRows480;
+	const GXColor *primaryColors = primaryColors480;
+	const float primaryBaseHalfWidth = 24.0f;
+#endif
 	float rearCenter[REAR_WAVE_SEGMENTS + 1];
 	float rearWidth[REAR_WAVE_SEGMENTS + 1];
 	float primaryCenter[PRIMARY_WAVE_SEGMENTS + 1];
@@ -360,7 +376,7 @@ static void drawSilkWaves(float seconds, bool animated, float strength)
 	initWaveOscillator(&width, 0.80f - motionTime * 0.021f,
 		0.353474844f, 0.935444031f);
 	buildWavePath(primaryCenter, primaryWidth, PRIMARY_WAVE_SEGMENTS,
-		272.0f, 43.0f, 10.0f, 24.0f, 5.0f, amplitudeScale,
+		272.0f, 43.0f, 10.0f, primaryBaseHalfWidth, 5.0f, amplitudeScale,
 		centerA, centerB, width);
 
 	GX_SetZMode(GX_DISABLE, GX_ALWAYS, GX_FALSE);
@@ -427,15 +443,25 @@ static void drawSilkWaves(float seconds, bool animated, float strength)
 	 * without turning the background into a competing luminous object. Its
 	 * original 8/6-pixel integrated width is a 1/3-pixel core plus two linear
 	 * one-pixel fringes; the same color, alpha, path and endpoint fade remain. */
-	static const float crestOffsets[4] = {-7.0f/6.0f, -1.0f/6.0f, 1.0f/6.0f, 7.0f/6.0f};
+	static const float crestOffsets480[4] = {-7.0f/6.0f, -1.0f/6.0f, 1.0f/6.0f, 7.0f/6.0f};
+#if UI_EXPERIMENTAL_540P
+	static const float crestOffsets540[4] = {-10.5f, -2.6f, 2.6f, 10.5f};
+	const float *crestOffsets = wave540 ? crestOffsets540 : crestOffsets480;
+	const float crestShoulder = wave540 ? 0.20f : 0.28f;
+	const GXColor crestBase = wave540 ? (GXColor){172, 148, 255, 18} : (GXColor){238, 232, 255, 34};
+#else
+	const float *crestOffsets = crestOffsets480;
+	const float crestShoulder = 0.28f;
+	const GXColor crestBase = {238, 232, 255, 34};
+#endif
 	indigoPoint_t crest[PRIMARY_WAVE_SEGMENTS + 1], joins[PRIMARY_WAVE_SEGMENTS + 1];
 	GXColor crestColors[PRIMARY_WAVE_SEGMENTS + 1];
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_ONE, GX_LO_CLEAR);
 	for(int i = 0; i <= PRIMARY_WAVE_SEGMENTS; i++) {
 		crest[i] = (indigoPoint_t) {primaryOffsetX + waveLeft +
 			waveSpan * (float)i / PRIMARY_WAVE_SEGMENTS,
-			primaryCenter[i] - primaryWidth[i] * 0.28f};
-		crestColors[i] = waveVertexColor((GXColor) {238, 232, 255, 34},
+			primaryCenter[i] - primaryWidth[i] * crestShoulder};
+		crestColors[i] = waveVertexColor(crestBase,
 			waveEdgeFade(i, PRIMARY_WAVE_SEGMENTS), strength);
 	}
 	if(buildRasterJoins(crest, joins, PRIMARY_WAVE_SEGMENTS + 1, false))
@@ -2545,8 +2571,16 @@ static bool prepareGlassStudio(void)
 	DCFlushRange(glassStudioTexels, sizeof(glassStudioTexels));
 	GX_InitTexObj(&glassStudioTexObj, glassStudioTexels, GLASS_STUDIO_SIZE,
 		GLASS_STUDIO_SIZE, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_TRUE);
-	GX_InitTexObjLOD(&glassStudioTexObj, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f,
-		(float)(GLASS_STUDIO_LEVELS - 1), 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Active()) {
+		GX_InitTexObjLOD(&glassStudioTexObj, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f,
+			(float)(GLASS_STUDIO_LEVELS - 1), -0.50f, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	} else
+#endif
+	{
+		GX_InitTexObjLOD(&glassStudioTexObj, GX_LIN_MIP_LIN, GX_LINEAR, 0.0f,
+			(float)(GLASS_STUDIO_LEVELS - 1), 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+	}
 	GX_InvalidateTexAll();
 	for(int i = 0; i < GLASS_LIGHTS; i++) glassStudioColors[i] = colors[i];
 	glassStudioBaked = true;
@@ -2820,6 +2854,60 @@ void IndigoBackground_SetFramebuffer(u16 width, u16 height)
 	glassEfbHeight = height;
 }
 
+#if UI_EXPERIMENTAL_540P
+static u8 glassBloomTexels[GLASS_COPY_MAX_W * GLASS_COPY_MAX_H * 4] ATTRIBUTE_ALIGN(32);
+static GXTexObj glassBloomTexObj;
+static u16 glassBloomWidth;
+static u16 glassBloomHeight;
+static u16 glassBloomLeft;
+static u16 glassBloomTop;
+static bool glassBloomFlushed;
+static bool facePicturesPrepared540p;
+static bool glassPrepared540p;
+static bool glassBloomPrepared540p;
+
+static bool glassCopyBloomFrame(float left, float top, float right, float bottom)
+{
+	if(UI540_Recording()) return false;
+	float sx = (float)glassEfbWidth / 640.0f, sy = (float)glassEfbHeight / 480.0f;
+	int x0, y0, x1, y1;
+	u16 width, height;
+
+	left = left < 0.0f ? 0.0f : left * sx;
+	top = top < 0.0f ? 0.0f : top * sy;
+	right = right * sx; bottom = bottom * sy;
+	x0 = (int)left & ~7;
+	y0 = (int)top & ~7;
+	x1 = ((int)right + 8) & ~7;
+	y1 = ((int)bottom + 8) & ~7;
+	if(x1 > (int)(glassEfbWidth & ~7u)) x1 = (int)(glassEfbWidth & ~7u);
+	if(y1 > (int)(glassEfbHeight & ~7u)) y1 = (int)(glassEfbHeight & ~7u);
+	if(x1 - x0 < 8 || y1 - y0 < 8) return false;
+	width = (u16)((x1 - x0) / 2);
+	height = (u16)((y1 - y0) / 2);
+	if(width > GLASS_COPY_MAX_W) width = GLASS_COPY_MAX_W;
+	if(height > GLASS_COPY_MAX_H) height = GLASS_COPY_MAX_H;
+	if(!glassBloomFlushed) {
+		DCFlushRange(glassBloomTexels, sizeof(glassBloomTexels));
+		glassBloomFlushed = true;
+	}
+	GX_SetTexCopySrc((u16)x0, (u16)y0, (u16)(width * 2u), (u16)(height * 2u));
+	GX_SetTexCopyDst(width, height, GX_TF_RGBA8, GX_TRUE);
+	GX_CopyTex(glassBloomTexels, GX_FALSE);
+	GX_PixModeSync();
+	GX_InitTexObj(&glassBloomTexObj, glassBloomTexels, width, height, GX_TF_RGBA8,
+		GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&glassBloomTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+		GX_FALSE, GX_FALSE, GX_ANISO_1);
+	GX_InvalidateTexAll();
+	glassBloomWidth = width;
+	glassBloomHeight = height;
+	glassBloomLeft = (u16)x0;
+	glassBloomTop = (u16)y0;
+	return true;
+}
+#endif
+
 typedef struct glassRefraction {
 	float centerX;
 	float centerY;
@@ -2861,6 +2949,11 @@ static float glassSceneStrength(const uiSceneFrame_t *scene)
  * glassCopyLeft and glassCopyTop keep where it starts, in EFB pixels. */
 static bool glassCopyFrame(float left, float top, float right, float bottom)
 {
+	/* Screen-space copies need a tile-aware pass; never sample the last
+	 * EFB tile as if it were a complete 720 x 540 frame. */
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Recording()) return false;
+#endif
 	float sx = (float)glassEfbWidth / 640.0f, sy = (float)glassEfbHeight / 480.0f;
 	int x0, y0, x1, y1;
 	u16 width, height;
@@ -3068,8 +3161,16 @@ static void renderFacePictures(const uiSceneFrame_t *scene, float seconds,
 		 * and the bilinear read averages them. */
 		GX_InitTexObj(&picture->texture, facePictureTexels[facePictureCount],
 			(u16)(width * 2), (u16)height, GX_TF_RGB565, GX_CLAMP, GX_CLAMP, GX_FALSE);
-		GX_InitTexObjLOD(&picture->texture, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
-			GX_FALSE, GX_FALSE, GX_ANISO_1);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			GX_InitTexObjLOD(&picture->texture, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+				GX_TRUE, GX_TRUE, GX_ANISO_2);
+		} else
+#endif
+		{
+			GX_InitTexObjLOD(&picture->texture, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+				GX_FALSE, GX_FALSE, GX_ANISO_1);
+		}
 		picture->weight = weight * glassSmoothstep(BOOT_CUBE_HANDOFF, 1.0f, scene->introProgress);
 		picture->x = (u16)x0;
 		picture->y = (u16)y0;
@@ -3207,17 +3308,42 @@ static void refractGlassVertex(const cubeRasterTransform_t *raster,
 	float sy = 240.0f - raster->scaleY * eye.y / -eye.z;
 	float bx = glass->centerX + (sx - glass->centerX) * (1.0f - glass->magnify);
 	float by = glass->centerY + (sy - glass->centerY) * (1.0f - glass->magnify);
-	float ox = -n.x * glass->bend, oy = n.y * glass->bend;
+#if UI_EXPERIMENTAL_540P
+	if(!UI540_Active())
+#endif
+	{
+		float ox = -n.x * glass->bend, oy = n.y * glass->bend;
+
+		out->body = body;
+		out->color = glass->tint;
+		out->color.a = (u8)((float)glass->tint.a * glassSmoothstep(0.0f, 0.34f, facing) + 0.5f);
+		UIColor_Apply(&out->color.r, &out->color.g, &out->color.b);
+		for(int channel = 0; channel < 3; channel++) {
+			float k = 1.0f + glass->dispersion * (float)(channel - 1);
+			out->s[channel] = UIStage_FrameX(bx + ox * k) * glass->sScale - glass->sOffset;
+			out->t[channel] = (by + oy * k) * glass->tScale - glass->tOffset;
+		}
+		return;
+	}
+#if UI_EXPERIMENTAL_540P
+	float facingClamped = facing < 0.0f ? 0.0f : (facing > 1.0f ? 1.0f : facing);
+	float sideAtten = 0.28f + 0.72f * facingClamped * facingClamped;
+	float ox = -n.x * glass->bend * sideAtten;
+	float oy = (n.y + 0.11f * (1.0f - facingClamped)) * glass->bend;
+	float dispX = ox * glass->dispersion * 0.48f;
+	float dispY = (fmaxf(0.05f, n.y) + 0.21f + 0.12f * fabsf(n.x)) *
+		glass->bend * glass->dispersion;
 
 	out->body = body;
 	out->color = glass->tint;
-	out->color.a = (u8)((float)glass->tint.a * glassSmoothstep(0.0f, 0.34f, facing) + 0.5f);
+	out->color.a = glass->tint.a;
 	UIColor_Apply(&out->color.r, &out->color.g, &out->color.b);
 	for(int channel = 0; channel < 3; channel++) {
-		float k = 1.0f + glass->dispersion * (float)(channel - 1);
-		out->s[channel] = UIStage_FrameX(bx + ox * k) * glass->sScale - glass->sOffset;
-		out->t[channel] = (by + oy * k) * glass->tScale - glass->tOffset;
+		float c = (float)(channel - 1);
+		out->s[channel] = UIStage_FrameX(bx + ox + dispX * c) * glass->sScale - glass->sOffset;
+		out->t[channel] = (by + oy + dispY * c) * glass->tScale - glass->tOffset;
 	}
+#endif
 }
 
 static void putGlassRefractedVertex(const glassRefractedVertex_t *vertex)
@@ -3403,12 +3529,31 @@ static void drawGlassBloom(float left, float top, float right, float bottom,
 
 	/* The taps reach 3 texels (6 pixels) round each point, and bilinear
 	 * filtering one more. */
-	if(strength <= 0.01f || !glassCopyFrame(UIStage_FrameX(left) - 12.0f,
-		top - 12.0f, UIStage_FrameX(right) + 12.0f, bottom + 12.0f)) return;
-	sScale = glassCopyS();
-	tScale = glassCopyT();
-	sOffset = glassCopyS0();
-	tOffset = glassCopyT0();
+	u16 bWidth, bHeight;
+	if(strength <= 0.01f) return;
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Recording()) {
+		if(!glassBloomPrepared540p || glassBloomWidth == 0 || glassBloomHeight == 0) return;
+		glassBloomPrepared540p = false;
+		GX_LoadTexObj(&glassBloomTexObj, GX_TEXMAP0);
+		bWidth = glassBloomWidth;
+		bHeight = glassBloomHeight;
+		sScale = (float)glassEfbWidth / (float)(bWidth * 2u) / 640.0f;
+		tScale = (float)glassEfbHeight / (float)(bHeight * 2u) / 480.0f;
+		sOffset = (float)glassBloomLeft / (float)(bWidth * 2u);
+		tOffset = (float)glassBloomTop / (float)(bHeight * 2u);
+	} else
+#endif
+	{
+		if(!glassCopyFrame(UIStage_FrameX(left) - 12.0f,
+			top - 12.0f, UIStage_FrameX(right) + 12.0f, bottom + 12.0f)) return;
+		bWidth = glassCopyWidth;
+		bHeight = glassCopyHeight;
+		sScale = glassCopyS();
+		tScale = glassCopyT();
+		sOffset = glassCopyS0();
+		tOffset = glassCopyT0();
+	}
 	left = fmaxf(UIStage_Left(), left); top = fmaxf(0.0f, top);
 	right = fminf(UIStage_Right(), right); bottom = fminf(480.0f, bottom);
 	if(right - left < 2.0f || bottom - top < 2.0f) return;
@@ -3418,8 +3563,8 @@ static void drawGlassBloom(float left, float top, float right, float bottom,
 		Mtx offset;
 		guMtxIdentity(offset);
 		/* Offsets in copy texels, about two screen pixels each. */
-		offset[0][3] = taps[tap][0] / (float)glassCopyWidth;
-		offset[1][3] = taps[tap][1] / (float)glassCopyHeight;
+		offset[0][3] = taps[tap][0] / (float)bWidth;
+		offset[1][3] = taps[tap][1] / (float)bHeight;
 		GX_LoadTexMtxImm(offset, GX_TEXMTX0 + tap * 3u, GX_MTX2x4);
 		GX_SetTexCoordGen((u16)(GX_TEXCOORD0 + tap), GX_TG_MTX2x4, GX_TG_TEX0,
 			GX_TEXMTX0 + tap * 3u);
@@ -3568,14 +3713,17 @@ static void drawCube(const uiSceneFrame_t *scene, float seconds, bool animated,
 	/* Convex glass is rendered back-to-front with depth writes disabled. */
 	GX_SetCullMode(GX_CULL_FRONT);
 	drawCubeSurfacePass(&raster, &shellOutline, shell, 6, GX_CULL_FRONT);
-	/* Every semantic lateral face has the same smoked plate set into the
-	 * glass, so no destination becomes a blank reverse side of the Library
-	 * artwork. It is dark: each face's icon, glowing on the glass above it,
-	 * reads against it. It is behind the copy, so the front glass bends it
-	 * like an inlay. Its edge fades over one pixel, as an icon's does. */
-	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
-	GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_FALSE);
+#if UI_EXPERIMENTAL_540P
+	if(!UI540_Active())
+#endif
 	{
+		/* Every semantic lateral face has the same smoked plate set into the
+		 * glass, so no destination becomes a blank reverse side of the Library
+		 * artwork. It is dark: each face's icon, glowing on the glass above it,
+		 * reads against it. It is behind the copy, so the front glass bends it
+		 * like an inlay. Its edge fades over one pixel, as an icon's does. */
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_FALSE);
 		Mtx identity;
 		guMtxIdentity(identity);
 		GX_LoadPosMtxImm(identity, GX_PNMTX0);
@@ -3593,14 +3741,28 @@ static void drawCube(const uiSceneFrame_t *scene, float seconds, bool animated,
 	 * front tint, near bevels, reflections and icons then sit on the glass,
 	 * sharp. */
 	refract = screenGlass && strength > 0.01f && shellOutline.count >= 3 &&
+#if UI_EXPERIMENTAL_540P
+		(UI540_Recording() ? glassPrepared540p :
+			glassCopyFrame(UIStage_FrameX(boxLeft) - 16.0f, boxTop - 16.0f,
+				UIStage_FrameX(boxRight) + 16.0f, boxBottom + 16.0f));
+	glassPrepared540p = false;
+#else
 		glassCopyFrame(UIStage_FrameX(boxLeft) - 16.0f, boxTop - 16.0f,
 			UIStage_FrameX(boxRight) + 16.0f, boxBottom + 16.0f);
+#endif
 	{
 		float radius = raster.scaleY * scene->cubeScale / -CUBE_CAMERA_Z;
+#if UI_EXPERIMENTAL_540P
+		bool active540 = UI540_Active();
+#else
+		bool active540 = false;
+#endif
 		glassRefraction_t glass = {
 			320.0f + raster.model[0][3] * raster.scaleX / -raster.model[2][3],
 			240.0f - raster.model[1][3] * raster.scaleY / -raster.model[2][3],
-			0.46f * radius, 0.05f, 0.24f,
+			(active540 ? 0.48f : 0.46f) * radius,
+			active540 ? 0.08f : 0.05f,
+			active540 ? 0.36f : 0.24f,
 			refract ? glassCopyS() : 0.0f, refract ? glassCopyT() : 0.0f,
 			refract ? glassCopyS0() : 0.0f, refract ? glassCopyT0() : 0.0f,
 			/* The layer fades in with the boot's light, never all at once. */
@@ -3618,6 +3780,25 @@ static void drawCube(const uiSceneFrame_t *scene, float seconds, bool animated,
 			restoreCubeRaster();
 		}
 	}
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Active()) {
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_FALSE);
+		Mtx identity;
+		guMtxIdentity(identity);
+		GX_LoadPosMtxImm(identity, GX_PNMTX0);
+		GX_SetCullMode(GX_CULL_NONE);
+		for(int face = 0; face < UI_HOME_FACE_COUNT; face++) {
+			float facing = faceFacing(&raster, face);
+			float w = glassSmoothstep(0.32f, 0.65f, facing);
+			if(w > 0.01f) {
+				drawFacePolygon(&raster, face, pane, 4, 0.860f,
+					(GXColor) {12, 9, 34, (u8)(96.0f * w + 0.5f)});
+			}
+		}
+		GX_LoadPosMtxImm(raster.model, GX_PNMTX0);
+	}
+#endif
 
 	GX_SetCullMode(GX_CULL_BACK);
 	litCubeTints(&raster, frontGlassColors, lit);
@@ -3675,6 +3856,160 @@ void IndigoBackground_SetColors(const int colors[UI_COLOR_LAYERS])
 	}
 }
 
+#if UI_EXPERIMENTAL_540P
+void IndigoBackground_Prepare540p(float seconds, bool backdropAnimated,
+	bool cubeAnimated, const uiSceneFrame_t *scene,
+	const uiClockFrame_t *clock, const indigoPadFrame_t *pad,
+	const int icons[UI_HOME_FACE_COUNT])
+{
+	facePicturesPrepared540p = false;
+	glassPrepared540p = false;
+	facePictureCount = 0;
+	if(!scene || !scene->visible || scene->introProgress < BOOT_CUBE_HANDOFF) {
+		return;
+	}
+	bool backdropMotionActive = backdropAnimated && scene->visible;
+	bool cubeMotionActive = cubeAnimated && scene->visible;
+	float drift = backdropMotionActive ? sinf(seconds * 0.12f) * 5.0f : 0.0f;
+	float centerX = 320.0f + (scene->cubeX * 112.0f);
+	float centerY = 238.0f - (scene->cubeY * 112.0f);
+	float orbitScale = 0.70f + (scene->cubeScale * 0.30f);
+	float orbitStrength = scene->orbitStrength < 0.0f ? 0.0f :
+		(scene->orbitStrength > 1.0f ? 1.0f : scene->orbitStrength);
+	float decorativeStrength = orbitStrength +
+		(orbitStrength * HOME_DECORATIVE_STRENGTH - orbitStrength) *
+		scene->homeDecorativeBlend;
+
+	/* Use the 640x480 stage EFB region before UI540_RecordBegin() so GX_CopyTex
+	 * captures both the 4x2 supersampled turned face icons and the half-res
+	 * RGBA8 glass refraction backdrop. */
+	GX_SetScissorBoxOffset(0, 0);
+	GX_SetViewport(0.0f, 0.0f, (f32)glassEfbWidth, (f32)glassEfbHeight, 1.0f, 1.0f);
+	GX_SetScissor(0, 0, glassEfbWidth, glassEfbHeight);
+	setupRasterPipeline();
+	GX_SetZMode(GX_ENABLE, GX_ALWAYS, GX_TRUE);
+	GX_SetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_COPY);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+		GX_Position3f32(UIStage_Left(), 0.0f, 0.0f); GX_Color4u8(0, 0, 0, 255); GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(UIStage_Right(), 0.0f, 0.0f); GX_Color4u8(0, 0, 0, 255); GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(UIStage_Right(), 480.0f, 0.0f); GX_Color4u8(0, 0, 0, 255); GX_TexCoord2f32(0.0f, 0.0f);
+		GX_Position3f32(UIStage_Left(), 480.0f, 0.0f); GX_Color4u8(0, 0, 0, 255); GX_TexCoord2f32(0.0f, 0.0f);
+	GX_End();
+	GX_SetViewport(0.0f, 0.0f, (f32)glassEfbWidth, (f32)glassEfbHeight, 0.0f, 1.0f);
+
+	UIColor_Select(layerColors[UI_COLOR_LAYER_MENU]);
+	renderFacePictures(scene, seconds, cubeMotionActive, clock, pad, icons);
+	facePicturesPrepared540p = true;
+
+	float strength = glassSceneStrength(scene);
+	if(strength <= 0.01f) {
+		return;
+	}
+	static const GXColor backGlassColors[6] = {
+		{61, 46, 132, 14}, {72, 55, 151, 18}, {111, 88, 193, 25},
+		{62, 47, 136, 17}, {153, 135, 220, 34}, {92, 71, 174, 20}
+	};
+	static const GXColor bevelColors[6] = {
+		{25, 18, 70, 88}, {132, 108, 218, 98}, {196, 180, 255, 134},
+		{65, 48, 143, 84}, {235, 228, 255, 154}, {132, 108, 218, 98}
+	};
+	static cubeSurfaceQuad_t bevels[36], fans[72];
+	GXColor lit[6], edge[6], rear[6];
+	cubeRasterTransform_t raster;
+	cubeSurfaceQuad_t shell[6];
+	cubeOutline_t shellOutline;
+	float boxLeft, boxTop, boxRight, boxBottom;
+	const float outer = 1.0f, inset = 0.78f;
+
+	setupCubePipeline(scene, seconds, cubeMotionActive, &raster);
+	litCubeTints(&raster, bevelColors, edge);
+	for(int face = 0; face < 6; face++) {
+		rear[face] = edge[face];
+		rear[face].a /= 2;
+	}
+	litCubeTints(&raster, backGlassColors, lit);
+	buildCubeFaces(shell, outer, inset, lit);
+	buildChamferStrips(bevels, outer, inset, rear, lit);
+	buildCornerFans(fans, outer, inset, rear, lit);
+	buildCubeOutline(&raster, shell, &shellOutline);
+	cubeOutlineBox(&shellOutline, &boxLeft, &boxTop, &boxRight, &boxBottom);
+	if(shellOutline.count < 3 || boxRight <= UIStage_Left() || boxLeft >= UIStage_Right()) {
+		return;
+	}
+	float copyL = UIStage_FrameX(boxLeft) - 16.0f;
+	float copyT = boxTop - 16.0f;
+	float copyR = UIStage_FrameX(boxRight) + 16.0f;
+	float copyB = boxBottom + 16.0f;
+	int sx0 = (int)(copyL < 0.0f ? 0.0f : copyL) & ~7;
+	int sy0 = (int)(copyT < 0.0f ? 0.0f : copyT) & ~7;
+	int sx1 = ((int)copyR + 8) & ~7;
+	int sy1 = ((int)copyB + 8) & ~7;
+	if(sx1 > (int)glassEfbWidth) sx1 = (int)glassEfbWidth;
+	if(sy1 > (int)glassEfbHeight) sy1 = (int)glassEfbHeight;
+	if(sx1 - sx0 < 8 || sy1 - sy0 < 8) {
+		return;
+	}
+	GX_SetScissor((u32)sx0, (u32)sy0, (u32)(sx1 - sx0), (u32)(sy1 - sy0));
+
+	glassPrepared540p = false;
+	setupRasterPipeline();
+	UIColor_Select(layerColors[UI_COLOR_LAYER_BACKDROP]);
+	(drawIndigoWash)(255, UIColor_BackdropShade(layerColors[UI_COLOR_LAYER_BACKDROP]));
+	drawGlobeGrid(320.0f, 212.0f, drift * 0.18f);
+	if(scene->visible && wavesShown) {
+		UIColor_Select(layerColors[UI_COLOR_LAYER_WAVES]);
+		drawSilkWaves(waveClock(seconds), backdropMotionActive, decorativeStrength);
+	}
+	UIColor_Select(layerColors[UI_COLOR_LAYER_MENU]);
+	drawRadialDisc(centerX, centerY + 132.0f * orbitScale,
+		104.0f * orbitScale, 14.0f * orbitScale,
+		(GXColor) {3, 2, 12, (u8)(92.0f * orbitStrength)},
+		(GXColor) {3, 2, 12, 0});
+
+	setupCubePipeline(scene, seconds, cubeMotionActive, &raster);
+	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_FALSE);
+	drawCubeSurfacePass(&raster, &shellOutline, bevels, 36, GX_CULL_FRONT);
+	drawCubeSurfacePassVertices(&raster, &shellOutline, fans, 72, 3, GX_CULL_FRONT);
+	GX_SetCullMode(GX_CULL_FRONT);
+	drawCubeSurfacePass(&raster, &shellOutline, shell, 6, GX_CULL_FRONT);
+	GX_SetScissor(0, 0, glassEfbWidth, glassEfbHeight);
+	glassPrepared540p = glassCopyFrame(copyL, copyT, copyR, copyB);
+	glassBloomPrepared540p = false;
+	if(glassPrepared540p) {
+		static const GXColor frontGlassColors[6] = {
+			{69, 54, 145, 24}, {82, 65, 166, 34}, {146, 124, 225, 58},
+			{74, 58, 151, 31}, {219, 207, 255, 78}, {119, 96, 203, 42}
+		};
+		cubeSurfaceQuad_t strips[12], corners[8];
+		buildChamferStrips(strips, outer, inset, edge, NULL);
+		buildCubeCorners(corners, outer, inset);
+		GX_SetScissor((u32)sx0, (u32)sy0, (u32)(sx1 - sx0), (u32)(sy1 - sy0));
+		GX_SetCullMode(GX_CULL_BACK);
+		litCubeTints(&raster, frontGlassColors, lit);
+		buildCubeFaces(shell, outer, inset, lit);
+		buildChamferStrips(bevels, outer, inset, edge, lit);
+		buildCornerFans(fans, outer, inset, edge, lit);
+		drawCubeSurfacePass(&raster, &shellOutline, shell, 6, GX_CULL_BACK);
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+		drawCubeSurfacePass(&raster, &shellOutline, bevels, 36, GX_CULL_BACK);
+		drawCubeSurfacePassVertices(&raster, &shellOutline, fans, 72, 3, GX_CULL_BACK);
+		GX_SetZMode(GX_ENABLE, GX_LEQUAL, GX_FALSE);
+		GX_SetCullMode(GX_CULL_BACK);
+		setupGlassReflectionPipeline(cubeMotionActive ? GLASS_STUDIO_DRIFT * scene->homeIdleBlend *
+			sinf(seconds * GLASS_STUDIO_DRIFT_RATE) : 0.0f);
+		drawGlassReflection(&raster, shell, 6, 4, outer);
+		drawGlassReflection(&raster, strips, 12, 4, outer);
+		drawGlassReflection(&raster, corners, 8, 3, outer);
+		restoreCubeRaster();
+		GX_SetScissor(0, 0, glassEfbWidth, glassEfbHeight);
+		glassBloomPrepared540p = glassCopyBloomFrame(
+			UIStage_FrameX(boxLeft - 28.0f) - 12.0f, (boxTop - 28.0f) - 12.0f,
+			UIStage_FrameX(boxRight + 28.0f) + 12.0f, (boxBottom + 28.0f) + 12.0f);
+	}
+}
+#endif
+
 void IndigoBackground_Draw(float seconds, bool backdropAnimated,
 	bool cubeAnimated, const uiSceneFrame_t *scene,
 	const uiClockFrame_t *clock, const indigoPadFrame_t *pad,
@@ -3696,13 +4031,27 @@ void IndigoBackground_Draw(float seconds, bool backdropAnimated,
 
 	/* The turned faces' icon pictures go first: the backdrop paints over
 	 * the corner of the frame they are drawn in. */
-	if(scene->visible && scene->introProgress >= BOOT_CUBE_HANDOFF) {
+	bool facePictures = scene->visible && scene->introProgress >= BOOT_CUBE_HANDOFF;
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Recording()) {
+		if(!facePicturesPrepared540p) facePictureCount = 0;
+		facePicturesPrepared540p = false;
+		facePictures = false;
+	}
+#endif
+	if(facePictures) {
 		UIColor_Select(layerColors[UI_COLOR_LAYER_MENU]);
 		renderFacePictures(scene, seconds, cubeMotionActive, clock, pad, icons);
 	}
+#if UI_EXPERIMENTAL_540P
+	else if(!UI540_Recording()) {
+		facePictureCount = 0;
+	}
+#else
 	else {
 		facePictureCount = 0;
 	}
+#endif
 	setupRasterPipeline();
 	/* The backdrop and the waves have colors of their own; the cube and
 	 * everything after it take the menus'. */

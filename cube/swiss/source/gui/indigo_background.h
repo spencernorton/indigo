@@ -39,6 +39,12 @@ void IndigoBackground_SetIdleSway(bool sway);
 /* Drawn after the configured backdrop and before every foreground widget.
  * pad may be NULL: the Controller icon then plays only its idle motion.
  * icons holds a uiHomeIcon_t for each uiHomeFace_t. */
+#if UI_EXPERIMENTAL_540P
+void IndigoBackground_Prepare540p(float seconds, bool backdropAnimated,
+	bool cubeAnimated, const uiSceneFrame_t *scene,
+	const uiClockFrame_t *clock, const indigoPadFrame_t *pad,
+	const int icons[UI_HOME_FACE_COUNT]);
+#endif
 void IndigoBackground_Draw(float seconds, bool backdropAnimated,
 	bool cubeAnimated, const uiSceneFrame_t *scene,
 	const uiClockFrame_t *clock, const indigoPadFrame_t *pad,

@@ -285,6 +285,15 @@ normalized, browsers = re.subn(
     r"\t+break;\n",
     lambda arm: "" if arm.group(1).lower() == arm.group(2) else arm.group(0),
     normalized)
+# Swiss and Apps Video Mode add 540p60 at index 9.
+normalized = normalized.replace(
+    "swissSettings.uiVMode = (swissSettings.uiVMode + 10) % 10;",
+    "swissSettings.uiVMode = (swissSettings.uiVMode + 9) % 9;",
+)
+normalized = normalized.replace(
+    "swissSettings.appsVMode = (swissSettings.appsVMode + 10) % 10;",
+    "swissSettings.appsVMode = (swissSettings.appsVMode + 9) % 9;",
+)
 normalized = re.sub(r"[ \t]+(?=\n|$)", "", normalized)
 Path(sys.argv[2]).write_text(normalized)
 PY

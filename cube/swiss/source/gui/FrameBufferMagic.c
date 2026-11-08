@@ -36,6 +36,7 @@
 #include "ui_color.h"
 #include "ui_lang.h"
 #include "ui_perf.h"
+#include "ui_540p.h"
 #include "ui_scene.h"
 #include "ui_stage.h"
 #include "ui_hint.h"
@@ -939,8 +940,9 @@ static void _DrawBackground(uiDrawObj_t *evt)
 	(void)evt;
 	_HomeFaceIcons(icons);
 	/* The glass copies the frame it is drawn in. */
-	IndigoBackground_SetFramebuffer(getVideoMode()->fbWidth,
-		getVideoMode()->efbHeight);
+	IndigoBackground_SetFramebuffer(
+		UI540_Active() ? 640 : getVideoMode()->fbWidth,
+		UI540_Active() ? 480 : getVideoMode()->efbHeight);
 	IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
 	IndigoBackground_SetWaves(!swissSettings.hideWaves);
 	IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
@@ -8722,6 +8724,10 @@ static void *videoUpdate(void *videoEventQueue) {
 		UI_PERF_BEGIN(frameWorkStart);
 		//frames++;
 		LWP_MutexLock(_videomutex);
+#if UI_EXPERIMENTAL_540P
+		UI540_BeginFrame();
+		u64 experimentalWorkStart = gettime();
+#endif
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameStart();
 #endif
@@ -8768,8 +8774,28 @@ static void *videoUpdate(void *videoEventQueue) {
 		}
 		/* One shape and one language for the whole frame, whatever Settings
 		 * does meanwhile. */
-		UIStage_SetWide(swissSettings.menuWidescreen);
+		UIStage_SetWide(UI540_Active() || swissSettings.menuWidescreen);
 		UILang_Select(swissSettings.menuLanguage);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			if(!backgroundCovered && sceneRenderingEnabled) {
+				static const float waveSpeeds[WAVE_SPEED_MAX] = {1.0f, 3.0f, 0.5f};
+				bool decorativeAnimated = _CurrentMotionMode() == UI_MOTION_FULL;
+				int icons[UI_HOME_FACE_COUNT];
+				_HomeFaceIcons(icons);
+				IndigoBackground_SetFramebuffer(640, 480);
+				IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
+				IndigoBackground_SetWaves(!swissSettings.hideWaves);
+				IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
+				IndigoBackground_Prepare540p(UIAnim_Seconds(),
+					decorativeAnimated && !swissSettings.disableAnimatedBackdrop,
+					decorativeAnimated, UIScene_Frame(),
+					&systemInstrument.clock, &padInstrument, icons);
+			}
+			UI540_RecordBegin();
+			drawInit();
+		}
+#endif
 		// Draw out every event
 		videoEventQueueEntry = (uiDrawObjQueue_t*)videoEventQueue;
 		while(videoEventQueueEntry != NULL) {
@@ -8799,13 +8825,30 @@ static void *videoUpdate(void *videoEventQueue) {
 #endif
 		
 		//Copy EFB->XFB
+		u16 width = vmode->fbWidth;
+		u16 height;
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			drawInit();
+			UI540_DrawStatus();
+			if(!UI540_Present(xfb[whichfb])) {
+				LWP_MutexUnlock(_videomutex);
+				continue;
+			}
+			height = vmode->xfbHeight;
+		} else
+#endif
+		{
 		if(vmode->copy_interlaced == GX_COPY_INTERLACED) {
 			GX_SetDispCopyFrame2Field(GX_COPY_INTERLACED ^ VIDEO_GetNextField());
 		}
-		u16 width = vmode->fbWidth;
-		u16 height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
+		height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
 		copyDisplayFrame(xfb[whichfb]);
+		}
 		GX_DrawDone();
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) UI540_EndFrame(experimentalWorkStart);
+#endif
 		UI_PERF_END(UI_PERF_METRIC_FRAME_WORK, frameWorkStart);
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameEnd();
@@ -8813,7 +8856,9 @@ static void *videoUpdate(void *videoEventQueue) {
 
 		LWP_MutexUnlock(_videomutex);
 		VIDEO_SetNextFramebuffer(xfb[whichfb]);
-		VIDEO_ConfigurePan(0, 0, width, height);
+		if(!UI540_Active()) {
+			VIDEO_ConfigurePan(0, 0, width, height);
+		}
 		VIDEO_Flush();
 		VIDEO_WaitForFlush();
 	}
@@ -8927,6 +8972,7 @@ void DrawLoadBackdrop(DEVICEHANDLER_INTERFACE *device) {
 }
 
 void DrawShutdown() {
+	UI540_Leave();
 	mutex_t mutex;
 	lwp_t thread = video_thread;
 

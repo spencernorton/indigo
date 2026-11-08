@@ -33,6 +33,7 @@
 #include "sram.h"
 #include "stub_bin.h"
 #include "gui/FrameBufferMagic.h"
+#include "gui/ui_540p.h"
 #include "gui/IPLFontWrite.h"
 #include "devices/deviceHandler.h"
 #include "devices/fat/ata.h"
@@ -433,6 +434,9 @@ int main(int argc, char *argv[])
 	if(swissSettings.cubebootInvoked) {
 		return 0;
 	}
+#if UI_EXPERIMENTAL_540P
+	UI540_Request(argc, argv);
+#endif
 	while(1) {
 		menu_loop();
 	}

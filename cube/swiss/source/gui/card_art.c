@@ -17,6 +17,7 @@
 #include "ui_png.h"
 #include "util.h"
 #include "card_art.h"
+#include "ui_540p.h"
 
 static cardArtSource_t source;
 static bool artOpen;
@@ -144,8 +145,16 @@ static void posterDone(void *context)
 		GX_InitTexObj(&artTexture[job->slot], artTexels +
 			(size_t)job->slot * UI_PNG_POSTER_BYTES, UI_PNG_CANVAS,
 			UI_PNG_CANVAS, GX_TF_CMPR, GX_CLAMP, GX_CLAMP, GX_TRUE);
-		GX_InitTexObjLOD(&artTexture[job->slot], GX_LIN_MIP_LIN, GX_LINEAR,
-			0.0f, 4.0f, 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			GX_InitTexObjLOD(&artTexture[job->slot], GX_LIN_MIP_LIN, GX_LINEAR,
+				0.0f, 4.0f, -0.35f, GX_TRUE, GX_TRUE, GX_ANISO_4);
+		} else
+#endif
+		{
+			GX_InitTexObjLOD(&artTexture[job->slot], GX_LIN_MIP_LIN, GX_LINEAR,
+				0.0f, 4.0f, 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+		}
 		artReadyMs[job->slot] = nowMs();
 	}
 }
