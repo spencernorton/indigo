@@ -220,6 +220,11 @@ bool UITimeSync_ZoneOffset(const char *zone, int64_t utcSeconds,
 	return true;
 }
 
+bool UITimeSync_KeepsOffset(const char *zone)
+{
+	return zone[0] == '\0' || strcmp(zone, "Etc/Unknown") == 0;
+}
+
 /* Every offset a time zone uses, standard or daylight, in minutes east of UTC
  * (the IANA database, 2026). Snapping to these rather than to any quarter hour
  * lets a clock that drifted half an hour or less keep a whole-hour zone. */

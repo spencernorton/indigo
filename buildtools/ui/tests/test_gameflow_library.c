@@ -18,6 +18,7 @@
 #include <fnmatch.h>
 
 #include "ui_gameflow_library.h"
+#include "ui_lang.h"
 
 #define CHECK(condition) do { \
 	if(!(condition)) { \
@@ -874,6 +875,11 @@ static void testLibraryFoldersHeading(void)
 	CHECK(UIGameflowLibrary_FolderHeading("sd:/games", "SD:/Games/rpgs/",
 		heading, sizeof(heading)));
 	CHECK(strcmp(heading, "RPGS") == 0);
+	/* A cut in a Cyrillic name keeps whole letters before its ellipsis. */
+	CHECK(UIGameflowLibrary_FolderHeading("sd:/games", "sd:/games/aяяяяяяяяяя",
+		tiny, sizeof(tiny)));
+	CHECK(strlen(tiny) == 10u && (unsigned char)tiny[9] == 0x85u);
+	CHECK(UILang_Head(tiny, 9u) == 9u);
 	/* /games itself and anywhere else have no heading. */
 	CHECK(!UIGameflowLibrary_FolderHeading("sd:/games", "sd:/games",
 		heading, sizeof(heading)));

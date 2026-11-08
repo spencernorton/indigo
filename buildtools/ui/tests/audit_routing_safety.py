@@ -21,7 +21,7 @@ if not __debug__:
 
 
 ROOT = Path(__file__).resolve().parents[3]
-# The accepted base main.c, before Indigo's two startup edits.
+# The accepted base main.c, before Indigo's startup edits.
 BASE_MAIN = Path(__file__).resolve().parent / "fixtures/main.base.c"
 SWISS_PATH = ROOT / "cube/swiss/source/swiss.c"
 MAIN_PATH = ROOT / "cube/swiss/source/main.c"
@@ -127,6 +127,16 @@ def expected_main(base: str) -> str:
         "\t\t}\n\t}\n"
     )
     assert base.count(anchor) == 1
+    base = base.replace(anchor, replacement, 1)
+    include = '#include "gui/FrameBufferMagic.h"\n'
+    assert base.count(include) == 1
+    base = base.replace(include, include + '#include "gui/ui_540p.h"\n', 1)
+    # The experiment starts only after normal startup and the Cubeboot return,
+    # is absent from ordinary builds, and cannot intercept source discovery.
+    anchor = '\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}\n\twhile(1) {'
+    replacement = ('\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}\n'
+                   '#if UI_EXPERIMENTAL_540P\n\tUI540_Request(argc, argv);\n#endif\n\twhile(1) {')
+    assert base.count(anchor) == 1
     return base.replace(anchor, replacement, 1)
 
 
@@ -139,7 +149,7 @@ def trailing_blank_free(text: str) -> str:
 def check_runtime(swiss: str, main: str) -> None:
     assert trailing_blank_free(main) == trailing_blank_free(
         expected_main(base_file("cube/swiss/source/main.c"))), (
-        "main.c changed outside its two audited startup edits"
+        "main.c changed outside its audited startup edits and opt-in experiment"
     )
     assert '#include "gui/ui_home_safety.h"' in swiss
 
@@ -388,6 +398,12 @@ for label, mutant in helper_mutants:
     expect_rejected(label, check_helper, mutant)
 
 runtime_mutants = [
+	("540p experiment enabled in ordinary builds", MAIN.replace(
+		"#if UI_EXPERIMENTAL_540P\n\tUI540_Request(argc, argv);\n#endif",
+		"\tUI540_Request(argc, argv);", 1), SWISS),
+	("540p experiment intercepts Cubeboot return", MAIN.replace(
+		"\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}",
+		"\tif(swissSettings.cubebootInvoked) {\n\t\tUI540_Request(argc, argv);\n\t\treturn 0;\n\t}", 1), SWISS),
     ("startup failure pointer retained", MAIN.replace(
         "\t\t\tdevices[DEVICE_CUR] = NULL;\n", "", 1), SWISS),
     ("startup DOL autoload restored", MAIN.replace(

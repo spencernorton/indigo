@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "ui_system_info.h"
+#include "ui_lang.h"
 
 static const uiSystemPageDesc_t PAGES[UI_SYSTEM_PAGE_COUNT] = {
 	{ "OVERVIEW", "Live console, source, output, and build summary." },
@@ -230,7 +231,7 @@ bool UISystem_FormatCalibration(char *out, size_t capacity, int offsetCelsius)
 	if(out == NULL || capacity == 0u) {
 		return false;
 	}
-	(void)snprintf(out, capacity, "%+d\260C OFFSET", offsetCelsius);
+	(void)snprintf(out, capacity, UI_T("%+d\260C OFFSET"), offsetCelsius);
 	return true;
 }
 
@@ -258,7 +259,7 @@ void UISystem_FormatPageStatus(char *out, size_t capacity, int page)
 		return;
 	}
 	page = clampPage(page);
-	(void)snprintf(out, capacity, "L/R  PAGE %d OF %d    B  BACK",
+	(void)snprintf(out, capacity, UI_T("L/R  PAGE %d OF %d    B  BACK"),
 		page + 1, UI_SYSTEM_PAGE_COUNT);
 }
 

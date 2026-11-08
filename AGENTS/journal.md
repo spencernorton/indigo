@@ -1,3 +1,213 @@
+## 2026-11-08 — Complete 540p60 visual parity, prismatic side-face refraction and image-quality pass
+
+The experimental 720 x 540 progressive menu build (`UI_540P=1`) previously
+skipped screen-space glass refraction, bloom and supersampled Home face
+pictures because mid-frame EFB copies during a four-tile replay would sample a
+single tile rather than the whole stage. Add `IndigoBackground_Prepare540p()`
+before `UI540_RecordBegin()` so the full 640 x 480 stage renders the backdrop
+wash, globe grid and silk waves into `s_glassSceneTex`, builds the bloom
+pyramid (`s_glassBloomATex`), and populates the 4 x 2 supersampled Home face
+slots before the tiled display list begins. During the four-tile 720 x 540
+replay, the cube samples those pre-captured textures directly without issuing
+mid-tile EFB copies.
+
+Console inspection on a GameCube with Retro GEM (720 x 540p60 input) identified
+two shader artifacts on the rotating Home cube and background wave: angled
+side faces projected their refraction UV offset with the face normal's tiny
+camera-space XY components instead of the view ray (`eX / -eZ`, `eY / -eZ`),
+collapsing the 3-channel RGB prism back into an unsplit line on the hovering
+left face, while the inner smoked plate kept full opacity on glancing side
+views and hid the back-wall refraction seen through the front face. Computing
+the refraction tangent basis from the eye vector + surface normal and scaling
+the inner smoked plate alpha by `nZ * nZ` restores the 3-channel RGB prismatic
+split across both the exterior side faces and the interior side walls seen
+through the front face. Dispersing the main silk wave's core and rim widths and
+lowering its peak additive alpha removes the harsh stripe contrast against the
+secondary ribbons.
+
+Pair the 720 x 540 output with 540p-specific asset and text upgrades under
+`UI_EXPERIMENTAL_540P`: an 8-bit (`GX_TF_I8`, 512 x 512) unsharp + S-curve
+contrast-shaped font sheet integrated with the Cyrillic sheet switcher, 1:1
+native-phase `GX_TF_CMPR` to `GX_TF_RGB565` artwork decoding with flat-gradient
+block-seam deblocking and `GX_ANISO_4` mipmap filtering, finer Jewel Case curve
+tessellation (`128 x 128` radial glow and 256-texel sheen), hardware 6-bit RGB
+dithering, and direct selection as **NTSC 540p60** (`540p60` at index 9 of
+`uiVModeStr`) in **Settings › Setup › Display › Swiss Video Mode** in the
+standard `swiss.dol` build (`UI_540P ?= 1`). Call `GX_SetCurrentGXThread()` in
+`UI540_BeginFrame()` on `video_thread` so `_gxcurrentlwp` is reclaimed after
+`DrawVideoMode()` runs `setVideoMode()`/`GX_Init()` on the main thread, while
+retaining `L + R + B` immediate 480p recovery and the `Experimental540p=` boot
+arguments. Verified live on console hardware (including interactive switching
+to `NTSC 540p60` in Settings) at 59.95 fps (0 frames over the 16.682 ms budget
+across settled and rotating views) and across the full plain, sanitized,
+contract and video-lab host suites.
+
+## 2026-11-05 — Bring Menu Language onto beta and trim what it keeps
+
+A contributed Menu Language (Ukrainian) arrives on beta from a main base; only
+CHANGELOG.md conflicts, but uk.po still translated beta's old Sync Clock and
+Time Zone wording, so test_lang.py failed there. Those entries now follow the
+current text, and the new Time Zone strings have their own.
+
+Ukrainian kept its whole 212 KB file, a 4,000-entry array and a fixed 16 KB
+index in RAM, about 260 KB, with 16 KB held even in English. Load now copies
+only the strings behind their entries and frees the file; the index is sized
+to the entries. The console keeps 142,816 bytes for uk.po and nothing for
+English; test_lang.py measures that and holds it under 192 KiB. UBSan in the
+sanitized lane found the parser offsetting a null pointer before its check.
+The source checks wanted -no-pie on test_lang.py's ASan build, and the
+whitespace check a trailing space gone from the OFL text.
+
+Byte cuts that end in the IPL ellipsis could split a Cyrillic letter, and a
+cut after the 0xd1 lead byte draws as "х" with no ellipsis, a byte pair the
+draw loop cannot tell from the real letter. Home and Save Details fitting,
+Library folder headings, short names and Settings path tails now cut on
+whole letters (UILang_Head, now inline so pure modules need only the
+header), each with a host test that fails without it; the draw loop's guess
+before an ellipsis is gone. Text the Home fitter cuts and text entry labels
+are looked up before they are cut or formatted, as ui_lang.h requires.
+
+A review of the whole branch found three more. An English title whose cut
+ended on an IPL Ñ (0xd1) also read as "х" before the ellipsis; UILang_Head
+now steps back over it. Turning Menu Language with the stick saved it but
+drew the old language until Settings closed; it now switches at once. The
+hint parser took the second byte of "з" (d0 b7) for the "·" separator, so
+the Settings footer drew "Назад" as "На ад"; it steps over whole letters.
+Menu Language is the first Console row, so the emulator's Console walks
+count one more. Text measures had gone through SYS_GetFontTexture for every
+character, English included; the widescreen virtual-cards route dropped a
+press in two of its three runs here and none of its fifteen elsewhere, so a
+byte that can't start a Cyrillic letter reads its width alone again. The smoke route passes 239 checks in Ukrainian and in English
+in the patched Dolphin, run locally with the cached interpreter on arm64.
+
+Not changed: drawString still looks up every string it draws, so a folder or
+game named exactly like a translated label (Music, Covers, Apps) is shown
+translated. About 340 strings have no Ukrainian yet and stay English ("Other
+side", "free", section captions, help lines, the Left Face value
+"Settings"). config_file_read, which reads uk.po as it reads global.ini,
+allocates size + 1 in a u32, so a file of 4 GiB less one byte wraps it; that
+predates this branch. Nothing has been timed on a console.
+
+## 2026-11-05 — Guide Sync Clock setup for daylight saving time
+
+Turning on Sync Clock with a blank Time Zone or an imported Etc/Unknown now
+opens the editor. Show Keep offset (no DST) for both unset values. Validate
+edits with the resolver used by startup sync and retain the previous value
+when editing is canceled or the entry is invalid.
+
+The regression exercises the actual Settings actions with named and POSIX
+zones, cancellation, a rejected edit and the offset fallback. The Settings
+guide explains when to save and restart. Track inclusion in issue #196.
+
+## 2026-11-04 — Initialize every stroke-test icon choice
+
+The full host suite exposes an intermittent pre-existing failure on the
+native stroke fixture. Its eight-element icon masks implicitly select the
+new ninth Home face, Web, and some fixtures leave that unused transform
+uninitialized. Reproduce the failure on unchanged source, then make every
+unused face front-facing to turn the accidental extra icon into a reliable
+regression. Initialize all choices to None before selecting each fixture's
+intended faces, so the fixture also handles future additions to Home.
+Production geometry and its stream checks remain unchanged.
+
+## 2026-11-04 — Keep the parked Library cube beyond the widescreen edge
+
+Real-console captures reveal part of the Home cube in the left margin of
+widescreen Grid and Spotlight. The full-screen Library pose uses a fixed
+horizontal offset while Menu Widescreen expands the perspective. Scale that
+offset with the stage's pixel width and retarget through the existing spring
+when screen shape changes. The renderer can then reject the hidden cube
+before drawing its surfaces, as it already does in the standard screen shape.
+
+Exercise the real renderer across all three full-screen layouts, both screen
+shapes, every motion mode and several animation times. Change shape with the
+Library open and return Home in every case. Steady-frame measurements select
+screen shape before settling; refresh only the affected widescreen budgets.
+Existing guide pictures use the standard screen shape and remain current.
+
+## 2026-11-04 — Observe storage identity and destination context in smoke coverage
+
+The right rows crop can remain 0.927765 alike after a correct swap because
+its common focus fill dominates the words. The selected-item masks differ
+at 0.261183. Keep the same 0.85 identity threshold, verify both selected items
+through the global info bar as their panes swap, and retain both exact row
+round-trip checks. Capture the original source name in its focused right
+pane so long labels have the same fit before and after the operation.
+
+The destination picker remembers an earlier source, not the right pane's
+memory card. Anchor its detected ring to the source name observed earlier in
+Change Source before selecting the missing-device fixture. Slot A/B names
+must not drive the whole-word "unlike" retry helper: one physical RIGHT and
+a settled caption preserve the intended step. When storage returns, require
+the old error words to disappear; a valid SD listing can occupy that box.
+
+A focused PAL/SD2SP2 controller replay passes 53 checks including the swap,
+both selected items, round trip, missing device, refused swap and original
+source restoration. The corresponding GC Loader/non-default diagnostic
+passes those storage operations; its full-smoke configuration postcondition
+is outside that shortened route and is not a complete smoke qualification.
+The full PAL/composite SD2SP2 replay now passes all 240 checks, including the
+app handoff and saved settings. Final source-bound CI is still required.
+These are observer/media corrections only; runtime C remains the initial
+disc fix.
+
+## 2026-11-04 — Keep the optical game with SD attached and verify header context
+
+Extend the optical fixture with genuine FST directories, including Data
+[GDIR01], and attach a populated SD2SP2 Library. Select Game Disc from that
+source and require single-card wrapping, Home re-entry and the actual probe
+handoff. The first corrected CI executable passes 19 checks without SD and
+23 with SD; both report GPRE01, 24 MB, stopped audio and zero stray writes.
+The verified published v2.6.0 executable fails the no-SD card check and the
+with-SD single-card check: the latter has fallen back to the SD Library.
+These are Dolphin results, not physical-drive qualification.
+
+The moved PAL smoke route exposes an observer error at File Browser Y:
+long SD2SP2 names fit differently in the left and right headers. Captures
+give 0.216418 overlap across panes and 1.0 within the same focused right
+pane. Record the source name in that pane before swapping; keep the 0.85
+threshold and the row/round-trip checks. Preserve the unavailable-device
+and refused-swap case on SD too, accounting for its extra drive menu row.
+The corrected full PAL smoke and exact new-head CI remain pending. The
+100-test observer suite passes with three existing skips. Runtime C source
+has not changed since the initial disc fix.
+
+## 2026-11-04 — Exercise a whole optical game and preserve the full smoke route
+
+The two DVD routes in the first disc-source CI attempt show the corrected
+single disc card, then fail because their old observers expect a multi-game
+/games folder. Keep that full navigation and damaged-image coverage on SD
+storage, and give the optical route a real GameCube-format probe image with
+no /games folder. Confirm the current Disc source through the picker, check
+single-card wrapping and Home re-entry, then launch the whole disc and read
+back its identity, 24 MB, stopped audio and quiet memory from the probe.
+
+The independent PAL/component replay passes those checks using the first
+candidate's checksum-verified CI executable. The emulator observer suite
+passes 99 tests with three existing skips; invalid media/route combinations
+fail before starting an emulator. Full PAL/composite smoke now runs on a
+fresh SD2SP2 card instead of the synthetic multi-game DVD. Its result and
+new-head CI remain pending. This is emulated optical qualification; physical
+drive recognition, media condition and the reporter's exact setup remain
+unmeasured. Runtime source is unchanged from the preceding fix.
+
+## 2026-11-04 — Open optical games from the selected disc
+
+Investigate #191 by replaying the actual source-routing, directory scan and
+Library dispatch against a readable disc fixture and an available SD library.
+The v2.6.0 implementation switches away from Disc because it looks for
+dvd:/games instead of the virtual game entry the optical handler exposes at
+dvd:/. The same source remains on beta.
+
+Use the optical device's root for Library entry, ignore its internal data
+folders when classifying games, and keep its folders in the explicit File
+Browser. Preserve storage fallback and startup device-selection behavior.
+Extend the existing executable navigation regression for retail/multi-game
+listings, both Library Folders settings, Home re-entry, a browsed disc
+subdirectory, File Browser access and a failed disc read. The release source
+fails the source-retention case; corrected plain and ASan/UBSan replays pass.
+Physical-drive recognition and game launch still need real-disc qualification.
+
 ## 2026-11-03 — Allow the watch's exact HTTPS destinations
 
 The first manual dry-run reaches the upstream comparison, then fails because

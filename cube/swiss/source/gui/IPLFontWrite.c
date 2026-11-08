@@ -14,11 +14,90 @@
 #include <string.h>
 #include "IPLFontWrite.h"
 #include "ui_color.h"
+#include "ui_lang.h"
+#include "ui_540p.h"
 #include "ui_stage.h"
+#include "ui_font_cyrillic.inc"
 
 static u8 fontData[SYS_FONTSIZE_ANSI] ATTRIBUTE_ALIGN (32);
 static sys_fontheader *font = (sys_fontheader *)fontData;
 static bool fontReady;
+/* The Cyrillic sheet stands in for an IPL sheet, so it needs the IPL's
+ * layout: I4, as wide, and cells as tall. */
+static bool cyrillicReady;
+#if UI_EXPERIMENTAL_540P
+#define FONT_I8_L0_BYTES (512 * 512)
+static u8 fontSheetI8[FONT_I8_L0_BYTES] ATTRIBUTE_ALIGN (32);
+static u8 fontFlatScratch[FONT_I8_L0_BYTES];
+static const void *rawFontSheet;
+static bool fontSheetI8Ready;
+static bool fontSheetI8Attempted;
+static u8 fontTexel(const u8 *sheet, int x, int y);
+
+static inline int clampCell(int v, int lo, int hi)
+{
+	return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static void buildSharpenedFontSheetI8(void)
+{
+	fontSheetI8Ready = false;
+	rawFontSheet = NULL;
+	if(!fontReady || font->sheet_format != GX_TF_I4 ||
+		font->sheet_width != 512 || font->sheet_height != 512 ||
+		font->cell_width < 1 || font->cell_height < 1) {
+		return;
+	}
+	void *sheetPtr = NULL;
+	int dummyS = 0, dummyT = 0, dummyW = 0;
+	SYS_GetFontTexture(' ', &sheetPtr, &dummyS, &dummyT, &dummyW);
+	if(!sheetPtr) return;
+	const u8 *src = (const u8 *)sheetPtr;
+	rawFontSheet = sheetPtr;
+	int cw = font->cell_width;
+	int ch = font->cell_height;
+
+	for(int y = 0; y < 512; y++) {
+		for(int x = 0; x < 512; x++) {
+			fontFlatScratch[y * 512 + x] = fontTexel(src, x, y);
+		}
+	}
+
+	int tilesX = 512 / 8;
+	for(int y = 0; y < 512; y++) {
+		int cellY0 = (y / ch) * ch;
+		int cellY1 = cellY0 + ch - 1;
+		if(cellY1 >= 512) cellY1 = 511;
+		int ym1 = clampCell(y - 1, cellY0, cellY1) * 512;
+		int y0  = y * 512;
+		int yp1 = clampCell(y + 1, cellY0, cellY1) * 512;
+		for(int x = 0; x < 512; x++) {
+			int cellX0 = (x / cw) * cw;
+			int cellX1 = cellX0 + cw - 1;
+			if(cellX1 >= 512) cellX1 = 511;
+			int xm1 = clampCell(x - 1, cellX0, cellX1);
+			int xp1 = clampCell(x + 1, cellX0, cellX1);
+
+			int c = fontFlatScratch[y0 + x];
+			int card = (fontFlatScratch[ym1 + x] + fontFlatScratch[yp1 + x] +
+			            fontFlatScratch[y0 + xm1] + fontFlatScratch[y0 + xp1] + 2) >> 2;
+			int sharp = c + (((c - card) * 6) >> 3);
+			if(sharp < 0) sharp = 0;
+			if(sharp > 255) sharp = 255;
+			if(sharp > 0 && sharp < 96) {
+				sharp = (sharp * sharp) / 96;
+			} else if(sharp >= 140 && sharp < 255) {
+				sharp = 140 + ((sharp - 140) * 140) / 115;
+				if(sharp > 255) sharp = 255;
+			}
+			int dstIdx = ((y >> 2) * tilesX + (x >> 3)) * 32 + ((y & 3) << 3) + (x & 7);
+			fontSheetI8[dstIdx] = (u8)sharp;
+		}
+	}
+	DCFlushRange(fontSheetI8, sizeof(fontSheetI8));
+	fontSheetI8Ready = true;
+}
+#endif
 
 GXTexObj fontTexObj;
 GXColor defaultColor = (GXColor) {255,255,255,255};
@@ -32,9 +111,77 @@ void init_font(void)
 		fontReady = true;
 		GX_InitTexObj(&fontTexObj, NULL, font->sheet_width, font->sheet_height, font->sheet_format, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_TRUE, GX_TRUE, GX_ANISO_4);
+		cyrillicReady = font->sheet_format == GX_TF_I4 &&
+			font->sheet_width == UI_FONT_CYRILLIC_SHEET_WIDTH &&
+			font->cell_height == UI_FONT_CYRILLIC_CELL;
+		DCFlushRange(uiFontCyrillicSheet, sizeof(uiFontCyrillicSheet));
 		/* DrawInit publishes the immutable sheets before video starts. */
 		GX_InvalidateTexAll();
 	}
+}
+
+/* The character at text, from the IPL's sheets or the Cyrillic one: its
+ * sheet, its cell's corner and its width; how many bytes it takes. A
+ * Cyrillic letter without its sheet is drawn as '?'. */
+static int fontCharacter(const char *text, void **sheet, int *s0, int *t0,
+		int *width)
+{
+	int bytes;
+	unsigned code = UILang_Character(text, &bytes);
+
+	if(bytes == 2) {
+		int glyph = code >= 0x410u && code <= 0x44fu ? (int)code - 0x410 : 64;
+
+		while(glyph < UI_FONT_CYRILLIC_GLYPHS && uiFontCyrillicCodes[glyph] != code) {
+			glyph++;
+		}
+		if(cyrillicReady && glyph < UI_FONT_CYRILLIC_GLYPHS) {
+			*sheet = uiFontCyrillicSheet;
+			*s0 = glyph % UI_FONT_CYRILLIC_COLUMNS * UI_FONT_CYRILLIC_CELL;
+			*t0 = glyph / UI_FONT_CYRILLIC_COLUMNS * UI_FONT_CYRILLIC_CELL;
+			*width = uiFontCyrillicWidths[glyph];
+			return bytes;
+		}
+		code = '?';
+	}
+	else if(code >= 0xd0u && code <= 0xd2u && text[1] == '\0') {
+		/* Half a letter, where a byte budget (snprintf's) cut the text at
+		 * its end: nothing, not an IPL letter. Cuts before an ellipsis
+		 * keep whole letters (UILang_Head). */
+		SYS_GetFontTexture(' ', sheet, s0, t0, width);
+		*width = 1;
+		return bytes;
+	}
+	SYS_GetFontTexture((unsigned char)code, sheet, s0, t0, width);
+#if UI_EXPERIMENTAL_540P
+	if(UI540_Active()) {
+		if(!fontSheetI8Attempted) {
+			fontSheetI8Attempted = true;
+			buildSharpenedFontSheetI8();
+		}
+		if(fontSheetI8Ready && *sheet == rawFontSheet) {
+			*sheet = fontSheetI8;
+		}
+	}
+#endif
+	return bytes;
+}
+
+/* The character at text's width, as fontCharacter draws it. A byte that
+ * can't start a Cyrillic letter reads its width alone, as before, so the
+ * measures text fitting repeats cost English nothing more. */
+static int fontCharacterWidth(const char *text, int *bytes)
+{
+	void *sheet;
+	int s0, t0, width;
+	unsigned char c = (unsigned char)*text;
+
+	if(c < 0xd0u || c > 0xd2u) {
+		*bytes = c ? 1 : 0;
+		return SYS_GetFontWidth(c);
+	}
+	*bytes = fontCharacter(text, &sheet, &s0, &t0, &width);
+	return width;
 }
 
 int fontCellHeight(void)
@@ -153,6 +300,7 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 	if(string == NULL) {
 		return;
 	}
+	string = UILang_Text(string);
 	drawFontInit();
 	Mtx GXmodelView2D;
 	int strWidth = 0;
@@ -164,9 +312,9 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 		const char* string_work = string;
 		while(*string_work)
 		{
-			unsigned char c = *string_work;
-			strWidth += SYS_GetFontWidth(c) - 1;
-			string_work++;
+			int bytes;
+			strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+			string_work += bytes;
 		}
 	}
 	for(pass=0; pass<passes; pass++) {
@@ -193,18 +341,26 @@ static void drawStringWeighted(int x, int y, const char *string, float scale,
 			while(*end && *end != '\n' && count < 64) {
 				void *sheet;
 				int s0, t0, width;
+				int bytes = fontCharacter(end, &sheet, &s0, &t0, &width);
 
-				SYS_GetFontTexture((unsigned char)*end, &sheet, &s0, &t0, &width);
 				if(count > 0 && sheet != image) break;
 				image = sheet;
 				glyphs[count].s = s0;
 				glyphs[count].t = t0;
 				glyphs[count].width = width;
 				count++;
-				end++;
+				end += bytes;
 			}
 			if(GX_GetTexObjData(&fontTexObj) != (void *)MEM_VIRTUAL_TO_PHYSICAL(image)) {
+#if UI_EXPERIMENTAL_540P
+				GX_InitTexObj(&fontTexObj, image, font->sheet_width, font->sheet_height,
+					(fontSheetI8Ready && image == fontSheetI8) ? GX_TF_I8 : font->sheet_format,
+					GX_CLAMP, GX_CLAMP, GX_FALSE);
+				GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+					GX_TRUE, GX_TRUE, GX_ANISO_4);
+#else
 				GX_InitTexObjData(&fontTexObj, image);
+#endif
 				GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 			}
 			GX_Begin(GX_QUADS, GX_VTXFMT1, (u16)(count * 4));
@@ -286,8 +442,25 @@ void drawStringWithCaret(int x, int y, const char *string, float scale, int alig
 		void *image;
 		int s0, t0, width;
 		SYS_GetFontTexture(c, &image, &s0, &t0, &width);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			if(!fontSheetI8Attempted) {
+				fontSheetI8Attempted = true;
+				buildSharpenedFontSheetI8();
+			}
+			if(fontSheetI8Ready && image == rawFontSheet) image = fontSheetI8;
+		}
+#endif
 		if (GX_GetTexObjData(&fontTexObj) != (void *)MEM_VIRTUAL_TO_PHYSICAL(image)) {
+#if UI_EXPERIMENTAL_540P
+			GX_InitTexObj(&fontTexObj, image, font->sheet_width, font->sheet_height,
+				(fontSheetI8Ready && image == fontSheetI8) ? GX_TF_I8 : font->sheet_format,
+				GX_CLAMP, GX_CLAMP, GX_FALSE);
+			GX_InitTexObjLOD(&fontTexObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f,
+				GX_TRUE, GX_TRUE, GX_ANISO_4);
+#else
 			GX_InitTexObjData(&fontTexObj, image);
+#endif
 			GX_LoadTexObj(&fontTexObj, GX_TEXMAP0);
 		}
 		int i;
@@ -320,25 +493,25 @@ int GetFontHeight(float scale)
 int GetTextSizeInPixels(const char *string)
 {
 	int strWidth = 0;
-	const char* string_work = string;
+	const char* string_work = UILang_Text(string);
 	while(*string_work)
 	{
-		unsigned char c = *string_work;
-		strWidth += SYS_GetFontWidth(c) - 1;
-		string_work++;
+		int bytes;
+		strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+		string_work += bytes;
 	}
 	return strWidth;
 }
 
 float GetTextScaleToFitInWidth(const char *string, int width) {
 	int strWidth = 0;
-	const char* string_work = string;
+	const char* string_work = UILang_Text(string);
 	while(*string_work)
 	{
-		unsigned char c = *string_work;
-		if(c == '\n') break;
-		strWidth += SYS_GetFontWidth(c) - 1;
-		string_work++;
+		int bytes;
+		if(*string_work == '\n') break;
+		strWidth += fontCharacterWidth(string_work, &bytes) - 1;
+		string_work += bytes;
 	}
 	return width>strWidth ? 1.0f : (float)((float)width/(float)strWidth);
 }

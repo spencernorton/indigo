@@ -2,7 +2,7 @@
 
 # Library
 
-The Library shows the games on your card as posters: in a row, in a column
+The Library shows the games on your source as posters: in a row, in a column
 or in a grid, or as a gameplay still over a row of disc banners, as you
 choose. On Home, turn the cube to **Library** and press A.
 
@@ -79,6 +79,9 @@ one moves.
 <p align="center">
   <img alt="The Grid layout: five covers across and three rows on screen, the selected cover lit by a bright frame and a little larger, with its title and publisher above the controls. The frame slides right along the row, the rows scroll as it moves down and back up, and R moves three rows at a time." src="images/library-grid.png" width="640">
 </p>
+
+Grid, Spotlight and Jewel Case fill the Library screen; the Home cube waits
+outside the picture in both screen shapes, including Menu Widescreen.
 
 Every layout wraps round: after the last game comes the first.
 

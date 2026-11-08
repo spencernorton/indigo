@@ -34,7 +34,9 @@
 #include "ui_anim.h"
 #include "ui_clock.h"
 #include "ui_color.h"
+#include "ui_lang.h"
 #include "ui_perf.h"
+#include "ui_540p.h"
 #include "ui_scene.h"
 #include "ui_stage.h"
 #include "ui_hint.h"
@@ -938,8 +940,9 @@ static void _DrawBackground(uiDrawObj_t *evt)
 	(void)evt;
 	_HomeFaceIcons(icons);
 	/* The glass copies the frame it is drawn in. */
-	IndigoBackground_SetFramebuffer(getVideoMode()->fbWidth,
-		getVideoMode()->efbHeight);
+	IndigoBackground_SetFramebuffer(
+		UI540_Active() ? 640 : getVideoMode()->fbWidth,
+		UI540_Active() ? 480 : getVideoMode()->efbHeight);
 	IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
 	IndigoBackground_SetWaves(!swissSettings.hideWaves);
 	IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
@@ -1159,9 +1162,9 @@ static void _DrawProgressBar(uiDrawObj_t *evt) {
 			formatBytes(fbTextBuffer, data->speed, 0, true);
 			strcat(fbTextBuffer, "/s");
 			drawString(x1 + 280, middleY+30, fbTextBuffer, 1.0f, ALIGN_CENTER, defaultColor);
-			sprintf(fbTextBuffer,"Elapsed: %02i:%02i:%02i", data->timestart / 3600, (data->timestart / 60)%60,  data->timestart % 60);
+			sprintf(fbTextBuffer,UI_T("Elapsed: %02i:%02i:%02i"), data->timestart / 3600, (data->timestart / 60)%60,  data->timestart % 60);
 			drawString(x1 + 500, middleY+30, fbTextBuffer, 0.65f, ALIGN_CENTER, defaultColor);
-			sprintf(fbTextBuffer,"Remain: %02i:%02i:%02i", data->timeremain / 3600, (data->timeremain / 60)%60,  data->timeremain % 60);
+			sprintf(fbTextBuffer,UI_T("Remain: %02i:%02i:%02i"), data->timeremain / 3600, (data->timeremain / 60)%60,  data->timeremain % 60);
 			drawString(x1 + 500, middleY+45, fbTextBuffer, 0.65f, ALIGN_CENTER, defaultColor);
 		}
 	}	
@@ -1180,7 +1183,7 @@ uiDrawObj_t* DrawProgressBar(bool indeterminate, int percent, const char *messag
 		return event;
 	}
 	if(message && strlen(message) > 0) {
-		sprintf(txtbuffer, "%s", message);
+		sprintf(txtbuffer, "%s", UI_T(message));
 		// Add child component(s) for label(s)
 		char *tok = strtok(txtbuffer,"\n");
 		int y1 = ((480/2) - (PROGRESS_BOX_HEIGHT/2));
@@ -1226,7 +1229,7 @@ uiDrawObj_t* DrawMessageBox(int type, const char *msg)
 	event->data = eventData;
 	
 	// Add child component(s) for label(s)
-	sprintf(txtbuffer, "%s", msg);
+	sprintf(txtbuffer, "%s", UI_T(msg));
 	/* "Press A to continue." and the like become a line of button icons. */
 	char hint[UI_HINT_LABEL_CAPACITY];
 	bool hasHint = UIHint_SplitPrompt(txtbuffer, hint, sizeof(hint)) != 0;
@@ -1349,16 +1352,16 @@ static bool _PreparePresentation(drawPresentationEvent_t *data,
 	memset(data, 0, sizeof(*data));
 	data->snapshot.kind = snapshot->kind;
 	data->titleScale = UIHomeText_CopyFitted(data->snapshot.title,
-		sizeof(data->snapshot.title), snapshot->title, 392, 0.76f,
+		sizeof(data->snapshot.title), UI_T(snapshot->title), 392, 0.76f,
 		GetTextSizeInPixels, NULL);
 	data->messageScale = UIHomeText_CopyFitted(data->snapshot.message,
-		sizeof(data->snapshot.message), snapshot->message, 432, 0.54f,
+		sizeof(data->snapshot.message), UI_T(snapshot->message), 432, 0.54f,
 		GetTextSizeInPixels, NULL);
 	data->detailScale = UIHomeText_CopyFitted(data->snapshot.detail,
-		sizeof(data->snapshot.detail), snapshot->detail, 432, 0.46f,
+		sizeof(data->snapshot.detail), UI_T(snapshot->detail), 432, 0.46f,
 		GetTextSizeInPixels, NULL);
 	data->actionScale = UIHomeText_CopyFitted(data->snapshot.action,
-		sizeof(data->snapshot.action), snapshot->action, 432, 0.50f,
+		sizeof(data->snapshot.action), UI_T(snapshot->action), 432, 0.50f,
 		GetTextSizeInPixels, NULL);
 	return UIPresentation_Valid(&data->snapshot);
 }
@@ -1467,16 +1470,16 @@ static bool _PrepareSaveDetails(drawSaveDetailsEvent_t *data,
 	data->snapshot.blocks = snapshot->blocks;
 	data->snapshot.estimated = snapshot->estimated;
 	data->nameScale = UIHomeText_CopyFitted(data->snapshot.name,
-		sizeof(data->snapshot.name), snapshot->name, 432, 0.86f,
+		sizeof(data->snapshot.name), UI_T(snapshot->name), 432, 0.86f,
 		GetTextSizeInPixels, NULL);
 	data->sourceScale = UIHomeText_CopyFitted(data->snapshot.source,
-		sizeof(data->snapshot.source), snapshot->source, 286, 0.60f,
+		sizeof(data->snapshot.source), UI_T(snapshot->source), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	data->updatedScale = UIHomeText_CopyFitted(data->snapshot.updated,
-		sizeof(data->snapshot.updated), snapshot->updated, 286, 0.60f,
+		sizeof(data->snapshot.updated), UI_T(snapshot->updated), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	data->iconScale = UIHomeText_CopyFitted(data->snapshot.icon,
-		sizeof(data->snapshot.icon), snapshot->icon, 286, 0.60f,
+		sizeof(data->snapshot.icon), UI_T(snapshot->icon), 286, 0.60f,
 		GetTextSizeInPixels, NULL);
 	snprintf(data->blocks, sizeof(data->blocks), "%u", (unsigned)snapshot->blocks);
 	snprintf(data->kib, sizeof(data->kib), "%u", (unsigned)(snapshot->blocks * 8u));
@@ -1599,7 +1602,7 @@ static void _DrawTooltip(uiDrawObj_t *evt) {
 uiDrawObj_t* DrawTooltip(const char *tooltip) {
 	drawTooltipEvent_t *eventData = calloc(1, sizeof(drawTooltipEvent_t));
 	if(tooltip && strlen(tooltip) > 0) {
-		eventData->tooltip = strdup(tooltip);
+		eventData->tooltip = strdup(UI_T(tooltip));
 	}
 	else {
 		eventData->tooltip = NULL;
@@ -2607,6 +2610,7 @@ static void _GameflowShortName(const char *title,
 		name[k] = c >= 'a' && c <= 'z' ? (char)(c - 'a' + 'A') : c;
 	}
 	if(title[k] != '\0') {
+		k = UILang_Head(title, k);
 		name[k++] = '\205';
 	}
 	name[k] = '\0';
@@ -5098,7 +5102,7 @@ static void _PrepareHomeText(drawHomeEvent_t *data)
 		commandWidth, 0.46f, GetHintSizeInPixels);
 	if(data->state.surface == UI_HOME_SURFACE_SOURCE) {
 		if(data->capabilities.hasSource && data->sourceName[0] != '\0') {
-			snprintf(headingSource, sizeof(headingSource), "SOURCE   %s",
+			snprintf(headingSource, sizeof(headingSource), UI_T("SOURCE   %s"),
 				data->sourceName);
 		}
 		else {
@@ -5111,7 +5115,7 @@ static void _PrepareHomeText(drawHomeEvent_t *data)
 		headingSource[sizeof(headingSource) - 1u] = '\0';
 	}
 	data->headingScale = UIHomeText_CopyFitted(data->heading,
-		sizeof(data->heading), headingSource, titleWidth, 0.58f,
+		sizeof(data->heading), UI_T(headingSource), titleWidth, 0.58f,
 		GetTextSizeInPixels, NULL);
 	for(row = 0; row < UI_HOME_LAYOUT_MAX_ROWS; ++row) {
 		const char *label = UIHome_RowLabel(data->state.surface, row);
@@ -5875,7 +5879,7 @@ void DrawArgsSelector(const char *fileName) {
 	while (padsButtonsHeld() & BUTTON_A){ VIDEO_WaitVSync (); }
 	while(1) {
 		uiDrawObj_t *newPanel = DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 460);
-		sprintf(txtbuffer, "%s Parameters:", fileName);
+		sprintf(txtbuffer, UI_T("%s Parameters:"), fileName);
 		DrawAddChild(newPanel, DrawStyledLabel(25, 74, txtbuffer, GetTextScaleToFitInWidth(txtbuffer, getVideoMode()->fbWidth-50), ALIGN_LEFT, defaultColor));
 
 		int i = 0, j = 0;
@@ -5978,7 +5982,7 @@ static void _CheatsSnapshot(uiCheatsSnapshot_t *out, const char *fileName,
 		_CheatsEnabled, cheats);
 	out->first = UICheats_WindowStart(selection, out->count);
 	out->focusRow = selection - out->first;
-	(void)snprintf(out->enabledText, sizeof(out->enabledText), "%d enabled",
+	(void)snprintf(out->enabledText, sizeof(out->enabledText), UI_T("%d enabled"),
 		getEnabledCheatsCount());
 	if(out->count > 0) {
 		(void)snprintf(out->positionText, sizeof(out->positionText), "%d / %d",
@@ -6853,7 +6857,7 @@ uiDrawObj_t* DrawSettingsHelp(const char *help)
 {
 	drawSettingsHelpEvent_t *data = calloc(1, sizeof(*data));
 	uiDrawObj_t *event = calloc(1, sizeof(*event));
-	const char *cursor = help != NULL ? help : "";
+	const char *cursor = help != NULL ? UI_T(help) : "";
 	const char *end = strchr(cursor, '\n');
 	char title[UI_SETLAYOUT_TEXT_BUFFER_SIZE];
 	size_t length;
@@ -6929,7 +6933,7 @@ static void _DrawMemoryCardFolder(uiDrawObj_t *event)
 		drawStringMedium(48, 136 + (int)i * 22, s->lines[s->firstLine + i],
 			0.46f, ALIGN_LEFT, ink);
 	if(s->lineCount > UI_FOLDER_VISIBLE_LINES) {
-		snprintf(position, sizeof(position), "%u-%u of %u", (unsigned)s->firstLine + 1u,
+		snprintf(position, sizeof(position), UI_T("%u-%u of %u"), (unsigned)s->firstLine + 1u,
 			(unsigned)MIN(s->firstLine + UI_FOLDER_VISIBLE_LINES, s->lineCount),
 			(unsigned)s->lineCount);
 		drawStringMedium(584, 264, position, 0.40f, ALIGN_RIGHT, quiet);
@@ -7300,7 +7304,9 @@ static void _SaveCubesHeader(const uiSaveCubesStack_t *stack,
 	drawStringMedium((int)middle, 42, text->control, 0.5f, ALIGN_CENTER, white);
 	drawStringMedium((int)middle - 100, 74, text->name, 1.5f, ALIGN_LEFT, white);
 	if(text->free[0] != '\0') {
-		drawStringMedium((int)middle - 66, 80, "Open", 0.5f, ALIGN_LEFT, white);
+		/* The free blocks' caption. Its space keeps it apart from the
+		 * action "Open" for Menu Language, which words them differently. */
+		drawStringMedium((int)middle - 66, 80, "Open ", 0.5f, ALIGN_LEFT, white);
 		_SaveCubesBox(middle - 20.0f, 60.0f, 56.0f, 28.0f, shadow, shadow, white, 2.0f);
 		drawStringMedium((int)middle + 8, 74, text->free, 0.6f, ALIGN_CENTER, white);
 	}
@@ -8422,7 +8428,7 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 		// Double box for extra darkness
 		uiDrawObj_t *newPanel = DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440);
 		DrawAddChild(newPanel, DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440));
-		sprintf(txtbuffer, "%s - Please enter a value", label);
+		sprintf(txtbuffer, UI_T("%s - Please enter a value"), UI_T(label));
 		DrawAddChild(newPanel, DrawStyledLabel(25, 74, txtbuffer, GetTextScaleToFitInWidth(txtbuffer, getVideoMode()->fbWidth-50), ALIGN_LEFT, defaultColor));
 
 		// Draw the text entry box (TODO: mask chars if the mode says to do so)
@@ -8436,7 +8442,7 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 				(mode & ENTRYMODE_FILE ? txt_mode_file_chars_lower : txt_mode_chars_lower)
 				: 
 				(mode & ENTRYMODE_FILE ? txt_mode_file_chars_upper : txt_mode_chars_upper);
-			sprintf(txtbuffer, "X  Change to [%s], current mode is [%s]",
+			sprintf(txtbuffer, UI_T("X  Change to [%s], current mode is [%s]"),
 													txt_modes_str[(cur_txt_mode + 1 >= num_txt_modes ? 0 : cur_txt_mode + 1)], txt_modes_str[cur_txt_mode]);
 			DrawAddChild(newPanel, DrawHintLabel(25, 427, txtbuffer, 0.65f, ALIGN_LEFT, defaultColor));
 		}
@@ -8718,6 +8724,10 @@ static void *videoUpdate(void *videoEventQueue) {
 		UI_PERF_BEGIN(frameWorkStart);
 		//frames++;
 		LWP_MutexLock(_videomutex);
+#if UI_EXPERIMENTAL_540P
+		UI540_BeginFrame();
+		u64 experimentalWorkStart = gettime();
+#endif
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameStart();
 #endif
@@ -8762,8 +8772,30 @@ static void *videoUpdate(void *videoEventQueue) {
 		if(vmode->field_rendering) {
 			GX_SetViewportJitter(0.0f, 0.0f, vmode->fbWidth, vmode->efbHeight, 0.0f, 1.0f, VIDEO_GetNextField());
 		}
-		/* One shape for the whole frame, whatever Settings does meanwhile. */
-		UIStage_SetWide(swissSettings.menuWidescreen);
+		/* One shape and one language for the whole frame, whatever Settings
+		 * does meanwhile. */
+		UIStage_SetWide(UI540_Active() || swissSettings.menuWidescreen);
+		UILang_Select(swissSettings.menuLanguage);
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			if(!backgroundCovered && sceneRenderingEnabled) {
+				static const float waveSpeeds[WAVE_SPEED_MAX] = {1.0f, 3.0f, 0.5f};
+				bool decorativeAnimated = _CurrentMotionMode() == UI_MOTION_FULL;
+				int icons[UI_HOME_FACE_COUNT];
+				_HomeFaceIcons(icons);
+				IndigoBackground_SetFramebuffer(640, 480);
+				IndigoBackground_SetWaveSpeed(waveSpeeds[swissSettings.waveSpeed]);
+				IndigoBackground_SetWaves(!swissSettings.hideWaves);
+				IndigoBackground_SetIdleSway(swissSettings.idleAnimation != 0);
+				IndigoBackground_Prepare540p(UIAnim_Seconds(),
+					decorativeAnimated && !swissSettings.disableAnimatedBackdrop,
+					decorativeAnimated, UIScene_Frame(),
+					&systemInstrument.clock, &padInstrument, icons);
+			}
+			UI540_RecordBegin();
+			drawInit();
+		}
+#endif
 		// Draw out every event
 		videoEventQueueEntry = (uiDrawObjQueue_t*)videoEventQueue;
 		while(videoEventQueueEntry != NULL) {
@@ -8793,13 +8825,30 @@ static void *videoUpdate(void *videoEventQueue) {
 #endif
 		
 		//Copy EFB->XFB
+		u16 width = vmode->fbWidth;
+		u16 height;
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) {
+			drawInit();
+			UI540_DrawStatus();
+			if(!UI540_Present(xfb[whichfb])) {
+				LWP_MutexUnlock(_videomutex);
+				continue;
+			}
+			height = vmode->xfbHeight;
+		} else
+#endif
+		{
 		if(vmode->copy_interlaced == GX_COPY_INTERLACED) {
 			GX_SetDispCopyFrame2Field(GX_COPY_INTERLACED ^ VIDEO_GetNextField());
 		}
-		u16 width = vmode->fbWidth;
-		u16 height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
+		height = GX_SetDispCopyYScale(getYScaleFactor(vmode->efbHeight, vmode->xfbHeight));
 		copyDisplayFrame(xfb[whichfb]);
+		}
 		GX_DrawDone();
+#if UI_EXPERIMENTAL_540P
+		if(UI540_Active()) UI540_EndFrame(experimentalWorkStart);
+#endif
 		UI_PERF_END(UI_PERF_METRIC_FRAME_WORK, frameWorkStart);
 #if UI_PERF_CAPTURE
 		_PerfGpuFrameEnd();
@@ -8807,7 +8856,9 @@ static void *videoUpdate(void *videoEventQueue) {
 
 		LWP_MutexUnlock(_videomutex);
 		VIDEO_SetNextFramebuffer(xfb[whichfb]);
-		VIDEO_ConfigurePan(0, 0, width, height);
+		if(!UI540_Active()) {
+			VIDEO_ConfigurePan(0, 0, width, height);
+		}
 		VIDEO_Flush();
 		VIDEO_WaitForFlush();
 	}
@@ -8921,6 +8972,7 @@ void DrawLoadBackdrop(DEVICEHANDLER_INTERFACE *device) {
 }
 
 void DrawShutdown() {
+	UI540_Leave();
 	mutex_t mutex;
 	lwp_t thread = video_thread;
 

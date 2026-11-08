@@ -4,14 +4,53 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
-## Unreleased
+## v2.7.0 — 540p60 menu mode, Ukrainian menus and clock zones
 
+### New
+
+- **Settings › Setup › Display › Swiss Video Mode** adds **NTSC 540p60**
+  (`720 x 540` progressive at 60 Hz) when a digital or component video cable is
+  detected. Selecting it switches to a four-tile `720 x 540` progressive
+  renderer with a 10-second confirmation prompt (and **L + R + B** at any time
+  to return to `480p`), a full-stage pre-pass for 3-channel RGB prismatic glass
+  refraction, bloom and supersampled Home face pictures, an 8-bit
+  contrast-shaped font sheet, 1:1 `RGB565` artwork decoding with anisotropic
+  filtering, and softened silk wave dispersion. Before a game or another
+  application starts, Indigo returns to its normal video mode. See the
+  [540p60 technical notes](docs/dev/experimental-540p.md) for scaler setup (for
+  Retro GEM, set **Use Console DE** to **On (16:9)**).
+- **Settings › Setup › Console › Menu Language** puts Indigo's own screens in
+  Ukrainian (**Українська**). Its words come from `swiss/indigo/uk.po`, which
+  the download now carries, and its letters from a Cyrillic sheet drawn from
+  Noto Sans, since the console's font has none. Games, their titles, System
+  Language and the settings files stay as they are; without the file the menus
+  stay English. File names in Cyrillic now show their letters too.
+- Add a standalone experimental video diagnostic (`buildtools/video_lab/`) for
+  source-width, recovery and tiled GX copy verification, with source-pattern
+  captures, frame-by-frame checks of known-black skipping, dirty regions and
+  cached static layers, and a pinned SDK audit.
+
+### Improved
+
+- Open **Time Zone** when turning on **Sync Clock** with no zone set. Enter
+  your location to follow its daylight saving rules at startup. **Keep offset**
+  uses the console's current UTC offset year-round.
+- Add Arrmes and Endexis to the README suite links.
 - Allow the upstream watch to reach its three required API hosts through the
   runner's HTTPS proxy. Other destinations and private addresses stay blocked.
-
 - Refresh scheduled checks under the active workflow maintainer and allow the
   weekly beta dispatcher to be tested manually. Scheduled runs retain the full
   extended fuzzing check; manual runs can select it explicitly.
+
+### Fixed
+
+- Keep the Home cube outside the screen in widescreen Grid, Spotlight and
+  Jewel Case layouts, including after changing the menu's screen shape.
+- Keep Game Disc selected when opening the Library and show the disc's game
+  at its root. A disc no longer falls back to another card's `/games` folder,
+  and its data folders stay in the File Browser.
+- Recover a missed Right press in the virtual memory-card emulator test
+  only while the original folder colour is still visible.
 
 ## v2.6.0 — Jewel Case memory savings and Swiss updates
 
@@ -158,7 +197,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
   changes for daylight time by itself; left empty, the clock keeps the
   zone it is in, snapped to the nearest real one so a clock that drifted
   a few minutes still lands on its own zone. NTP Server IP is an address
-  (the console has no DNS); empty asks Cloudflare's, `162.159.200.123`.
+  (the console has no DNS). An empty setting uses the
+  [default Cloudflare time server](docs/SETTINGS.md#setup--network).
 - Home has a Web face, which opens CubeBrowser, a web browser for the
   GameCube by Arial-Bold (used with permission). It ships in the zip as
   `swiss/indigo/cubebrowser.dol`, with its certificates in `gcbrowser/` at

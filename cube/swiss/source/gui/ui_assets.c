@@ -45,6 +45,8 @@
 #define GX_LINEAR 1
 #define GX_LIN_MIP_LIN 5
 #define GX_ANISO_1 0
+#define GX_ANISO_2 1
+#define GX_ANISO_4 2
 
 /* Provided by the test harness so allocations can be counted. */
 extern void *uiAssetsHostAllocAligned32(u32 size);
@@ -89,6 +91,7 @@ static void DCFlushRange(void *ptr, u32 len) {
 #include <malloc.h>
 #include <ogc/cache.h>
 #include <ogc/lwp_watchdog.h>
+#include "ui_540p.h"
 
 #define UIA_ALLOC_ALIGNED32(size) memalign(32, size)
 #define UIA_ALLOC(size) malloc(size)
@@ -121,6 +124,8 @@ typedef struct {
 	u32 readyMs; /* nowMs() stamp of its texture's publication */
 	u32 wanted; /* the window request that last asked for its record */
 	u8 *data; /* fixed arena region */
+	u8 *srData; /* 1:1 RGB565 arena region (540p target build) */
+	bool srBuilt;
 	GXTexObj tex;
 } uiAssetSlot_t;
 
@@ -134,6 +139,10 @@ typedef struct {
 	u16 contentH;
 	u8 mipLevels;
 	u8 slotCount; /* <= UI_ASSETS_SLOTS */
+	u32 srBytes;
+	u16 srW;
+	u16 srH;
+	u8 srMipLevels;
 } uiAssetsShape_t;
 
 typedef struct {
@@ -157,6 +166,8 @@ typedef struct {
 	uiAssetsSync_t sync;
 	u32 (*nowMs)(void);
 	u8 *arena;         /* slotCount * recordBytes, 32-aligned */
+	u8 *srArena;       /* slotCount * srBytes, 32-aligned (target 2x RGB565 SR) */
+	bool srAllocFailed;
 	u8 *index;         /* recordCount * PAK_RECORD_SIZE raw big-endian records */
 	u32 recordCount;
 	u32 dataOffset;
@@ -166,20 +177,27 @@ typedef struct {
 	uiAssetSlot_t slots[UI_ASSETS_SLOTS];
 } uiAssetsCache_t;
 
+#define UI_POSTER_SR_BYTES ((256 * 256 + 128 * 128 + 64 * 64 + 32 * 32) * 2)
+#define UI_STILLS_SR_BYTES (320 * 240 * 2)
+#define UI_DISCS_SR_BYTES  (160 * 160 * 2)
+
 static const uiAssetsShape_t posterShape = {
 	UI_ASSETS_POSTER_BYTES, UI_ASSETS_CANVAS_W, UI_ASSETS_CANVAS_H,
 	UI_ASSETS_CONTENT_W, UI_ASSETS_CONTENT_H, UI_ASSETS_MIP_LEVELS,
-	UI_ASSETS_SLOTS
+	UI_ASSETS_SLOTS,
+	UI_POSTER_SR_BYTES, UI_ASSETS_CANVAS_W, UI_ASSETS_CANVAS_H, UI_ASSETS_MIP_LEVELS
 };
 
 static const uiAssetsShape_t stillShape = {
 	UI_STILLS_BYTES, UI_STILLS_W, UI_STILLS_H, UI_STILLS_W, UI_STILLS_H, 1,
-	UI_STILLS_SLOTS
+	UI_STILLS_SLOTS,
+	UI_STILLS_SR_BYTES, UI_STILLS_W, UI_STILLS_H, 1
 };
 
 static const uiAssetsShape_t discShape = {
 	UI_DISCS_BYTES, UI_DISCS_SIZE, UI_DISCS_SIZE, UI_DISCS_SIZE, UI_DISCS_SIZE, 1,
-	UI_DISCS_SLOTS
+	UI_DISCS_SLOTS,
+	UI_DISCS_SR_BYTES, UI_DISCS_SIZE, UI_DISCS_SIZE, 1
 };
 
 _Static_assert(UI_STILLS_SLOTS <= UI_ASSETS_SLOTS, "stills slots overflow");
@@ -250,6 +268,173 @@ static bool idCharsValid(const char *id) {
 }
 
 #ifndef UI_ASSETS_HOST_BUILD
+#define SR_MAX_SRC_W 320
+#define SR_MAX_SRC_H 256
+static u8 srRawRgb[SR_MAX_SRC_W * SR_MAX_SRC_H * 3];
+static u8 srCleanRgb[SR_MAX_SRC_W * SR_MAX_SRC_H * 3];
+
+static inline int srClampInt(int v, int lo, int hi) {
+	return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static inline u8 srClampU8(int v) {
+	return (u8)(v < 0 ? 0 : (v > 255 ? 255 : v));
+}
+
+static inline void putRgb565Tile(u16 *dst, int w, int x, int y, int r, int g, int b) {
+	static const int bayer2x2[4] = {-1, 1, 2, 0};
+	int d = bayer2x2[((y & 1) << 1) | (x & 1)];
+	int r5 = srClampInt(r + (d << 1), 0, 255) >> 3;
+	int g6 = srClampInt(g + d, 0, 255) >> 2;
+	int b5 = srClampInt(b + (d << 1), 0, 255) >> 3;
+	int tile = (y >> 2) * (w >> 2) + (x >> 2);
+	int off = (tile << 4) + ((y & 3) << 2) + (x & 3);
+	dst[off] = (u16)((r5 << 11) | (g6 << 5) | b5);
+}
+
+/* Decode each mip level of GameCube GX_TF_CMPR at 1:1 native texel coordinates
+ * (zero spatial phase shift) using true 1/3 and 2/3 S3TC DXT1 palette
+ * interpolation, gentle flat-gradient block-seam deblocking, and headroom-aware
+ * 5-tap Contrast-Adaptive Sharpening (CAS) into 16-bit GX_TF_RGB565. */
+static void buildSuperResTexture(const uiAssetsShape_t *shape, const u8 *cmpr, u8 *srDst) {
+	const u8 *p = cmpr;
+	u8 *dstPtr = srDst;
+
+	for (int mip = 0; mip < (int)shape->srMipLevels; mip++) {
+		int mipW = shape->canvasW >> mip;
+		int mipH = shape->canvasH >> mip;
+		int activeW = (shape->contentW >> mip) + 2;
+		if (activeW > mipW) activeW = mipW;
+		int blocksX = mipW >> 3;
+		int blocksY = mipH >> 3;
+
+		for (int by = 0; by < blocksY; by++) {
+			for (int bx = 0; bx < blocksX; bx++) {
+				for (int sb = 0; sb < 4; sb++) {
+					int sbx = (bx << 3) + ((sb & 1) << 2);
+					int sby = (by << 3) + ((sb >> 1) << 2);
+					u16 c0 = (u16)((p[0] << 8) | p[1]);
+					u16 c1 = (u16)((p[2] << 8) | p[3]);
+					int r0 = ((c0 >> 11) & 0x1F), g0 = ((c0 >> 5) & 0x3F), b0 = (c0 & 0x1F);
+					int r1 = ((c1 >> 11) & 0x1F), g1 = ((c1 >> 5) & 0x3F), b1 = (c1 & 0x1F);
+					r0 = (r0 << 3) | (r0 >> 2); g0 = (g0 << 2) | (g0 >> 4); b0 = (b0 << 3) | (b0 >> 2);
+					r1 = (r1 << 3) | (r1 >> 2); g1 = (g1 << 2) | (g1 >> 4); b1 = (b1 << 3) | (b1 >> 2);
+					u8 pal[4][3];
+					pal[0][0] = (u8)r0; pal[0][1] = (u8)g0; pal[0][2] = (u8)b0;
+					pal[1][0] = (u8)r1; pal[1][1] = (u8)g1; pal[1][2] = (u8)b1;
+					if (c0 > c1) {
+						pal[2][0] = (u8)((2 * r0 + r1 + 1) / 3);
+						pal[2][1] = (u8)((2 * g0 + g1 + 1) / 3);
+						pal[2][2] = (u8)((2 * b0 + b1 + 1) / 3);
+						pal[3][0] = (u8)((r0 + 2 * r1 + 1) / 3);
+						pal[3][1] = (u8)((g0 + 2 * g1 + 1) / 3);
+						pal[3][2] = (u8)((b0 + 2 * b1 + 1) / 3);
+					} else {
+						pal[2][0] = (u8)((r0 + r1) >> 1);
+						pal[2][1] = (u8)((g0 + g1) >> 1);
+						pal[2][2] = (u8)((b0 + b1) >> 1);
+						pal[3][0] = 0; pal[3][1] = 0; pal[3][2] = 0;
+					}
+					for (int py = 0; py < 4; py++) {
+						u8 rowBits = p[4 + py];
+						u8 *dstRow = &srRawRgb[((sby + py) * mipW + sbx) * 3];
+						for (int px = 0; px < 4; px++) {
+							int idx = (rowBits >> (6 - (px << 1))) & 3;
+							dstRow[px * 3 + 0] = pal[idx][0];
+							dstRow[px * 3 + 1] = pal[idx][1];
+							dstRow[px * 3 + 2] = pal[idx][2];
+						}
+					}
+					p += 8;
+				}
+			}
+		}
+
+		/* Gentle flat-gradient-only 4x4 block-seam smoothing. */
+		memcpy(srCleanRgb, srRawRgb, (size_t)mipW * mipH * 3);
+		for (int y = 0; y < mipH; y++) {
+			for (int bx = 4; bx < activeW - 2; bx += 4) {
+				u8 *p1 = &srCleanRgb[(y * mipW + bx - 2) * 3];
+				u8 *p0 = &srCleanRgb[(y * mipW + bx - 1) * 3];
+				u8 *q0 = &srCleanRgb[(y * mipW + bx + 0) * 3];
+				u8 *q1 = &srCleanRgb[(y * mipW + bx + 1) * 3];
+				for (int c = 0; c < 3; c++) {
+					int d0 = q0[c] - p0[c];
+					int ad0 = d0 < 0 ? -d0 : d0;
+					int dp = p0[c] - p1[c]; if (dp < 0) dp = -dp;
+					int dq = q1[c] - q0[c]; if (dq < 0) dq = -dq;
+					if (ad0 > 0 && ad0 <= 10 && dp <= 3 && dq <= 3) {
+						int delta = (d0 * 3 + (p1[c] - q1[c])) >> 3;
+						p0[c] = srClampU8(p0[c] + delta);
+						q0[c] = srClampU8(q0[c] - delta);
+					}
+				}
+			}
+		}
+		for (int by = 4; by < mipH - 2; by += 4) {
+			for (int x = 0; x < activeW; x++) {
+				u8 *p1 = &srCleanRgb[((by - 2) * mipW + x) * 3];
+				u8 *p0 = &srCleanRgb[((by - 1) * mipW + x) * 3];
+				u8 *q0 = &srCleanRgb[((by + 0) * mipW + x) * 3];
+				u8 *q1 = &srCleanRgb[((by + 1) * mipW + x) * 3];
+				for (int c = 0; c < 3; c++) {
+					int d0 = q0[c] - p0[c];
+					int ad0 = d0 < 0 ? -d0 : d0;
+					int dp = p0[c] - p1[c]; if (dp < 0) dp = -dp;
+					int dq = q1[c] - q0[c]; if (dq < 0) dq = -dq;
+					if (ad0 > 0 && ad0 <= 10 && dp <= 3 && dq <= 3) {
+						int delta = (d0 * 3 + (p1[c] - q1[c])) >> 3;
+						p0[c] = srClampU8(p0[c] + delta);
+						q0[c] = srClampU8(q0[c] - delta);
+					}
+				}
+			}
+		}
+
+		/* 1:1 5-Tap Headroom-Aware Contrast-Adaptive Sharpening (CAS) into GX_TF_RGB565. */
+		u16 *dstMip = (u16 *)dstPtr;
+		for (int y = 0; y < mipH; y++) {
+			int ym1 = y > 0 ? y - 1 : 0;
+			int yp1 = y + 1 < mipH ? y + 1 : mipH - 1;
+			const u8 *rUp = &srCleanRgb[ym1 * mipW * 3];
+			const u8 *r0  = &srCleanRgb[y   * mipW * 3];
+			const u8 *rDn = &srCleanRgb[yp1 * mipW * 3];
+			for (int x = 0; x < mipW; x++) {
+				int xm1 = x > 0 ? x - 1 : 0;
+				int xp1 = x + 1 < activeW ? x + 1 : activeW - 1;
+				int outRgb[3];
+				for (int c = 0; c < 3; c++) {
+					int v0 = r0[x * 3 + c];
+					int vN = rUp[x * 3 + c], vS = rDn[x * 3 + c];
+					int vW = r0[xm1 * 3 + c], vE = r0[xp1 * 3 + c];
+					int mn = v0, mx = v0;
+					if (vN < mn) mn = vN;
+					if (vN > mx) mx = vN;
+					if (vS < mn) mn = vS;
+					if (vS > mx) mx = vS;
+					if (vW < mn) mn = vW;
+					if (vW > mx) mx = vW;
+					if (vE < mn) mn = vE;
+					if (vE > mx) mx = vE;
+					int span = mx - mn;
+					int head = mn < (255 - mx) ? mn : (255 - mx);
+					int sharp = v0;
+					if (span >= 4 && head > 0) {
+						int neigh = (vN + vS + vW + vE + 2) >> 2;
+						int weight = (head * 6) / (mx + 32);
+						if (weight > 4) weight = 4;
+						sharp = v0 + (((v0 - neigh) * weight) >> 3);
+					}
+					outRgb[c] = srClampInt(sharp, 0, 255);
+				}
+				putRgb565Tile(dstMip, mipW, x, y, outRgb[0], outRgb[1], outRgb[2]);
+			}
+		}
+		dstPtr += mipW * mipH * 2;
+	}
+	DCFlushRange(srDst, shape->srBytes);
+}
+
 static u32 defaultNowMs(void) {
 	return (u32)ticks_to_millisecs(SYS_GetSystemTime());
 }
@@ -334,6 +519,7 @@ static uiAssetSlot_t *slotFromHandle(uiAssetsCache_t *c,
 static void evictSlot(const uiAssetsCache_t *c, uiAssetSlot_t *slot) {
 	slot->state = SLOT_EMPTY;
 	slot->recordPos = -1;
+	slot->srBuilt = false;
 	slot->quarantineUntil = c->nowMs ? c->nowMs() + UI_ASSETS_EVICT_QUARANTINE_MS : 0;
 }
 
@@ -513,9 +699,13 @@ static s32 cacheInit(uiAssetsCache_t *c, const uiAssetsSource_t *source,
 	c->nowMs = nowMs;
 	freshArena = !c->arenaReady;
 	if (freshArena) {
-		for (i = 0; i < shape->slotCount; i++)
+		for (i = 0; i < shape->slotCount; i++) {
 			c->slots[i].data =
 				c->arena + (size_t)i * shape->recordBytes;
+			c->slots[i].srData = c->srArena ?
+				c->srArena + (size_t)i * shape->srBytes : NULL;
+			c->slots[i].srBuilt = false;
+		}
 		c->arenaReady = true;
 	}
 	oldIndex = c->index;
@@ -693,6 +883,64 @@ static bool cachePoll(uiAssetsCache_t *c, u32 maxBytes) {
 			if (!slot || candidate->distance < slot->distance) slot = candidate;
 		}
 		if (!slot) {
+#ifndef UI_ASSETS_HOST_BUILD
+			bool wantSr = UI540_Active() && shape->srBytes > 0 && !c->srAllocFailed;
+			uiAssetSlot_t *srSlot = NULL;
+			if (wantSr) {
+				for (i = 0; i < shape->slotCount; i++) {
+					uiAssetSlot_t *cand = &c->slots[i];
+					if (cand->state == SLOT_READY && !cand->srBuilt &&
+					    (!srSlot || cand->distance < srSlot->distance))
+						srSlot = cand;
+				}
+			}
+			if (srSlot) {
+				u32 srGen = srSlot->generation;
+				s16 srRec = srSlot->recordPos;
+				int srIdx = (int)(srSlot - c->slots);
+				bool needAlloc = (c->srArena == NULL);
+				syncUnlock(c);
+				if (needAlloc) {
+					u8 *allocatedSr = UIA_ALLOC_ALIGNED32((u32)shape->slotCount * shape->srBytes);
+					syncLock(c);
+					if (!allocatedSr) {
+						c->srAllocFailed = true;
+						syncUnlock(c);
+						return pending;
+					}
+					c->srArena = allocatedSr;
+					for (i = 0; i < shape->slotCount; i++) {
+						c->slots[i].srData = c->srArena + (size_t)i * shape->srBytes;
+						c->slots[i].srBuilt = false;
+					}
+					syncUnlock(c);
+				}
+				buildSuperResTexture(shape, c->slots[srIdx].data, c->slots[srIdx].srData);
+				syncLock(c);
+				srSlot = &c->slots[srIdx];
+				if (c->packOpen && srSlot->state == SLOT_READY &&
+				    srSlot->generation == srGen && srSlot->recordPos == srRec &&
+				    srSlot->srData) {
+					bool srMip = shape->srMipLevels > 1;
+					GX_InitTexObj(&srSlot->tex, srSlot->srData, shape->srW,
+					              shape->srH, GX_TF_RGB565, GX_CLAMP,
+					              GX_CLAMP, srMip ? GX_TRUE : GX_FALSE);
+					GX_InitTexObjLOD(&srSlot->tex,
+					                 srMip ? GX_LIN_MIP_LIN : GX_LINEAR, GX_LINEAR,
+					                 0.0f, (float)(shape->srMipLevels - 1),
+					                 srMip ? -0.65f : 0.0f, GX_TRUE, GX_TRUE,
+					                 srMip ? GX_ANISO_4 : GX_ANISO_2);
+					srSlot->srBuilt = true;
+				}
+				for (i = 0; i < shape->slotCount && !pending; i++) {
+					if (c->slots[i].state == SLOT_PENDING ||
+					    (c->slots[i].state == SLOT_READY && !c->slots[i].srBuilt))
+						pending = true;
+				}
+				syncUnlock(c);
+				return pending;
+			}
+#endif
 			syncUnlock(c);
 			return pending;
 		}
@@ -722,21 +970,62 @@ static bool cachePoll(uiAssetsCache_t *c, u32 maxBytes) {
 		crc = crc32(job.crc, job.data + job.readBytes, take);
 		if (finished) loadOk = crc == job.expectedCrc;
 	}
-	if (loadOk && finished) DCFlushRange(job.data, shape->recordBytes);
+#ifndef UI_ASSETS_HOST_BUILD
+	bool use540pSr = UI540_Active() && shape->srBytes > 0 && !c->srAllocFailed;
+	if (use540pSr && !c->srArena) {
+		u8 *allocatedSr = UIA_ALLOC_ALIGNED32((u32)shape->slotCount * shape->srBytes);
+		syncLock(c);
+		if (allocatedSr) {
+			c->srArena = allocatedSr;
+			for (int i = 0; i < shape->slotCount; i++) {
+				c->slots[i].srData = c->srArena + (size_t)i * shape->srBytes;
+				c->slots[i].srBuilt = false;
+			}
+		} else {
+			c->srAllocFailed = true;
+			use540pSr = false;
+		}
+		syncUnlock(c);
+	}
+#endif
+	if (loadOk && finished) {
+		DCFlushRange(job.data, shape->recordBytes);
+#ifndef UI_ASSETS_HOST_BUILD
+		if (use540pSr && c->slots[job.slotIdx].srData)
+			buildSuperResTexture(shape, job.data, c->slots[job.slotIdx].srData);
+#endif
+	}
 
 	syncLock(c);
 	slot = &c->slots[job.slotIdx];
 	if (c->packOpen && c->loading.active && slot->state == SLOT_LOADING &&
 	    slot->generation == job.generation && slot->recordPos == job.recordPos) {
 		if (loadOk && finished) {
-			bool mipmapped = shape->mipLevels > 1;
-			GX_InitTexObj(&slot->tex, slot->data, shape->canvasW,
-			              shape->canvasH, GX_TF_CMPR, GX_CLAMP,
-			              GX_CLAMP, mipmapped ? GX_TRUE : GX_FALSE);
-			if (mipmapped)
-				GX_InitTexObjLOD(&slot->tex, GX_LIN_MIP_LIN, GX_LINEAR,
-				                 0.0f, (float)(shape->mipLevels - 1),
-				                 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+#ifndef UI_ASSETS_HOST_BUILD
+			if (use540pSr && slot->srData) {
+				bool srMip = shape->srMipLevels > 1;
+				GX_InitTexObj(&slot->tex, slot->srData, shape->srW,
+				              shape->srH, GX_TF_RGB565, GX_CLAMP,
+				              GX_CLAMP, srMip ? GX_TRUE : GX_FALSE);
+				GX_InitTexObjLOD(&slot->tex,
+				                 srMip ? GX_LIN_MIP_LIN : GX_LINEAR, GX_LINEAR,
+				                 0.0f, (float)(shape->srMipLevels - 1),
+				                 srMip ? -0.65f : 0.0f, GX_TRUE, GX_TRUE,
+				                 srMip ? GX_ANISO_4 : GX_ANISO_2);
+				slot->srBuilt = true;
+			} else
+#endif
+			{
+				bool mipmapped = shape->mipLevels > 1;
+				GX_InitTexObj(&slot->tex, slot->data, shape->canvasW,
+				              shape->canvasH, GX_TF_CMPR, GX_CLAMP,
+				              GX_CLAMP, mipmapped ? GX_TRUE : GX_FALSE);
+				if (mipmapped)
+					GX_InitTexObjLOD(&slot->tex, GX_LIN_MIP_LIN, GX_LINEAR,
+					                 0.0f, (float)(shape->mipLevels - 1),
+					                 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+				slot->srBuilt = false;
+			}
 			slot->readyMs = c->nowMs();
 			slot->state = SLOT_READY;
 			c->loading.active = false;
@@ -864,8 +1153,11 @@ static s32 cacheDispose(uiAssetsCache_t *c) {
 	 * live-mutex Cancel step must have unpublished and freed the index. */
 	if (c->packOpen || c->index != NULL)
 		return UI_ASSETS_ERR_STATE;
+	u8 *oldSrArena = c->srArena;
 	oldArena = c->arena;
 	c->arena = NULL;
+	c->srArena = NULL;
+	c->srAllocFailed = false;
 	c->arenaReady = false;
 	for (i = 0; i < c->shape->slotCount; i++) {
 		c->slots[i].state = SLOT_EMPTY;
@@ -873,6 +1165,7 @@ static s32 cacheDispose(uiAssetsCache_t *c) {
 		c->slots[i].recordPos = -1;
 		c->slots[i].quarantineUntil = 0;
 		c->slots[i].data = NULL;
+		c->slots[i].srData = NULL;
 		memset(&c->slots[i].tex, 0, sizeof(c->slots[i].tex));
 	}
 	memset(&c->src, 0, sizeof(c->src));
@@ -884,6 +1177,8 @@ static s32 cacheDispose(uiAssetsCache_t *c) {
 	c->syncBound = false;
 	if (oldArena)
 		UIA_FREE(oldArena);
+	if (oldSrArena)
+		UIA_FREE(oldSrArena);
 	return UI_ASSETS_OK;
 }
 
@@ -958,9 +1253,16 @@ static bool cachePending(uiAssetsCache_t *c)
 
 	syncLock(c);
 	if(c->packOpen && c->arenaReady) {
+#ifndef UI_ASSETS_HOST_BUILD
+		bool wantSr = UI540_Active() && c->shape->srBytes > 0 && !c->srAllocFailed;
+#endif
 		pending = c->loading.active;
 		for(int i = 0; i < c->shape->slotCount && !pending; i++) {
 			pending = c->slots[i].state == SLOT_PENDING;
+#ifndef UI_ASSETS_HOST_BUILD
+			if(!pending && wantSr && c->slots[i].state == SLOT_READY && !c->slots[i].srBuilt)
+				pending = true;
+#endif
 		}
 	}
 	syncUnlock(c);

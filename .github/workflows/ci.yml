@@ -99,6 +99,8 @@ jobs:
           cp buildtools/ui/emulator/probe/probe.dol dist/probe.dol
           make -C buildtools/ui/emulator/aesnd
           cp buildtools/ui/emulator/aesnd/aesnd.dol dist/aesnd.dol
+          make -C buildtools/video_lab REVISION="$(git rev-parse --short=12 HEAD)"
+          cp buildtools/video_lab/video-lab.dol dist/video-lab.dol
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: indigo-sd-card-${{ github.sha }}
@@ -112,6 +114,7 @@ jobs:
             dist/swiss.dol
             dist/probe.dol
             dist/aesnd.dol
+            dist/video-lab.dol
             dist/provenance.json
           if-no-files-found: error
           retention-days: 14
@@ -167,9 +170,33 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  video-diagnostic:
+    name: Video diagnostic
+    needs: build
+    runs-on: [self-hosted, indigo-emulator]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dol-${{ github.sha }}
+          path: build
+      - name: Compare tiled GPU copies and retained regions in Dolphin
+        run: python3 buildtools/video_lab/emulator.py build/video-lab.dol --out video-diagnostic
+      - name: Summary
+        if: always()
+        run: cat video-diagnostic/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: video-diagnostic-${{ github.sha }}
+          path: video-diagnostic/
+          if-no-files-found: warn
+          retention-days: 7
+
   emulator:
     name: ${{ matrix.name }}
-    needs: build
+    needs: [build, video-diagnostic]
     runs-on: [self-hosted, indigo-emulator]
     timeout-minutes: 25
     strategy:
@@ -180,14 +207,14 @@ jobs:
           # among them, then the probe launched as an app. game: the
           # Library to a game's launch, the probe launched as a game. The
           # console's region and cable decide the video mode: PAL composite
-          # 576i, NTSC composite 480i, a component cable 480p. dvd boots with
-          # the demonstration disc in the drive; sd2sp2 from an SD card made
+          # 576i, NTSC composite 480i, a component cable 480p. optical launches
+          # a whole game disc; sd2sp2 boots from an SD card made
           # from this build's zip, as someone sets one up; gcloader from such a
           # card in a GC Loader, which serves the game from its fragments.
-          - { name: Emulator, route: smoke, region: pal, cable: composite, storage: dvd, artifact: emulator }
+          - { name: Emulator, route: smoke, region: pal, cable: composite, storage: sd2sp2, artifact: emulator }
           # It also stops AESND hundreds of times, as a launch does (aesnd_test.py).
-          - { name: "Emulator (game, PAL, component)", route: game, region: pal, cable: component,
-              storage: dvd, aesnd: true, artifact: emulator-game-pal-component }
+          - { name: "Emulator (optical disc, PAL, component)", route: optical, region: pal, cable: component,
+              storage: sd2sp2, aesnd: true, artifact: emulator-game-pal-component }
           # The GC Loader smoke job's card starts with settings/non-default.ini;
           # the game jobs' cards are new, so they start in Settings.
           - { name: "Emulator (smoke, NTSC, component, GC Loader)", route: smoke, region: ntsc,

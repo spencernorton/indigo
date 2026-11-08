@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include "swiss.h"
+#include "gui/ui_540p.h"
 
 #define DEFAULT_FIFO_SIZE (256*1024)//(64*1024) minimum
 static u8 gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
@@ -35,6 +36,9 @@ int whichfb = 0;				//Frame buffer toggle
 
 char *getVideoModeString(GXRModeObj *m) {
 	switch(m->viTVMode) {
+#if UI_EXPERIMENTAL_540P
+		case UI540_TVMODE:            return "NTSC 540p60";
+#endif
 		case VI_TVMODE_NTSC_INT:       return m->xfbMode == VI_XFBMODE_PSF ? NtscIntStr : NtscIntDfStr;
 		case VI_TVMODE_NTSC_DS:        return NtscDsStr;
 		case VI_TVMODE_NTSC_PROG:      return NtscProgStr;
@@ -162,6 +166,12 @@ GXRModeObj *getVideoModeFromSwissSetting(int uiVMode) {
 				case SYS_VIDEO_MPAL: return getDTVStatus() ? &TVNtsc240DsVf : &TVMpal240DsVf;
 				default:             return &TVNtsc240DsVf;
 			}
+		case 9:
+#if UI_EXPERIMENTAL_540P
+			if(getDTVStatus()) {
+				return UI540_VideoMode();
+			}
+#endif
 		case 4:
 			if(getDTVStatus()) {
 				return swissSettings.sramVideo == SYS_VIDEO_PAL ? &TVEurgb60Hz480Prog : &TVNtsc480Prog;
@@ -237,7 +247,10 @@ void updateVideoMode(GXRModeObj *m) {
 			case VI_TVMODE_DEBUG_PAL_DS:  m->viTVMode = VI_TVMODE_PAL_DS;  break;
 		}
 	}
-	if(in_range(swissSettings.aveCompat, GCDIGITAL_COMPAT, GCVIDEO_COMPAT) && swissSettings.rt4kOptim) {
+	if(UI_EXPERIMENTAL_540P && m->viTVMode == UI540_TVMODE) {
+		m->viWidth = UI540_WIDTH;
+		m->viXOrigin = 0;
+	} else if(in_range(swissSettings.aveCompat, GCDIGITAL_COMPAT, GCVIDEO_COMPAT) && swissSettings.rt4kOptim) {
 		m->viWidth = m->fbWidth;
 		m->viXOrigin = 40;
 	} else {
@@ -255,14 +268,21 @@ void updateVideoMode(GXRModeObj *m) {
 }
 
 void setVideoMode(GXRModeObj *m) {
-	updateVideoMode(m);
+	/* Keep the old pair until the new mode has storage and VI has latched
+	 * its first buffer. A failed experimental allocation leaves 480p live. */
+	u32 *next[2] = {SYS_AllocateFramebuffer(m), SYS_AllocateFramebuffer(m)};
+	if(!next[0] || !next[1]) {
+		free(next[0]);
+		free(next[1]);
+		return;
+	}
 	if(vmode != NULL) {
 		GX_AbortFrame ();
 	}
-	free(xfb[0]);
-	free(xfb[1]);
-	xfb[0] = (u32 *) SYS_AllocateFramebuffer (m);
-	xfb[1] = (u32 *) SYS_AllocateFramebuffer (m);
+	u32 *old[2] = {xfb[0], xfb[1]};
+	xfb[0] = next[0];
+	xfb[1] = next[1];
+	updateVideoMode(m);
 	VIDEO_ClearFrameBuffer (m, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer (m, xfb[1], COLOR_BLACK);
 	VIDEO_SetNextFramebuffer (xfb[0]);
@@ -270,25 +290,33 @@ void setVideoMode(GXRModeObj *m) {
 	VIDEO_SetBlack (false);
 	VIDEO_Flush ();
 	VIDEO_WaitForFlush ();
+	free(old[0]);
+	free(old[1]);
 	
 	// init GX
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 	// clears the bg to color and clears the z buffer
 	GX_SetCopyClear ((GXColor) {0, 0, 0, 0xFF}, GX_MAX_Z24);
 	// init viewport
-	GX_SetViewport (0.0f, 0.0f, m->fbWidth, m->efbHeight, 0.0f, 1.0f);
-	GX_SetScissor (0, 0, m->fbWidth, m->efbHeight);
+	bool tiled = UI_EXPERIMENTAL_540P && m->viTVMode == UI540_TVMODE;
+	u16 efbWidth = tiled ? UI540_EFB_WIDTH : m->fbWidth;
+	u16 efbHeight = tiled ? UI540_EFB_HEIGHT : m->efbHeight;
+	GX_SetViewport (0.0f, 0.0f, efbWidth, efbHeight, 0.0f, 1.0f);
+	GX_SetScissor (0, 0, efbWidth, efbHeight);
 	// Set the correct y scaling for efb->xfb copy operation
 	GX_SetDispCopyFrame2Field (m->copy_interlaced);
-	GX_SetDispCopySrc (0, 0, m->fbWidth, m->efbHeight);
-	GX_SetDispCopyYScale (GX_GetYScaleFactor (m->efbHeight, m->xfbHeight));
+	GX_SetDispCopySrc (0, 0, efbWidth, efbHeight);
+	GX_SetDispCopyYScale (tiled ? 1.0f : GX_GetYScaleFactor (m->efbHeight, m->xfbHeight));
 	GX_SetDispCopyDst (m->fbWidth, m->xfbHeight);
-	GX_SetCopyFilter (m->aa, m->sample_pattern, GX_TRUE, m->vfilter);
+	GX_SetCopyFilter (m->aa, m->sample_pattern, !tiled, m->vfilter);
 	GX_SetFieldMode (m->field_rendering, ((m->viHeight / m->efbHeight == 2) ? GX_ENABLE : GX_DISABLE));
 	if (m->aa)
 		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
 	else
 		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+#if UI_EXPERIMENTAL_540P
+	if(tiled) GX_SetDither(GX_ENABLE);
+#endif
 	GX_SetCullMode (GX_CULL_NONE); // default in rsp init
 	GX_CopyDisp (xfb[0], GX_TRUE); // This clears the efb
 	GX_CopyDisp (xfb[0], GX_TRUE); // This clears the xfb

@@ -18,7 +18,9 @@
 # three layouts, the Save Folder arm (SET_SAVE_FOLDER) only sets
 # swissSettings.saveFolder to the folder Memory Cards' chooser returns, the
 # Menu Widescreen arm (SET_MENU_WIDESCREEN) only flips
-# swissSettings.menuWidescreen, the four side arms (SET_*_FACE) each only
+# swissSettings.menuWidescreen, the Menu Language arm (SET_MENU_LANGUAGE) only
+# steps swissSettings.menuLanguage round the languages, reads the new one's
+# file and selects it, the four side arms (SET_*_FACE) each only
 # step their own side round the faces and none, the Cube arm (SET_CUBE) only flips
 # swissSettings.cubeStyle between Infinite and Classic, the Library
 # Folders arm (SET_LIBRARY_FOLDERS) only turns Library Folders on or off
@@ -27,9 +29,9 @@
 # hideDetailSaves and alwaysShowDetailSaves, and the Idle Animation, Waves, On-screen
 # Controls and Face Labels arms (SET_IDLE_ANIMATION, SET_WAVES,
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
-# the clock sync arms only flip swissSettings.ntpSync (SET_NTP_SYNC) or take
-# swissSettings.ntpHostIp and swissSettings.timeZone as text (SET_NTP_HOSTIP,
-# SET_TIME_ZONE). The three File Browser Type arms
+# the clock sync arms flip swissSettings.ntpSync and open the zone editor
+# when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
+# server and SET_TIME_ZONE opens the same validated editor. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
 #
@@ -201,6 +203,20 @@ normalized = re.sub(
     r"\t+swissSettings\.menuWidescreen \^= 1;\n"
     r"\t+break;\n",
     "", normalized, count=1)
+# Menu Language looks a message's format up (UI_T("...")) before it is
+# formatted; the format and its arguments are the same.
+normalized = re.sub(r'UI_T\(("(?:\\.|[^"\\])*")\)', r"\1", normalized)
+# And the Menu Language arm: a step round the languages, reading the new
+# one's file once (config_load_language) and drawing in it at once.
+normalized = re.sub(
+    r"(?ms)^\t+case SET_MENU_LANGUAGE:\n"
+    r"\t+swissSettings\.menuLanguage \+= direction;\n"
+    r"\t+swissSettings\.menuLanguage = \(swissSettings\.menuLanguage \+ UI_LANG_MAX\) % UI_LANG_MAX;\n"
+    r"\t+config_load_language\(swissSettings\.menuLanguage, true\);\n"
+    r"\t+/\* The page is rebuilt before the next frame selects it\. \*/\n"
+    r"\t+UILang_Select\(swissSettings\.menuLanguage\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
 # And the four side arms, each round the faces and none.
 normalized, sides = re.subn(
     r"(?ms)^\t+case SET_(UP|LEFT|RIGHT|DOWN)_FACE:\n"
@@ -235,16 +251,20 @@ for option, field in (("IDLE_ANIMATION", "idleAnimation"), ("WAVES", "hideWaves"
         r"\t+swissSettings\." + field + r" \^= 1;\n"
         r"\t+break;\n",
         "", normalized, count=1)
-# And the clock sync: Sync Clock flips, NTP Server IP and Time Zone take text.
+# Accept the original clock arms and the deliberate timezone setup flow.
 normalized = re.sub(
     r"(?ms)^\t+case SET_NTP_SYNC:\n"
     r"\t+swissSettings\.ntpSync \^= 1;\n"
+    r"(?:\t+if\(swissSettings\.ntpSync && UITimeSync_KeepsOffset\(swissSettings\.timeZone\)\) \{\n"
+    r"\t+settingsEditTimeZone\(\);\n"
+    r"\t+\}\n)?"
     r"\t+break;\n"
     r"\t+case SET_NTP_HOSTIP:\n"
     r"\t+DrawGetTextEntry\(ENTRYMODE_IP, \"NTP Server IP\", &swissSettings\.ntpHostIp, sizeof\(swissSettings\.ntpHostIp\) - 1\);\n"
     r"\t+break;\n"
     r"\t+case SET_TIME_ZONE:\n"
-    r"\t+DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\);\n"
+    r"\t+(?:settingsEditTimeZone\(\)|"
+    r"DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\));\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # Swiss's new clock controls map to Indigo's existing Network rows. Match
@@ -265,6 +285,15 @@ normalized, browsers = re.subn(
     r"\t+break;\n",
     lambda arm: "" if arm.group(1).lower() == arm.group(2) else arm.group(0),
     normalized)
+# Swiss and Apps Video Mode add 540p60 at index 9.
+normalized = normalized.replace(
+    "swissSettings.uiVMode = (swissSettings.uiVMode + 10) % 10;",
+    "swissSettings.uiVMode = (swissSettings.uiVMode + 9) % 9;",
+)
+normalized = normalized.replace(
+    "swissSettings.appsVMode = (swissSettings.appsVMode + 10) % 10;",
+    "swissSettings.appsVMode = (swissSettings.appsVMode + 9) % 9;",
+)
 normalized = re.sub(r"[ \t]+(?=\n|$)", "", normalized)
 Path(sys.argv[2]).write_text(normalized)
 PY
@@ -282,9 +311,9 @@ for fn in settings_toggle; do
 			normalize_intended_changes "$TMP/base_$fn" "$TMP/base_${fn}_normalized"
 			normalize_intended_changes "$TMP/head_$fn" "$TMP/head_${fn}_normalized"
 			if cmp -s "$TMP/base_${fn}_normalized" "$TMP/head_${fn}_normalized"; then
-				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
+				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
 			else
-				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
+				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
 				diff -u "$TMP/base_${fn}_normalized" \
 					"$TMP/head_${fn}_normalized" | head -40 >&2 || true
 				fail=1

@@ -53,6 +53,13 @@ TEXTURES	:=	source/images \
               source/images/buttons
 INCLUDES	:=	include $(SOURCES) .. aesnd/libogc2/include
 
+# The custom VI driver and tiled menus are confined to a separate test build.
+# Use a separate BUILD directory when changing this option.
+UI_540P ?= 1
+ifeq ($(UI_540P),1)
+SOURCES += ../../buildtools/video_lab/sdk
+endif
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
@@ -65,6 +72,7 @@ UI_PERF		?= 0
 # Prebuilt dependencies retain their own exception metadata and compiler flags.
 # Source paths are relative so the DOL is the same wherever it is built.
 CFLAGS		= -g -Os -flto -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(shell git log -1 --format=%ct)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
+CFLAGS += -DUI_EXPERIMENTAL_540P=$(UI_540P)
 CXXFLAGS	= $(CFLAGS)
 
 ASFLAGS		= $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY $(INCLUDE)
@@ -178,6 +186,7 @@ $(OUTPUT).elf: $(OFILES)
 # Keep the measured hot emitters and audio outside cross-file optimization:
 # their instructions and relocation records match the previous -O2 objects.
 $(OFILES_AESND) IPLFontWrite.o indigo_background.o ui_jewel_case.o: CFLAGS += -O2 -fno-lto
+video_540_driver.o: CFLAGS += -O2 -fno-lto -I$(LIBOGC_INC)/ogc -I$(LIBOGC_INC)/ogc/machine
 
 $(OFILES_SOURCES) : $(HFILES)
 

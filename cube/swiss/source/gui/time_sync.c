@@ -83,7 +83,7 @@ static void time_sync_set(void)
 		return;
 	}
 	int64_t utcSeconds = utc / 1000000;
-	if(timeSyncZone[0] == '\0' || !strcmp(timeSyncZone, "Etc/Unknown")) {
+	if(UITimeSync_KeepsOffset(timeSyncZone)) {
 		east = UITimeSync_KeptOffset(time(NULL), utcSeconds);
 	}
 	else if(!UITimeSync_ZoneOffset(timeSyncZone, utcSeconds, &east)) {

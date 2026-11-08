@@ -22,6 +22,7 @@
 #include "ui_game_history.h"
 #include "ui_gameflow_library.h"
 #include "ui_folder.h"
+#include "ui_lang.h"
 
 // This is an example Swiss settings entry (sits at the top of global.ini)
 //!!Swiss Settings Start!!
@@ -565,6 +566,7 @@ int config_update_global(bool checkConfigDevice) {
 	fprintf(fp, "Backdrop Color=%s\r\n", uiLayerColorStr[swissSettings.uiBackdropColor]);
 	fprintf(fp, "Wave Color=%s\r\n", uiLayerColorStr[swissSettings.uiWaveColor]);
 	fprintf(fp, "Menu Widescreen=%s\r\n", swissSettings.menuWidescreen ? "Yes":"No");
+	fprintf(fp, "Menu Language=%s\r\n", uiLangKeys[swissSettings.menuLanguage]);
 	fprintf(fp, "Library Icon=%s\r\n", libraryIconStr[swissSettings.libraryIcon]);
 	fprintf(fp, "Source Icon=%s\r\n", sourceIconStr[swissSettings.sourceIcon]);
 	fprintf(fp, "Settings Icon=%s\r\n", settingsIconStr[swissSettings.settingsIcon]);
@@ -1093,7 +1095,7 @@ void config_parse_legacy(char *configData, void (*progress_indicator)(char*, int
 					swissSettings.exiSpeed = !strcmp("32MHz", value);
 				}
 				else if(!strcmp("Swiss Video Mode", name)) {
-					for(int i = 0; i < 9; i++) {
+					for(int i = 0; i < 10; i++) {
 						if(!strcmp(uiVModeStr[i], value)) {
 							swissSettings.uiVMode = i;
 							break;
@@ -1462,7 +1464,7 @@ void config_parse_global(char *configData, bool settingsFile) {
 					}
 				}
 				else if(!strcmp("Swiss Video Mode", name)) {
-					for(int i = 0; i < 9; i++) {
+					for(int i = 0; i < 10; i++) {
 						if(!strcmp(uiVModeStr[i], value)) {
 							swissSettings.uiVMode = i;
 							break;
@@ -1470,7 +1472,7 @@ void config_parse_global(char *configData, bool settingsFile) {
 					}
 				}
 				else if(!strcmp("Apps Video Mode", name)) {
-					for(int i = 0; i < 9; i++) {
+					for(int i = 0; i < 10; i++) {
 						if(!strcmp(uiVModeStr[i], value)) {
 							swissSettings.appsVMode = i;
 							break;
@@ -1556,6 +1558,14 @@ void config_parse_global(char *configData, bool settingsFile) {
 				}
 				else if(!strcmp("Menu Widescreen", name)) {
 					swissSettings.menuWidescreen = !strcmp("Yes", value);
+				}
+				else if(!strcmp("Menu Language", name)) {
+					for(int i = 0; i < UI_LANG_MAX; i++) {
+						if(!strcmp(uiLangKeys[i], value)) {
+							swissSettings.menuLanguage = i;
+							break;
+						}
+					}
 				}
 				else if(!strcmp("Library Icon", name)) {
 					for(int i = 0; i < UI_HOME_ICON_CHOICES; i++) {
@@ -2146,6 +2156,25 @@ void config_find(ConfigEntry *entry) {
 	config_unset_device();
 }
 
+bool config_load_language(int language, bool checkConfigDevice) {
+	char path[PATHNAME_MAX];
+	char *data;
+
+	if(language <= UI_LANG_ENGLISH || language >= UI_LANG_MAX || UILang_Loaded(language)) {
+		return UILang_Loaded(language);
+	}
+	if(checkConfigDevice ? !config_set_device() : devices[DEVICE_CONFIG] == NULL) {
+		return false;
+	}
+	concat_path(path, SWISS_BASE_DIR "/indigo", uiLangFiles[language]);
+	data = config_file_read(path);
+	if(checkConfigDevice) {
+		config_unset_device();
+	}
+	/* config_file_read ends the text with a 0 past its size. */
+	return data != NULL && UILang_Load(language, data, strlen(data));
+}
+
 /** 
 	Initialises the configuration file
 	Returns 1 on successful file open, 0 otherwise
@@ -2184,6 +2213,7 @@ int config_init(void (*progress_indicator)(char*, int, int)) {
 	}
 	
 	config_load_play_history();
+	config_load_language(swissSettings.menuLanguage, false);
 
 	// Read the recent list if enabled
 	if(swissSettings.recentListLevel > 0) {

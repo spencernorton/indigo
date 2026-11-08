@@ -74,6 +74,13 @@ them. In a Setup section, B first goes back to the list of sections.
 
 ## Video changes ask first
 
+With a digital or component cable, **Swiss Video Mode** includes **NTSC 540p60**
+(**720 x 540 progressive at 60 Hz**, 16:9). Like the other video modes, pressing
+**A** switches to it for a 10-second confirmation trial; you can also hold
+**L + R + B** at any time to return immediately to 480p. See
+[the 540p60 technical notes](../dev/experimental-540p.md) for scaler setup and
+rendering details.
+
 On **Swiss Video Mode**, **System Video**, **AVE Compatibility**, **Force
 DTV Status** and **RetroTINK-4K HDMI Input**, Left and Right only choose a
 value. The setting shows it and the line above the buttons reads "Not
@@ -190,7 +197,7 @@ The Settings tour above predates the Apps Video Mode row.
 
 | Setting | What it does |
 | --- | --- |
-| Swiss Video Mode | The video mode of Indigo's own screens. Auto picks 480p with a digital cable and otherwise follows the console's region. A switches to a new mode and asks before it keeps it. |
+| Swiss Video Mode | The video mode of Indigo's own screens. Auto picks 480p with a digital cable and otherwise follows the console's region. With a digital cable, **NTSC 540p60** renders the menus at 720 x 540 progressive (hold **L + R + B** at any time to return to 480p). A switches to a new mode and asks before it keeps it. |
 | Apps Video Mode | The mode passed to homebrew that Indigo starts; a program sent over the network keeps Indigo's mode. **Auto** keeps Indigo’s mode. Libogc2 apps use it; other apps may choose their own. Changing it leaves Indigo’s own screens as they are. |
 | Menu Widescreen | Draws Indigo's own screens for a TV set to 16:9: the background fills the screen and the menus keep their shape in the middle. Set your TV or HDMI adapter to 16:9 too. Games follow **Force Widescreen** instead. |
 | System Video | NTSC, PAL or PAL-M, mainly for the Brazilian console. |
@@ -209,6 +216,7 @@ The Settings tour above predates the Apps Video Mode row.
 
 | Setting | What it does |
 | --- | --- |
+| Menu Language | The language Indigo's own screens are in: **English** or **Українська** (Ukrainian). Ukrainian's words come from `swiss/indigo/uk.po` on the settings device, which the download's `swiss` folder puts there; without it the menus stay in English. Games and their titles, System Language and the settings files don't change. |
 | Menu Color | The color of the whole interface. See [Make it yours](personalize.md#menu-color). |
 | Backdrop Color, Wave Color | The backdrop behind the cube and the waves in front of it, each in Menu Color or a color of its own. See [Make it yours](personalize.md#backdrop-and-wave-color). |
 | Waves | **Off** takes the waves away, leaving the backdrop and its rings. Wave Color and Wave Speed apply while they're on. See [Make it yours](personalize.md#backdrop-and-wave-color). |
@@ -256,7 +264,15 @@ The Settings tour above predates the Apps Video Mode row.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock, NTP Server IP, Time Zone | Shown only with a network adapter, and off until you turn it on. Sets the clock from a time server each time the network starts; the IPL and games see it too. Time Zone accepts a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` (US Mountain). The rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the zone the clock is in. |
+| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Off by default. |
+| NTP Server IP | The time server to use. An empty entry uses the default server. |
+| Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
+
+The clock settings appear with a network adapter. When you turn on **Sync
+Clock** with no zone set, Indigo opens **Time Zone**. Enter your location and
+choose **Save & Exit**. Restart Indigo with **Init network at startup**
+enabled to apply the change. Indigo uses your location's daylight saving rules
+when the clock syncs.
 
 Passwords are saved as plain text in `global.ini`.
 

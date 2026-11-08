@@ -20,6 +20,7 @@
 #include "ui_menu_input.h"
 #include "ui_stage.h"
 #include "manual.h"
+#include "ui_lang.h"
 
 #define SCROLL_ROWS 8	/* a frame, the D-pad held; the stick up to 4 times that */
 #define STICK_DEAD 16
@@ -376,7 +377,7 @@ void Manual_Show(DEVICEHANDLER_INTERFACE *device, const char *gameId)
 		view.pageHeight = pages[reader.page].height;
 		view.whole = whole;
 		view.scroll = scroll;
-		snprintf(view.counter, sizeof(view.counter), "PAGE %u / %u",
+		snprintf(view.counter, sizeof(view.counter), UI_T("PAGE %u / %u"),
 			(unsigned)reader.page + 1u, (unsigned)info.pages);
 		snprintf(view.message, sizeof(view.message), UIManual_ShownFailed(&reader) ?
 			"Page %u can't be read." : "Reading page %u\205",

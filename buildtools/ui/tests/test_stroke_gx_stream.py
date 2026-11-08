@@ -180,7 +180,10 @@ static void test_rail_joins(void) {
         "opposed join accepted");
 }
 /* The default Source, Settings and System icons, with None on Library. */
-static const int quadIcons[UI_HOME_FACE_COUNT]={-1,0,0,0,-1,-1,-1,-1};
+static void noIcons(int icons[UI_HOME_FACE_COUNT]) {
+    for(int face=0;face<UI_HOME_FACE_COUNT;face++) icons[face]=-1;
+}
+static int quadIcons[UI_HOME_FACE_COUNT];
 static void test_motifs(void) {
     cubeRasterTransform_t r;
     const Mtx semanticFaces[4]={
@@ -286,7 +289,8 @@ static int brighter(const u8 *before,int n) {
 }
 static void drawController(const cubeRasterTransform_t *r,float seconds,bool animated,
     const indigoPadFrame_t *pad) {
-    static const int icons[UI_HOME_FACE_COUNT]={0,-1,-1,-1,-1,-1,-1,-1};
+    int icons[UI_HOME_FACE_COUNT];
+    noIcons(icons); icons[UI_HOME_FACE_LIBRARY]=0;
     drawFaceIcons(seconds,animated,NULL,pad,icons,r);
 }
 static void test_controller(void) {
@@ -446,7 +450,8 @@ static void test_icons_on_their_faces(void) {
     r.scaleX=r.scaleY=625.221f;
     for(int face=0;face<UI_HOME_FACE_COUNT;face++) for(int choice=0;choice<UI_HOME_ICON_CHOICES;choice++) {
         int icon=face*UI_HOME_ICON_CHOICES+choice;
-        int choices[UI_HOME_FACE_COUNT]={-1,-1,-1,-1,-1,-1,-1,-1};
+        int choices[UI_HOME_FACE_COUNT];
+        noIcons(choices);
         /* Apps, Memory Cards, Emulators and File Browser have one icon
          * each. */
         if(icon>=UI_HOME_ICON_COUNT || primitives[icon]==0) continue;
@@ -486,7 +491,12 @@ static void test_icons_on_their_faces(void) {
         CHECK(shown,"no angle showed the icon");
     }
     /* A choice outside a face's four draws nothing. */
-    const int none[UI_HOME_FACE_COUNT]={UI_HOME_ICON_CHOICES,-1,1000,4,1,2,3,1};
+    int none[UI_HOME_FACE_COUNT];
+    noIcons(none);
+    none[UI_HOME_FACE_LIBRARY]=UI_HOME_ICON_CHOICES;
+    none[UI_HOME_FACE_SETTINGS]=1000; none[UI_HOME_FACE_SYSTEM]=4;
+    none[UI_HOME_FACE_APPS]=1; none[UI_HOME_FACE_SAVES]=2;
+    none[UI_HOME_FACE_EMULATORS]=3; none[UI_HOME_FACE_FILES]=1;
     guMtxIdentity(r.model); r.model[2][3]=-5.4f;
     reset(false); drawFaceIcons(1.0f,true,&clock,&pad,none,&r);
     CHECK(count==0 && begins==0 && matrixLoads==2,"an out-of-range choice drew");
@@ -645,7 +655,8 @@ static void turnTo(cubeRasterTransform_t *r,float degrees,float scale) {
  * close to the glass. Read at each Books quad's core, whose half-pixel inset
  * cancels across its corners. */
 static void test_lift(void) {
-    const int books[UI_HOME_FACE_COUNT]={1,-1,-1,-1,-1,-1,-1,-1};
+    int books[UI_HOME_FACE_COUNT];
+    noIcons(books); books[UI_HOME_FACE_LIBRARY]=1;
     uiClockFrame_t clock={true,0,1,1,0,0.70710678f,0.70710678f};
     cubeRasterTransform_t r;
     memcpy(r.semanticFaces,homeFaces,sizeof(homeFaces)); lightAll(&r);
@@ -693,8 +704,10 @@ static void streamSpread(const cubeRasterTransform_t *r,float *x,float *y,int *p
  * keeps its glass plain (strength 0). */
 static void test_shadows(void) {
     /* Books on Library, square on; the faces either side are edge-on. */
-    const int choices[UI_HOME_FACE_COUNT]={1,0,0,0,-1,-1,-1,-1};
-    const int books[UI_HOME_FACE_COUNT]={1,-1,-1,-1,-1,-1,-1,-1};
+    int choices[UI_HOME_FACE_COUNT], books[UI_HOME_FACE_COUNT];
+    noIcons(choices); noIcons(books);
+    choices[UI_HOME_FACE_LIBRARY]=books[UI_HOME_FACE_LIBRARY]=1;
+    choices[UI_HOME_FACE_SOURCE]=choices[UI_HOME_FACE_SETTINGS]=choices[UI_HOME_FACE_SYSTEM]=0;
     uiClockFrame_t clock={true,0,1,1,0,0.70710678f,0.70710678f};
     indigoPadFrame_t pad={true,0,0,0,0,0u};
     cubeRasterTransform_t r;
@@ -764,7 +777,8 @@ static void test_hidden_controller_reads_the_pad(void) {
     };
     uiClockFrame_t clock={true,0,1,1,0,0.70710678f,0.70710678f};
     indigoPadFrame_t held={true,0,0,0,0,PAD_BUTTON_A},rest={true,0,0,0,0,0u};
-    int choices[UI_HOME_FACE_COUNT]={0,-1,-1,-1,-1,-1,-1,-1};
+    int choices[UI_HOME_FACE_COUNT];
+    noIcons(choices); choices[UI_HOME_FACE_LIBRARY]=0;
     memcpy(r.semanticFaces,semanticFaces,sizeof(semanticFaces)); lightAll(&r);
     r.scaleX=r.scaleY=625.221f;
     guMtxIdentity(r.model); r.model[0][0]=r.model[2][2]=-1; r.model[2][3]=-5.4f;
@@ -1104,6 +1118,8 @@ static void test_glass(void) {
     CHECK(most>200 && most<=1100,"reflection vertex budget");
 }
 int main(void) {
+    noIcons(quadIcons);
+    quadIcons[UI_HOME_FACE_SOURCE]=quadIcons[UI_HOME_FACE_SETTINGS]=quadIcons[UI_HOME_FACE_SYSTEM]=0;
     test_fast_sqrt(); test_dial(); test_rail_joins(); test_motifs(); test_controller(); test_rounded_outlines();
     test_icons_on_their_faces(); test_lift(); test_shadows(); test_hidden_controller_reads_the_pad();
     test_controller_across_the_clock_wrap();
@@ -1254,10 +1270,10 @@ class StrokeGXStreamTests(unittest.TestCase):
             with self.subTest(mutant=new), self.assertRaises((AssertionError, ValueError)):
                 check(draw.replace(old,new,1))
 
-    def run_emitters(self, emitters):
+    def run_emitters(self, emitters, harness=HARNESS):
         with tempfile.TemporaryDirectory(prefix="swiss-stroke-gx-") as directory:
             root=Path(directory); source=root / "strokes.c"; binary=root / "strokes"
-            source.write_text(HARNESS.replace("/* HOME ENUMS */", self.enums)
+            source.write_text(harness.replace("/* HOME ENUMS */", self.enums)
                 .replace("/* CONTROLLER DEFINES */", self.defines)
                 .replace("/* CONTROLLER IDLE */", self.idle)
                 .replace("/* EMITTERS */", emitters))
@@ -1272,6 +1288,16 @@ class StrokeGXStreamTests(unittest.TestCase):
 
     def test_native_emitters(self):
         result=self.run_emitters(self.emitters)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def test_unselected_faces_have_no_icons(self):
+        # Make every unused face front-facing. An accidentally selected extra
+        # icon must fail reliably instead of reading whatever transform the
+        # compiler or host happened to leave on the stack.
+        visible=HARNESS.replace("cubeRasterTransform_t r;", """cubeRasterTransform_t r;
+            for(int face=0;face<UI_HOME_FACE_COUNT;face++)
+                guMtxIdentity(r.semanticFaces[face]);""")
+        result=self.run_emitters(self.emitters, visible)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     def test_regressions_are_rejected(self):

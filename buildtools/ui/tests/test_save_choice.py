@@ -272,7 +272,7 @@ def main() -> None:
         (path / "test.c").write_text(source)
         command = [os.environ.get("CC", "cc"), "-std=c11", "-D_POSIX_C_SOURCE=200112L",
                    "-Wall", "-Wextra", "-Werror", "-Wno-unused-function", "-g", "-I", str(GUI),
-                   str(path / "test.c"), str(GUI / "ui_saves_metadata.c"), str(GUI / "ui_saves.c"),
+                   str(path / "test.c"), str(GUI / "ui_saves_metadata.c"), str(GUI / "ui_saves.c"), str(GUI / "ui_lang.c"),
                    "-o", str(path / "test")]
         if args.sanitize:
             command += ["-fsanitize=address,undefined", "-fno-sanitize-recover=all",

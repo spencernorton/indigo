@@ -169,6 +169,19 @@ class Disc(unittest.TestCase):
             self.assertEqual(card.library_order(False)[0], card.GAMES[0][1], "the route launches the first game")
             self.assertEqual((region(card.GAMES[0]), region(card.GAMES[1])), (2, 0))
 
+    def test_optical_probe_has_real_internal_folders_but_no_games_folder(self):
+        image = card.probe_image(bytes(range(256)), optical_data=True)
+        start, size = struct.unpack_from(">II", image, 0x424)
+        fst = image[start:start + size]
+        count = struct.unpack_from(">I", fst, 8)[0]
+        self.assertEqual(count, 4)
+        names = fst[count * 12:]
+        self.assertEqual(names.split(b"\0")[:-1], [b"opening.bnr", b"assets", b"Data [GDIR01]"])
+        for index in (2, 3):
+            kind_name, parent, end = struct.unpack_from(">III", fst, index * 12)
+            self.assertEqual(kind_name >> 24, 1)
+            self.assertEqual((parent, end), (0, index + 1))
+
     def test_where_the_probe_sits_in_the_library_and_in_apps(self):
         order = card.library_order(True)
         self.assertEqual(order[:3], card.library_order(False)[:3],
@@ -1106,6 +1119,23 @@ class Screen(unittest.TestCase):
         self.assertTrue(np.array_equal(wait([indigo, azure, indigo, azure, azure], unlike=indigo), azure))
         self.assertTrue(np.array_equal(wait([azure, azure], like=azure), azure))
 
+    def test_folder_color_repeats_only_a_missed_right_press(self):
+        old, new = np.ones((4, 4), bool), np.zeros((4, 4), bool)
+        for observed, expected_presses in ((old, 2), (new, 1)):
+            with self.subTest(expected_presses=expected_presses):
+                route = run.Route.__new__(run.Route)
+                route.press = mock.Mock()
+                route.folder_color = mock.Mock(side_effect=(None, new))
+                route.gray = mock.Mock()
+                route.pressed_again = []
+                with mock.patch.object(run, "text_mask", return_value=observed):
+                    found = route.next_folder_color(old, like=new)
+                self.assertIs(found, new)
+                self.assertEqual(route.press.call_args_list, [mock.call("RIGHT")] * expected_presses)
+                self.assertEqual(route.pressed_again, ["RIGHT"] * (expected_presses - 1))
+                self.assertEqual(route.folder_color.call_args_list[0],
+                                 mock.call(like=new, unlike=old, seconds=run.MISSED_SECONDS))
+
     def test_actual_legacy_folder_chrome_and_its_fades(self):
         legacy = self.folder_frame("folder-legacy-browser.png")
         for strength in (1.0, 0.75, 0.5, 0.25, 0.1):
@@ -1891,6 +1921,21 @@ class Screen(unittest.TestCase):
             log.write_text("MMU.cpp:599 N[PowerPC]: DABR: write to 0x8082f278 at PC 0x8018e9c0, "
                            "the doubleword the DABR guards\n")
             self.assertEqual(len(run.fatal_lines(log)), 1, "a stack reached its guard")
+
+
+class MediaRouteTests(unittest.TestCase):
+    def test_optical_requires_a_probe_and_the_disc_drive(self):
+        cases = (
+            ["--route", "optical"],
+            ["--route", "optical", "--probe", "probe.dol", "--storage", "gcloader",
+             "--card-zip", "release.zip"],
+            ["--route", "game", "--probe", "probe.dol", "--storage", "dvd"],
+            ["--route", "smoke", "--probe", "probe.dol", "--storage", "dvd"],
+        )
+        for args in cases:
+            with self.subTest(args=args), mock.patch("sys.stderr"), self.assertRaises(SystemExit) as stopped:
+                run.main(["swiss.dol", "--out", "unused"] + args)
+            self.assertEqual(stopped.exception.code, 2)
 
 
 if __name__ == "__main__":

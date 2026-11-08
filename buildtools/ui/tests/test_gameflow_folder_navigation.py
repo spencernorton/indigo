@@ -46,6 +46,9 @@ def build_source(read):
     b = carousel[carousel.index("if((browserButtons & BUTTON_B) && gameflowInsideFolder()) {"):]
     b = b[:b.index("if((browserButtons & BUTTON_START)")]
     menu = function(swiss, "void menu_loop()")
+    home_effects = function(swiss, "static void homeDispatchEffect(")
+    library_effect = home_effects[home_effects.index("case UI_HOME_EFFECT_OPEN_LIBRARY:"):
+                                 home_effects.index("case UI_HOME_EFFECT_CHANGE_SOURCE:")]
     dispatch = function(menu, "if(devices[DEVICE_CUR] != NULL && curMenuLocation==ON_FILLIST)")
     refresh = function(menu, "if(devices[DEVICE_CUR] != NULL && needsRefresh)")
     helper = ""
@@ -96,6 +99,9 @@ def build_source(read):
               "static void navigate(unsigned browserButtons, bool useGameflow) { file_handle **directory=sortedDirEntries; while(1) {",
               "if(browserButtons & BUTTON_A) {", parent, "break; }", x, b, "break; } }",
               "static void dispatch(void) {", dispatch, "}",
+              "static void openLibraryFromHome(void) { switch(0) {",
+              library_effect.replace("case UI_HOME_EFFECT_OPEN_LIBRARY:", "case 0:", 1),
+              "} }",
               "static void nextIteration(void) { while(1) { homePublishBrowserTransition(&filePanel);",
               refresh, "dispatch(); break; } }", TESTS]
     return "\n".join(parts)
@@ -169,6 +175,7 @@ static DEVICEHANDLER_INTERFACE *allDevices[MAX_DEVICES] = {&bootDevice, &__devic
 static DEVICEHANDLER_INTERFACE *devices[] = {&device, NULL, &bootDevice};
 static file_handle initial = {.name = "sdc:/", .fileType = IS_DIR};
 static file_handle bootInitial = {.name = "gcldr:/", .fileType = IS_DIR};
+static file_handle discInitial = {.name = "dvd:/", .fileType = IS_DIR};
 static bool deviceAvailable;
 static unsigned inits;
 static int initFailDevice;
@@ -277,6 +284,7 @@ static uiDrawObj_t *renderFileCarousel(file_handle **directory, int num_files, u
 TESTS = r'''
 static unsigned rootEmpty;
 static bool failRead;
+static bool discMultiGame;
 static int fakeReadDir(file_handle *dir, file_handle **out, unsigned type) {
     (void)type;
     if(failRead) { *out=NULL; return 0; }
@@ -286,7 +294,18 @@ static int fakeReadDir(file_handle *dir, file_handle **out, unsigned type) {
     const char *names[16] = {".."};
     int types[16] = {IS_SPECIAL}, attrib[16] = {0};
     int n = 1;
-    if(!strcmp(dir->name, "sdc:/games") && !rootEmpty) {
+    if(!strcmp(dir->name, "dvd:/")) {
+        /* read_fst exposes the whole retail disc as a virtual .gcm beside
+         * its data files/folders. Multi-game media exposes several images. */
+        n=discMultiGame ? 2 : 4;
+        names[0]="Demo Game [GDEM01].gcm"; types[0]=IS_FILE;
+        if(discMultiGame) { names[1]="Second Game.gcm"; types[1]=IS_FILE; }
+        else {
+            names[1]="data"; types[1]=IS_DIR;
+            names[2]="Folder [GDIR01]"; types[2]=IS_DIR;
+            names[3]="notes.txt"; types[3]=IS_FILE;
+        }
+    } else if(!strcmp(dir->name, "sdc:/games") && !rootEmpty) {
         n = 11;
         for(int i=0; i<n; ++i) names[i] = rootNames[i];
         for(int i=1; i<=3; ++i) types[i] = IS_DIR;
@@ -317,11 +336,14 @@ static int fakeReadDir(file_handle *dir, file_handle **out, unsigned type) {
         (*out)[i].fileType=types[i]; (*out)[i].fileAttrib=attrib[i];
         (*out)[i].fileBase=(uint64_t)i+10;
     }
+    if(!strcmp(dir->name,"dvd:/") && !discMultiGame) {
+        (*out)[0].fileBase=0; (*out)[0].size=DISC_SIZE;
+    }
     return n;
 }
 static void reset(const char *path, bool folders, unsigned empty) {
     freeFiles(); memset(&curFile, 0, sizeof(curFile));
-    devices[DEVICE_CUR]=&device; failRead=false;
+    devices[DEVICE_CUR]=&device; failRead=false; discMultiGame=false;
     memset(&swissSettings, 0, sizeof(swissSettings));
     swissSettings.libraryFolders=folders; swissSettings.hideUnknownFileTypes=true;
     swissSettings.fileBrowserType=swissSettings.gameBrowserType=BROWSER_FULLWIDTH;
@@ -330,6 +352,8 @@ static void reset(const char *path, bool folders, unsigned empty) {
     device.readDir=fakeReadDir; device.deinit=fakeDeinit;
     bootDevice.initial=&bootInitial; bootDevice.features=FEAT_BOOT_GCM;
     bootDevice.init=fakeInit; bootDevice.readDir=fakeReadDir; bootDevice.deinit=fakeDeinit;
+    __device_dvd.initial=&discInitial; __device_dvd.features=FEAT_BOOT_GCM;
+    __device_dvd.init=fakeInit; __device_dvd.readDir=fakeReadDir; __device_dvd.deinit=fakeDeinit;
     __device_fsp.initial=&fspInitial; __device_fsp.features=FEAT_BOOT_GCM;
     __device_fsp.init=fakeInit; __device_fsp.readDir=fakeReadDir; __device_fsp.deinit=fakeDeinit;
     __device_wode.initial=&wodeInitial; __device_wode.features=FEAT_BOOT_GCM;
@@ -565,10 +589,59 @@ static void crossDeviceLibraryFallback(void) {
     assert(devices[DEVICE_CUR]==&device && !strcmp(curDir.name,"sdc:/games"));
     assert(libraryPublishes==1 && listPublishes==0);
 }
+static void discLibrary(void) {
+    for(unsigned folders=0;folders<2;++folders)
+    for(unsigned multi=0;multi<2;++multi)
+    for(unsigned sd=0;sd<2;++sd) {
+        reset("dvd:/",folders,false);
+        devices[DEVICE_CUR]=&__device_dvd; deviceAvailable=sd;
+        discMultiGame=multi; dvdDiscTypeInt=multi ? 0 : GAMECUBE_DISC;
+        scanFiles();
+        /* A usable SD library must not steal an explicitly selected disc. */
+        openLibraryFromHome();
+        assert(curMenuLocation==ON_FILLIST);
+        assert(devices[DEVICE_CUR]==&__device_dvd);
+        assert(!strcmp(curDir.name,"dvd:/") && !needsRefresh && !inits);
+        assert(gameflowLibraryMode(sortedDirEntries,sortedDirEntryCount)==
+            UI_GAMEFLOW_LIBRARY_IMAGE_FILES);
+        int count=gameflowLibraryEntries(sortedDirEntries,sortedDirEntryCount);
+        assert(count==(multi ? 2 : 1));
+        assert(!strcmp(sortedDirEntries[0]->name,"dvd:/Demo Game [GDEM01].gcm"));
+        dispatch(); assert(libraryPublishes==1 && !listPublishes);
+        /* Home and re-entry keep the disc and the selected game. */
+        curSelection=multi ? 1 : 0;
+        navigate(BUTTON_B,true); nextIteration();
+        assert(curMenuLocation==ON_OPTIONS && !needsRefresh);
+        assert(gameflowEnterLibraryFromHome());
+        assert(devices[DEVICE_CUR]==&__device_dvd && curSelection==(multi ? 1 : 0));
+        /* The explicit File Browser still lists the disc's data. */
+        homeFileBrowser=true;
+        assert(gameflowLibraryMode(sortedDirEntries,sortedDirEntryCount)==UI_GAMEFLOW_LIBRARY_NONE);
+        curMenuLocation=ON_FILLIST; dispatch(); assert(listPublishes==1);
+        homeFileBrowser=false;
+    }
+    /* Games from a browsed disc subdirectory returns to its root, even with
+     * Library Folders on or a saved path naming a directory on the disc. */
+    reset("dvd:/data",true,false);
+    devices[DEVICE_CUR]=&__device_dvd; deviceAvailable=true;
+    strcpy(swissSettings.libraryPath,"dvd:/data");
+    scanFiles();
+    openLibraryFromHome();
+    assert(devices[DEVICE_CUR]==&__device_dvd && !strcmp(curDir.name,"dvd:/"));
+    assert(needsRefresh && !inits);
+    nextIteration(); assert(libraryPublishes==1 && !listPublishes);
+    /* An unreadable disc follows the existing failure path to the picker. */
+    reset("dvd:/",true,false); devices[DEVICE_CUR]=&__device_dvd;
+    failRead=true; needsRefresh=1;
+    nextIteration();
+    assert(devices[DEVICE_CUR]==NULL && needsDeviceChange);
+    assert(!libraryPublishes && !listPublishes);
+}
 int main(int argc, char **argv) {
     if(argc==2 && !strcmp(argv[1],"dots")) dottedFilter();
+    else if(argc==2 && !strcmp(argv[1],"disc")) discLibrary();
     else { rootNavigation(); nestedNavigation(); dottedFilter(); legacyAndEmptyPolicy();
-        listFallback(); crossDeviceLibraryFallback(); }
+        listFallback(); crossDeviceLibraryFallback(); discLibrary(); }
     freeFiles();
     puts("real folder filter/navigation/dispatch: PASS"); return 0;
 }
@@ -579,7 +652,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sanitize", action="store_true")
     parser.add_argument("--revision", help="replay source from a git revision")
-    parser.add_argument("--case", choices=("all", "dots"), default="all")
+    parser.add_argument("--case", choices=("all", "dots", "disc"), default="all")
     args = parser.parse_args()
     def read(path):
         if args.revision:

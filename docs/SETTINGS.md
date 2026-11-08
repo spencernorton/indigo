@@ -134,9 +134,10 @@ most use the same key there.
 | --- | --- | --- | --- |
 | `System Video` | `NTSC`, `PAL`, `PAL-M`. Ignored on a Wii (AVE-RVL). | the console's region | System Video |
 | `Screen Position` | A signed number, such as `+0` or `-2`. | the console's SRAM | Screen Position |
-| `Swiss Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p` | `Auto` | Swiss Video Mode |
-| `Apps Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`. Passed to homebrew Indigo starts, not to a program sent over the network; Auto keeps the menu mode. Applies to libogc2; other apps may choose their own. | `Auto` | Apps Video Mode |
+| `Swiss Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`, `540p60` | `Auto` | Swiss Video Mode |
+| `Apps Video Mode` | `Auto`, `480i`, `480sf`, `240p`, `480p`, `576i`, `576sf`, `288p`, `576p`, `540p60`. Passed to homebrew Indigo starts, not to a program sent over the network; Auto keeps the menu mode. Applies to libogc2; other apps may choose their own. | `Auto` | Apps Video Mode |
 | `Menu Widescreen` | `Yes`, `No`. `Yes` draws Indigo's own screens for a TV set to 16:9; games follow `Force Widescreen`. | `No` | Menu Widescreen |
+| `Menu Language` | `English`, `Ukrainian`. The language of Indigo's own screens; `Ukrainian` reads its words from `swiss/indigo/uk.po` on the Configuration Device, and without that file the menus stay English. Any other value means `English`. | `English` | Menu Language |
 | `AVECompat` | `AVE N-DOL`, `AVE P-DOL`, `CMPV-DOL`, `GCDigital`, `GCVideo`, `AVE-RVL` | `GCVideo`, or what your loader reports | AVE Compatibility |
 | `Force DTV Status` | `No`, `Yes`, `Region Switch` | `No` | Force DTV Status |
 | `RT4KOptim` | `Yes`, `No` | `No` | RetroTINK-4K HDMI Input |
@@ -197,7 +198,7 @@ most use the same key there.
 | `SNTPHostIP` | Swiss alias of `NTPHostIP`, read on import. Saving uses `NTPHostIP`. It does not enable Sync Clock. | | NTP Server IP |
 | `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
 | `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
-| `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty keeps the zone the console's clock is in: its offset from UTC, snapped to the nearest one a real time zone uses. | empty | Time Zone |
+| `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the current UTC offset, rounded to the nearest offset a real zone uses, without applying daylight saving rules. | empty | Time Zone |
 | `FSPHostIP` | An IPv4 address. | empty | FSP Host IP |
 | `FSPPort` | A port number. | `21` | FSP Port |
 | `FSPPassword` | Text, stored as written. | empty | FSP Password |

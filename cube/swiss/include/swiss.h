@@ -141,6 +141,7 @@ typedef struct {
 	int uiBackdropColor;	// 0 (default): the backdrop follows uiColor; else 1 + a UI_COLOR_ value
 	int uiWaveColor;	// the waves behind the cube, the same way
 	int menuWidescreen;	// 0 = 4:3 (default); 1 = the menus drawn for a 16:9 TV (gui/ui_stage.h)
+	int menuLanguage;	// UI_LANG_ENGLISH (default) or another UI_LANG_ value: the menus' words (gui/ui_lang.h)
 	int libraryIcon;	// each Home face's icon: a choice 0-3 of its own four (gui/ui_home.h)
 	int sourceIcon;
 	int settingsIcon;

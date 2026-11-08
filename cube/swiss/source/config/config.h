@@ -62,6 +62,10 @@ int config_update_spin_discs(bool checkConfigDevice);
 bool config_global_file_loaded(void);
 int config_update_recent(bool checkConfigDevice);
 int config_init(void (*progress_indicator)(char*, int, int));
+/* Reads Menu Language's file (swiss/indigo/, gui/ui_lang.h) from the
+ * settings device once, mounting it unless checkConfigDevice is false.
+ * False without the file, leaving the menus in English. */
+bool config_load_language(int language, bool checkConfigDevice);
 void config_init_environ();
 void config_update_environ();
 void config_parse_args(int argc, char *argv[]);

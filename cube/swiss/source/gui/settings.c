@@ -22,8 +22,10 @@
 #include "sram.h"
 #include "rt4k.h"
 #include "time_sync.h"
+#include "ui_time_sync.h"
 #include "input.h"
 #include "ui_color.h"
+#include "ui_lang.h"
 #include "ui_motion.h"
 #include "ui_settings_layout.h"
 #include "saves.h"
@@ -50,7 +52,7 @@ ConfigEntry tempConfig;
 SwissSettings tempSettings;
 char *enableUSBGeckoStr[] = {"No", "Slot A", "Slot B", "Serial Port 2"};
 char *simulatedMemSizeStr[] = {"None", "16 MiB", "24 MiB", "32 MiB", "48 MiB", "64 MiB"};
-char *uiVModeStr[] = {"Auto", "480i", "480sf", "240p", "480p", "576i", "576sf", "288p", "576p"};
+char *uiVModeStr[] = {"Auto", "480i", "480sf", "240p", "480p", "576i", "576sf", "288p", "576p", "540p60"};
 char *gameVModeStr[] = {"Auto", "480i", "480sf", "240p", "960i", "480p", "1080i60", "540p60", "576i", "576sf", "288p", "1152i", "576p", "1080i50", "540p50"};
 char *forceHScaleStr[] = {"Auto", "1:1", "11:10", "9:8", "640px", "656px", "672px", "704px", "720px"};
 char *forceVFilterStr[] = {"Auto", "0", "1", "2"};
@@ -168,6 +170,7 @@ static char *tooltips_interface[PAGE_INTERFACE_MAX+1] = {
 	[SET_WAVES] = "Waves:\n\nOn - Waves drift behind the cube (default)\nOff - No waves: the backdrop and its rings only\n\nWave Color and Wave Speed apply while they are on.",
 	[SET_HOME_CONTROLS] = "On-screen Controls:\n\nOn - Home shows its button hints under the cube (default)\nOff - Home shows none\n\nOther screens, and Restart's question, keep theirs.\nY on Home always opens Settings.",
 	[SET_FACE_LABELS] = "Face Labels:\n\nOn - Home names the face in front under the cube (default)\nOff - The cube shows only its icons.",
+	[SET_MENU_LANGUAGE] = "Menu Language:\n\nThe language Indigo's menus are in: English (default) or\nUkrainian. Ukrainian's words come from swiss/indigo/uk.po on\nthe settings device; without that file the menus stay English.\n\nGames, their titles and System Language don't change, and\nthe settings files stay in English.",
 	[SET_WAVE_SPEED] = "Wave Speed:\n\nHow fast the waves behind the cube drift.\nSlow - Half as fast\nNormal - As they always have (default)\nFast - Three times as fast\n\nUI Motion Off or Reduced, or Animated Backdrop off (Setup >\nLibrary), still stops them.",
 	[SET_CLOCK_POSITION] = "Clock:\n\nRight - The time sits in the top right corner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nTemperature places the temperature dial on its own.",
 	[SET_TEMPERATURE_POSITION] = "Temperature:\n\nRight - The CPU temperature dial sits in the top right\ncorner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nIn the clock's corner, the dial sits nearer the edge.",
@@ -186,9 +189,9 @@ static char *tooltips_network[PAGE_NETWORK_MAX+1] = {
 	[SET_BBA_NETMASK] = "IPv4 Netmask:\n\nThe network's prefix length when DHCP is off, such as 24 on a\ntypical home network.",
 	[SET_BBA_GATEWAY] = "IPv4 Gateway:\n\nYour router's address when DHCP is off.",
 	[SET_BBA_DHCP] = "IPv4 uses DHCP:\n\nYes - Your router assigns the address, netmask and gateway (default)\nNo - Use the address, netmask and gateway set above",
-	[SET_NTP_SYNC] = "Sync Clock:\n\nYes - Set the clock from the NTP server when the network starts\nNo - Leave the clock as it is (default)\n\nThe IPL and games see the new time too. The network starts with\nIndigo when Init network at startup is on.",
+	[SET_NTP_SYNC] = "Sync Clock:\n\nYes - Set the clock from the NTP server when the network starts\nNo - Leave the clock as it is (default)\n\nChoose a Time Zone to follow daylight saving time. The IPL and\ngames see the new time too. Init network at startup runs the sync\nwhen Indigo starts.",
 	[SET_NTP_HOSTIP] = "NTP Server IP:\n\nAddress of the time server Sync Clock asks. Empty asks\nCloudflare's, 162.159.200.123 (default). A name won't work: the\nconsole has no DNS.",
-	[SET_TIME_ZONE] = "Time Zone:\n\nA location, such as America/Denver, Europe/London or Asia/Kolkata,\nor a POSIX TZ string such as MST7MDT,M3.2.0,M11.1.0. The rules\nchoose the offset when Sync Clock runs.\n\nEmpty keeps the zone the clock is already in: its offset from UTC,\nsnapped to a real time zone. Set daylight time in the IPL.",
+	[SET_TIME_ZONE] = "Time Zone:\n\nChoose a location to follow its daylight saving rules.\n\nEnter a name such as America/Denver or Europe/London, or a POSIX\nrule such as MST7MDT,M3.2.0,M11.1.0. The rules apply at each sync.\n\nKeep offset (no DST) preserves the console's current UTC offset.\nLeave the entry empty to use it.",
 	[SET_FSP_HOSTIP] = "FSP Host IP:\n\nAddress of the computer running the FSP server with your games.",
 	[SET_FSP_PORT] = "FSP Port:\n\nPort of the FSP server (21 by default).",
 	[SET_FSP_PASS] = "FSP Password:\n\nPassword for the FSP server, if it has one. It is stored as plain\ntext in global.ini.",
@@ -254,6 +257,17 @@ char* getAutoLoadDeviceName(SwissSettings *settings) {
 	return entryDevice != NULL ? (char*)(entryDevice->deviceName) : "None";
 }
 
+/* The end of a path too long for a value: its last max bytes, or one fewer
+ * where the cut would start inside a Cyrillic letter. */
+static const char *pathTail(const char *path, size_t length, size_t max)
+{
+	size_t start = length - max;
+	int bytes;
+
+	UILang_Character(path + start - 1u, &bytes);
+	return path + start + (bytes == 2);
+}
+
 char* getLibraryPathName(SwissSettings *settings) {
 	static char formatted[UI_SETLAYOUT_VALUE_TEXT_MAX + 1];
 	DEVICEHANDLER_INTERFACE *sourceDevice = getDeviceFromPath(settings->libraryPath);
@@ -266,7 +280,7 @@ char* getLibraryPathName(SwissSettings *settings) {
 	snprintf(formatted, sizeof(formatted), "%s%s",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
 		length > UI_SETLAYOUT_VALUE_TEXT_MAX ?
-			settings->libraryPath + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
+			pathTail(settings->libraryPath, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) :
 			settings->libraryPath);
 	return formatted;
 }
@@ -505,7 +519,7 @@ static void drawSettingsChrome(uiSetPageSnapshot_t *page, int page_num,
 	if(layout->tabCount == 0) {
 		n = settings_game_custom_count(gameConfig);
 		if(n > 0) {
-			snprintf(text, sizeof(text), "%d custom", n);
+			snprintf(text, sizeof(text), UI_T("%d custom"), n);
 		}
 		(void)prepareSettingText(n > 0 ? text : "No custom settings",
 			sizeof(text) - 1u, UI_SETLAYOUT_ELLIPSIZE_TAIL,
@@ -614,6 +628,7 @@ static const settingsRowRef_t displayRows[] = {
 };
 
 static const settingsRowRef_t consoleRows[] = {
+	{PAGE_INTERFACE, SET_MENU_LANGUAGE},
 	{PAGE_INTERFACE, SET_UI_COLOR},
 	{PAGE_INTERFACE, SET_UI_BACKDROP_COLOR},
 	{PAGE_INTERFACE, SET_WAVES},
@@ -989,7 +1004,7 @@ static void rowShow(settingRowView_t *row, uiSettingRowKind_t kind,
 	const char *label, const char *value, bool enabled)
 {
 	row->kind = kind;
-	row->label = label;
+	row->label = UI_T(label);
 	row->value = value;
 	row->enabled = enabled;
 	row->on = false;
@@ -1019,7 +1034,7 @@ static void rowOnOff(settingRowView_t *row, const char *label, bool on,
 static void rowNumber(settingRowView_t *row, const char *label,
 	const char *format, int value, bool enabled)
 {
-	snprintf(row->text, sizeof(row->text), format, value);
+	snprintf(row->text, sizeof(row->text), UI_T(format), value);
 	rowShow(row, SET_ROWKIND_CYCLE, label, row->text, enabled);
 }
 
@@ -1076,7 +1091,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 				snprintf(path, sizeof(path), "/%s", strcmp(saves_folder(), "/") ? saves_folder() : "");
 				length = strlen(path);
 				snprintf(folder, sizeof(folder), "%s%s", length > UI_SETLAYOUT_VALUE_TEXT_MAX ? "\205" : "",
-					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? path + length - (UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
+					length > UI_SETLAYOUT_VALUE_TEXT_MAX ? pathTail(path, length, UI_SETLAYOUT_VALUE_TEXT_MAX - 1) : path);
 				rowText(row, "Save Folder:", folder, devices[DEVICE_CONFIG] != NULL);
 			}
 			break;
@@ -1144,6 +1159,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_LIBRARY_FOLDERS: rowOnOff(row, "Library Folders:", swissSettings.libraryFolders, true); break;
 			case SET_DETAIL_SAVES: rowCycle(row, "Saves on Details:", swissSettings.hideDetailSaves ? "Off" : swissSettings.alwaysShowDetailSaves ? "Always" : "On", true); break;
 			case SET_MENU_WIDESCREEN: rowYesNo(row, "Menu Widescreen:", swissSettings.menuWidescreen, true); break;
+			case SET_MENU_LANGUAGE: rowCycle(row, "Menu Language:", uiLangNames[swissSettings.menuLanguage], true); break;
 		}
 	}
 	else if(page == PAGE_NETWORK) {
@@ -1156,7 +1172,8 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_BBA_DHCP: rowYesNo(row, "IPv4 uses DHCP:", swissSettings.bbaUseDhcp, netEnable); break;
 			case SET_NTP_SYNC: rowYesNo(row, "Sync Clock:", swissSettings.ntpSync, netEnable); break;
 			case SET_NTP_HOSTIP: rowText(row, "NTP Server IP:", swissSettings.ntpHostIp[0] ? swissSettings.ntpHostIp : TIME_SYNC_DEFAULT_SERVER, netEnable); break;
-			case SET_TIME_ZONE: rowText(row, "Time Zone:", swissSettings.timeZone[0] ? swissSettings.timeZone : "Keep console's", netEnable); break;
+			case SET_TIME_ZONE: rowText(row, "Time Zone:", UITimeSync_KeepsOffset(swissSettings.timeZone) ?
+				"Keep offset (no DST)" : swissSettings.timeZone, netEnable); break;
 			case SET_FSP_HOSTIP: rowText(row, "FSP Host IP:", swissSettings.fspHostIp, netEnable); break;
 			case SET_FSP_PORT: rowTextNumber(row, "FSP Port:", swissSettings.fspPort, netEnable); break;
 			case SET_FSP_PASS: rowText(row, "FSP Password:", "*****", netEnable); break;
@@ -1461,6 +1478,25 @@ const char *settings_game_custom_first(ConfigEntry *game)
 	return text;
 }
 
+static void settingsEditTimeZone(void)
+{
+	char zone[sizeof(swissSettings.timeZone)];
+	int32_t offset;
+
+	strcpy(zone, swissSettings.timeZone);
+	DrawGetTextEntry(ENTRYMODE_NUMERIC | ENTRYMODE_ALPHA,
+		"Time Zone (e.g. America/Denver)", zone, sizeof(zone) - 1);
+	if(strcmp(zone, swissSettings.timeZone) == 0) return;
+	if(UITimeSync_KeepsOffset(zone) || UITimeSync_ZoneOffset(zone, 0, &offset)) {
+		strcpy(swissSettings.timeZone, zone);
+		return;
+	}
+	uiDrawObj_t *message = DrawPublish(DrawMessageBox(D_WARN,
+		"Time Zone not recognized.\nCheck the location name and capitalization,\nor leave it blank to keep the current offset."));
+	wait_press_A();
+	DrawDispose(message);
+}
+
 void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfig) {
 	if(page == PAGE_GLOBAL) {
 		switch(option) {
@@ -1574,11 +1610,11 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_SWISS_VIDEOMODE:
 				swissSettings.uiVMode += direction;
-				swissSettings.uiVMode = (swissSettings.uiVMode + 9) % 9;
+				swissSettings.uiVMode = (swissSettings.uiVMode + 10) % 10;
 			break;
 			case SET_APPS_VIDEOMODE:
 				swissSettings.appsVMode += direction;
-				swissSettings.appsVMode = (swissSettings.appsVMode + 9) % 9;
+				swissSettings.appsVMode = (swissSettings.appsVMode + 10) % 10;
 			break;
 			case SET_INIT_DRIVE:
 				if(deviceHandler_getDeviceAvailable(&__device_dvd))
@@ -1612,10 +1648,10 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 					swissSettings.rt4kOptim ^= 1;
 					switch(swissSettings.aveCompat) {
 						case GCDIGITAL_COMPAT:
-							sprintf(txtbuffer, "In the \223GCDigital Settings\224 menu,\nset \223Use console DE\224 to %s.", swissSettings.rt4kOptim ? "on (4:3)" : "off");
+							sprintf(txtbuffer, UI_T("In the \223GCDigital Settings\224 menu,\nset \223Use console DE\224 to %s."), swissSettings.rt4kOptim ? "on (4:3)" : "off");
 						break;
 						case GCVIDEO_COMPAT:
-							sprintf(txtbuffer, "In the GCVideo \223Advanced Settings\224\nmenu, set \223Fix Resolution\224 to %s.", swissSettings.rt4kOptim ? "Off" : "On");
+							sprintf(txtbuffer, UI_T("In the GCVideo \223Advanced Settings\224\nmenu, set \223Fix Resolution\224 to %s."), swissSettings.rt4kOptim ? "Off" : "On");
 						break;
 					}
 					uiDrawObj_t *msgBox = DrawPublish(DrawMessageBox(D_INFO, txtbuffer));
@@ -1818,6 +1854,13 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			case SET_MENU_WIDESCREEN:
 				swissSettings.menuWidescreen ^= 1;
 			break;
+			case SET_MENU_LANGUAGE:
+				swissSettings.menuLanguage += direction;
+				swissSettings.menuLanguage = (swissSettings.menuLanguage + UI_LANG_MAX) % UI_LANG_MAX;
+				config_load_language(swissSettings.menuLanguage, true);
+				/* The page is rebuilt before the next frame selects it. */
+				UILang_Select(swissSettings.menuLanguage);
+			break;
 		}
 	}
 	else if(page == PAGE_NETWORK) {
@@ -1840,12 +1883,15 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_NTP_SYNC:
 				swissSettings.ntpSync ^= 1;
+				if(swissSettings.ntpSync && UITimeSync_KeepsOffset(swissSettings.timeZone)) {
+					settingsEditTimeZone();
+				}
 			break;
 			case SET_NTP_HOSTIP:
 				DrawGetTextEntry(ENTRYMODE_IP, "NTP Server IP", &swissSettings.ntpHostIp, sizeof(swissSettings.ntpHostIp) - 1);
 			break;
 			case SET_TIME_ZONE:
-				DrawGetTextEntry(ENTRYMODE_NUMERIC|ENTRYMODE_ALPHA, "Time Zone", &swissSettings.timeZone, sizeof(swissSettings.timeZone) - 1);
+				settingsEditTimeZone();
 			break;
 			case SET_FSP_HOSTIP:
 				DrawGetTextEntry(ENTRYMODE_IP, "FSP Host IP", &swissSettings.fspHostIp, sizeof(swissSettings.fspHostIp) - 1);
@@ -2451,14 +2497,14 @@ static bool settingsKeepVideoMode(const settingRowView_t *row)
 
 		if(seconds != shown) {
 			/* DrawMessageBox copies into txtbuffer, so format elsewhere. */
-			char message[128];
+			char message[256];
 
 			/* Three lines: a fourth runs past the 125 px box. The first names
 			 * the new value, as the row behind shows it. The last is the
 			 * buttons, which DrawMessageBox draws as icons. */
-			snprintf(message, sizeof(message), "Keep %s %s?\n"
+			snprintf(message, sizeof(message), UI_T("Keep %s %s?\n"
 				"It changes back by itself in %d s.\n"
-				"A  KEEP    B  CHANGE BACK", row->label, row->value, seconds);
+				"A  KEEP    B  CHANGE BACK"), row->label, UI_T(row->value), seconds);
 			box = box == NULL ?
 				DrawPublish(DrawMessageBox(D_WARN, message)) :
 				DrawRepublish(box, DrawMessageBox(D_WARN, message));
@@ -2835,6 +2881,7 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 	}
 	if(page == PAGE_NETWORK && (horizontal || activate)) {
 		return in_range(option, SET_BBA_LOCALIP, SET_BBA_GATEWAY) ||
+			(option == SET_NTP_SYNC && UITimeSync_KeepsOffset(swissSettings.timeZone)) ||
 			in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
 			in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT);
 	}

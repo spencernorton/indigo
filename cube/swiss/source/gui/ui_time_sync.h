@@ -32,6 +32,9 @@ bool UITimeSync_Reply(const uint8_t *packet, size_t length, uint64_t cookie,
 bool UITimeSync_ZoneOffset(const char *zone, int64_t utcSeconds,
 	int32_t *eastSeconds);
 
+/* An empty Time Zone and the imported Etc/Unknown both keep the offset. */
+bool UITimeSync_KeepsOffset(const char *zone);
+
 /* With no Time Zone, the console keeps its own: the offset its clock already
  * has from UTC, snapped to the nearest offset a real time zone uses. A drift
  * keeps the zone while it is nearer than any other: under half an hour for

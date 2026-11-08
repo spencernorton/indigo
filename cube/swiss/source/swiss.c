@@ -78,6 +78,7 @@
 #include "devices/filemeta.h"
 #include "dolparameters.h"
 #include "reservedarea.h"
+#include "ui_lang.h"
 
 DiskHeader GCMDisk;      //Gamecube Disc Header struct
 TGCHeader tgcFile;
@@ -589,6 +590,12 @@ static void gameflowGamesRoot(const DEVICEHANDLER_INTERFACE *device,
 {
 	if(device == NULL || device->initial == NULL) {
 		gamesRoot[0] = '\0';
+		return;
+	}
+	/* The optical handler exposes the disc's game(s) at its root, without
+	 * a /games folder. An explicit Disc source must stay on that disc. */
+	if(device == &__device_dvd) {
+		strlcpy(gamesRoot, device->initial->name, PATHNAME_MAX);
 		return;
 	}
 	/* Settings › Library Path, when it is on this device; else /games. */
@@ -1373,7 +1380,7 @@ static bool filesInfoSnapshot(uiFilesSnapshot_t *s, file_handle **entries,
 			}
 			if(kind == UI_FILES_KIND_DISC && meta->diskId.gamename[0] != '\0') {
 				/* A banner's short company fills its field without a terminator. */
-				snprintf(s->line[1], sizeof(s->line[1]), "GameCube disc  \267  %.4s%.2s%s%.*s",
+				snprintf(s->line[1], sizeof(s->line[1]), UI_T("GameCube disc  \267  %.4s%.2s%s%.*s"),
 					meta->diskId.gamename, meta->diskId.company,
 					meta->bannerDesc.company[0] != '\0' ? "  \267  " : "",
 					(int)sizeof(meta->bannerDesc.company), meta->bannerDesc.company);
@@ -1398,7 +1405,7 @@ static bool filesInfoSnapshot(uiFilesSnapshot_t *s, file_handle **entries,
 			unlockFile(entry);
 		}
 		if(pane == UI_FILES_RIGHT && kind != UI_FILES_KIND_PARENT) {
-			snprintf(s->line[0], sizeof(s->line[0]), "On %s  \233  %s", deviceName,
+			snprintf(s->line[0], sizeof(s->line[0]), UI_T("On %s  \233  %s"), deviceName,
 				getDevicePath(filesOther.dir.name));
 		}
 		if(kind == UI_FILES_KIND_DISC_COMPRESSED) {
@@ -1881,7 +1888,7 @@ static u32 filesAskExists(const char *destName)
 	strlcpy(folder, destName, sizeof(folder));
 	getParentPath(folder, folder);
 	/* The file's name, however long, is the info bar's line 1. */
-	snprintf(title, sizeof(title), "It's already in %s.", *getRelativeName(folder) != '\0' ?
+	snprintf(title, sizeof(title), UI_T("It's already in %s."), *getRelativeName(folder) != '\0' ?
 		getRelativeName(folder) : DeviceDisplayName(devices[DEVICE_DEST]));
 	memset(&filesMenu, 0, sizeof(filesMenu));
 	filesMenu.devices = -1;
@@ -2018,7 +2025,7 @@ static uiDrawObj_t *filesProgress(int option, const char *destName)
 	char title[UI_FILES_TEXT_CAPACITY + 64], path[PATHNAME_MAX + 64];
 	const char *there = DeviceDisplayName(devices[DEVICE_DEST]);
 
-	snprintf(title, sizeof(title), "%s %s to %s", option == MOVE_OPTION ? "Moving" : "Copying",
+	snprintf(title, sizeof(title), UI_T("%s %s to %s"), option == MOVE_OPTION ? UI_T("Moving") : UI_T("Copying"),
 		filesCopyName, there);
 	snprintf(path, sizeof(path), "%s  \233  %s", there, getDevicePath((char *)destName));
 	return DrawProgressBarFiles(title, path);
@@ -2222,12 +2229,12 @@ static bool filesActions(file_handle **directory, int pane)
 		char title[64], line[UI_FILES_TEXT_CAPACITY], size[24], free[24] = "";
 		file_handle **list = left ? filesOther.sorted : directory;
 
-		snprintf(title, sizeof(title), "Copy to %s?", DeviceDisplayName(there));
+		snprintf(title, sizeof(title), UI_T("Copy to %s?"), DeviceDisplayName(there));
 		if(to.freeKnown) {
 			UIFiles_SizeText(free, sizeof(free), to.freeBytes, filesBlockSize(there),
 				to.device.metric);
 		}
-		snprintf(line, sizeof(line), free[0] != '\0' ? "To %s  \233  %s  \267  %s free" :
+		snprintf(line, sizeof(line), free[0] != '\0' ? UI_T("To %s  \233  %s  \267  %s free") :
 			"To %s  \233  %s", DeviceDisplayName(there), getDevicePath((char *)thereDir), free);
 		filesSizeText(size, sizeof(size), entry);
 		filesQuestion(title, "Yes", "No", line, avail.line[action], avail.warn[action]);
@@ -2359,7 +2366,7 @@ static bool filesSwapSides(file_handle **directory)
 	char leftFocus[PATHNAME_MAX], rightFocus[PATHNAME_MAX];
 
 	if(!UIFiles_CanSwap(filesOther.mount, !filesOther.readFailed)) {
-		snprintf(filesNoteText, sizeof(filesNoteText), "%s isn't ready, so the sides can't swap.",
+		snprintf(filesNoteText, sizeof(filesNoteText), UI_T("%s isn't ready, so the sides can't swap."),
 			DeviceDisplayName(right));
 		filesNote = filesNoteText;
 		return false;
@@ -2820,7 +2827,8 @@ static uiGameflowLibraryMode_t gameflowLibraryMode(file_handle **directory,
 		return UI_GAMEFLOW_LIBRARY_NONE;
 	}
 	gameflowGamesRoot(devices[DEVICE_CUR], gamesRoot);
-	location = swissSettings.libraryFolders ?
+	location = swissSettings.libraryFolders &&
+		devices[DEVICE_CUR] != &__device_dvd ?
 		UIGameflowLibrary_LocateFolders(gamesRoot, curDir.name) :
 		UIGameflowLibrary_Locate(gamesRoot, curDir.name);
 	if(location == UI_GAMEFLOW_LIBRARY_LOCATION_NONE) {
@@ -2836,7 +2844,9 @@ static uiGameflowLibraryMode_t gameflowLibraryMode(file_handle **directory,
 		const char *name = directory[i] ?
 			getRelativeName(directory[i]->name) : NULL;
 		uiGameflowLibraryEntryType_t type = gameflowEntryType(directory[i]);
-		if(flattened && type == UI_GAMEFLOW_LIBRARY_ENTRY_DIRECTORY) {
+		/* Disc folders are the game's data, not Library folders. */
+		if((flattened || devices[DEVICE_CUR] == &__device_dvd) &&
+			type == UI_GAMEFLOW_LIBRARY_ENTRY_DIRECTORY) {
 			continue;
 		}
 		if(!UIGameflowLibrary_ClassifierAdd(&classifier, type, name)) {
@@ -2900,7 +2910,8 @@ static bool gameflowInsideFolder(void)
 {
 	char gamesRoot[PATHNAME_MAX];
 
-	if(!swissSettings.libraryFolders || devices[DEVICE_CUR] == NULL ||
+	if(!swissSettings.libraryFolders || devices[DEVICE_CUR] == &__device_dvd ||
+		devices[DEVICE_CUR] == NULL ||
 		devices[DEVICE_CUR]->initial == NULL) {
 		return false;
 	}
@@ -3154,8 +3165,8 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 			}
 			first = UICheats_WindowStart(deviceSelection, totalDevices);
 			memset(&shown, 0, sizeof(shown));
-			snprintf(shown.title, sizeof(shown.title), "Choose a Device");
-			snprintf(shown.status, sizeof(shown.status), "Storage Devices");
+			snprintf(shown.title, sizeof(shown.title), UI_T("Choose a Device"));
+			snprintf(shown.status, sizeof(shown.status), UI_T("Storage Devices"));
 			snprintf(shown.section, sizeof(shown.section),
 				"Select a storage device to browse its folders");
 			snprintf(shown.position, sizeof(shown.position), "%d / %d",
@@ -3175,7 +3186,7 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 				else {
 					snprintf(row->title, sizeof(row->title),
 						"Auto (Find a Games Folder)");
-					snprintf(row->blocks, sizeof(row->blocks), "Clear");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Clear"));
 				}
 				shown.rowCount++;
 			}
@@ -3185,7 +3196,7 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 			shown.focusRow = (s8)(deviceSelection - first);
 			snprintf(shown.hint[0], sizeof(shown.hint[0]),
 				"A  Select Device");
-			snprintf(shown.hint[1], sizeof(shown.hint[1]), "B  Back");
+			snprintf(shown.hint[1], sizeof(shown.hint[1]), UI_T("B  Back"));
 			if(page == NULL) {
 				if((page = DrawSavesPage(&shown)) != NULL) {
 					DrawPublish(page);
@@ -3305,7 +3316,7 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 			}
 			first = UICheats_WindowStart(selection, totalRows);
 			memset(&shown, 0, sizeof(shown));
-			snprintf(shown.title, sizeof(shown.title), "Choose a Folder");
+			snprintf(shown.title, sizeof(shown.title), UI_T("Choose a Folder"));
 			snprintf(shown.status, sizeof(shown.status), "%s",
 				DeviceDisplayName(activeDevice));
 			UICheats_Fit(shown.section, sizeof(shown.section),
@@ -3319,19 +3330,19 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 				char label[PATHNAME_MAX + 16];
 
 				if(idx == 0) {
-					snprintf(label, sizeof(label), "Use %s", openDir.name);
+					snprintf(label, sizeof(label), UI_T("Use %s"), openDir.name);
 					UICheats_Fit(row->title, sizeof(row->title), label,
 						330, 0.62f, GetTextSizeInPixels);
-					snprintf(row->blocks, sizeof(row->blocks), "Current");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Current"));
 				}
 				else if(idx == parentRow) {
 					char parent[PATHNAME_MAX];
 
 					getParentPath(openDir.name, parent);
-					snprintf(label, sizeof(label), "Up to %s", parent);
+					snprintf(label, sizeof(label), UI_T("Up to %s"), parent);
 					UICheats_Fit(row->title, sizeof(row->title), label,
 						330, 0.62f, GetTextSizeInPixels);
-					snprintf(row->blocks, sizeof(row->blocks), "Parent");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Parent"));
 				}
 				else if(idx >= firstSubRow && idx < firstSubRow + subCount) {
 					file_handle *sub = subDirs[idx - firstSubRow];
@@ -3339,17 +3350,17 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 					UICheats_Fit(row->title, sizeof(row->title),
 						getRelativeName(sub->name), 330, 0.62f,
 						GetTextSizeInPixels);
-					snprintf(row->blocks, sizeof(row->blocks), "Folder");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Folder"));
 				}
 				else if(idx == switchDeviceRow) {
 					snprintf(row->title, sizeof(row->title),
 						"Switch Device...");
-					snprintf(row->blocks, sizeof(row->blocks), "Device");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Device"));
 				}
 				else if(idx == clearRow) {
 					snprintf(row->title, sizeof(row->title),
 						"Auto (Find a Games Folder)");
-					snprintf(row->blocks, sizeof(row->blocks), "Clear");
+					snprintf(row->blocks, sizeof(row->blocks), UI_T("Clear"));
 				}
 				shown.rowCount++;
 			}
@@ -3359,7 +3370,7 @@ static bool homeChooseLibraryFolder(char *outPath, size_t outSize)
 			shown.focusRow = (s8)(selection - first);
 			snprintf(shown.hint[0], sizeof(shown.hint[0]),
 				"A  Open / Select   X  Use Folder   Y  Device");
-			snprintf(shown.hint[1], sizeof(shown.hint[1]), "B  Back");
+			snprintf(shown.hint[1], sizeof(shown.hint[1]), UI_T("B  Back"));
 			if(page == NULL) {
 				if((page = DrawSavesPage(&shown)) != NULL) {
 					DrawPublish(page);
@@ -4100,7 +4111,7 @@ static void gameflowSnapshotRecord(uiGameflowCardSnapshot_t *record,
 		gameflowMarkCustom(record);
 		gameflowCopyText(record->company, sizeof(record->company),
 			"GAME FOLDER", sizeof("GAME FOLDER"));
-		snprintf(record->facts, sizeof(record->facts), "%s  |  A OPEN",
+		snprintf(record->facts, sizeof(record->facts), UI_T("%s  |  A OPEN"),
 			record->gameId);
 		return;
 	}
@@ -4160,7 +4171,7 @@ static void gameflowSnapshotRecord(uiGameflowCardSnapshot_t *record,
 			record->gameId, sizeText);
 	}
 	else {
-		snprintf(record->facts, sizeof(record->facts), "GAME IMAGE  |  %s",
+		snprintf(record->facts, sizeof(record->facts), UI_T("GAME IMAGE  |  %s"),
 			sizeText);
 	}
 	if(!strcmp(swissSettings.autoload, file->name) ||
@@ -5644,7 +5655,7 @@ void load_app(ExecutableFile *fileToPatch)
 			if(devices[DEVICE_PATCHES]->readFile(fileToPatch->patchFile, &old_hash, sizeof(old_hash)) != sizeof(old_hash) ||
 				!XXH128_isEqual(old_hash, new_hash)) {
 				devices[DEVICE_PATCHES]->deleteFile(fileToPatch->patchFile);
-				sprintf(txtbuffer, "Failed integrity check in patched file!\nPlease test %s for defects.", devices[DEVICE_PATCHES]->deviceName);
+				sprintf(txtbuffer, UI_T("Failed integrity check in patched file!\nPlease test %s for defects."), devices[DEVICE_PATCHES]->deviceName);
 				message = txtbuffer;
 				goto fail;
 			}
@@ -6145,7 +6156,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 	if(preset == MANAGE_ASK) {
 		// Ask the user what they want to do with the selected entry
 		uiDrawObj_t* manageFileBox = DrawEmptyBox(10,150, getVideoMode()->fbWidth-10, 320);
-		sprintf(txtbuffer, "Manage %s:", isFile ? "File" : "Directory");
+		sprintf(txtbuffer, UI_T("Manage %s:"), isFile ? UI_T("File") : UI_T("Directory"));
 		DrawAddChild(manageFileBox, DrawStyledLabel(640/2, 160, txtbuffer, 1.0f, ALIGN_CENTER, defaultColor));
 		float scale = GetTextScaleToFitInWidth(getRelativeName(curFile.name), getVideoMode()->fbWidth-10-10);
 		DrawAddChild(manageFileBox, DrawStyledLabel(640/2, 190, getRelativeName(curFile.name), scale, ALIGN_CENTER, defaultColor));
@@ -6252,7 +6263,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 		if(modified) {
 			print_debug("Renaming %s to %s\n", &curFile.name[0], txtbuffer);
 			u32 ret = devices[DEVICE_CUR]->renameFile(&curFile, txtbuffer);
-			sprintf(txtbuffer, "%s renamed!\nPress A to continue.", isFile ? "File" : "Directory");
+			sprintf(txtbuffer, UI_T("%s renamed!\nPress A to continue."), isFile ? UI_T("File") : UI_T("Directory"));
 			manageTell(D_INFO, ret ? "Move Failed! Press A to continue" : txtbuffer,
 				ret ? "Couldn't rename it." : "Renamed.", "", ret != 0);
 		}
@@ -6266,7 +6277,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 		uiDrawObj_t *progBar = DrawPublish(DrawProgressBar(true, 0, "Deleting\205"));
 		bool deleted = deleteFileOrDir(&curFile);
 		DrawDispose(progBar);
-		sprintf(txtbuffer, "%s %s\nPress A to continue.", isFile ? "File" : "Directory", deleted ? "deleted successfully" : "failed to delete!");
+		sprintf(txtbuffer, UI_T("%s %s\nPress A to continue."), isFile ? UI_T("File") : UI_T("Directory"), deleted ? UI_T("deleted successfully") : UI_T("failed to delete!"));
 		manageTell(deleted ? D_INFO : D_FAIL, txtbuffer, !deleted ? "Couldn't delete it." :
 			isFile ? "The file was deleted." : "The folder was deleted.", "", !deleted);
 		return deleted;
@@ -6289,7 +6300,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 				deviceHandler_setStatEnabled(0);
 				if(devices[DEVICE_DEST]->init( devices[DEVICE_DEST]->initial )) {
 					deviceHandler_setStatEnabled(1);
-					sprintf(txtbuffer, "Failed to init destination device! (%u)\nPress A to continue.",ret);
+					sprintf(txtbuffer, UI_T("Failed to init destination device! (%u)\nPress A to continue."),ret);
 					uiDrawObj_t *msgBox = DrawMessageBox(D_FAIL,txtbuffer);
 					DrawPublish(msgBox);
 					wait_press_A();
@@ -6480,7 +6491,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 			u32 bulkWrite = isSrcCard || isDestCard || devices[DEVICE_DEST] == &__device_qoob;
 			u32 curOffset = curFile.offset, cancelled = 0, written = 0, chunkSize = bulkWrite ? curFile.size - curOffset : (256*1024);
 			char *readBuffer = (char*)memalign(32,chunkSize);
-			sprintf(txtbuffer, "Copying to: %s",getRelativeName(destFile->name));
+			sprintf(txtbuffer, UI_T("Copying to: %s"),getRelativeName(destFile->name));
 			uiDrawObj_t* progBar = filesBoxes ? filesProgress(option, destFile->name) :
 				DrawProgressBar(false, 0, txtbuffer);
 			DrawPublish(progBar);
@@ -6523,7 +6534,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 						devices[DEVICE_DEST]->closeFile(destFile);
 						/* Before its first write the copy made no file, so none is left. */
 						bool removed = !written || manageDropPartial(destFile);
-						sprintf(txtbuffer, "Failed to Read! (%d %d)\n%s",amountToCopy,ret, &curFile.name[0]);
+						sprintf(txtbuffer, UI_T("Failed to Read! (%d %d)\n%s"),amountToCopy,ret, &curFile.name[0]);
 						manageCopied(UI_FILES_RESULT_READ_FAILED, option, destFile->name, ret, removed,
 							replaced, D_FAIL, txtbuffer);
 						setGCIInfo(NULL);
@@ -6539,7 +6550,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 					devices[DEVICE_CUR]->closeFile(&curFile);
 					devices[DEVICE_DEST]->closeFile(destFile);
 					bool removed = manageDropPartial(destFile);
-					sprintf(txtbuffer, "Failed to Write! (%d %d)\n%s",amountToCopy,ret,destFile->name);
+					sprintf(txtbuffer, UI_T("Failed to Write! (%d %d)\n%s"),amountToCopy,ret,destFile->name);
 					manageCopied(UI_FILES_RESULT_WRITE_FAILED, option, destFile->name, ret, removed,
 						replaced, D_FAIL, txtbuffer);
 					setGCIInfo(NULL);
@@ -6557,7 +6568,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 				ret = devices[DEVICE_DEST]->closeFile(destFile);
 			if(ret != 0) {
 				bool removed = manageDropPartial(destFile);
-				sprintf(txtbuffer, "Failed to Write! (%d)\n%s",ret,destFile->name);
+				sprintf(txtbuffer, UI_T("Failed to Write! (%d)\n%s"),ret,destFile->name);
 				manageCopied(UI_FILES_RESULT_WRITE_FAILED, option, destFile->name, ret, removed,
 					replaced, D_FAIL, txtbuffer);
 				setGCIInfo(NULL);
@@ -6588,7 +6599,7 @@ bool manage_file_ex(int preset, const char *destDir) {
 				}
 			} 
 			else {
-				sprintf(txtbuffer, "%s cancelled.\nPress A to continue", (option == MOVE_OPTION) ? "Move" : "Copy");
+				sprintf(txtbuffer, UI_T("%s cancelled.\nPress A to continue"), (option == MOVE_OPTION) ? UI_T("Move") : UI_T("Copy"));
 				message = txtbuffer;
 				result = UI_FILES_RESULT_STOPPED;
 			}
@@ -6651,7 +6662,7 @@ void verify_game()
 		if(ret != amountToRead) {
 			DrawDispose(progBar);
 			free(readBuffer);
-			sprintf(txtbuffer, "Failed to Read! (%d %d)\n%s",amountToRead,ret, &curFile.name[0]);
+			sprintf(txtbuffer, UI_T("Failed to Read! (%d %d)\n%s"),amountToRead,ret, &curFile.name[0]);
 			uiDrawObj_t *msgBox = DrawMessageBox(D_FAIL,txtbuffer);
 			DrawPublish(msgBox);
 			wait_press_A();
@@ -7236,18 +7247,18 @@ uiDrawObj_t* draw_game_info(ConfigEntry *config) {
 	if(devices[DEVICE_CUR] == &__device_qoob) {
 		formatBytes(stpcpy(txtbuffer, "Size: "), curFile.size, 65536, false);
 		DrawAddChild(container, DrawStyledLabel(640/2, 160, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
-		sprintf(txtbuffer,"Position on Flash: %08X",(u32)(curFile.fileBase&0xFFFFFFFF));
+		sprintf(txtbuffer,UI_T("Position on Flash: %08X"),(u32)(curFile.fileBase&0xFFFFFFFF));
 		DrawAddChild(container, DrawStyledLabel(640/2, 180, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
 	}
 	else if(devices[DEVICE_CUR] == &__device_wode) {
 		ISOInfo_t* isoInfo = (ISOInfo_t*)&curFile.other;
-		sprintf(txtbuffer,"Partition: %i, ISO: %i", isoInfo->iso_partition,isoInfo->iso_number);
+		sprintf(txtbuffer,UI_T("Partition: %i, ISO: %i"), isoInfo->iso_partition,isoInfo->iso_number);
 		DrawAddChild(container, DrawStyledLabel(640/2, 160, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
 	}
 	else if(devices[DEVICE_CUR] == &__device_card_a || devices[DEVICE_CUR] == &__device_card_b) {
 		formatBytes(stpcpy(txtbuffer, "Size: "), curFile.size, 8192, false);
 		DrawAddChild(container, DrawStyledLabel(640/2, 160, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
-		sprintf(txtbuffer,"Position on Card: %08X",curFile.offset);
+		sprintf(txtbuffer,UI_T("Position on Card: %08X"),curFile.offset);
 		DrawAddChild(container, DrawStyledLabel(640/2, 180, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
 	}
 	else {
@@ -7279,7 +7290,7 @@ uiDrawObj_t* draw_game_info(ConfigEntry *config) {
 		if(is_verifiable_disc(&GCMDisk)) {
 			DrawAddChild(container, DrawStyledLabel(640/2, 180, "(R) Verify data integrity", 0.6f, ALIGN_CENTER, defaultColor));
 		}
-		sprintf(txtbuffer, "Game ID: [%.6s] Audio Streaming: [%s]", (char*)&GCMDisk, GCMDisk.AudioStreaming ? swissSettings.audioStreaming ? "Enabled" : "Unused" : "Disabled");
+		sprintf(txtbuffer, UI_T("Game ID: [%.6s] Audio Streaming: [%s]"), (char*)&GCMDisk, GCMDisk.AudioStreaming ? swissSettings.audioStreaming ? UI_T("Enabled") : UI_T("Unused") : UI_T("Disabled"));
 		DrawAddChild(container, DrawStyledLabel(640/2, 200, txtbuffer, 0.8f, ALIGN_CENTER, defaultColor));
 
 		if(GCMDisk.TotalDisc > 1) {
@@ -7287,19 +7298,19 @@ uiDrawObj_t* draw_game_info(ConfigEntry *config) {
 				DrawAddChild(container, DrawStyledLabel(640/2, 220, "A firmware update is required.", 0.6f, ALIGN_CENTER, defaultColor));
 			}
 			else {
-				sprintf(txtbuffer, "Disc %i/%i [Found: %s]", GCMDisk.DiscID+1, GCMDisk.TotalDisc, meta_find_disc2(&curFile) ? "Yes":"No");
+				sprintf(txtbuffer, UI_T("Disc %i/%i [Found: %s]"), GCMDisk.DiscID+1, GCMDisk.TotalDisc, meta_find_disc2(&curFile) ? UI_T("Yes"):UI_T("No"));
 				DrawAddChild(container, DrawStyledLabel(640/2, 220, txtbuffer, 0.6f, ALIGN_CENTER, defaultColor));
 			}
 		}
 		else if(GCMDisk.CountryCode == 'E'
 			&& GCMDisk.RegionCode == 0) {
 			if(GCMDisk.Version > 0x30) {
-				sprintf(txtbuffer, "Revision %X", GCMDisk.Version - 0x30);
+				sprintf(txtbuffer, UI_T("Revision %X"), GCMDisk.Version - 0x30);
 				DrawAddChild(container, DrawStyledLabel(640/2, 220, txtbuffer, 0.6f, ALIGN_CENTER, defaultColor));
 			}
 		}
 		else if(GCMDisk.Version) {
-			sprintf(txtbuffer, "Revision %X", GCMDisk.Version);
+			sprintf(txtbuffer, UI_T("Revision %X"), GCMDisk.Version);
 			DrawAddChild(container, DrawStyledLabel(640/2, 220, txtbuffer, 0.6f, ALIGN_CENTER, defaultColor));
 		}
 	}
@@ -7307,7 +7318,7 @@ uiDrawObj_t* draw_game_info(ConfigEntry *config) {
 	char *textPtr = txtbuffer;
 	if(devices[DEVICE_CONFIG] != NULL) {
 		bool isAutoLoadEntry = !strcmp(swissSettings.autoload, curFile.name) || !fnmatch(swissSettings.autoload, curFile.name, FNM_PATHNAME);
-		textPtr += sprintf(textPtr, "Z  Load at startup [Current: %s]", isAutoLoadEntry ? "Yes":"No");
+		textPtr += sprintf(textPtr, UI_T("Z  Load at startup [Current: %s]"), isAutoLoadEntry ? UI_T("Yes"):UI_T("No"));
 	}
 	if((devices[DEVICE_CUR]->location & LOC_DVD_CONNECTOR) && !config->preferCleanBoot) {
 		textPtr = stpcpy(textPtr, textPtr == txtbuffer ? "L+A  Clean Boot":"    L+A  Clean Boot");
@@ -7551,13 +7562,13 @@ static bool gameflowLoadChosenSave(gameflowLaunchContext_t *context)
 	/* With more than one file of the game, the question names the file. */
 	if(!gameflowSaveFiles() ||
 		!UISaves_DisplayText(file, sizeof(file), copy->entry + 8, UI_SAVES_NAME_LENGTH)) {
-		snprintf(file, sizeof(file), "the save");
+		snprintf(file, sizeof(file), UI_T("the save"));
 	}
-	snprintf(text, sizeof(text), own ? "Start with %s from %s?\n"
-		"%s's own copy of it goes to the Save Folder first.\nA  LOAD    B  KEEP" :
-		"Start with %s from %s?\n"
-		"It goes on the memory card in %s.\nA  LOAD    B  KEEP", file,
-		gameflowSaveWhere(copy), context->saveSlot == 0 ? "Slot A" : "Slot B");
+	snprintf(text, sizeof(text), own ? UI_T("Start with %s from %s?\n"
+		"%s's own copy of it goes to the Save Folder first.\nA  LOAD    B  KEEP") :
+		UI_T("Start with %s from %s?\n"
+		"It goes on the memory card in %s.\nA  LOAD    B  KEEP"), file,
+		UI_T(gameflowSaveWhere(copy)), UI_T(context->saveSlot == 0 ? "Slot A" : "Slot B"));
 	if(!gameflowSaveAsk(text)) {
 		context->saveChoice = -1;
 		return false;
@@ -7579,7 +7590,7 @@ static bool gameflowLoadChosenSave(gameflowLaunchContext_t *context)
 	ok = Saves_LoadCopy(context->saveSlot, copy, why, sizeof(why));
 	DrawDispose(box);
 	if(!ok) {
-		snprintf(text, sizeof(text), "The save didn't go on the card.\n%s\nA  OK",
+		snprintf(text, sizeof(text), UI_T("The save didn't go on the card.\n%s\nA  OK"),
 			why);
 		gameflowSaveAsk(text);
 		/* The cards may have changed: read them again. */

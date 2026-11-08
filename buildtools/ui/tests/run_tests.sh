@@ -186,6 +186,7 @@ run_contracts() {
 	python3 ./test_gameflow_layout_mutants.py
 	echo "== cube orientation and visible face binding =="
 	python3 ./test_cube_render_pose.py
+	python3 ./test_library_cube_bounds.py
 	echo "== frame budget: what one frame of each scene costs the console =="
 	python3 ./test_frame_budget.py
 	python3 ./test_jewel_lighting.py
@@ -206,6 +207,9 @@ run_contracts() {
 	python3 ./test_config_save.py
 	echo "== settings views: every setting in exactly one view =="
 	python3 ./test_settings_views.py
+	echo "== Menu Language: uk.po against the code and the console's parser =="
+	python3 ./test_lang.py
+	python3 ./test_lang.py --sanitize
 	echo "== Menu Color: Indigo's colors turn, meanings and neutrals stay =="
 	python3 ./test_ui_color.py
 	echo "== Clock: the time and its dial take the corner Settings names =="

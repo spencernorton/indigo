@@ -1,5 +1,6 @@
 """Regressions for the post-CI fuzzer's scheduling contract."""
 import unittest
+import re
 from pathlib import Path
 
 from check_workflows import fuzz_gate_problems
@@ -61,6 +62,32 @@ class FuzzGateTests(unittest.TestCase):
         guard = "    if: ${{ !cancelled() && needs.passed.result == 'success' }}\n"
         self.assertEqual(source.count(guard), 1)
         self.assertTrue(fuzz_gate_problems(source.replace(guard, "", 1)))
+
+
+class VideoArtifactTests(unittest.TestCase):
+    @staticmethod
+    def diagnostic_has_input(source):
+        jobs = dict(re.findall(r"^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", source, re.M | re.S))
+        uploads = {}
+        for step in re.split(r"^      - ", jobs['build'], flags=re.M):
+            if 'uses: actions/upload-artifact@' in step:
+                name = re.search(r"^          name: (.+)$", step, re.M).group(1)
+                uploads[name] = set(re.findall(r"dist/([^\s]+)", step))
+        diagnostic = jobs['video-diagnostic']
+        download = next(step for step in re.split(r"^      - ", diagnostic, flags=re.M)
+                        if 'uses: actions/download-artifact@' in step)
+        name = re.search(r"^          name: (.+)$", download, re.M).group(1)
+        consumed = re.search(r"video_lab/emulator.py\s+(\S+)", diagnostic).group(1)
+        return Path(consumed).name in uploads.get(name, set())
+
+    def test_diagnostic_download_contains_the_consumed_dol(self):
+        source = (Path(__file__).resolve().parents[2] / '.github/workflows/ci.yml').read_text()
+        self.assertTrue(self.diagnostic_has_input(source))
+        # A valid SD zip artifact is still the wrong input for this job.
+        start = source.index('  video-diagnostic:')
+        mutant = source[:start] + source[start:].replace(
+            'name: dol-${{ github.sha }}', 'name: indigo-sd-card-${{ github.sha }}', 1)
+        self.assertFalse(self.diagnostic_has_input(mutant))
 
 
 if __name__ == "__main__":

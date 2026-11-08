@@ -280,7 +280,12 @@ class SettingsViewsTest(unittest.TestCase):
                              SETTINGS_C)
         self.assertGreater(len(network), 10)
         for option in network:
-            self.assertTrue(arms[option].strip().startswith("DrawGetTextEntry("), option)
+            if option == "SET_TIME_ZONE":
+                self.assertEqual(arms[option].strip(), "settingsEditTimeZone();")
+                editor = SETTINGS_C[SETTINGS_C.index("static void settingsEditTimeZone("):]
+                self.assertIn("DrawGetTextEntry(", editor[:editor.index("\n}\n")])
+            else:
+                self.assertTrue(arms[option].strip().startswith("DrawGetTextEntry("), option)
         self.assertIn("devices[DEVICE_CONFIG] != NULL &&", arms["SET_SAVE_FOLDER"])
         # Flatten directory dims while Library Folders sets it, and then
         # neither A nor Left and Right reach its editor.

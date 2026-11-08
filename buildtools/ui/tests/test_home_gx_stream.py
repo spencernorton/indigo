@@ -58,6 +58,8 @@ typedef struct uiDrawObj { int type; void *data; } uiDrawObj_t;
 #define ALIGN_LEFT 0
 #define ALIGN_CENTER 1
 #define ALIGN_RIGHT 2
+/* Menu Language is English here. */
+#define UI_T(english) (english)
 #define EV_HOME 1
 enum { GX_QUADS = 0x80, GX_VTXFMT0 = 0 };
 #define CHECK(c) do { if(!(c)) { fprintf(stderr, "failed %d: %s\n", __LINE__, #c); exit(73); } } while(0)

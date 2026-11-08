@@ -427,11 +427,11 @@ static void home(const char *name, int turns, int framesAfter)
 
 static void library(const char *name, uiGameflowLayout_t layout, bool wide)
 {
+	UIStage_SetWide(wide);
 	startScene();
 	UIScene_Request(UI_SCENE_LIBRARY);
 	UIScene_RequestLibraryLayout(layout);
 	settle(600);
-	UIStage_SetWide(wide);
 	measure(name, false);
 	UIStage_SetWide(false);
 }
@@ -447,6 +447,7 @@ static void jewelCase(const char *name, bool printed, bool moving, bool wide)
 		{-0.5f, 19u, &cover, {0.0f, 0.125f, 0.75f, 0.875f}, 1.0f, 1.0f}
 	};
 
+	UIStage_SetWide(wide);
 	startScene();
 	UIScene_Request(UI_SCENE_LIBRARY);
 	UIScene_RequestLibraryLayout(UI_GAMEFLOW_LAYOUT_JEWEL_CASE);
@@ -458,7 +459,6 @@ static void jewelCase(const char *name, bool printed, bool moving, bool wide)
 	jewelShots = shots;
 	jewelCount = moving ? 2 : 1;
 	jewelDirection = moving ? 1 : 0;
-	UIStage_SetWide(wide);
 	measure(name, false);
 	UIStage_SetWide(false);
 	jewelCount = 0;

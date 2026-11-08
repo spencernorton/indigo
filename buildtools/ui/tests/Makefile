@@ -27,16 +27,17 @@ TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw t
 	test_gameflow_state test_gameflow_library test_ui_folder test_gameflow_resolver \
 	test_gameflow_detail test_ui_game_history test_ui_about \
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
-	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual
+	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual \
+	test_ui_lang
 
 test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c tzdata_host.c
 test_ui_cheats.src := $(GUI)/ui_cheats.c
-test_ui_saves.src := $(GUI)/ui_saves.c
-test_ui_saves_raw.src := $(GUI)/ui_saves_raw.c $(GUI)/ui_saves.c
-test_ui_saves_metadata.src := $(GUI)/ui_saves_metadata.c $(GUI)/ui_saves.c
+test_ui_saves.src := $(GUI)/ui_saves.c $(GUI)/ui_lang.c
+test_ui_saves_raw.src := $(GUI)/ui_saves_raw.c $(GUI)/ui_saves.c $(GUI)/ui_lang.c
+test_ui_saves_metadata.src := $(GUI)/ui_saves_metadata.c $(GUI)/ui_saves.c $(GUI)/ui_lang.c
 test_ui_saves_details.src := $(GUI)/ui_saves_details.c
 # Memory Cards' screen: its cubes, their motion and the cursor.
-test_ui_save_cubes.src := $(GUI)/ui_save_cubes.c $(GUI)/ui_motion.c $(GUI)/ui_saves.c $(GUI)/ui_folder.c
+test_ui_save_cubes.src := $(GUI)/ui_save_cubes.c $(GUI)/ui_motion.c $(GUI)/ui_saves.c $(GUI)/ui_folder.c $(GUI)/ui_lang.c
 test_ui_save_cubes.libs := -lm
 test_ui_apps.src := $(GUI)/ui_apps.c
 # test_ui_png.py drives these with the pictures it writes. test_ui_png.c
@@ -58,11 +59,12 @@ test_blank_banner.flags := $(GAMEFLOW_CFLAGS) -I$(GUI)
 # Settings layout module: strict C99. ui_cheats is the cheat browser whose
 # window the pages share.
 test_ui_settings_layout.src := $(GUI)/ui_settings_layout.c $(GUI)/ui_hint.c \
-	$(GUI)/ui_cheats.c
+	$(GUI)/ui_cheats.c $(GUI)/ui_lang.c
 test_ui_settings_layout.flags := -std=c99 -Wall -Wextra -Werror -pedantic
 test_ui_settings_focus.src := $(GUI)/ui_settings_focus.c $(GUI)/ui_motion.c
 test_ui_settings_focus.libs := -lm
-test_ui_system_info.src := $(GUI)/ui_system_info.c
+test_ui_lang.src := $(GUI)/ui_lang.c
+test_ui_system_info.src := $(GUI)/ui_system_info.c $(GUI)/ui_lang.c
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c
 test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c
@@ -84,7 +86,7 @@ test_ui_home_safety.src := $(GUI)/ui_home_safety.c
 test_ui_home_layout.src := $(GUI)/ui_home_layout.c $(GUI)/ui_home_text.c \
 	$(GUI)/ui_home.c
 test_ui_scene.src := $(GUI)/ui_scene.c $(GUI)/ui_motion.c $(GUI)/ui_home.c \
-	$(GUI)/ui_cube_motif.c
+	$(GUI)/ui_cube_motif.c $(GUI)/ui_stage.c
 test_ui_scene.libs := -lm
 test_ui_command_rail.src := $(GUI)/ui_command_rail.c
 test_ui_command_rail.libs := -lm
@@ -97,7 +99,7 @@ test_ui_folder.src := $(GUI)/ui_folder.c
 test_gameflow_resolver.src := $(GUI)/ui_gameflow_resolver.c \
 	$(GUI)/ui_gameflow_library.c
 test_gameflow_detail.src := $(GUI)/ui_gameflow_detail.c $(GUI)/ui_game_history.c \
-	$(GUI)/ui_saves_metadata.c $(GUI)/ui_saves.c
+	$(GUI)/ui_saves_metadata.c $(GUI)/ui_saves.c $(GUI)/ui_lang.c
 test_ui_game_history.src := $(GUI)/ui_game_history.c
 # Spotlight's game descriptions (swiss/ui/descriptions.txt).
 test_ui_about.src := $(GUI)/ui_about.c
@@ -111,7 +113,7 @@ test_ui_launch.src := $(GUI)/ui_launch.c
 test_ui_manual.src := $(GUI)/ui_manual.c
 test_ui_manual.libs := -lz -lm
 # The File Browser's two panes; ui_hint counts the hint lines' buttons.
-test_ui_files.src := $(GUI)/ui_files.c $(GUI)/ui_hint.c
+test_ui_files.src := $(GUI)/ui_files.c $(GUI)/ui_hint.c $(GUI)/ui_lang.c
 # The console lab's requests and settings, and the log it serves.
 test_ui_lab.src := $(GUI)/ui_lab.c
 test_indigo_log.src := $(GUI)/indigo_log.c

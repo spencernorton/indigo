@@ -2,7 +2,7 @@
 """Boot an Indigo DOL in Dolphin and drive its menus with a controller.
 
 Dolphin (headless: software OpenGL on a virtual X server) boots the DOL with
-the demonstration disc (card.py) in the drive. Once Home is up a controller
+a game disc or a demonstration SD card (card.py). Once Home is up a controller
 is plugged in (dsu_pad.py) and a route of button presses walks the cube and
 opens each face. Every check compares the screen with itself earlier in the
 same run, never with stored pictures, so a redesign does not break the test
@@ -1054,7 +1054,8 @@ class Emulator:
                  storage: str = "dvd", card: Path | None = None, cable: str = "composite",
                  faults: str | None = None, cards: Path | None = None,
                  empty_slots: bool = False, folder_frames: bool = False,
-                 second: Path | None = None, exact_textures: bool = False) -> None:
+                 second: Path | None = None, exact_textures: bool = False,
+                 exact_copies: bool = False) -> None:
         self.out = out
         self.user = work / "dolphin"
         (self.user / "Config").mkdir(parents=True)
@@ -1076,7 +1077,9 @@ class Emulator:
         (self.user / "Config/GFX.ini").write_text("[Settings]\nInternalResolution = 1\nShowFPS = False\n" +
             ("SafeTextureCacheColorSamples = 0\n" if exact_textures else "") +
             ("DumpFramesAsImages = True\nFrameDumpsResolutionType = 2\nPNGCompressionLevel = 1\n"
-             if folder_frames else ""))
+             if folder_frames else "") +
+            ("[Hacks]\nEFBToTextureEnable = False\nXFBToTextureEnable = False\n"
+             "DeferEFBCopies = False\nEarlyXFBOutput = False\n" if exact_copies else ""))
         self.folder_frames = (PresentedFrames(self.user / "Dump/Frames", out / "folder-transitions")
                               if folder_frames else None)
         (self.user / "Config/GCPadNew.ini").write_text(dsu_pad.GCPAD_INI)
@@ -1213,6 +1216,7 @@ class Route:
         self.shots: list[tuple[str, Path]] = []
         self.pad = emulator.pad
         self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
+        self.source_picker_name: np.ndarray | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -1549,6 +1553,58 @@ class Route:
         self.check("... in the colours the card's settings chose, not the defaults", drift < 15,
                    drift=round(drift, 1))
 
+    def optical(self) -> None:
+        """Confirm Game Disc as Source, retain its single game through Home,
+        then launch the whole disc through the real optical driver."""
+        home = self.boot()
+        source = self.turn([home], "RIGHT", "optical-source")
+        self.press("A")
+        self.check("A opens the Source choices", self.covered(source))
+        before = text_mask(self.gray(), TITLE_BOX)
+        self.press("A")
+        picker, _ = self.settled_label(unlike=before, box=TITLE_BOX)
+        self.shot("optical-source-picker", self.last_rgb)
+        self.check("Change Source opens the device picker", picker is not None)
+        if self.storage == "sd2sp2":
+            # The fixture has only DVD and SD2SP2 as game sources. DVD is
+            # immediately after SD2SP2 in the normal detected-device order.
+            disc, _ = self.press_until("RIGHT", unlike=picker, box=TITLE_BOX)
+            self.shot("optical-disc-selected", self.last_rgb)
+            self.check("RIGHT selects the disc instead of the SD card", disc is not None)
+        # Confirm the optical source through its normal remount path. The
+        # one-card and handoff checks reject accidentally keeping SD selected.
+        self.press("A")
+        back, _ = self.settled_label(like=source)
+        self.check("confirming Game Disc returns to the Source face", back is not None)
+        back, _ = self.press_until("LEFT", like=home)
+        self.check("LEFT returns to the Library face", back is not None)
+        self.press("A")
+        self.check("Games opens the selected disc", self.covered(home))
+        title, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("optical-library", self.last_rgb)
+        self.check("the optical game has a Library card", title is not None)
+        for button in ("RIGHT", "LEFT"):
+            self.press(button)
+            same, _ = self.settled_label(like=title, box=TITLE_BOX)
+            self.check("the single disc card wraps to itself", same is not None, button=button)
+        self.press("B")
+        back, _ = self.settled_label(like=home)
+        self.check("B returns from the disc to Home", back is not None)
+        self.press("A")
+        same, _ = self.settled_label(like=title, box=TITLE_BOX)
+        self.check("Games reopens the same disc card", same is not None)
+        self.press("A")
+        self.check("A opens the optical game's details", self.covered(title, TITLE_BOX))
+        details, _ = self.settled_label(box=DETAIL_TITLE_BOX)
+        self.shot("optical-details", self.last_rgb)
+        self.check("the optical details show the game's title", details is not None)
+        self.press("A")
+        report = self.handoff("optical-game")
+        self.check("the optical game starts with its own disc ID",
+                   report["disc_id"] == card.PROBE_GAME[0], disc_id=report["disc_id"])
+        self.check("the optical game is given the full 24 MB", report["memsize"] == 0x01800000,
+                   memory=f"{report['memsize']:08X}")
+
     def game(self) -> None:
         """Boot, open the Library, move to the probe's game, open its details
         and launch it. The probe must see the game's own disc ID and the
@@ -1585,7 +1641,7 @@ class Route:
                    memory=f"{report['memsize']:08X}")
 
     def flip_apps_face(self, settings: np.ndarray, tag: str) -> None:
-        """Down Face, twelve DOWNs into Console (flip_console): five RIGHTs
+        """Down Face, thirteen DOWNs into Console (flip_console): five RIGHTs
         from Apps pass Memory Cards, Emulators, File Browser and Web to None
         ("off"), two LEFTs from None reach File Browser ("files"), and three
         LEFTs more come back to Apps ("on")."""
@@ -1593,12 +1649,12 @@ class Route:
         # Settings, System, Apps, Memory Cards, Emulators, File Browser, Web.
         # A face added to that list must update them.
         change, presses = {"off": ("RIGHT", 5), "files": ("LEFT", 2), "on": ("LEFT", 3)}[tag]
-        self.flip_console(settings, 12, "apps-face", tag, change=change, presses=presses)
+        self.flip_console(settings, 13, "apps-face", tag, change=change, presses=presses)
 
     def flip_console(self, settings: np.ndarray, downs: int, name: str, tag: str,
                      change: str = "RIGHT", presses: int = 1, named: bool = True) -> None:
         """From the Settings face: R and R to Setup, DOWN and A into Console,
-        downs DOWNs to a row and change (a direction) to change it. B goes back to Setup and
+        whose first row is Menu Language, downs DOWNs to a row and change (a direction) to change it. B goes back to Setup and
         B again saves and exits (the demo disc can't keep the file; the
         setting holds until Indigo restarts), back to the Settings face, or,
         not named (Face Labels off), to a Home without the face's name."""
@@ -1662,7 +1718,7 @@ class Route:
         self.check(name, moved == rows, moved=moved, **({"odd_steps": corrected} if corrected else {}), **detail)
 
     def classic_cube(self, faces: list[np.ndarray]) -> None:
-        """From the Settings face: Setup > Console > Cube (thirteen DOWNs, just
+        """From the Settings face: Setup > Console > Cube (fourteen DOWNs, just
         after the four sides) to Classic. The faces then sit as on the GameCube's
         menu, Library in front and the way between them: Settings is its
         left side, so LEFT goes nowhere, and RIGHT twice is Library and then
@@ -1672,7 +1728,7 @@ class Route:
         A press that should go nowhere has had a second of the console's
         time to turn the cube when its face is checked."""
         library, source, settings, system, apps = faces[:5]
-        self.flip_console(settings, 13, "cube", "classic")
+        self.flip_console(settings, 14, "cube", "classic")
         walk = (("LEFT", "Settings", False), ("LEFT", "Settings", False), ("RIGHT", "Library", True),
                 ("RIGHT", "System", True), ("UP", "System", False), ("B", "Library", True),
                 ("UP", "Source", True), ("DOWN", "Library", True), ("DOWN", "Apps", True),
@@ -1689,15 +1745,15 @@ class Route:
             self.shot(f"classic-{n}-{button.lower()}", self.last_rgb)
             self.check(f"Cube Classic: {button} {'turns to' if turns else 'stays on'} {name}",
                        mask is not None, step=n)
-        self.flip_console(settings, 13, "cube", "infinite")
+        self.flip_console(settings, 14, "cube", "infinite")
 
     def face_labels_off_and_on(self, faces: list[np.ndarray]) -> None:
-        """From the Settings face: Setup > Console > Face Labels (fifteen
+        """From the Settings face: Setup > Console > Face Labels (sixteen
         DOWNs, after Cube and Idle Animation) Off takes the face's name from
         under the cube; On puts the Settings face's name back."""
         settings = faces[2]
-        self.flip_console(settings, 15, "face-labels", "off", named=False)
-        self.flip_console(settings, 15, "face-labels", "on")
+        self.flip_console(settings, 16, "face-labels", "off", named=False)
+        self.flip_console(settings, 16, "face-labels", "on")
 
     def apps_face_off_and_on(self, faces: list[np.ndarray]) -> None:
         """Setup > Console > Down Face: None takes Apps off the cube, so the
@@ -1848,7 +1904,8 @@ class Route:
         return label
 
     def folder_color(self, like: np.ndarray | None = None,
-                     unlike: np.ndarray | None = None) -> np.ndarray | None:
+                     unlike: np.ndarray | None = None,
+                     seconds: float = SETTLE_SECONDS) -> np.ndarray | None:
         """Steady color words, with the folder value's own small-text bounds.
         A changed value must differ from the preceding words; it cannot pass
         on a stale frame. Other screens retain their existing title bounds.
@@ -1856,7 +1913,22 @@ class Route:
         return self.text_until(FOLDER_COLOR_BOX,
                                lambda mask: has_folder_color_label(mask)
                                and (like is None or same_text(mask, like))
-                               and (unlike is None or not same_text(mask, unlike)))
+                               and (unlike is None or not same_text(mask, unlike)),
+                               seconds)
+
+    def next_folder_color(self, before: np.ndarray, like: np.ndarray | None = None) -> np.ndarray | None:
+        """Repeat a missed Right only while the original color is still visible."""
+        for attempt in range(PRESSES):
+            self.press("RIGHT")
+            last = attempt == PRESSES - 1
+            color = self.folder_color(like=like, unlike=before,
+                                      seconds=SETTLE_SECONDS if last else MISSED_SECONDS)
+            if color is not None or last:
+                return color
+            if not same_text(text_mask(self.gray(), FOLDER_COLOR_BOX), before):
+                return self.folder_color(like=like, unlike=before)
+            self.pressed_again.append("RIGHT")
+        return None
 
     def folder_layout(self, faces: list[np.ndarray], name: str, first: bool) -> None:
         """From Home Settings, set the next layout and folders on, then browse."""
@@ -2130,16 +2202,18 @@ class Route:
         first, _ = self.settled_label(unlike=before, box=TITLE_BOX)
         self.shot("source-picker", self.last_rgb)
         self.check("Change Source opens the device picker", first is not None)
+        self.source_picker_name = first.copy()
         name, _ = self.press_until("RIGHT", unlike=first, box=TITLE_BOX)
         self.shot("source-picker-right", self.last_rgb)
         self.check("RIGHT shows the next device", name is not None)
         self.press("B")
         self.check("B leaves the device picker", self.covered(name, TITLE_BOX))
 
-    def text_until(self, box: tuple[int, int, int, int], wanted) -> np.ndarray | None:
+    def text_until(self, box: tuple[int, int, int, int], wanted,
+                   seconds: float = SETTLE_SECONDS) -> np.ndarray | None:
         """Steady text in a box, or none, that wanted(mask) accepts: None when
         it never comes."""
-        deadline = Deadline(self.emulator, SETTLE_SECONDS)
+        deadline = Deadline(self.emulator, seconds)
         previous = None
         while not deadline.expired():
             mask = text_mask(self.gray(), box)
@@ -2335,6 +2409,16 @@ class Route:
         again swaps back, the left pane as it was. L opens the left pane's
         menu and B closes it."""
         disc = self.files_rows(right=True)
+        # Long device names fit differently in each header. Record the
+        # original source in the same focused right pane it will occupy
+        # after Y, rather than comparing a left-pane fit with a right one.
+        self.press("RIGHT")
+        self.check("RIGHT focuses the original source on the right", self.files_list(True, pane=1))
+        source = self.files_path(right=True, box=FILES_NAME_BOXES[1])
+        self.shot("file-browser-source-reference", self.last_rgb)
+        self.check("the focused right pane shows the original source name", source is not None)
+        self.press("LEFT")
+        self.check("LEFT restores the source pane before choosing storage", self.files_list(True, pane=0))
         self.press("R")
         opened = self.files_storage_menu(1, True)
         self.shot("file-browser-storage-right", self.last_rgb)
@@ -2343,11 +2427,10 @@ class Route:
         self.check("B closes the storage menu", self.files_storage_menu(1, False))
         self.press("R")
         self.files_storage_menu(1, True)
-        # The GC Loader route lists the drive's disc between them, greyed.
+        # SD sources list the drive between the source and the memory card.
         self.steps("DOWN" if self.storage == "dvd" else "DOWN DOWN")
         self.press("A")
         card = self.files_rows(right=True, unlike=disc) if disc is not None else None
-        source = self.files_path(right=True, box=FILES_NAME_BOXES[0])  # focused: white
         self.shot("file-browser-second-device", self.last_rgb)
         self.check("R and A on Memory Card - Slot A show its saves in the right pane",
                    card is not None and not files_menu(self.last_rgb, 1, self.menu_wide))
@@ -2360,19 +2443,46 @@ class Route:
         moved = self.files_path(unlike=name, right=True, box=FILES_INFO_TITLE_BOX) \
             if name is not None else None
         self.check("DOWN browses the second device", moved is not None)
+        card_item = moved
+        self.press("LEFT")
+        self.check("LEFT focuses the original source before swapping", self.files_list(True, pane=0))
+        source_item = self.files_path(unlike=card_item, box=FILES_INFO_TITLE_BOX)
+        self.check("the original source has a different selected item", source_item is not None)
+        self.press("RIGHT")
+        self.check("RIGHT restores the card's selected item before swapping",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
         left = self.files_rows(right=False)
         right = self.files_rows(right=True)
+        self.shot("file-browser-before-swap", self.last_rgb)
         self.press("Y")
         # The Source's name moves to the focused right pane once both sides
         # are mounted and read (a disc drive resets on the way).
         moved = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1]) \
             if source is not None else None
         swapped = self.files_rows(right=False, unlike=left) if left is not None else None
-        changed = self.files_rows(right=True, unlike=right) if right is not None else None
+        focused = self.files_list(True, pane=1)
+        item = self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX)
+        right_changed = right is not None and not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX), right)
         self.shot("file-browser-swapped", self.last_rgb)
-        self.check("Y swaps the sides: the card is the Source, the disc on the right",
-                   moved is not None and swapped is not None and changed is not None and
-                   self.files_list(True, pane=1))
+        # A common focus fill can dominate a short rows crop even when its
+        # text differs. Require the source's selected item in the global info
+        # bar instead, and prove the other item on the left before swapping
+        # back. Both complete row masks must still round-trip exactly below.
+        self.check("Y swaps the sides: the card is the Source, the original source on the right",
+                   moved is not None and swapped is not None and item is not None and
+                   focused, source_name_matches=moved is not None,
+                   left_rows_changed=swapped is not None, right_rows_changed=right_changed,
+                   right_focused=focused, selected_item_matches=item is not None)
+        self.press("LEFT")
+        self.check("the card's selected item moved to the left pane",
+                   self.files_list(True, pane=0) and
+                   self.files_path(like=card_item, box=FILES_INFO_TITLE_BOX) is not None)
+        self.press("RIGHT")
+        self.check("the original source's selected item moved to the right pane",
+                   self.files_list(True, pane=1) and
+                   self.files_path(like=source_item, box=FILES_INFO_TITLE_BOX) is not None)
         self.press("Y")
         home = self.files_path(like=other, right=True, box=FILES_NAME_BOXES[1]) \
             if other is not None else None
@@ -2386,22 +2496,50 @@ class Route:
         self.check("L opens the left pane's storage menu", opened)
         self.press("B")
         self.check("B closes the left storage menu", self.files_storage_menu(0, False))
-        if self.storage == "dvd":
-            self.files_not_ready()
+        self.files_not_ready(source)
 
-    def files_not_ready(self) -> None:
+    def files_not_ready(self, source: np.ndarray) -> None:
         """A second device that isn't there. R, UP twice (from Memory Card -
         Slot A, which the menu focuses, round to Other devices...) and A open
         Swiss's destination picker; Z lists every
         device and RIGHT twice goes from Memory Card - Slot A to KunaiGC,
         which A chooses. The right pane says it isn't ready instead of rows,
-        Y leaves the sides as they are, and R and A put the disc back."""
+        Y leaves the sides as they are, and R and A put the original source
+        back. SD sources have an extra disc entry before Memory Card - Slot A."""
         left = self.files_rows(right=False)
         self.press("R")
         self.files_storage_menu(1, True)
-        self.steps("UP UP A")
-        self.pause(2.0)
-        self.steps("Z RIGHT RIGHT")
+        self.steps("UP UP" if self.storage == "dvd" else "UP UP UP")
+        self.shot("not-ready-menu-target", self.emulator.frame())
+        self.press("A")
+        picker, _ = self.settled_label(box=TITLE_BOX)
+        self.shot("not-ready-picker", self.last_rgb)
+        self.check("Other devices opens the destination picker", picker is not None)
+        # The destination picker remembers a previous source, not the pane's
+        # memory card. Anchor its detected-only ring to the same source name
+        # observed in Change Source earlier in this boot. Our writable source
+        # is followed by Memory Card - Slot A in this fixture.
+        self.check("the boot has an observed source-picker reference", self.source_picker_name is not None)
+        for step in range(4):
+            if same_text(picker, self.source_picker_name):
+                break
+            picker, _ = self.press_until("LEFT", unlike=picker, box=TITLE_BOX)
+            self.check("find the original source in detected destinations", picker is not None, step=step)
+        self.check("the destination picker is anchored to the original source",
+                   same_text(picker, self.source_picker_name))
+        picker, _ = self.press_until("RIGHT", unlike=picker, box=TITLE_BOX)
+        self.check("the next detected destination is the memory card anchor", picker is not None)
+        self.press("Z")
+        all_devices, _ = self.settled_label(like=picker, box=TITLE_BOX)
+        self.shot("not-ready-all-devices", self.last_rgb)
+        self.check("Z keeps the focused destination while showing every device", all_devices is not None)
+        for step in range(2):
+            # Slot A and Slot B differ by one character; a whole-word
+            # "unlike" threshold must not turn one press into two here.
+            self.press("RIGHT")
+            picker, _ = self.settled_label(box=TITLE_BOX)
+            self.shot(f"not-ready-device-{step}", self.last_rgb)
+            self.check("the next destination name settles after RIGHT", picker is not None, step=step)
         self.press("A")
         message = self.files_path(right=True, box=FILES_RIGHT_MESSAGE_BOX)
         rows = files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_ROWS_BOX)
@@ -2420,9 +2558,13 @@ class Route:
         self.files_storage_menu(1, True)
         self.press("A")
         back = self.files_rows(right=True)
-        self.check("R and A on the disc put it back on the right",
-                   back is not None and not files_text(self.last_rgb, self.menu_wide,
-                                                       box=FILES_RIGHT_MESSAGE_BOX).any())
+        source_back = self.files_path(like=source, right=True, box=FILES_NAME_BOXES[1])
+        message_gone = not same_text(
+            files_text(self.last_rgb, self.menu_wide, box=FILES_RIGHT_MESSAGE_BOX), message)
+        self.check("R and A put the original source back on the right",
+                   back is not None and message_gone and source_back is not None,
+                   rows_returned=back is not None, error_message_gone=message_gone,
+                   source_name_matches=source_back is not None)
 
     def files_goto(self, image: Path, focus: str, target: str, folder: str = "") -> None:
         """Moves the focused pane's focus from one entry to another, by their
@@ -3242,11 +3384,9 @@ class Route:
         self.press("Y")
         default = self.folder_color()
         self.check("Y resets the folder preview to Default", default is not None)
-        self.press("RIGHT")
-        indigo = self.folder_color(unlike=default)
+        indigo = self.next_folder_color(default)
         self.check("Right selects Indigo for the memory-card folder", indigo is not None)
-        self.press("RIGHT")
-        azure = self.folder_color(unlike=indigo)
+        azure = self.next_folder_color(indigo)
         self.check("Right selects Azure for the memory-card folder", azure is not None)
         self.shot("memory-folder-azure-preview", self.last_rgb)
         self.memory_folder_return("A", selected, "memory-folder-azure-saved")
@@ -3259,8 +3399,7 @@ class Route:
                    self.settled_label(box=FOLDER_PATH_BOX, like=path)[0] is not None and
                    self.settled_label(box=FOLDER_CONTENTS_BOX, like=contents)[0] is not None)
         self.check("reopening selects the saved Azure value", self.folder_color(like=azure) is not None)
-        self.press("RIGHT")
-        self.check("another color can be previewed", self.folder_color(unlike=azure) is not None)
+        self.check("another color can be previewed", self.next_folder_color(azure) is not None)
         self.memory_folder_return("B", selected, "memory-folder-cancel")
         self.memory_folder_saved(2)
         self.memory_folder_open("memory-folder-after-cancel", like=title)
@@ -3271,10 +3410,8 @@ class Route:
         self.memory_folder_return("A", selected, "memory-folder-default-saved")
         self.memory_folder_saved(None)
         self.memory_folder_open("memory-folder-before-restart", like=title)
-        self.press("RIGHT")
-        self.check("Indigo can be selected after reset", self.folder_color(like=indigo) is not None)
-        self.press("RIGHT")
-        self.check("Azure can be selected after reset", self.folder_color(like=azure) is not None)
+        self.check("Indigo can be selected after reset", self.next_folder_color(default, like=indigo) is not None)
+        self.check("Azure can be selected after reset", self.next_folder_color(indigo, like=azure) is not None)
         self.memory_folder_return("A", selected, "memory-folder-ready-for-restart")
         self.memory_folder_saved(2)
         self.memory_folder_reference = {"title": title, "path": path, "contents": contents,
@@ -3767,9 +3904,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dol", type=Path)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--route", choices=("smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
+    parser.add_argument("--route", choices=("optical", "smoke", "tour", "game", "save", "virtual-cards", "folders", "files",
                                             "manual"),
-                        default="smoke")
+                        default=None)
     parser.add_argument("--probe", type=Path, help="the probe DOL (probe/), launched as an app and a game")
     parser.add_argument("--region", choices=tuple(REGIONS), default="pal")
     parser.add_argument("--storage", choices=tuple(STORAGES), default="dvd")
@@ -3782,8 +3919,14 @@ def main(argv: list[str] | None = None) -> int:
                              "its launch must be refused")
     parser.add_argument("--disc", type=Path, help="a disc to use instead of building card.py's")
     args = parser.parse_args(argv)
-    if args.route == "game" and not args.probe:
-        parser.error("the game route launches the probe: give --probe")
+    if args.route is None:
+        args.route = "optical" if args.storage == "dvd" else "smoke"
+    if args.route in ("game", "optical") and not args.probe:
+        parser.error("the game and optical routes launch the probe: give --probe")
+    if args.route == "optical" and args.storage not in ("dvd", "sd2sp2"):
+        parser.error("the optical route needs dvd or a supporting sd2sp2 card")
+    if args.route in ("smoke", "tour", "game") and args.storage == "dvd":
+        parser.error("multi-game Library routes need an SD card; use --route optical for a game disc")
     if (args.storage != "dvd") != bool(args.card_zip):
         parser.error("an SD card (--storage) is made from the release zip (--card-zip), and only then")
     if args.settings and not args.card_zip:
@@ -3827,9 +3970,15 @@ def main(argv: list[str] | None = None) -> int:
                 with zipfile.ZipFile(args.card_zip) as package:
                     dol.write_bytes(package.read("ipl.dol"))
                 report["dol"] = f"{args.card_zip.name}:ipl.dol"
-            elif disc is None:
-                disc = work / "demo.iso"
-                report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
+            if disc is None and (args.storage == "dvd" or args.route == "optical"):
+                if args.route == "optical":
+                    disc = work / "optical.iso"
+                    disc.write_bytes(card.probe_image(args.probe.read_bytes(), optical_data=True))
+                    report["disc"] = {"kind": "gamecube-game", "disc_id": card.PROBE_GAME[0],
+                                      "games": 1, "bytes": disc.stat().st_size}
+                else:
+                    disc = work / "demo.iso"
+                    report["disc"] = card.build(disc, probe=args.probe, foreign=FOREIGN[args.region])
             # The smoke route opens Memory Cards with a memory card in each
             # slot, unless an SD Gecko has Slot B.
             cards = None
