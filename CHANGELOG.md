@@ -4,6 +4,12 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+- Hold each emulator-test press for at least a frame of the console's time
+  when the runner is busy, and wait for the File Browser's right pane to name
+  Memory Card - Slot A before checking its saves.
+
 ## v2.7.0 — 540p60 menu mode, Ukrainian menus and clock zones
 
 ### New

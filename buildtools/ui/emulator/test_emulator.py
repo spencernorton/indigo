@@ -1238,6 +1238,53 @@ class Screen(unittest.TestCase):
                 missing[y0:y1, x0:x1] = frame[130, x0 + 60]
                 self.assertFalse(run.files_menu(missing, pane), (pane, y0))
 
+    def test_a_card_being_read_is_not_its_saves(self):
+        """R, DOWN DOWN and A on Memory Card - Slot A: a busy runner caught the
+        card being read, its rows under "Reading..." (unlike the GC Loader's)
+        and the menu still closing, and failed the step. It waits for the
+        header to name the card."""
+        menu, reading, card = (self.folder_frame(f"files-storage-{name}.png")
+                               for name in ("gcloader", "reading", "card"))
+        route = run.Route.__new__(run.Route)
+        route.menu_wide, route.storage, route.cards = False, "gcloader", True
+        frames = {"pressed_a": False, "after_a": 0}
+
+        class Emulator:
+            def frame(self):
+                if not frames["pressed_a"]:
+                    return menu
+                frames["after_a"] += 1
+                return reading if frames["after_a"] <= 3 else card
+
+        class Done(Exception):
+            pass
+
+        def check(name, passed, **detail):
+            if name.startswith("R and A on Memory Card"):
+                raise Done(passed)
+
+        route.emulator = Emulator()
+        route.press = lambda button, seconds=0: frames.update(pressed_a=frames["pressed_a"] or button == "A")
+        route.steps = lambda buttons, seconds=0: None
+        route.shot = lambda *args: None
+        route.files_list = lambda *args, **kwargs: True
+        route.files_storage_menu = lambda *args: True
+        route.check = check
+
+        class Budget:
+            def __init__(self, *args, **kwargs):
+                self.left = 10
+
+            def expired(self):
+                self.left -= 1
+                return self.left < 0
+
+        with mock.patch.object(run, "Deadline", Budget), mock.patch.object(run.time, "sleep"), \
+                self.assertRaises(Done) as done:
+            route.files_storage()
+        self.assertTrue(done.exception.args[0], "passed")
+        self.assertGreater(frames["after_a"], 3, "it read past the card being read")
+
     def test_the_file_browser_storage_menus_in_widescreen(self):
         # Menu Widescreen moves the right pane's outer edge, and the boxes
         # right-aligned to it, past the 4:3 stage: the detectors read the
@@ -1779,6 +1826,24 @@ class Screen(unittest.TestCase):
             self.assertFalse(wait.expired(), "no report yet, and less than WALL_FLOOR")
             wait.wall -= run.WALL_FLOOR
             self.assertTrue(wait.expired())
+
+    def test_a_crawling_dolphin_still_holds_a_press_for_a_frame(self):
+        """A busy runner had Dolphin report 2 ms of the console's time a
+        tenth of a second: a press held 0.5 s of the machine's then reached
+        the console as 11 ms, short of a PAL frame, and B never closed the
+        Actions box. It must last a frame (20 ms) of the console's time."""
+        with tempfile.TemporaryDirectory() as directory:
+            emulator = run.Emulator.__new__(run.Emulator)
+            emulator.log = Path(directory) / "dolphin.log"
+            ticks = run.TICKS_PER_SECOND
+            emulator.log.write_text(f"TICKS {ticks} PC 80003100 LR 00000000\n")
+            wait = run.Deadline(emulator, run.PRESS_SECONDS, fresh=True)
+            for report in range(1, 12):  # the first starts it, ten more are 20 ms
+                ticks += run.TICKS_PER_SECOND // 500
+                with emulator.log.open("a") as log:
+                    log.write(f"TICKS {ticks} PC 80003100 LR 00000000\n")
+                wait.wall -= 0.1
+                self.assertFalse(wait.expired(), f"ended after {report} reports")
 
     def press_until(self, screens, answers):
         """press_until with the screen's text and settled_label's answers scripted."""
