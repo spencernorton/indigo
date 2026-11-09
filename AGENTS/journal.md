@@ -1,3 +1,27 @@
+## 2026-11-08 — Keep emulator presses and the storage step steady on a busy runner
+
+Release v2.7.0's CI failed two File Browser steps on a tree identical to a
+green beta run. Both came from the runner host being heavily loaded, which
+made Dolphin crawl in bursts to 2 ms of the console's time a report.
+
+- Full route, "B closes the Actions box": a fresh press ends on the console's
+  0.05 s or the machine's `WALL_FLOOR`, whichever comes first. At 2 ms a
+  report the 0.5 s floor let B reach the console for about 11 ms, less than
+  a PAL frame, and the Actions box never closed. `WALL_FLOOR` is now 5 s,
+  enough for a press at a fiftieth of the console's speed; it only lengthens
+  waits when Dolphin is that slow.
+- Smoke route, "R and A on Memory Card - Slot A": the step took the first
+  frame whose right-pane rows differed from the GC Loader's. That was the
+  card being read: rows dimmed under "Reading..." with the menu still
+  closing over them, so the menu check failed on the same frame. The step
+  now waits for the pane's header to name the card first, as the Y swap
+  already does.
+
+Regressions: a 2 ms-a-report clock must not end a press within 20 ms of
+the console's time, and `files_storage` reads past three "Reading..."
+frames to the card's saves. Both fail on the old harness. The three frames
+are CI captures (`fixtures/files-storage-{gcloader,reading,card}.png`).
+
 ## 2026-11-08 — Complete 540p60 visual parity, prismatic side-face refraction and image-quality pass
 
 The experimental 720 x 540 progressive menu build (`UI_540P=1`) previously

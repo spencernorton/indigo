@@ -228,11 +228,13 @@ SAME, DIFFERENT = 0.85, 0.5  # intersection over union of two label masks
 # reports them, so a busy machine slows a run instead of failing it; the
 # machine's seconds still end a wait at WALL_FACTOR times as many, and never
 # before WALL_FLOOR: a slow Dolphin must not cut a short press down to a frame.
+# On a busy runner Dolphin has run at 2 ms of the console's time a report,
+# a fiftieth of its speed: a 0.05 s press is then 2.5 s of the machine's.
 BOOT_SECONDS = 120
 SETTLE_SECONDS = 10
 HOME_STEADY_SECONDS = 0.3  # In Dolphin's time, not repeated captures of a cached host frame.
 WALL_FACTOR = 5
-WALL_FLOOR = 0.5
+WALL_FLOOR = 5
 TICKS_PER_SECOND = 486_000_000  # the GameCube's CPU clock, which Dolphin's ticks count
 # Of the console's time a button stays down, and up after. A press waits
 # fresh (Route.press), so with Dolphin's reports a tenth of a second apart it
@@ -2429,8 +2431,14 @@ class Route:
         self.files_storage_menu(1, True)
         # SD sources list the drive between the source and the memory card.
         self.steps("DOWN" if self.storage == "dvd" else "DOWN DOWN")
+        # While the card is read its rows are dimmed under "Reading...", unlike
+        # the disc's already, and the menu may still be closing over them: the
+        # pane's header names the card once it is mounted and read.
+        header = self.files_path(right=True, box=FILES_NAME_BOXES[1])
         self.press("A")
-        card = self.files_rows(right=True, unlike=disc) if disc is not None else None
+        named = self.files_path(unlike=header, right=True, box=FILES_NAME_BOXES[1]) \
+            if header is not None else None
+        card = self.files_rows(right=True, unlike=disc) if disc is not None and named is not None else None
         self.shot("file-browser-second-device", self.last_rgb)
         self.check("R and A on Memory Card - Slot A show its saves in the right pane",
                    card is not None and not files_menu(self.last_rgb, 1, self.menu_wide))
