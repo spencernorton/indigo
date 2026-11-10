@@ -1,3 +1,16 @@
+## 2026-11-10 — Prepare v2.8.0 for publication
+
+Prepare the accepted disc-source badge and the already merged emulator
+reliability updates as v2.8.0. This release preparation changes documentation
+only; preserve the code qualified by the beta release candidate. The
+maintainer approved promotion and publication after validation.
+
+Keep the optical hardware coverage limit explicit. Dolphin navigation and
+whole-disc handoff results do not qualify a physical drive, and the pending
+MemCard PRO GC record remains pending. Require the normal protected-branch
+checks, an exact-source package, immutable tags and the native release
+workflow before publication; regenerate the release site from the final tag.
+
 ## 2026-11-10 — Mark games read from the optical drive
 
 Adapt the disc badge from contribution #206 onto current beta. The optical

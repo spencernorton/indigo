@@ -4,14 +4,28 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
-## Unreleased
+## v2.8.0 — Disc source badge
 
-- Mark games read from **Game Disc** with a small disc badge in the top-left
-  of their Library artwork.
+### New
+
+- Games read from **Game Disc** carry a small disc badge in the top-left
+  of their Library artwork. Spotlight marks its large picture or cover;
+  Jewel Case marks the cover when you open the game's details.
+- The badge adds 576 bytes to the executable, with no increase in data or
+  BSS size, and needs no new texture, heap allocation or draw-time file read.
+
+### Maintenance
 
 - Hold each emulator-test press for at least a frame of the console's time
   when the runner is busy, and wait for the File Browser's right pane to name
   Memory Card - Slot A before checking its saves.
+- Refresh the emulator runner's base image.
+
+### Coverage
+
+- Optical navigation and whole-disc launch are tested in Dolphin with and
+  without an SD Library attached. Physical optical-drive recognition and
+  launch remain unconfirmed on a console.
 
 ## v2.7.0 — 540p60 menu mode, Ukrainian menus and clock zones
 
