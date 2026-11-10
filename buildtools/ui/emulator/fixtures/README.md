@@ -100,6 +100,16 @@ Loader card (L: the left pane's, Game Disc greyed beside the GC Loader).
 storage button and right-aligned to the pane; the tests check each menu is
 found over its own pane only, never over rows, a focus bar or Swiss's Z box.
 
+`files-storage-gcloader.png`, `files-storage-reading.png` and
+`files-storage-card.png` are untouched captures of the smoke route (NTSC,
+component, GC Loader, non-default settings) in CI: R's menu over the GC
+Loader's rows; A on Memory Card - Slot A while the card is read, its rows
+dimmed under "Reading..." and the menu still closing over them (commit
+451e288, on a runner too busy to finish the read before the route looked);
+and the card's saves listed (commit 6ff854d). The rows alone differ from
+the GC Loader's in both of the latter; the right pane's header names the
+card only once it is read.
+
 `files-storage-wide-left.png` and `files-storage-wide-right.png` are the
 same menus with Menu Widescreen on, from a GC Loader card showing its own
 top folder on both sides: Dolphin letterboxes the 16:9 stage, and the right

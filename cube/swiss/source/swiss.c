@@ -4179,6 +4179,7 @@ static void gameflowSnapshotRecord(uiGameflowCardSnapshot_t *record,
 			FNM_PATHNAME | FNM_PREFIX_DIRS)) {
 		record->flags |= UI_GAMEFLOW_CARD_AUTOLOAD;
 	}
+	record->disc = file->device == &__device_dvd;
 	gameflowMarkCustom(record);
 }
 

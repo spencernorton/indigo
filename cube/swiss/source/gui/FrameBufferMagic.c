@@ -431,6 +431,8 @@ typedef struct {
 	float iconScale;
 } drawSaveDetailsEvent_t;
 
+_Static_assert(sizeof(uiGameflowCardSnapshot_t) == 6400u,
+	"Gameflow card records must retain their fixed stride");
 _Static_assert(sizeof(uiGameflowCardSnapshot_t) % 32u == 0u,
 	"Gameflow record stride must preserve banner alignment");
 _Static_assert(offsetof(uiGameflowRenderSnapshot_t, records) % 32u == 0u,
@@ -2723,6 +2725,29 @@ static void _GameflowDrawCustomMark(const gameflowRenderCard_t *card, float reve
 	}
 }
 
+/* A game read from the disc in the drive: a small disc, on the plate the
+ * settings mark uses, in the top-left corner of its cover. */
+static void _GameflowDrawDiscMark(const gameflowRenderCard_t *card, float reveal)
+{
+	gameflowPoint_t top = _GameflowQuadPoint(&card->quad, 0.0f, 0.0f);
+	gameflowPoint_t bottom = _GameflowQuadPoint(&card->quad, 0.0f, 1.0f);
+	gameflowPoint_t center = _GameflowQuadPoint(&card->quad, 0.15f, 0.085f);
+	float size = fabsf(bottom.y - top.y) * 0.13f;
+	u8 alpha = _GameflowAlpha(255.0f * card->presence * reveal);
+	GXColor plate = {22, 17, 46, (u8)((alpha * 220u) / 255u)};
+	GXColor line = {206, 196, 255, alpha};
+	GXColor hole = {22, 17, 46, alpha};
+
+	UIColor_Apply(&plate.r, &plate.g, &plate.b);
+	UIColor_Apply(&line.r, &line.g, &line.b);
+	UIColor_Apply(&hole.r, &hole.g, &hole.b);
+	drawInit();
+	_SetupRasterColor();
+	_HintRoundRect(center.x, center.y, size, size, size * 0.24f, plate);
+	_HintDisc(center.x, center.y, size * 0.36f, line);
+	_HintDisc(center.x, center.y, size * 0.11f, hole);
+}
+
 static void _GameflowDrawFallback(const gameflowRenderCard_t *card,
 	uiGameflowLibraryArtwork_t artwork, GXTexObj *bannerTexture,
 	float reveal)
@@ -3042,6 +3067,9 @@ static void _GameflowDrawSpotlightCover(drawGameflowEvent_t *data,
 	if(record->flags & UI_GAMEFLOW_CARD_CUSTOM) {
 		_GameflowDrawCustomMark(&cover, 1.0f);
 	}
+	if(record->disc) {
+		_GameflowDrawDiscMark(&cover, 1.0f);
+	}
 }
 
 /* One game's picture in Spotlight's panel, faded by alpha: its gameplay
@@ -3070,11 +3098,16 @@ static void _GameflowDrawSpotlightArt(drawGameflowEvent_t *data,
 			_GameflowAlpha(255.0f * alpha * arrival));
 		drawInit();
 		_SetupRasterColor();
-		if(record->flags & UI_GAMEFLOW_CARD_CUSTOM) {
+		if((record->flags & UI_GAMEFLOW_CARD_CUSTOM) || record->disc) {
 			memset(&mark, 0, sizeof(mark));
 			mark.quad = inner;
 			mark.presence = alpha * arrival;
-			_GameflowDrawCustomMark(&mark, 1.0f);
+			if(record->flags & UI_GAMEFLOW_CARD_CUSTOM) {
+				_GameflowDrawCustomMark(&mark, 1.0f);
+			}
+			if(record->disc) {
+				_GameflowDrawDiscMark(&mark, 1.0f);
+			}
 		}
 		return;
 	}
@@ -4377,6 +4410,9 @@ static void _DrawGameflow(uiDrawObj_t *evt)
 		if(cards[i].art && !cards[i].tile &&
 			(cards[i].record->flags & UI_GAMEFLOW_CARD_CUSTOM)) {
 			_GameflowDrawCustomMark(&cards[i], reveal);
+		}
+		if(cards[i].art && !cards[i].tile && cards[i].record->disc) {
+			_GameflowDrawDiscMark(&cards[i], reveal);
 		}
 	}
 
