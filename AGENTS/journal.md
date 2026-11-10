@@ -1,3 +1,17 @@
+## 2026-11-10 — Mark games read from the optical drive
+
+Adapt the disc badge from contribution #206 onto current beta. The optical
+Library routing fix already shipped in v2.7.0 through #192; keep its source
+selection, directory exclusion and launch coverage intact.
+
+Use one reserved byte in the existing 6,400-byte card record, with a
+compile-time size guard. Capture the source on the menu thread and draw the
+badge with the existing rounded-rectangle/disc primitives on visible artwork,
+including Spotlight's large picture or cover and Jewel Case's Detail cover.
+The 3D case keeps its existing renderer. The badge needs no new
+texture, asset reads, heap allocations, worker or retained buffer. Ordinary
+Spotlight pictures keep skipping badge geometry and setup.
+
 ## 2026-11-08 — Keep emulator presses and the storage step steady on a busy runner
 
 Release v2.7.0's CI failed two File Browser steps on a tree identical to a

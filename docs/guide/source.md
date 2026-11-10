@@ -54,6 +54,8 @@ With **Game Disc** selected, the Library shows the game on the disc, or the
 games on a multi-game disc. It reads them from the disc's root without
 looking for a `/games` folder or switching to another card. The game's data
 folders are available through the [File Browser](system.md#file-browser).
+A small disc mark in the top-left of its Library artwork identifies a game
+read from the disc drive.
 
 Use a `/games` layout described in the [Library guide](library.md) to open
 the poster Library. Indigo skips unrelated files in that folder. When the
