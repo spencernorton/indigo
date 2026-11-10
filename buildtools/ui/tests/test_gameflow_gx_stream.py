@@ -212,6 +212,8 @@ static void _DrawHintText(int x, int y, const char *text, float scale, int align
 { CHECK(!active); fprintf(out, "H %d %d %.3f %d %u %s\n", x, y, scale, align, c.a, text); }
 static void _HintRoundRect(float cx, float cy, float w, float h, float r, GXColor c)
 { CHECK(!active); fprintf(out, "R %.2f %.2f %.2f %.2f %.2f %u\n", cx, cy, w, h, r, c.a); }
+static void _HintDisc(float cx, float cy, float radius, GXColor c)
+{ _HintRoundRect(cx, cy, radius * 2.0f, radius * 2.0f, radius, c); }
 static int GetTextSizeInPixels(const char *text) { CHECK(!videoLocked);return 11 * (int)strlen(text); }
 static float GetTextScaleToFitInWidthWithMax(const char *text, int width, float maximum)
 {
@@ -346,9 +348,11 @@ static bool apps;
 static bool folders;
 /* W: every game has a disc banner, as Spotlight's always do. */
 static bool banners;
+/* G: every fifth game, from the third, is read from the disc in the drive. */
+static bool fromDisc;
 
 /* L layout count selected (A: apps, O: folders) | P selected hint rowDirection snap
- * | M motion | D mode | W (banners) | Y [game] (pictures, or its still, arrive)
+ * | M motion | D mode | W (banners) | G (disc games) | Y [game] (pictures, or its still, arrive)
  * | K (no jewel case) | Q (discs being read) | N frames dt  -- the log has one "F" per frame. */
 static void publish(int layout, uint32_t count, uint32_t selected, int hint,
 	int rowDirection, int snap, bool first)
@@ -389,6 +393,7 @@ static void publish(int layout, uint32_t count, uint32_t selected, int hint,
 		snprintf(record->company, sizeof(record->company), "Company %u", slots[i].index % 9u);
 		snprintf(record->facts, sizeof(record->facts), "%s  |  1.4 GB", record->gameId);
 #if LAYOUTS
+		record->disc = fromDisc && slots[i].index % 5u == 3u;
 		if(layout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT || banners) {
 			record->flags |= UI_GAMEFLOW_CARD_HAS_BANNER;
 			snprintf((char *)record->banner, 16, "banner:%s", record->gameId);
@@ -483,6 +488,7 @@ int main(void)
 #if LAYOUTS
 		else if(line[0] == 'K') jewelUnready = true;
 		else if(line[0] == 'Q') discsLoading = true;
+		else if(line[0] == 'G') fromDisc = true;
 #endif
 #if LAYOUTS
 		else if(line[0] == 'C') {
@@ -992,6 +998,31 @@ class GameflowGxStream(unittest.TestCase):
         self.assertAlmostEqual(x, 36 + 0.85 * 320, delta=1.0)
         self.assertAlmostEqual(y, 78 + 0.085 * 240, delta=1.0)
         self.assertAlmostEqual(size, 0.13 * 240, delta=0.5)
+
+    def test_a_game_from_the_disc_carries_the_disc_mark(self):
+        """A game read from the disc in the drive carries a small disc (a
+        plate, the disc and its hole) in its cover's top-left corner, sized
+        as the own-settings mark is; no other game does."""
+        log = self.run_script(["G", "L 2 40 18", "N 40 0.0167"])
+        last = frames(log)[-1]
+        marks = [tuple(map(float, l.split()[1:4])) for l in last.splitlines()
+                 if l.startswith("R ")]
+        # Games 11, 16 and 21 have settings of their own (seven each);
+        # 13, 18 and 23 are from the disc (three each).
+        self.assertEqual(len(marks), 3 * 7 + 3 * 3)
+        cards = covers(last)
+        for game in ("G013E0", "G018E0", "G023E0"):
+            box = cards[game][0]
+            height = box[3] - box[1]
+            # The plate: 13% of the card's height, near its top-left corner.
+            plate = [m for m in marks if box[0] <= m[0] < centre(box)[0] and
+                     box[1] - 2 <= m[1] < centre(box)[1] and
+                     abs(m[2] - 0.13 * height / (1 - 2 / 30)) < 1.0]
+            self.assertEqual(len(plate), 1, game)
+        # Without G, no game is from the disc: only the settings marks.
+        log = self.run_script(["L 2 40 18", "N 40 0.0167"])
+        self.assertEqual(len([l for l in frames(log)[-1].splitlines()
+                              if l.startswith("R ")]), 3 * 7)
 
     def test_spotlight_marks_only_a_game_with_its_own_settings(self):
         # Game 22 has none, and game 21's banner beside it carries no mark.

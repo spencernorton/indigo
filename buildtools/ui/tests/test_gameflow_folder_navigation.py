@@ -69,6 +69,7 @@ def build_source(read):
         parts.append(function(files, marker))
     for marker in ("static bool gameflowCustomRootForDevice(",
                    "static void gameflowGamesRoot(",
+                   "static bool gameflowLibraryFolders(",
                    "static bool gameflowPathPrefixMatches(",
                    "static bool gameflowResolveDirOnDevice("):
         if marker in swiss:
@@ -565,10 +566,72 @@ static void crossDeviceLibraryFallback(void) {
     assert(devices[DEVICE_CUR]==&device && !strcmp(curDir.name,"sdc:/games"));
     assert(libraryPublishes==1 && listPublishes==0);
 }
+/* The disc's top, as read_fst lists it: the whole disc as an image, then
+ * its own files and folders. */
+static int discReadDir(file_handle *dir, file_handle **out, unsigned type) {
+    static const char *names[] = {"Demo Game [GDMO01].gcm", "opening.bnr", "audio"};
+    static const int types[] = {IS_FILE, IS_FILE, IS_DIR};
+    int n = !strcmp(dir->name, "dvd:/") ? 3 : 1;
+    (void)type;
+    *out = calloc((size_t)n, sizeof(**out)); assert(*out);
+    if(n == 1) {
+        concat_path((*out)[0].name, dir->name, "intro.dol"); return 1;
+    }
+    for(int i=0;i<n;++i) {
+        concat_path((*out)[i].name, dir->name, names[i]);
+        (*out)[i].fileType=types[i]; (*out)[i].fileBase=(uint64_t)i;
+    }
+    (*out)[0].size=DISC_SIZE;
+    return n;
+}
+static file_handle dvdInitial = {.name = "dvd:/", .fileType = IS_DIR};
+static void useDisc(const char *path, bool folders) {
+    reset(path,folders,false);
+    __device_dvd.initial=&dvdInitial; __device_dvd.features=FEAT_BOOT_GCM;
+    __device_dvd.init=fakeInit; __device_dvd.readDir=discReadDir;
+    __device_dvd.deinit=fakeDeinit;
+    devices[DEVICE_CUR]=&__device_dvd;
+    /* The SD card has /games: the Library must not go there instead. */
+    deviceAvailable=true;
+    scanFiles();
+}
+static void gameDiscLibrary(void) {
+    for(unsigned folders=0;folders<2;++folders) {
+        /* Game Disc chosen as the Source: the Library is the disc's top,
+         * with its game as the only card, even with Library Folders on. */
+        useDisc("dvd:/",folders);
+        assert(gameflowEnterLibraryFromHome());
+        assert(devices[DEVICE_CUR]==&__device_dvd && inits==0);
+        assert(!strcmp(curDir.name,"dvd:/") && !needsRefresh);
+        assert(gameflowLibraryMode(sortedDirEntries,sortedDirEntryCount)==
+            UI_GAMEFLOW_LIBRARY_IMAGE_FILES);
+        assert(!gameflowInsideFolder());
+        dispatch(); assert(libraryPublishes==1 && listPublishes==0);
+        assert(gameflowLibraryEntries(sortedDirEntries,sortedDirEntryCount)==1);
+        assert(!strcmp(sortedDirEntries[0]->name,"dvd:/Demo Game [GDMO01].gcm"));
+        assert(!gameflowTryOtherDevicesForLibrary());
+        assert(devices[DEVICE_CUR]==&__device_dvd && inits==0);
+
+        /* From one of the disc's folders (the File Browser was there):
+         * Library goes back to the disc's top, never to the SD card. */
+        useDisc("dvd:/audio",folders);
+        assert(gameflowLibraryMode(sortedDirEntries,sortedDirEntryCount)==
+            UI_GAMEFLOW_LIBRARY_NONE);
+        assert(!gameflowInsideFolder());
+        assert(!gameflowEnterLibraryFromHome());
+        assert(devices[DEVICE_CUR]==&__device_dvd && inits==0);
+        memcpy(&curDir, devices[DEVICE_CUR]->initial, sizeof(file_handle));
+        curSelection=0; needsRefresh=1; homeLibraryEntryPending=true;
+        curMenuLocation=ON_FILLIST;
+        nextIteration();
+        assert(devices[DEVICE_CUR]==&__device_dvd && !strcmp(curDir.name,"dvd:/"));
+        assert(libraryPublishes==1 && listPublishes==0);
+    }
+}
 int main(int argc, char **argv) {
     if(argc==2 && !strcmp(argv[1],"dots")) dottedFilter();
     else { rootNavigation(); nestedNavigation(); dottedFilter(); legacyAndEmptyPolicy();
-        listFallback(); crossDeviceLibraryFallback(); }
+        listFallback(); crossDeviceLibraryFallback(); gameDiscLibrary(); }
     freeFiles();
     puts("real folder filter/navigation/dispatch: PASS"); return 0;
 }

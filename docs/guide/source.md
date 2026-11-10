@@ -50,6 +50,15 @@ The disc drive is called **Game Disc**.
 
 ## What the Library face opens
 
+With **Game Disc** as the source, the Library shows the game on the disc in
+the drive as one cover, with a small disc mark in its top-left corner. A
+opens its details, where you launch it, as for any other game. Indigo stays
+on the disc: it never looks for `/games` on other storage instead, and
+Library Folders doesn't apply to it. A disc that isn't a GameCube game opens
+in the [File Browser](system.md#file-browser).
+
+For any other source:
+
 Use a `/games` layout described in the [Library guide](library.md) to open
 the poster Library. Indigo skips unrelated files in that folder. When the
 Source has no `/games` folder, Indigo looks for one on the other storage

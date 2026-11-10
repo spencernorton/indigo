@@ -591,12 +591,25 @@ static void gameflowGamesRoot(const DEVICEHANDLER_INTERFACE *device,
 		gamesRoot[0] = '\0';
 		return;
 	}
+	/* A game disc's top holds the game itself (read_fst lists the whole
+	 * disc as an image first), so its Library is there. */
+	if(device == &__device_dvd) {
+		strlcpy(gamesRoot, device->initial->name, PATHNAME_MAX);
+		return;
+	}
 	/* Settings › Library Path, when it is on this device; else /games. */
 	if(gameflowCustomRootForDevice(device, swissSettings.libraryPath,
 			gamesRoot)) {
 		return;
 	}
 	concat_path(gamesRoot, device->initial->name, "games");
+}
+
+/* Library Folders, on the Source: never on a game disc, whose folders are
+ * the game's own files. */
+static bool gameflowLibraryFolders(void)
+{
+	return swissSettings.libraryFolders && devices[DEVICE_CUR] != &__device_dvd;
 }
 
 /* The retained Library ends at /games. Its parent card and X return Home,
@@ -2820,7 +2833,7 @@ static uiGameflowLibraryMode_t gameflowLibraryMode(file_handle **directory,
 		return UI_GAMEFLOW_LIBRARY_NONE;
 	}
 	gameflowGamesRoot(devices[DEVICE_CUR], gamesRoot);
-	location = swissSettings.libraryFolders ?
+	location = gameflowLibraryFolders() ?
 		UIGameflowLibrary_LocateFolders(gamesRoot, curDir.name) :
 		UIGameflowLibrary_Locate(gamesRoot, curDir.name);
 	if(location == UI_GAMEFLOW_LIBRARY_LOCATION_NONE) {
@@ -2900,7 +2913,7 @@ static bool gameflowInsideFolder(void)
 {
 	char gamesRoot[PATHNAME_MAX];
 
-	if(!swissSettings.libraryFolders || devices[DEVICE_CUR] == NULL ||
+	if(!gameflowLibraryFolders() || devices[DEVICE_CUR] == NULL ||
 		devices[DEVICE_CUR]->initial == NULL) {
 		return false;
 	}
@@ -3594,7 +3607,9 @@ static bool gameflowTryOtherDevicesForLibrary(void)
 	DEVICEHANDLER_INTERFACE *found;
 	file_handle dir;
 
-	if(previous == NULL || previous->initial == NULL || needsRefresh ||
+	/* The game disc was chosen for its game: never trade it for a card. */
+	if(previous == NULL || previous == &__device_dvd ||
+		previous->initial == NULL || needsRefresh ||
 		strcmp(curDir.name, previous->initial->name)) {
 		return false;
 	}
@@ -4168,6 +4183,7 @@ static void gameflowSnapshotRecord(uiGameflowCardSnapshot_t *record,
 			FNM_PATHNAME | FNM_PREFIX_DIRS)) {
 		record->flags |= UI_GAMEFLOW_CARD_AUTOLOAD;
 	}
+	record->disc = file->device == &__device_dvd;
 	gameflowMarkCustom(record);
 }
 
@@ -5054,7 +5070,7 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 	}
 	uiGameflowLibraryMode_t gameflowMode = gameflowLibraryMode(directory, num_files);
 	/* Only Library Folders shows folders, and their posters. */
-	u64 folderListing = swissSettings.libraryFolders ?
+	u64 folderListing = gameflowLibraryFolders() ?
 		folderArtIdentity(directory, num_files) : 0u;
 	uiGameflowDirection_t gameflowDirection = UI_GAMEFLOW_DIRECTION_NONE;
 	/* The last move between grid rows: a two-row grid keeps its other row

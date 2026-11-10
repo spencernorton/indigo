@@ -6,6 +6,11 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- With **Game Disc** as the source, the Library shows the game in the
+  drive as one cover, marked with a small disc in its top-left corner, and
+  launches it from its details. It used to switch the source to a card with
+  `/games` instead, so the disc could only be started from the File Browser.
+
 - Allow the upstream watch to reach its three required API hosts through the
   runner's HTTPS proxy. Other destinations and private addresses stay blocked.
 
