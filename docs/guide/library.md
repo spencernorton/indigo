@@ -110,6 +110,10 @@ column it doesn't have, Up or Down lands on its last game.
 - **B** goes back to Home.
 - A small **sliders mark** in the corner of a cover means that game has
   [settings of its own](game-details.md#this-games-own-settings).
+- A small **disc mark** in the top-left corner means the game is read from
+  **Game Disc**, rather than an image on a card. Spotlight shows it on the
+  large picture or cover instead of the small banner row. In Jewel Case,
+  it appears on the cover when you open the game's details.
 
 <p align="center">
   <img alt="Y on 007: Agent Under Fire in the grid opens its own settings. A on Force Video Mode lists the modes; 480p is chosen, the row is marked Custom and the top right reads 1 custom. B shows the game's details, whose Settings line reads 1 custom and Force Video Mode: 480p; B again returns to the grid with the same game selected." src="images/library-game-settings.png" width="640">

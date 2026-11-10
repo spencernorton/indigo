@@ -90,7 +90,9 @@ typedef struct {
 	u8 column;	/* grid only */
 	/* Library Folders: a folder of games, which A opens, not a game. */
 	u8 subfolder;
-	u8 reserved[7];
+	/* A game read from the disc in the drive, which its card marks. */
+	u8 disc;
+	u8 reserved[6];
 } uiGameflowCardSnapshot_t;
 
 typedef struct {

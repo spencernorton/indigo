@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Mark games read from **Game Disc** with a small disc badge in the top-left
+  of their Library artwork.
+
 - Hold each emulator-test press for at least a frame of the console's time
   when the runner is busy, and wait for the File Browser's right pane to name
   Memory Card - Slot A before checking its saves.
