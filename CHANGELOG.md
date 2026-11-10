@@ -26,6 +26,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Optical navigation and whole-disc launch are tested in Dolphin with and
   without an SD Library attached. Physical optical-drive recognition and
   launch remain unconfirmed on a console.
+- MemCard PRO GC coverage on the current SDK remains pending; emulator
+  tests do not qualify a real card.
 
 ## v2.7.0 — 540p60 menu mode, Ukrainian menus and clock zones
 
