@@ -1,3 +1,19 @@
+## 2026-11-11 — Replace Horizontal with the 3D carousel
+
+Make 3D Boxes the default Library view in place of Horizontal, with five
+public choices rather than an additional sixth option. Accept saved
+`Horizontal` as an alias for `3D Boxes`; preserve the other four saved
+indices. Resolve the default setting to the Boxes renderer before entering
+the Library, while Apps retains its existing flat cards and matching cube
+pose. Keep the flat renderer for the Jewel Case low-memory fallback too.
+
+Exercise the actual settings parser, writer, five-choice cycle, game-layout
+mapping and Apps fallback in host tests. Walk the five public choices in
+Dolphin's folder route. Keep the existing geometry and motion contracts,
+including Reduced and Off. Use real Dolphin media already captured for the
+3D view; older flat-row comparisons are labelled historical. Physical-console
+frame timing remains unqualified.
+
 ## 2026-11-10 — Prepare cover strips once and account for diagnostic overhead
 
 PR #211's standard builds reproduce byte for byte. Its performance build

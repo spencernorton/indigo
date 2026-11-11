@@ -129,13 +129,12 @@ LABEL_BOX = (200, 372, 440, 396)
 HOME_HINT_BOX, HINT_LEVEL, HINT_GONE_LEVEL = (240, 422, 400, 446), 120, 80
 TITLE_BOX = (200, 338, 440, 362)
 FOLDER_LAYOUTS = {
-    "Horizontal": (TITLE_BOX, "LEFT", "RIGHT"),
+    "3D Boxes": (TITLE_BOX, "LEFT", "RIGHT"),
     "Vertical": ((258, 190, 605, 224), "UP", "DOWN"),
     "Grid": ((180, 374, 460, 402), "LEFT", "RIGHT"),
     "Spotlight": ((378, 78, 607, 108), "LEFT", "RIGHT"),
     # The jewel case's title stands where the carousel's does.
     "Jewel Case": (TITLE_BOX, "LEFT", "RIGHT"),
-    "3D Boxes": (TITLE_BOX, "LEFT", "RIGHT"),
 }
 # Settings' page title, including the "Storage" page a new card opens with.
 SETTINGS_TITLE_BOX = (30, 46, 230, 80)

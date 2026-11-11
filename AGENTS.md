@@ -23,6 +23,12 @@ Indigo is built on and lists the upstream files Indigo does change, with why.
 - User documentation: `README.md`, `docs/guide/` (every screen and setting,
   with pictures), `docs/SETTINGS.md` (the settings files), `CHANGELOG.md`.
 
+Library settings expose five choices, starting with 3D Boxes. Saved indices
+0..4 remain stable; the old `Horizontal` name is a compatibility alias for
+the new default. `gameflowLayout()` maps saved zero to the Boxes renderer.
+The flat Horizontal renderer stays internal for Apps and Jewel Case's
+low-memory fallback, so renderer count and public setting count differ.
+
 ## Build and test
 
 ```bash

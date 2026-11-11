@@ -255,10 +255,11 @@ def check_layouts(swiss: str) -> None:
     folder = extract_function(swiss, "static bool gameflowResolveAndLoadFolder(")
     image = extract_function(swiss, "static bool gameflowLoadImageWithContext(")
 
-    # Anything but Vertical or Grid is the carousel.
+    # Public setting zero replaces Horizontal with Boxes. The renderer's
+    # flat mode stays internal for Apps and the jewel-case memory fallback.
     assert "swissSettings.libraryLayout > UI_GAMEFLOW_LAYOUT_HORIZONTAL &&" in layout_of
-    assert "swissSettings.libraryLayout < UI_GAMEFLOW_LAYOUT_COUNT ?" in layout_of
-    assert "UI_GAMEFLOW_LAYOUT_HORIZONTAL;" in layout_of
+    assert "swissSettings.libraryLayout < UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT ?" in layout_of
+    assert "UI_GAMEFLOW_LAYOUT_BOXES;" in layout_of
     # The grid window only for the grid; its off-screen rows never read.
     grid_at = build.index("if(layout == UI_GAMEFLOW_LAYOUT_GRID) {")
     ring_at = build.index("UIGameflowLibrary_BuildWindow(", grid_at)
@@ -354,7 +355,7 @@ special = activate_entry.index("else if(directory[curSelection]->fileType==IS_SP
 assert activate_entry.index("gameflowNavigateParent(useGameflow, directory[curSelection]);",
                             special) < activate_entry.index("else if", special + 1)
 layout_mutants = (
-    ("an unknown layout is kept", "swissSettings.libraryLayout < UI_GAMEFLOW_LAYOUT_COUNT ?",
+    ("an unknown layout is kept", "swissSettings.libraryLayout < UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT ?",
      "swissSettings.libraryLayout < 99 ?"),
     ("the carousel gets the grid window", "if(layout == UI_GAMEFLOW_LAYOUT_GRID) {\n\t\tsize_t kept = 0u;",
      "if(layout != UI_GAMEFLOW_LAYOUT_HORIZONTAL) {\n\t\tsize_t kept = 0u;"),

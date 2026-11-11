@@ -2,6 +2,7 @@
 """The emulator test's own parts, without Dolphin: the disc, the pad, the checks."""
 
 import itertools
+import re
 import shutil
 import socket
 import struct
@@ -1904,6 +1905,19 @@ class Screen(unittest.TestCase):
         with self.assertRaises(run.Failed):  # a row it can't find among the rows before
             route.walk_rows(2, "DOWNs reach the row")
 
+    def test_folder_route_follows_the_public_library_layout_order(self):
+        # The route changes the setting with one Right between layouts. Its
+        # names and title regions must follow today's actual Settings list,
+        # without walking the removed flat Horizontal option.
+        root = Path(__file__).resolve().parents[3]
+        settings = (root / "cube/swiss/source/gui/settings.c").read_text()
+        names = re.search(r'^char \*libraryLayoutStr\[\] = \{([^}]+)\};',
+                          settings, re.M).group(1)
+        self.assertEqual(list(run.FOLDER_LAYOUTS), re.findall(r'"([^"]+)"', names))
+        self.assertEqual(next(iter(run.FOLDER_LAYOUTS)), "3D Boxes")
+        self.assertEqual(run.FOLDER_LAYOUTS["3D Boxes"],
+                         (run.TITLE_BOX, "LEFT", "RIGHT"))
+
     def test_folder_layout_observes_settings_navigation_after_a_missed_tab_press(self):
         """A missed first R must not turn Setup > Library into a Defaults picker."""
         for missed in (0, 1, run.PRESSES):
@@ -1966,11 +1980,11 @@ class Screen(unittest.TestCase):
                 with mock.patch.object(run, "Deadline", ShortWait), mock.patch.object(run.time, "sleep"):
                     if missed == run.PRESSES:
                         with self.assertRaises(run.Failed):
-                            route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                            route.folder_layout([np.ones((4, 4), bool)] * 3, "3D Boxes", first=True)
                         self.assertEqual(presses.count("R"), run.PRESSES)
                         self.assertEqual(chosen, [], "a dead tab control stops before changing a setting")
                         continue
-                    route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                    route.folder_layout([np.ones((4, 4), bool)] * 3, "3D Boxes", first=True)
                 self.assertEqual(chosen, [("Library", 1)])
                 self.assertEqual(presses.count("R"), 3 if missed else 2)
                 self.assertEqual(route.pressed_again, ["R"] if missed else [])

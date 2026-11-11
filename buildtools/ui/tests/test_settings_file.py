@@ -35,6 +35,7 @@ UI_GAMEFLOW_LIBRARY_H = (SWISS / "source/gui/ui_gameflow_library.h").read_text()
 MAIN_H = (SWISS / "include/main.h").read_text()
 MAIN_C = (SWISS / "source/main.c").read_text()
 SWISS_C = (SWISS / "source/swiss.c").read_text()
+APPS_C = (SWISS / "source/gui/apps.c").read_text()
 DOC = ROOT / "docs/SETTINGS.md"
 EXAMPLES = ROOT / "docs/examples"
 
@@ -77,6 +78,11 @@ DEFAULTS = between(MAIN_C, "// Sane defaults", "config_init_environ();")
 assert 'strcpy(swissSettings.flattenDir, "*/games");' in MAIN_C
 DETAIL_SAVES_TOGGLE = re.search(
     r"case SET_DETAIL_SAVES:\n(.*?)\n\t+break;", SETTINGS_C, re.S).group(1)
+LIBRARY_LAYOUT_TOGGLE = re.search(
+    r"case SET_LIBRARY_LAYOUT:\n(.*?)\n\t+break;", SETTINGS_C, re.S).group(1)
+APPS_LAYOUT_FALLBACK = extract_function(
+    extract_function(APPS_C, "static void showPrograms("),
+    "if(layout > UI_GAMEFLOW_LAYOUT_GRID)")
 
 
 HARNESS = "\n".join([
@@ -129,10 +135,18 @@ static bool getRawDTVStatus(void) { return false; }
     re.search(r"^typedef enum \{[^}]*\} uiHomeFace_t;", UI_HOME_H, re.M).group(0),
     # And the Library layouts, through the same header.
     re.search(r"^typedef enum \{[^}]*\} uiGameflowLayout_t;", UI_GAMEFLOW_H, re.M).group(0),
+    re.search(r"^enum \{\s*UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT[^}]*\};",
+              UI_GAMEFLOW_H, re.M).group(0),
     "\n".join(re.findall(r"^enum \w+\s*\{.*?\};", SWISS_H, re.S | re.M)),
     re.search(r"^enum setupStream\s*\{.*?\};", MAIN_H, re.S | re.M).group(0),
     SWISS_SETTINGS,
     "SwissSettings swissSettings;",
+    extract_function(SWISS_C, "uiGameflowLayout_t gameflowLayout("),
+    "static uiGameflowLayout_t apps_layout(void)\n{\n"
+    "\tuiGameflowLayout_t layout = gameflowLayout();\n" +
+    APPS_LAYOUT_FALLBACK + "\n\treturn layout;\n}\n",
+    "static void cycle_library_layout(int direction)\n{\n" +
+    LIBRARY_LAYOUT_TOGGLE + "\n}\n",
     (SWISS / "source/gui/ui_folder.h").read_text(),
     (SWISS / "source/gui/ui_folder.c").read_text().replace('#include "ui_folder.h"', ""),
     "static uiFolderColors_t folderColors;",
@@ -263,7 +277,17 @@ int main(int argc, char **argv)
 	if(argc < 2) return 64;
 	char *input = read_stream(stdin);
 	set_defaults();
-	if(argc >= 3 && !strcmp(argv[1], "merge-global")) {
+	if(argc >= 3 && !strcmp(argv[1], "layout-value")) {
+		swissSettings.libraryLayout = atoi(argv[2]);
+		printf("%d %d %d\n", swissSettings.libraryLayout,
+			gameflowLayout(), apps_layout());
+	}
+	else if(argc >= 3 && !strcmp(argv[1], "layout-cycle")) {
+		config_parse_global(input, true);
+		cycle_library_layout(atoi(argv[2]));
+		write_global(stdout);
+	}
+	else if(argc >= 3 && !strcmp(argv[1], "merge-global")) {
 		char *existing = read_path(argv[2]);
 		char *booted = strdup(existing);
 		char *generated = NULL;
@@ -693,10 +717,40 @@ class SettingsFileTest(unittest.TestCase):
             self.assertEqual(written["Swiss Video Mode"], "480p")
         self.assertEqual(self.global_file("Apps Video Mode=Unknown")["Apps Video Mode"], "Auto")
 
-    def test_3d_boxes_layout_round_trips_without_changing_the_default(self):
-        self.assertEqual(self.global_file()["Library Layout"], "Horizontal")
-        self.assertEqual(self.global_file("Library Layout=3D Boxes\n")["Library Layout"],
-                         "3D Boxes")
+    def test_3d_boxes_replaces_the_saved_horizontal_layout(self):
+        self.assertEqual(VALUES["libraryLayoutStr"],
+                         ["3D Boxes", "Vertical", "Grid", "Spotlight", "Jewel Case"])
+        self.assertEqual(self.global_file()["Library Layout"], "3D Boxes")
+        for value in ("Horizontal", "3D Boxes"):
+            with self.subTest(value=value):
+                self.assertEqual(self.global_file(f"Library Layout={value}\n")["Library Layout"],
+                                 "3D Boxes")
+                # The old name must actively replace an earlier choice, not
+                # merely leave the default behind after a failed match.
+                self.assertEqual(self.global_file(
+                    f"Library Layout=Vertical\nLibrary Layout={value}\n")["Library Layout"],
+                    "3D Boxes")
+
+    def test_public_layouts_map_to_boxes_but_apps_keep_flat_cards(self):
+        # Public settings retain the historical indices for all other views.
+        # Renderer 0 remains the flat Apps/fallback mode, never the default
+        # game Library. The first public setting reaches renderer 5 (Boxes).
+        for value, library, apps in ((0, 5, 0), (1, 1, 1), (2, 2, 2),
+                                     (3, 3, 0), (4, 4, 0), (5, 5, 0),
+                                     (-1, 5, 0), (77, 5, 0)):
+            with self.subTest(value=value):
+                fields = self.run_harness("layout-value", str(value)).split()
+                self.assertEqual(tuple(map(int, fields[1:])), (library, apps))
+
+    def test_library_layout_cycles_only_five_public_choices(self):
+        names = VALUES["libraryLayoutStr"]
+        for index, name in enumerate(names):
+            for direction in (-1, 1):
+                with self.subTest(name=name, direction=direction):
+                    written = pairs(self.run_harness(
+                        "layout-cycle", str(direction), stdin=f"Library Layout={name}\n"))
+                    self.assertEqual(written["Library Layout"],
+                                     names[(index + direction) % len(names)])
 
     def test_an_unknown_value_keeps_the_previous_one(self):
         defaults = self.global_file()

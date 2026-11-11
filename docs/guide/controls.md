@@ -64,7 +64,7 @@ See [Source](source.md).
 
 How the D-pad moves depends on **Library Layout** (Setup › Library):
 
-| To move | Horizontal, Spotlight, Jewel Case, 3D Boxes | Vertical | Grid |
+| To move | 3D Boxes, Spotlight, Jewel Case | Vertical | Grid |
 | --- | --- | --- | --- |
 | To the next or previous game | Left, Right | Up, Down | Left, Right |
 | To the game above or below | | | Up, Down |
@@ -83,7 +83,8 @@ scroll; the C-stick does not turn them. See [Library](library.md).
 | A | Start the app. |
 | B | Back to Home. |
 
-See [Apps](apps.md).
+With 3D Boxes selected, Apps keeps its flat row of posters and the same
+Left and Right controls. See [Apps](apps.md).
 
 ### Game details
 

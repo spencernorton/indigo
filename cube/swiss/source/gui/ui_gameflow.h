@@ -23,12 +23,13 @@ typedef enum {
 } uiGameflowDirection_t;
 
 /* Setup > Library > Library Layout: how the Library lays out the games.
- * Horizontal is the original carousel and the default; Vertical is the same
- * ring on end; Grid is rows of posters that scroll up and down. Spotlight is
+ * The default is 3D Boxes: the ring with projected retail cases and separate
+ * plain edges. Horizontal is retained internally for Apps and the low-memory
+ * Jewel Case fallback. Vertical is the same ring on end; Grid is rows of
+ * posters that scroll up and down. Spotlight is
  * the ring again as a row of disc banners, under the selected game's
  * gameplay still and details. Jewel Case is the ring as one clear CD case
- * at a time, the game's disc spinning inside (gui/ui_jewel_case.c). 3D Boxes
- * uses the ring with projected retail cases and separate plain edges. */
+ * at a time, the game's disc spinning inside (gui/ui_jewel_case.c). */
 typedef enum {
 	UI_GAMEFLOW_LAYOUT_HORIZONTAL = 0,
 	UI_GAMEFLOW_LAYOUT_VERTICAL,
@@ -38,6 +39,11 @@ typedef enum {
 	UI_GAMEFLOW_LAYOUT_BOXES,
 	UI_GAMEFLOW_LAYOUT_COUNT
 } uiGameflowLayout_t;
+
+/* Saved setting indices stay 0..4: the old Horizontal choice at 0 now names
+ * 3D Boxes. gameflowLayout() resolves it to the BOXES renderer; Apps then
+ * uses its original flat HORIZONTAL renderer. Do not expose both choices. */
+enum { UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT = UI_GAMEFLOW_LAYOUT_JEWEL_CASE + 1 };
 
 /*
  * Menu-thread selection snapshot. generation is a wrapping uint32_t serial;

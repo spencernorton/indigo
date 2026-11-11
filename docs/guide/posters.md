@@ -12,8 +12,11 @@ stills or disc art, so they do not compete with the pictures on screen;
 returning to that layout resumes them.
 
 <p align="center">
-  <img alt="1080° Avalanche in the Library twice: on the left without a poster pack, a card with its disc banner and game ID, GTEE01; on the right with one, its box art." src="images/posters-compare.png" width="640">
+  <img alt="The former Horizontal Library view compares 1080° Avalanche without a poster pack, showing its disc banner and game ID, GTEE01, and with a pack, showing its box art. The same artwork fallback now appears on the front of a 3D case." src="images/posters-compare.png" width="640">
 </p>
+
+This comparison shows the former Horizontal view; 3D Boxes uses the same
+poster and banner fallback on the case front.
 
 ## Download the pack
 
@@ -63,10 +66,10 @@ show banners with a bigger pack.
 
 ## 3D Boxes
 
-The **3D Boxes** Library layout uses the same `posters.pak`; no extra pack is
-needed. Each front cover sits on the front of a case, with plain case
-edges drawn separately. Games without a cover keep their disc banner
-card on the front.
+The default **3D Boxes** Library layout replaces Horizontal and uses the
+same `posters.pak`; no extra pack is needed. Each front cover sits on the
+front of a case, with plain case edges drawn separately. Games without a
+cover keep their disc banner card on the front.
 
 Use flat front-cover images when building a pack. A picture that already
 includes a perspective view of a spine will still show that spine within
