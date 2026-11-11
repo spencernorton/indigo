@@ -1,3 +1,12 @@
+## 2026-11-11 — Teach the picker audit to resolve enum counts
+
+The settings-view audit inferred every enum value from its position, so the
+new public-layout count expression was read as zero and the Library picker
+was incorrectly reported as extra. Resolve explicit numeric values, aliases
+and derived counts, and independently assert five public choices versus six
+internal renderer modes. The fifteen view audits pass. This changes test
+code and this journal only; the d4d7c48 test DOL's product code is unchanged.
+
 ## 2026-11-11 — Replace Horizontal with the 3D carousel
 
 Make 3D Boxes the default Library view in place of Horizontal, with five
