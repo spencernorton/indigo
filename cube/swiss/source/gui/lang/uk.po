@@ -1708,10 +1708,6 @@ msgid "Web"
 msgstr "Інтернет"
 
 #: cube/swiss/source/gui/settings.c:106
-msgid "Horizontal"
-msgstr "Горизонтальний"
-
-#: cube/swiss/source/gui/settings.c:106
 msgid "Vertical"
 msgstr "Вертикальний"
 

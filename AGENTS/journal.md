@@ -1,3 +1,12 @@
+## 2026-11-11 — Remove the retired layout label from translations
+
+Remove the standalone Horizontal translation now that the interface no
+longer draws that choice. Its settings-file spelling remains a parser alias
+and needs no localization. Keep the semantics audit's exact Library Layout
+arm match tied to the five public choices, separate from renderer count.
+The change retires unused text and updates the audit contract; navigation
+and rendering keep the already tested replacement behavior.
+
 ## 2026-11-11 — Teach the picker audit to resolve enum counts
 
 The settings-view audit inferred every enum value from its position, so the

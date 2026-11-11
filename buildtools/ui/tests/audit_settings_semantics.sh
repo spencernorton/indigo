@@ -143,11 +143,11 @@ normalized, icons = re.subn(
     r"\t+break;\n",
     lambda arm: "" if arm.group(1).lower() == arm.group(2) else arm.group(0),
     normalized)
-# And the Library Layout arm, round its three layouts.
+# And the Library Layout arm, round its five public layouts.
 normalized = re.sub(
     r"(?ms)^\t+case SET_LIBRARY_LAYOUT:\n"
     r"\t+swissSettings\.libraryLayout \+= direction;\n"
-    r"\t+swissSettings\.libraryLayout = \(swissSettings\.libraryLayout \+ UI_GAMEFLOW_LAYOUT_COUNT\) % UI_GAMEFLOW_LAYOUT_COUNT;\n"
+    r"\t+swissSettings\.libraryLayout = \(swissSettings\.libraryLayout \+ UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT\) % UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT;\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # And the Save Folder arm: the folder the chooser returns, or no change.
