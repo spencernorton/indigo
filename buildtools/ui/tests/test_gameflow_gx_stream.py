@@ -1459,7 +1459,7 @@ class GameflowGxStream(unittest.TestCase):
             self.assertEqual(len({s for s, _ in coordinates}), 9, name)
             quad = corners[name][0]
             # Solve a plane-to-screen homography from its four corners,
-            # independently of UIBoxCase_Point and its camera/path helpers.
+            # independently of UIBoxCase_Strips and its camera/path helpers.
             (x0, y0), (x1, y1), (x2, y2), (x3, y3) = quad
             dx1, dx2, dx3 = x1 - x2, x3 - x2, x0 - x1 + x2 - x3
             dy1, dy2, dy3 = y1 - y2, y3 - y2, y0 - y1 + y2 - y3

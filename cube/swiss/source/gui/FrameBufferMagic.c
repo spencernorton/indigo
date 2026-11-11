@@ -2756,8 +2756,8 @@ static void _GameflowDrawPoster(const gameflowRenderCard_t *card,
 static void _GameflowDrawBoxPoster(const gameflowRenderCard_t *card,
 	GXTexObj *texture, float reveal)
 {
-	enum { STRIPS = 8 };
 	uiBoxCaseQuad_t front;
+	uiBoxCaseStrips_t strips;
 	u8 alpha = _GameflowAlpha(255.0f * card->presence * reveal);
 	int i, strip;
 
@@ -2765,18 +2765,19 @@ static void _GameflowDrawBoxPoster(const gameflowRenderCard_t *card,
 		front.point[i].x = card->quad.point[i].x;
 		front.point[i].y = card->quad.point[i].y;
 	}
+	if(!UIBoxCase_Strips(&front, &strips)) return;
 	drawInit();
 	GX_SetNumTevStages(1);
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	GX_InvalidateTexAll();
 	GX_LoadTexObj(texture, GX_TEXMAP0);
-	GX_Begin(GX_QUADS, GX_VTXFMT0, STRIPS * 4);
-	for(strip = 0; strip < STRIPS; ++strip) {
+	GX_Begin(GX_QUADS, GX_VTXFMT0, UI_BOX_CASE_STRIPS * 4);
+	for(strip = 0; strip < UI_BOX_CASE_STRIPS; ++strip) {
 		for(i = 0; i < 4; ++i) {
-			float u = (float)(strip + (i == 1 || i == 2)) / (float)STRIPS;
+			int column = strip + (i == 1 || i == 2);
+			float u = (float)column / (float)UI_BOX_CASE_STRIPS;
 			float v = i >= 2 ? 1.0f : 0.0f;
-			uiBoxCasePoint_t point = UIBoxCase_Point(&front,
-				0.033333f + 0.933334f * u, 0.033333f + 0.933334f * v);
+			uiBoxCasePoint_t point = strips.column[column][i >= 2];
 			GX_Position3f32(point.x, point.y, 0.0f);
 			GX_Color4u8(255, 255, 255, alpha);
 			GX_TexCoord2f32(0.75f * u, v);

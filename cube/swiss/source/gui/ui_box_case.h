@@ -15,8 +15,14 @@ typedef struct {
 typedef struct {
 	uiBoxCaseQuad_t front;
 	uiBoxCaseQuad_t side;
-	uiBoxCaseQuad_t top;
 } uiBoxCasePose_t;
+
+enum { UI_BOX_CASE_STRIPS = 8 };
+
+typedef struct {
+	/* Each adjacent pair supplies one strip's left/right top/bottom. */
+	uiBoxCasePoint_t column[UI_BOX_CASE_STRIPS + 1][2];
+} uiBoxCaseStrips_t;
 
 /* Project a closed retail case into the 640 x 480 menu stage. slot is the
  * signed carousel position: 0 faces forward, 1 and 2 are its neighbours,
@@ -29,12 +35,11 @@ typedef struct {
  * out-of-range inputs return false without changing the output. */
 bool UIBoxCase_Pose(float slot, uiBoxCasePose_t *pose);
 
-/* A physical (u, v) point on a projected front, including its perspective.
- * Unlike a bilinear screen-space sample, the middle of the artwork remains
- * the projection of the case's physical middle. The front has vertical
- * edges, as Pose and its transitions into Detail do. Finite u/v are clamped
- * to 0..1. A zero-height face falls back to bilinear sampling; NULL or
- * non-finite inputs return (0, 0). No output can contain an infinity/NaN. */
-uiBoxCasePoint_t UIBoxCase_Point(const uiBoxCaseQuad_t *front, float u, float v);
+/* Prepare the eight front-art strips once per case. Physical u/v are inset
+ * by 0.033333 of the face; texture UVs remain 0..0.75 by 0..1. Validate the
+ * front and measure its edge heights once, then share each column between
+ * its neighbouring strips. A zero-height face uses bilinear sampling. NULL,
+ * non-finite inputs or non-finite results return false without changing out. */
+bool UIBoxCase_Strips(const uiBoxCaseQuad_t *front, uiBoxCaseStrips_t *out);
 
 #endif

@@ -34,7 +34,6 @@ static void centre(void)
 	closePoint(pose.front.point[2], (uiBoxCasePoint_t) {410.0f, 336.0f});
 	closePoint(pose.front.point[3], (uiBoxCasePoint_t) {230.0f, 336.0f});
 	assert(area(&pose.side) == 0.0f);
-	assert(area(&pose.top) == 0.0f);
 }
 
 static void neighbours(void)
@@ -68,7 +67,7 @@ static void sweep(void)
 		float slot = (float)step / 1000.0f;
 		uiBoxCasePose_t pose;
 		uiBoxCasePose_t mirror;
-		const uiBoxCaseQuad_t *faces[3];
+		const uiBoxCaseQuad_t *faces[2];
 		int face;
 		int i;
 
@@ -76,11 +75,9 @@ static void sweep(void)
 		assert(UIBoxCase_Pose(-slot, &mirror));
 		assert(area(&pose.front) > 1000.0f);
 		assert(area(&pose.side) >= -0.02f);
-		assert(fabsf(area(&pose.top)) < 0.02f);
 		faces[0] = &pose.front;
 		faces[1] = &pose.side;
-		faces[2] = &pose.top;
-		for(face = 0; face < 3; ++face) {
+		for(face = 0; face < 2; ++face) {
 			for(i = 0; i < 4; ++i) {
 				assert(isfinite(faces[face]->point[i].x));
 				assert(isfinite(faces[face]->point[i].y));
@@ -118,57 +115,179 @@ static void invalid(void)
 	}
 }
 
-static void physicalPoints(void)
+static void preparedStrips(void)
 {
-	uiBoxCasePose_t pose;
-	uiBoxCasePoint_t point;
 	uiBoxCaseQuad_t flat = {{{20.0f, 30.0f}, {220.0f, 30.0f},
 		{220.0f, 330.0f}, {20.0f, 330.0f}}};
-	int i;
+	uiBoxCasePose_t pose;
+	uiBoxCaseStrips_t strips;
+	int column;
+	int end;
+	int side;
 
-	closePoint(UIBoxCase_Point(&flat, 0.25f, 0.75f),
-		(uiBoxCasePoint_t) {70.0f, 255.0f});
-	assert(UIBoxCase_Pose(1.0f, &pose));
-	/* Independently project the case's physical centre and a point on its
-	 * top edge. An affine quad incorrectly puts the texture centre about
-	 * 12 pixels from here, on its triangle diagonal. */
-	point = UIBoxCase_Point(&pose.front, 0.5f, 0.5f);
-	closePoint(point, (uiBoxCasePoint_t) {320.0f + 700.0f * 190.0f / 810.0f,
-		216.0f});
-	point = UIBoxCase_Point(&pose.front, 0.5f, 0.0f);
-	closePoint(point, (uiBoxCasePoint_t) {320.0f + 700.0f * 190.0f / 810.0f,
-		216.0f - 700.0f * 120.0f / 810.0f});
-	for(i = 0; i < 4; ++i) {
-		closePoint(UIBoxCase_Point(&pose.front, i == 1 || i == 2,
-			i == 2 || i == 3), pose.front.point[i]);
+	assert(UI_BOX_CASE_STRIPS == 8);
+	assert(UIBoxCase_Strips(&flat, &strips));
+	for(column = 0; column <= UI_BOX_CASE_STRIPS; ++column) {
+		float u = 0.033333f + 0.933334f * (float)column / 8.0f;
+		for(end = 0; end < 2; ++end) {
+			float v = end ? 0.966667f : 0.033333f;
+			closePoint(strips.column[column][end],
+				(uiBoxCasePoint_t) {20.0f + 200.0f * u, 30.0f + 300.0f * v});
+		}
 	}
-	/* The entire physical midline is horizontal in this level camera,
-	 * including strongly angled neighbours. */
-	for(i = -30; i <= 30; ++i) {
-		int u;
-		assert(UIBoxCase_Pose((float)i / 10.0f, &pose));
-		for(u = 0; u <= 10; ++u) {
-			point = UIBoxCase_Point(&pose.front, (float)u / 10.0f, 0.5f);
-			assert(fabsf(point.y - 216.0f) < 0.001f);
+	for(side = -1; side <= 1; ++side) {
+		float yaw = (float)side * 65.0f * 0.01745329252f;
+		float centreX = (float)side * 190.0f;
+		float depth = side ? 110.0f : 0.0f;
+
+		assert(UIBoxCase_Pose((float)side, &pose));
+		assert(UIBoxCase_Strips(&pose.front, &strips));
+		for(column = 0; column <= UI_BOX_CASE_STRIPS; ++column) {
+			float u = 0.033333f + 0.933334f * (float)column / 8.0f;
+			float x = -90.0f + 180.0f * u;
+			float z = 700.0f + depth - sinf(yaw) * x;
+			for(end = 0; end < 2; ++end) {
+				float v = end ? 0.966667f : 0.033333f;
+				float y = -120.0f + 240.0f * v;
+				/* Independent world-space projection, not the production
+				 * height weighting or screen-space interpolation. */
+				uiBoxCasePoint_t expected = {
+					320.0f + 700.0f * (centreX + cosf(yaw) * x) / z,
+					216.0f + 700.0f * y / z
+				};
+				closePoint(strips.column[column][end], expected);
+				assert(column == 0 || strips.column[column][end].x >
+					strips.column[column - 1][end].x);
+			}
+			assert(strips.column[column][0].y < strips.column[column][1].y);
 		}
 	}
 }
 
-static void invalidPoints(void)
+/* The diagonals of a projected planar rectangle meet at its physical
+ * centre. This geometric construction does not use its height weights. */
+static uiBoxCasePoint_t diagonalCentre(const uiBoxCaseQuad_t *quad)
 {
-	uiBoxCasePoint_t zero = {0.0f, 0.0f};
+	uiBoxCasePoint_t a = quad->point[0];
+	uiBoxCasePoint_t b = quad->point[1];
+	uiBoxCasePoint_t r = {quad->point[2].x - a.x, quad->point[2].y - a.y};
+	uiBoxCasePoint_t s = {quad->point[3].x - b.x, quad->point[3].y - b.y};
+	float denominator = r.x * s.y - r.y * s.x;
+	float t;
+	uiBoxCasePoint_t centre;
+
+	assert(fabsf(denominator) > 1.0f);
+	t = ((b.x - a.x) * s.y - (b.y - a.y) * s.x) / denominator;
+	centre = (uiBoxCasePoint_t) {a.x + t * r.x, a.y + t * r.y};
+	return centre;
+}
+
+static void stripSweep(void)
+{
+	uiBoxCasePose_t pose;
+	uiBoxCaseStrips_t previous;
+	int step;
+
+	assert(UIBoxCase_Pose(-3.0f, &pose));
+	assert(UIBoxCase_Strips(&pose.front, &previous));
+	for(step = -300; step <= 300; ++step) {
+		uiBoxCasePose_t mirroredPose;
+		uiBoxCaseStrips_t strips;
+		uiBoxCaseStrips_t mirrored;
+		uiBoxCasePoint_t centre;
+		uiBoxCasePoint_t middle;
+		uiBoxCaseQuad_t artwork;
+		float totalArea = 0.0f;
+		int column;
+		int end;
+
+		assert(UIBoxCase_Pose((float)step / 100.0f, &pose));
+		assert(UIBoxCase_Pose(-(float)step / 100.0f, &mirroredPose));
+		assert(UIBoxCase_Strips(&pose.front, &strips));
+		assert(UIBoxCase_Strips(&mirroredPose.front, &mirrored));
+		centre = diagonalCentre(&pose.front);
+		middle = (uiBoxCasePoint_t) {
+			(strips.column[4][0].x + strips.column[4][1].x) * 0.5f,
+			(strips.column[4][0].y + strips.column[4][1].y) * 0.5f
+		};
+		closePoint(middle, centre);
+		for(column = 0; column <= UI_BOX_CASE_STRIPS; ++column) {
+			float x = strips.column[column][0].x;
+			float across = (x - pose.front.point[0].x) /
+				(pose.front.point[1].x - pose.front.point[0].x);
+			float top = pose.front.point[0].y + across *
+				(pose.front.point[1].y - pose.front.point[0].y);
+			float bottom = pose.front.point[3].y + across *
+				(pose.front.point[2].y - pose.front.point[3].y);
+
+			/* Every cached column is vertical and strictly inside the
+			 * projected front, with no inversion or folded strip. */
+			assert(x > pose.front.point[0].x && x < pose.front.point[1].x);
+			assert(fabsf(x - strips.column[column][1].x) < 0.001f);
+			assert(top < strips.column[column][0].y);
+			assert(strips.column[column][0].y < strips.column[column][1].y);
+			assert(strips.column[column][1].y < bottom);
+			for(end = 0; end < 2; ++end) {
+				uiBoxCasePoint_t point = strips.column[column][end];
+				uiBoxCasePoint_t reflected =
+					mirrored.column[UI_BOX_CASE_STRIPS - column][end];
+				assert(isfinite(point.x) && isfinite(point.y));
+				closePoint(point, (uiBoxCasePoint_t) {640.0f - reflected.x,
+					reflected.y});
+				assert(fabsf(point.x - previous.column[column][end].x) < 5.0f);
+				assert(fabsf(point.y - previous.column[column][end].y) < 5.0f);
+			}
+			if(column < UI_BOX_CASE_STRIPS) {
+				uiBoxCaseQuad_t strip = {{strips.column[column][0],
+					strips.column[column + 1][0], strips.column[column + 1][1],
+					strips.column[column][1]}};
+				assert(area(&strip) > 0.0f);
+				totalArea += area(&strip);
+			}
+		}
+		/* Shared column seams cover precisely the inset front once. */
+		artwork = (uiBoxCaseQuad_t) {{strips.column[0][0],
+			strips.column[UI_BOX_CASE_STRIPS][0],
+			strips.column[UI_BOX_CASE_STRIPS][1], strips.column[0][1]}};
+		assert(fabsf(totalArea - area(&artwork)) < 0.25f);
+		previous = strips;
+	}
+}
+
+static void invalidStrips(void)
+{
+	uiBoxCaseStrips_t strips;
+	uiBoxCaseStrips_t before;
 	uiBoxCaseQuad_t collapsed = {{{2.0f, 3.0f}, {6.0f, 3.0f},
 		{6.0f, 3.0f}, {2.0f, 3.0f}}};
+	const float bad[] = {NAN, INFINITY, -INFINITY};
+	size_t i;
+	int column;
+	int corner;
+	int coordinate;
 
-	closePoint(UIBoxCase_Point(&collapsed, 0.5f, 0.5f),
-		(uiBoxCasePoint_t) {4.0f, 3.0f});
-	closePoint(UIBoxCase_Point(&collapsed, -1.0f, 2.0f),
-		collapsed.point[3]);
-	closePoint(UIBoxCase_Point(NULL, 0.5f, 0.5f), zero);
-	closePoint(UIBoxCase_Point(&collapsed, NAN, 0.5f), zero);
-	closePoint(UIBoxCase_Point(&collapsed, 0.5f, INFINITY), zero);
-	collapsed.point[1].x = NAN;
-	closePoint(UIBoxCase_Point(&collapsed, 0.5f, 0.5f), zero);
+	assert(UIBoxCase_Strips(&collapsed, &strips));
+	for(column = 0; column <= UI_BOX_CASE_STRIPS; ++column) {
+		float u = 0.033333f + 0.933334f * (float)column / 8.0f;
+		closePoint(strips.column[column][0], (uiBoxCasePoint_t) {2.0f + 4.0f * u, 3.0f});
+		closePoint(strips.column[column][0], strips.column[column][1]);
+	}
+	memset(&strips, 0x5a, sizeof(strips));
+	before = strips;
+	assert(!UIBoxCase_Strips(NULL, &strips));
+	assert(memcmp(&before, &strips, sizeof(strips)) == 0);
+	assert(!UIBoxCase_Strips(&collapsed, NULL));
+	for(corner = 0; corner < 4; ++corner) {
+		for(coordinate = 0; coordinate < 2; ++coordinate) {
+			for(i = 0; i < sizeof(bad) / sizeof(bad[0]); ++i) {
+				uiBoxCaseQuad_t invalid = collapsed;
+				if(coordinate) invalid.point[corner].y = bad[i];
+				else invalid.point[corner].x = bad[i];
+				assert(!UIBoxCase_Strips(&invalid, &strips));
+				assert(memcmp(&before, &strips, sizeof(strips)) == 0);
+			}
+		}
+	}
 }
 
 int main(void)
@@ -177,8 +296,9 @@ int main(void)
 	neighbours();
 	sweep();
 	invalid();
-	physicalPoints();
-	invalidPoints();
+	preparedStrips();
+	stripSweep();
+	invalidStrips();
 	puts("ui_box_case: ok");
 	return 0;
 }

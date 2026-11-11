@@ -69,6 +69,12 @@ Every job runs on self-hosted runners, one throwaway container per job:
 Run tests from a git clone with tags: some checks compare today's renderer
 with a tagged release.
 
+The production DOL's size tripwire remains 4.25 MiB. CI verifies a performance
+DOL with `verify_dol.py --performance-baseline <normal.dol>`: that normal
+artifact must pass its original size, structure and revision checks, and
+diagnostic instrumentation may add at most 4 KiB. Its provenance records the
+normal artifact's hash and the measured overhead.
+
 ## Branches, versions and releases
 
 - `beta` is where work lands. Branch from `beta`, open a pull request into

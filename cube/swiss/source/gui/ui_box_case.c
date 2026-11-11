@@ -114,49 +114,78 @@ bool UIBoxCase_Pose(float slot, uiBoxCasePose_t *pose)
 			result.front.point[edge], result.front.point[3 - edge],
 			result.front.point[3 - edge]}};
 	}
-	result.top = (uiBoxCaseQuad_t) {{result.front.point[0],
-		result.front.point[1], result.front.point[1], result.front.point[0]}};
 	*pose = result;
 	return true;
 }
 
-uiBoxCasePoint_t UIBoxCase_Point(const uiBoxCaseQuad_t *front, float u, float v)
+static uiBoxCasePoint_t mixPoint(uiBoxCasePoint_t a, uiBoxCasePoint_t b,
+	float weight)
 {
-	uiBoxCasePoint_t origin = {0.0f, 0.0f};
-	uiBoxCasePoint_t left;
-	uiBoxCasePoint_t right;
-	uiBoxCasePoint_t point;
-	float leftHeight;
-	float rightHeight;
+	uiBoxCasePoint_t point = {
+		(1.0f - weight) * a.x + weight * b.x,
+		(1.0f - weight) * a.y + weight * b.y
+	};
+	return point;
+}
+
+static bool frontHeights(const uiBoxCaseQuad_t *front, float *left,
+	float *right)
+{
 	float height;
-	float weight;
 	int i;
 
-	if(front == NULL || !isfinite(u) || !isfinite(v)) return origin;
+	if(front == NULL) return false;
 	for(i = 0; i < 4; ++i) {
 		if(!isfinite(front->point[i].x) || !isfinite(front->point[i].y)) {
-			return origin;
+			return false;
 		}
 	}
-	u = fminf(1.0f, fmaxf(0.0f, u));
-	v = fminf(1.0f, fmaxf(0.0f, v));
-	leftHeight = fabsf(front->point[3].y - front->point[0].y);
-	rightHeight = fabsf(front->point[2].y - front->point[1].y);
-	height = fmaxf(leftHeight, rightHeight);
-	weight = u;
-	if(leftHeight > 0.0f && rightHeight > 0.0f && isfinite(height)) {
+	*left = fabsf(front->point[3].y - front->point[0].y);
+	*right = fabsf(front->point[2].y - front->point[1].y);
+	height = fmaxf(*left, *right);
+	if(*left > 0.0f && *right > 0.0f && isfinite(height)) {
 		/* Height is inverse camera depth. Normalize first so even very
 		 * large finite coordinates cannot overflow the weighted sum. */
-		leftHeight /= height;
-		rightHeight /= height;
-		weight = u * leftHeight /
-			((1.0f - u) * rightHeight + u * leftHeight);
+		*left /= height;
+		*right /= height;
 	}
-	left.x = (1.0f - v) * front->point[0].x + v * front->point[3].x;
-	left.y = (1.0f - v) * front->point[0].y + v * front->point[3].y;
-	right.x = (1.0f - v) * front->point[1].x + v * front->point[2].x;
-	right.y = (1.0f - v) * front->point[1].y + v * front->point[2].y;
-	point.x = (1.0f - weight) * left.x + weight * right.x;
-	point.y = (1.0f - weight) * left.y + weight * right.y;
-	return isfinite(point.x) && isfinite(point.y) ? point : origin;
+	else {
+		*left = *right = 1.0f;
+	}
+	return true;
+}
+
+static float frontWeight(float u, float leftHeight, float rightHeight)
+{
+	float denominator = (1.0f - u) * rightHeight + u * leftHeight;
+	return denominator > 0.0f ? u * leftHeight / denominator : u;
+}
+
+bool UIBoxCase_Strips(const uiBoxCaseQuad_t *front, uiBoxCaseStrips_t *out)
+{
+	uiBoxCaseStrips_t result;
+	uiBoxCasePoint_t edge[2][2];
+	float left;
+	float right;
+	int column;
+	int end;
+
+	if(out == NULL || !frontHeights(front, &left, &right)) return false;
+	for(end = 0; end < 2; ++end) {
+		float v = end ? 0.966667f : 0.033333f;
+		edge[0][end] = mixPoint(front->point[0], front->point[3], v);
+		edge[1][end] = mixPoint(front->point[1], front->point[2], v);
+	}
+	for(column = 0; column <= UI_BOX_CASE_STRIPS; ++column) {
+		float u = 0.033333f + 0.933334f *
+			(float)column / (float)UI_BOX_CASE_STRIPS;
+		float weight = frontWeight(u, left, right);
+		for(end = 0; end < 2; ++end) {
+			uiBoxCasePoint_t point = mixPoint(edge[0][end], edge[1][end], weight);
+			if(!isfinite(point.x) || !isfinite(point.y)) return false;
+			result.column[column][end] = point;
+		}
+	}
+	*out = result;
+	return true;
 }

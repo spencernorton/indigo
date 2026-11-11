@@ -1,3 +1,20 @@
+## 2026-11-10 — Prepare cover strips once and account for diagnostic overhead
+
+PR #211's standard builds reproduce byte for byte. Its performance build
+adds 3,168 bytes of instrumentation and crosses the shared file-size
+tripwire, while the production build remains under it. Keep the production
+limit at 4.25 MiB and validate the diagnostic build against the same
+revision's fully checked normal DOL, with at most 4 KiB of extra file size.
+Record the paired hash and actual overhead in diagnostic provenance; retain
+all structural and source checks, with no generic size override.
+
+Prepare the cover's nine shared strip columns once per front rather than
+revalidating and remeasuring its perspective for each emitted vertex. Keep
+the same eight textured strips, case poses and navigation. Remove the
+hidden top face from the pose data; the level camera never draws it. This
+reduces repeated projection work rather than changing the artwork or the
+visible geometry. Physical-console frame timing remains pending.
+
 ## 2026-11-10 — Add the 3D Boxes Library layout
 
 Add an optional sixth layout for #210: a front-facing selected cover and
