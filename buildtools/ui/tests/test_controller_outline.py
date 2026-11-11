@@ -8,6 +8,7 @@ import sys
 import unittest
 
 from test_cheats_gx_stream import extract_function
+import test_stroke_gx_stream as strokes
 
 ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "cube/swiss/source/gui/indigo_background.c"
@@ -91,6 +92,47 @@ class ControllerOutlineTests(unittest.TestCase):
         for side in (-1, 1):
             with self.subTest(side=side):
                 self.assertFalse(list(intersections(offset_band(self.points, self.width, side))))
+
+    def test_native_outline_stays_visible_in_glancing_pose(self):
+        # The actual Home-source raster at two adjacent measured frames.
+        # Its narrow projection used to reject the inside grip's band join,
+        # leaving the controller's controls floating without their shell.
+        fixture = r"""
+static void test_controller_glancing(void) {
+    cubeRasterTransform_t r;
+    memset(&r,0,sizeof(r)); lightAll(&r);
+    for(int face=0;face<UI_HOME_FACE_COUNT;face++) guMtxIdentity(r.semanticFaces[face]);
+    indigoPadFrame_t rest={true,0,0,0,0,0u};
+    GXColor glow={196,177,255,180};
+    guMtxIdentity(r.model); r.model[2][3]=-5.4f;
+    r.scaleX=r.scaleY=625.221f;
+    reset(false); drawControllerIcon(&r,0,glow,0,false,&rest);
+    int complete=count, parts=begins;
+    const Mtx poses[2]={
+        {{0.245469287f,0.0433745794f,-0.8855865f,0},
+         {-0.16008462f,0.905965209f,0,0.273901135f},
+         {0.87207675f,0.154096499f,0.249271989f,-5.4000001f}},
+        {{0.245621815f,0.0434202068f,-0.885541975f,0},
+         {-0.160151422f,0.905953348f,0,0.274244756f},
+         {0.872021437f,0.154153049f,0.249430135f,-5.4000001f}}
+    };
+    r.scaleX=2500.88525f; r.scaleY=1250.44275f;
+    for(int pose=0;pose<2;pose++) for(int mirror=0;mirror<2;mirror++) {
+        memcpy(r.model,poses[pose],sizeof(Mtx));
+        /* Reflect body x and eye x together: the opposite glancing side. */
+        if(mirror) for(int row=0;row<3;row++) for(int col=0;col<3;col++)
+            if((row==0)!=(col==0)) r.model[row][col]*=-1;
+        reset(false); drawControllerIcon(&r,0,glow,0,false,&rest);
+        CHECK(count==complete && begins==parts,"glancing controller lost its shell or a control");
+    }
+}
+"""
+        strokes.StrokeGXStreamTests.setUpClass()
+        native = strokes.StrokeGXStreamTests()
+        harness = strokes.HARNESS.replace("int main(void) {", fixture +
+                                          "\nint main(void) {\n    test_controller_glancing();")
+        result = native.run_emitters(native.emitters, harness)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_lower_controls_clear_the_shell(self):
         points = []

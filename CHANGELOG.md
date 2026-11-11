@@ -11,7 +11,7 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Add **3D Boxes** to Settings › Setup › Library › Library Layout: a
   carousel of GameCube-style cases, with the selected front facing you and
   neighboring cases angled inward. It uses the existing poster pack and
-  banner fallback, with plain side and top edges drawn separately. Printed
+  banner fallback, with plain case edges drawn separately. Printed
   spine and back artwork need future pack support.
 
 ### Improved

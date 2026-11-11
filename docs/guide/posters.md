@@ -64,8 +64,8 @@ show banners with a bigger pack.
 ## 3D Boxes
 
 The **3D Boxes** Library layout uses the same `posters.pak`; no extra pack is
-needed. Each front cover sits on the front of a case, with plain side and
-top edges drawn separately. Games without a cover keep their disc banner
+needed. Each front cover sits on the front of a case, with plain case
+edges drawn separately. Games without a cover keep their disc banner
 card on the front.
 
 Use flat front-cover images when building a pack. A picture that already

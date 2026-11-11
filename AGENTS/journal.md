@@ -15,7 +15,7 @@ The geometry is stateless and the draw path adds no allocation or file read.
 Refine the Controller Library icon's shell to the original controller's
 arched shoulders, straighter grips and deeper centre opening. Keep live
 stick and button feedback, move the two lower controls within the shell,
-and reduce its outline from 65 to 52 points. The shape generator and a
+and reduce its outline from 65 to 54 points. The shape generator and a
 clearance/reproducibility regression travel with it. Physical-console frame
 timing remains unqualified.
 
