@@ -71,6 +71,10 @@ one moves.
   cases; their motion follows **UI Motion**, including Reduced and Off.
 
 <p align="center">
+  <img alt="3D Boxes: Astral Circuit's front cover faces forward in the middle, with two game cases angled inward on each side and their plain case edges visible. Its title and publisher sit below the cover, above the controller hints." src="images/library-boxes.png" width="640">
+</p>
+
+<p align="center">
   <img alt="The Jewel Case layout: a clear CD jewel case in the middle of the screen, tilted a little, holding the demonstration game Dune Rally's disc, green with rings, a pale block and a row of small marks, turning slowly, with GAME LIBRARY above and the game's title and publisher below. Right swaps it: the case falls back to the left and fades as Ember and Ivy's case swings out to the right and lands in front, its disc printed with the middle of the game's blue cover, as the pack has no disc for it; Right again brings in Glacier Point's magenta disc the same way." src="images/library-jewel-case.png" width="640">
 </p>
 
