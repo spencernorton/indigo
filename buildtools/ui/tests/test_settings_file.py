@@ -693,6 +693,11 @@ class SettingsFileTest(unittest.TestCase):
             self.assertEqual(written["Swiss Video Mode"], "480p")
         self.assertEqual(self.global_file("Apps Video Mode=Unknown")["Apps Video Mode"], "Auto")
 
+    def test_3d_boxes_layout_round_trips_without_changing_the_default(self):
+        self.assertEqual(self.global_file()["Library Layout"], "Horizontal")
+        self.assertEqual(self.global_file("Library Layout=3D Boxes\n")["Library Layout"],
+                         "3D Boxes")
+
     def test_an_unknown_value_keeps_the_previous_one(self):
         defaults = self.global_file()
         for key, kind in GLOBAL_KEYS.items():

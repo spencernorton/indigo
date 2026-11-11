@@ -15,7 +15,7 @@ int main(void)
 {
     const uiGameflowLayout_t hidden[] = {
         UI_GAMEFLOW_LAYOUT_GRID, UI_GAMEFLOW_LAYOUT_SPOTLIGHT,
-        UI_GAMEFLOW_LAYOUT_JEWEL_CASE
+        UI_GAMEFLOW_LAYOUT_JEWEL_CASE, UI_GAMEFLOW_LAYOUT_BOXES
     };
     const float phases[] = {0,7,23,60,130};
     unsigned scenarios = 0;
@@ -64,5 +64,5 @@ if __name__ == "__main__":
         if error.stderr:
             print(error.stderr, file=sys.stderr, end="")
         raise
-    assert result["scenarios"] == 90
-    print("Library cube bounds: 90 hidden-render cases and Home returns passed")
+    assert result["scenarios"] == 120
+    print("Library cube bounds: 120 hidden-render cases and Home returns passed")

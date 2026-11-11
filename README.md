@@ -77,8 +77,11 @@ a row of disc banners, a design that comes from mvizensk's
 their permission, or Jewel Case: one clear CD jewel case at a time, the
 game's own disc spinning inside, from portlandhodl's
 [Swiss](https://github.com/portlandhodl/swiss-gc) after Ann Nguyen's
-[CD Case](https://www.bubbbly.com/cd-case) (Setup › Library › Library
-Layout). Y on a game opens its own settings. Cover art comes from a
+[CD Case](https://www.bubbbly.com/cd-case), or 3D Boxes: a carousel of
+GameCube-style cases, the selected front facing you and its neighbors
+angled inward (Setup › Library › Library Layout). 3D Boxes uses the existing
+front covers, with plain case edges drawn separately. Y on a game opens its
+own settings. Cover art comes from a
 ready-made pack or one you build yourself (see [Posters](#posters)); without
 one, each game gets a card with its disc banner.
 

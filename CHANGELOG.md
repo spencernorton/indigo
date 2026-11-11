@@ -4,6 +4,21 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+### New
+
+- Add **3D Boxes** to Settings › Setup › Library › Library Layout: a
+  carousel of GameCube-style cases, with the selected front facing you and
+  neighboring cases angled inward. It uses the existing poster pack and
+  banner fallback, with plain side and top edges drawn separately. Printed
+  spine and back artwork need future pack support.
+
+### Improved
+
+- Refine the Controller Library icon's outline to more closely follow the
+  original GameCube controller, retaining its live stick and button feedback.
+
 ## v2.8.0 — Disc source badge
 
 ### New

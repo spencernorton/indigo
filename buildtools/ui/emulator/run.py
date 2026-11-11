@@ -135,6 +135,7 @@ FOLDER_LAYOUTS = {
     "Spotlight": ((378, 78, 607, 108), "LEFT", "RIGHT"),
     # The jewel case's title stands where the carousel's does.
     "Jewel Case": (TITLE_BOX, "LEFT", "RIGHT"),
+    "3D Boxes": (TITLE_BOX, "LEFT", "RIGHT"),
 }
 # Settings' page title, including the "Storage" page a new card opens with.
 SETTINGS_TITLE_BOX = (30, 46, 230, 80)
@@ -1949,7 +1950,7 @@ class Route:
         if first:
             self.walk_rows(1, "Library's DOWN reaches Library Folders", layout=name)
             self.press("RIGHT")
-        else:  # Library Layout is the first row, cycling the five layouts.
+        else:  # Library Layout is the first row, cycling the layouts.
             self.press("RIGHT")
         self.pause(1.0)
         self.shot(f"folders-{name.lower()}-setting", self.emulator.frame())

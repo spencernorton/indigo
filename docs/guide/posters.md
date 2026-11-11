@@ -61,6 +61,18 @@ You can make a pack from your own cover images, from this repository:
 A pack holds up to 2,048 covers. Indigo 2.0 and earlier read up to 1,024 and
 show banners with a bigger pack.
 
+## 3D Boxes
+
+The **3D Boxes** Library layout uses the same `posters.pak`; no extra pack is
+needed. Each front cover sits on the front of a case, with plain side and
+top edges drawn separately. Games without a cover keep their disc banner
+card on the front.
+
+Use flat front-cover images when building a pack. A picture that already
+includes a perspective view of a spine will still show that spine within
+the front artwork. Printed spine and back artwork are not supported by the
+current pack.
+
 ## Gameplay stills
 
 The **Spotlight** layout (Settings › Setup › Library › Library Layout) shows

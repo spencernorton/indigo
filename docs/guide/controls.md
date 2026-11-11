@@ -64,7 +64,7 @@ See [Source](source.md).
 
 How the D-pad moves depends on **Library Layout** (Setup › Library):
 
-| To move | Horizontal, Spotlight, Jewel Case | Vertical | Grid |
+| To move | Horizontal, Spotlight, Jewel Case, 3D Boxes | Vertical | Grid |
 | --- | --- | --- | --- |
 | To the next or previous game | Left, Right | Up, Down | Left, Right |
 | To the game above or below | | | Up, Down |
@@ -72,7 +72,8 @@ How the D-pad moves depends on **Library Layout** (Setup › Library):
 
 In Jewel Case the C-stick turns the case in your hands, and Z stops the disc
 spinning or starts it again (there, Z doesn't open a file's actions as it
-does with **Enable File Management** on). See [Library](library.md).
+does with **Enable File Management** on). In 3D Boxes the cases turn as you
+scroll; the C-stick does not turn them. See [Library](library.md).
 
 ### Apps
 

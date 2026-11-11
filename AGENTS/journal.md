@@ -1,3 +1,24 @@
+## 2026-11-10 — Add the 3D Boxes Library layout
+
+Add an optional sixth layout for #210: a front-facing selected cover and
+angled retail cases either side, with projected case depth. Keep the existing
+poster cache, selection window, navigation, missing-art fallback, badges,
+Detail and launch transitions. The plain case edge uses no extra artwork;
+printed spines and backs remain a future pack extension. Keep the Home cube
+offstage in both screen shapes, and retain the existing motion settings.
+
+Project the front artwork in eight narrow strips so the angled cases do not
+bend it across the diagonal of an affine quad. Draw each complete case in
+far-to-near order and keep its side attached as its front moves into Detail.
+The geometry is stateless and the draw path adds no allocation or file read.
+
+Refine the Controller Library icon's shell to the original controller's
+arched shoulders, straighter grips and deeper centre opening. Keep live
+stick and button feedback, move the two lower controls within the shell,
+and reduce its outline from 65 to 52 points. The shape generator and a
+clearance/reproducibility regression travel with it. Physical-console frame
+timing remains unqualified.
+
 ## 2026-11-10 — Prepare v2.8.0 for publication
 
 Prepare the accepted disc-source badge and the already merged emulator
