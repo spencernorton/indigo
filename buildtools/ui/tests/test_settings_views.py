@@ -54,15 +54,31 @@ HEADERS = "\n".join(path.read_text() for path in (ROOT / "cube/swiss").rglob("*.
 
 
 def constant(name: str) -> int:
-    """A #define, or the position of a member in the enum that lists it."""
+    """A numeric define or enum value, including aliases and derived counts."""
     define = re.search(r"#define " + name + r"\s+(\d+)", HEADERS)
     if define:
         return int(define.group(1))
     text = re.sub(r"/\*.*?\*/|//[^\n]*", "", HEADERS, flags=re.S)
     for body in re.findall(r"enum\s*\w*\s*\{(.*?)\}", text, re.S):
-        members = [m.split("=")[0].strip() for m in body.split(",") if m.strip()]
-        if name in members:
-            return members.index(name)
+        members = [m.strip() for m in body.split(",") if m.strip()]
+        if name not in [m.split("=")[0].strip() for m in members]:
+            continue
+        value = -1
+        for member in members:
+            key, equals, expression = member.partition("=")
+            if equals:
+                expression = expression.strip()
+                try:
+                    value = int(expression, 0)
+                except ValueError:
+                    alias = re.fullmatch(r"([A-Z][A-Z0-9_]*)(?:\s*\+\s*(\d+))?", expression)
+                    if not alias:
+                        raise ValueError(f"unsupported enum expression: {expression}")
+                    value = constant(alias[1]) + int(alias[2] or 0)
+            else:
+                value += 1
+            if key.strip() == name:
+                return value
     raise KeyError(name)
 
 
@@ -85,6 +101,10 @@ def table(name: str) -> list:
 
 
 class SettingsViewsTest(unittest.TestCase):
+    def test_public_layout_count_excludes_the_internal_flat_renderer(self):
+        self.assertEqual(constant("UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT"), 5)
+        self.assertEqual(constant("UI_GAMEFLOW_LAYOUT_COUNT"), 6)
+
     def test_every_setting_has_exactly_one_home(self):
         placed = []
         for name in ["quick", "gameDefaults", *SECTIONS]:

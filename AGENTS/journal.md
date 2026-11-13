@@ -1,3 +1,75 @@
+## 2026-11-11 — Remove the retired layout label from translations
+
+Remove the standalone Horizontal translation now that the interface no
+longer draws that choice. Its settings-file spelling remains a parser alias
+and needs no localization. Keep the semantics audit's exact Library Layout
+arm match tied to the five public choices, separate from renderer count.
+The change retires unused text and updates the audit contract; navigation
+and rendering keep the already tested replacement behavior.
+
+## 2026-11-11 — Teach the picker audit to resolve enum counts
+
+The settings-view audit inferred every enum value from its position, so the
+new public-layout count expression was read as zero and the Library picker
+was incorrectly reported as extra. Resolve explicit numeric values, aliases
+and derived counts, and independently assert five public choices versus six
+internal renderer modes. The fifteen view audits pass. This changes test
+code and this journal only; the d4d7c48 test DOL's product code is unchanged.
+
+## 2026-11-11 — Replace Horizontal with the 3D carousel
+
+Make 3D Boxes the default Library view in place of Horizontal, with five
+public choices rather than an additional sixth option. Accept saved
+`Horizontal` as an alias for `3D Boxes`; preserve the other four saved
+indices. Resolve the default setting to the Boxes renderer before entering
+the Library, while Apps retains its existing flat cards and matching cube
+pose. Keep the flat renderer for the Jewel Case low-memory fallback too.
+
+Exercise the actual settings parser, writer, five-choice cycle, game-layout
+mapping and Apps fallback in host tests. Walk the five public choices in
+Dolphin's folder route. Keep the existing geometry and motion contracts,
+including Reduced and Off. Use real Dolphin media already captured for the
+3D view; older flat-row comparisons are labelled historical. Physical-console
+frame timing remains unqualified.
+
+## 2026-11-10 — Prepare cover strips once and account for diagnostic overhead
+
+PR #211's standard builds reproduce byte for byte. Its performance build
+adds 3,168 bytes of instrumentation and crosses the shared file-size
+tripwire, while the production build remains under it. Keep the production
+limit at 4.25 MiB and validate the diagnostic build against the same
+revision's fully checked normal DOL, with at most 4 KiB of extra file size.
+Record the paired hash and actual overhead in diagnostic provenance; retain
+all structural and source checks, with no generic size override.
+
+Prepare the cover's nine shared strip columns once per front rather than
+revalidating and remeasuring its perspective for each emitted vertex. Keep
+the same eight textured strips, case poses and navigation. Remove the
+hidden top face from the pose data; the level camera never draws it. This
+reduces repeated projection work rather than changing the artwork or the
+visible geometry. Physical-console frame timing remains pending.
+
+## 2026-11-10 — Add the 3D Boxes Library layout
+
+Add an optional sixth layout for #210: a front-facing selected cover and
+angled retail cases either side, with projected case depth. Keep the existing
+poster cache, selection window, navigation, missing-art fallback, badges,
+Detail and launch transitions. The plain case edge uses no extra artwork;
+printed spines and backs remain a future pack extension. Keep the Home cube
+offstage in both screen shapes, and retain the existing motion settings.
+
+Project the front artwork in eight narrow strips so the angled cases do not
+bend it across the diagonal of an affine quad. Draw each complete case in
+far-to-near order and keep its side attached as its front moves into Detail.
+The geometry is stateless and the draw path adds no allocation or file read.
+
+Refine the Controller Library icon's shell to the original controller's
+arched shoulders, straighter grips and deeper centre opening. Keep live
+stick and button feedback, move the two lower controls within the shell,
+and reduce its outline from 65 to 54 points. The shape generator and a
+clearance/reproducibility regression travel with it. Physical-console frame
+timing remains unqualified.
+
 ## 2026-11-10 — Prepare v2.8.0 for publication
 
 Prepare the accepted disc-source badge and the already merged emulator

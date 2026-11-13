@@ -1670,8 +1670,10 @@ void config_parse_global(char *configData, bool settingsFile) {
 					swissSettings.hideFaceLabels = !strcmp("Yes", value);
 				}
 				else if(!strcmp("Library Layout", name)) {
-					for(int i = 0; i < UI_GAMEFLOW_LAYOUT_COUNT; i++) {
-						if(!strcmp(libraryLayoutStr[i], value)) {
+					for(int i = 0; i < UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT; i++) {
+						/* Horizontal was the default before the 3D carousel. */
+						if(!strcmp(libraryLayoutStr[i], value) ||
+							(i == 0 && !strcmp("Horizontal", value))) {
 							swissSettings.libraryLayout = i;
 							break;
 						}

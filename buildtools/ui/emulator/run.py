@@ -129,7 +129,7 @@ LABEL_BOX = (200, 372, 440, 396)
 HOME_HINT_BOX, HINT_LEVEL, HINT_GONE_LEVEL = (240, 422, 400, 446), 120, 80
 TITLE_BOX = (200, 338, 440, 362)
 FOLDER_LAYOUTS = {
-    "Horizontal": (TITLE_BOX, "LEFT", "RIGHT"),
+    "3D Boxes": (TITLE_BOX, "LEFT", "RIGHT"),
     "Vertical": ((258, 190, 605, 224), "UP", "DOWN"),
     "Grid": ((180, 374, 460, 402), "LEFT", "RIGHT"),
     "Spotlight": ((378, 78, 607, 108), "LEFT", "RIGHT"),
@@ -1949,7 +1949,7 @@ class Route:
         if first:
             self.walk_rows(1, "Library's DOWN reaches Library Folders", layout=name)
             self.press("RIGHT")
-        else:  # Library Layout is the first row, cycling the five layouts.
+        else:  # Library Layout is the first row, cycling the layouts.
             self.press("RIGHT")
         self.pause(1.0)
         self.shot(f"folders-{name.lower()}-setting", self.emulator.frame())

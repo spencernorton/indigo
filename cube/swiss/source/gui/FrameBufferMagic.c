@@ -53,6 +53,7 @@
 #include "ui_about.h"
 #include "ui_launch.h"
 #include "ui_jewel_case.h"
+#include "ui_box_case.h"
 #include "card_art.h"
 #include "ui_artwork_reader.h"
 #include "manual.h"
@@ -2574,6 +2575,59 @@ static void _GameflowPutBorder(const gameflowQuad_t *outer,
 	}
 }
 
+/* Projected faces of the retail case share their corners. Keep the front
+ * in the ordinary card path so missing art, folders and Detail work alike. */
+static gameflowQuad_t _GameflowBoxQuad(const uiBoxCaseQuad_t *face)
+{
+	gameflowQuad_t quad;
+	int i;
+	for(i = 0; i < 4; ++i) {
+		quad.point[i].x = face->point[i].x;
+		quad.point[i].y = face->point[i].y;
+	}
+	return quad;
+}
+
+/* A few opaque plastic faces, drawn with each case in painter's order.
+ * The side is deliberately plain: posters.pak contains front art only. */
+static void _GameflowDrawBoxShell(const gameflowRenderCard_t *card,
+	const uiGameflowFrame_t *frame, float reveal)
+{
+	uiBoxCasePose_t pose;
+	float alpha = card->presence * reveal;
+	float depth = (1.0f - frame->detailProgress) * (1.0f - frame->launchProgress);
+	float depthAlpha = alpha * depth;
+	gameflowQuad_t inner = _GameflowInsetQuad(&card->quad, 0.018f, 0.018f);
+	GXColor front = {15, 13, 25, _GameflowAlpha(255.0f * alpha)};
+	GXColor rim = {164, 155, 201,
+		_GameflowAlpha((140.0f + 85.0f * card->focus) * alpha)};
+
+	drawInit();
+	_SetupRasterColor();
+	if(depthAlpha > 0.001f && UIBoxCase_Pose(card->visualSlot, &pose)) {
+		gameflowQuad_t side = _GameflowBoxQuad(&pose.side);
+		GXColor edge = {42, 38, 59, _GameflowAlpha(255.0f * depthAlpha)};
+		GXColor lower = {19, 17, 30, edge.a};
+		int top = card->visualSlot < 0.0f ? 0 : 1;
+		int i;
+		/* The side stays joined to the moving front as Detail opens. */
+		for(i = 0; i < 4; ++i) {
+			int anchor = i < 2 ? top : 3 - top;
+			side.point[i].x = card->quad.point[anchor].x +
+				(side.point[i].x - pose.front.point[anchor].x) * depth;
+			side.point[i].y = card->quad.point[anchor].y +
+				(side.point[i].y - pose.front.point[anchor].y) * depth;
+		}
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			_GameflowPutQuad(&side, edge, lower);
+		GX_End();
+	}
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 20);
+		_GameflowPutQuad(&card->quad, front, front);
+		_GameflowPutBorder(&card->quad, &inner, rim);
+	GX_End();
+}
+
 /* Folder colors are identities, independent of Menu Color. Bypass the
  * menu hue transform only for these explicit borders and their swatch. */
 static GXColor _GameflowAccent(const uiGameflowCardSnapshot_t *record,
@@ -2696,6 +2750,44 @@ static void _GameflowDrawPoster(const gameflowRenderCard_t *card,
 	_SetupRasterColor();
 }
 
+/* GX's ordinary stage quads interpolate UVs affinely. Narrow projected
+ * strips keep the artwork straight on an angled box, without changing the
+ * other layouts' vertex streams or allocating a texture for the case. */
+static void _GameflowDrawBoxPoster(const gameflowRenderCard_t *card,
+	GXTexObj *texture, float reveal)
+{
+	uiBoxCaseQuad_t front;
+	uiBoxCaseStrips_t strips;
+	u8 alpha = _GameflowAlpha(255.0f * card->presence * reveal);
+	int i, strip;
+
+	for(i = 0; i < 4; ++i) {
+		front.point[i].x = card->quad.point[i].x;
+		front.point[i].y = card->quad.point[i].y;
+	}
+	if(!UIBoxCase_Strips(&front, &strips)) return;
+	drawInit();
+	GX_SetNumTevStages(1);
+	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_InvalidateTexAll();
+	GX_LoadTexObj(texture, GX_TEXMAP0);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, UI_BOX_CASE_STRIPS * 4);
+	for(strip = 0; strip < UI_BOX_CASE_STRIPS; ++strip) {
+		for(i = 0; i < 4; ++i) {
+			int column = strip + (i == 1 || i == 2);
+			float u = (float)column / (float)UI_BOX_CASE_STRIPS;
+			float v = i >= 2 ? 1.0f : 0.0f;
+			uiBoxCasePoint_t point = strips.column[column][i >= 2];
+			GX_Position3f32(point.x, point.y, 0.0f);
+			GX_Color4u8(255, 255, 255, alpha);
+			GX_TexCoord2f32(0.75f * u, v);
+		}
+	}
+	GX_End();
+	drawInit();
+	_SetupRasterColor();
+}
+
 /* A game with settings of its own: a small sliders mark, the Settings
  * face's emblem, in the top-right corner of its cover. */
 static void _GameflowDrawCustomMark(const gameflowRenderCard_t *card, float reveal)
@@ -2746,6 +2838,16 @@ static void _GameflowDrawDiscMark(const gameflowRenderCard_t *card, float reveal
 	_HintRoundRect(center.x, center.y, size, size, size * 0.24f, plate);
 	_HintDisc(center.x, center.y, size * 0.36f, line);
 	_HintDisc(center.x, center.y, size * 0.11f, hole);
+}
+
+static void _GameflowDrawBoxMarks(const gameflowRenderCard_t *card, float reveal)
+{
+	if(card->record->flags & UI_GAMEFLOW_CARD_CUSTOM) {
+		_GameflowDrawCustomMark(card, reveal);
+	}
+	if(card->record->disc) {
+		_GameflowDrawDiscMark(card, reveal);
+	}
 }
 
 static void _GameflowDrawFallback(const gameflowRenderCard_t *card,
@@ -3308,6 +3410,7 @@ static void _GameflowPrepareCardPresentation(const uiGameflowRenderSnapshot_t *s
 		{{GAMEFLOW_SPOTLIGHT_COLUMN_W, 0.62f, 0.46f},
 			{GAMEFLOW_SPOTLIGHT_COLUMN_W, 0.46f, 0.40f},
 			{GAMEFLOW_SPOTLIGHT_COLUMN_W, 0.42f, 0.40f}},
+		{{520, 0.78f, 0.50f}, {420, 0.50f, 0.42f}, {500, 0.44f, 0.42f}},
 		{{520, 0.78f, 0.50f}, {420, 0.50f, 0.42f}, {500, 0.44f, 0.42f}}
 	};
 	/* A layout without its row would draw its text at scale 0. */
@@ -4202,6 +4305,12 @@ static void _DrawGameflow(uiDrawObj_t *evt)
 					_GameflowSamplePoseIn(gameflowSpotlightPoses, slot) :
 					_GameflowSamplePose(slot);
 				card->tile = layout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT;
+				if(layout == UI_GAMEFLOW_LAYOUT_BOXES && presence > 0.001f) {
+					uiBoxCasePose_t pose;
+					if(UIBoxCase_Pose(slot, &pose)) {
+						card->quad = _GameflowBoxQuad(&pose.front);
+					}
+				}
 			}
 			if(frame->detailProgress > 0.0f) {
 				if(focused) {
@@ -4321,7 +4430,7 @@ static void _DrawGameflow(uiDrawObj_t *evt)
 	drawInit();
 	_SetupRasterColor();
 	/* The cards' shells: none in the jewel case, at rest. */
-	if(count > 0u) {
+	if(count > 0u && layout != UI_GAMEFLOW_LAYOUT_BOXES) {
 		GX_Begin(GX_QUADS, GX_VTXFMT0, (u16)(count * 4u));
 		for(i = 0u; i < count; ++i) {
 			u8 topAlpha = _GameflowAlpha((104.0f + cards[i].focus * 64.0f) *
@@ -4371,6 +4480,9 @@ static void _DrawGameflow(uiDrawObj_t *evt)
 		if(!cards[i].art) {
 			continue;
 		}
+		if(layout == UI_GAMEFLOW_LAYOUT_BOXES) {
+			_GameflowDrawBoxShell(&cards[i], frame, reveal);
+		}
 		posterTexture = launchActive && launchHasPoster &&
 			cards[i].record->libraryIndex == frame->focusIndex ?
 			&launchPoster : _GameflowPosterTexture(cards[i].record, &arrival);
@@ -4396,17 +4508,25 @@ static void _DrawGameflow(uiDrawObj_t *evt)
 					bannerTexture != NULL), bannerTexture, reveal *
 					_GameflowUnderneath(cards[i].presence * reveal, arrival));
 			}
-			_GameflowDrawPoster(&cards[i], posterTexture, reveal * arrival);
-			continue;
+			if(layout == UI_GAMEFLOW_LAYOUT_BOXES) {
+				_GameflowDrawBoxPoster(&cards[i], posterTexture, reveal * arrival);
+			}
+			else {
+				_GameflowDrawPoster(&cards[i], posterTexture, reveal * arrival);
+			}
 		}
-		_GameflowDrawFallback(&cards[i], artwork, bannerTexture, reveal);
-	}
-	for(i = 0u; i < count; ++i) {
+		else {
+			_GameflowDrawFallback(&cards[i], artwork, bannerTexture, reveal);
+		}
+		if(layout == UI_GAMEFLOW_LAYOUT_BOXES) {
+			_GameflowDrawBoxMarks(&cards[i], reveal);
+		}
 	}
 	/* Every card that shows its art carries the mark, sized to the card.
 	 * Spotlight's banners are too small for one: its panel carries the
 	 * selected game's. */
 	for(i = 0u; i < count; ++i) {
+		if(layout == UI_GAMEFLOW_LAYOUT_BOXES) continue;
 		if(cards[i].art && !cards[i].tile &&
 			(cards[i].record->flags & UI_GAMEFLOW_CARD_CUSTOM)) {
 			_GameflowDrawCustomMark(&cards[i], reveal);

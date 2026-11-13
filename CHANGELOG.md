@@ -4,6 +4,24 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+### New
+
+- Replace the Horizontal Library view with **3D Boxes**, the default in
+  Settings › Setup › Library › Library Layout: a carousel of GameCube-style
+  cases, with the selected front facing you and neighboring cases angled
+  inward. Existing Horizontal settings use 3D Boxes automatically; the
+  other four layouts keep their saved choices. Apps keeps its flat row.
+  The cases use the existing poster pack and banner fallback, with plain
+  edges drawn separately. Printed spine and back artwork need future pack
+  support.
+
+### Improved
+
+- Refine the Controller Library icon's outline to more closely follow the
+  original GameCube controller, retaining its live stick and button feedback.
+
 ## v2.8.0 — Disc source badge
 
 ### New
