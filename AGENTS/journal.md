@@ -1,3 +1,14 @@
+## 2026-11-13 — Let the jewel host tests compile on macOS
+
+The frame-budget host compiles include the target's `<malloc.h>`, which
+macOS does not provide, so the jewel tests stopped at compile time there.
+Add a `fixtures/gx/malloc.h` stand-in beside the existing `gccore.h` stub:
+it supplies `<stdlib.h>` and a `posix_memalign`-based `memalign`, unless a
+test driver already macro-defines `memalign` to count allocations. The
+three jewel drivers now include `<stdlib.h>` and allocate aligned memory
+through `posix_memalign`, matching `test_card_art.py`. The full host suite
+passes on macOS as well as Linux; product code is unchanged.
+
 ## 2026-11-11 — Remove the retired layout label from translations
 
 Remove the standalone Horizontal translation now that the interface no
