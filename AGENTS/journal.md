@@ -24,7 +24,13 @@ Retain `config_parse_legacy` (`6330836b`), the SDK's `libuchardet`
 (`d00a2237`), and Indigo's opt-in local-clock model without automatic
 `GIT_TIMESTAMP` RTC clamping (`245ea76f`) or stock dummy Settings rows
 (`4c9e30ae`); clear any inherited `TZ` in `config_init_environ()` before
-refreshing the time base.
+refreshing the time base. Harden the Dolphin UI harness (`buildtools/ui/
+emulator/run.py`) against host `dolphin.log` flush stalls on PAL 576i:
+align short presses to a fresh `TICKS` report before holding, bound
+full-speed tap holds below Settings' 0.32 s repeat threshold while
+keeping slow-emulator console-time holds intact, compare interlaced
+row labels across both scanline parities in `same_text`, and observe
+tab and row-value transitions in `flip_console` and `library_folders`.
 
 ## 2026-11-13 — Let the jewel host tests compile on macOS
 

@@ -41,7 +41,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
   and keep legacy `swiss.ini` migration and Indigo's opt-in local-clock model
   ([intake notes](docs/dev/upstream-intake-2026-11-14.md)).
 - Update the pinned toolchain and runner base to `libogc2 r2500.cb7745a`,
-  refreshing the isolated 540p60 VIDEO driver copy to the same SDK commit.
+  refreshing the isolated 540p60 VIDEO driver copy to the same SDK commit,
+  and harden the Dolphin UI test harness against host log-flush stalls and
+  PAL 576i scanline-parity shifts.
 
 ### Coverage
 
