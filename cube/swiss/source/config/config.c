@@ -2235,6 +2235,11 @@ static char *sramLanguageEnvStr[] = {"en_GB", "de_DE", "fr_FR", "es_ES", "it_IT"
 
 void config_init_environ() {
 	char *value;
+	if(getenv("TZ") != NULL) {
+		unsetenv("TZ");
+		tzset();
+		__SYS_InitTime();
+	}
 	value = getenv("AVE");
 	if(value == NULL || *value == '\0') {
 		setenv("AVE", aveCompatStr[swissSettings.aveCompat], 1);

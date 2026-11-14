@@ -54,7 +54,7 @@ You can make a pack from your own cover images, from this repository:
 
    ```bash
    python3 -m pip install pillow
-   docker pull ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2
+   docker pull ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565
    python3 buildtools/ui/poster_pack.py --covers ~/covers --out posters.pak
    ```
 

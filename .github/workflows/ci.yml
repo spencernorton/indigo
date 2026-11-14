@@ -31,7 +31,7 @@ concurrency:
 env:
   # The image every DOL is built in. The build runner is built on it, and
   # buildtools/ci/check_workflows.py keeps this line and its Dockerfile equal.
-  TOOLCHAIN: ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2
+  TOOLCHAIN: ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565
 
 jobs:
   build:
