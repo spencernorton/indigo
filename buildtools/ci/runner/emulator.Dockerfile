@@ -4,7 +4,7 @@
 # software OpenGL, FFmpeg and the Python the harness in buildtools/ui/emulator/
 # uses, the FAT tools that make its SD card, gxtexconv for the demonstration
 # disc's posters, and a GitHub Actions runner that takes one job.
-FROM ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 AS toolchain
+FROM ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 AS toolchain
 
 FROM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c AS dolphin
 

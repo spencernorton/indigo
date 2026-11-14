@@ -139,6 +139,7 @@ static void ARAMStub(void)
 }
 
 void __InitFPRS(void);
+void __SYS_InitTime(void);
 
 void ARAMRunStub(void)
 {
@@ -183,6 +184,7 @@ void ARAMRun(u32 entrypoint, u32 dst, u32 src, u32 len)
 	/*** Shutdown libOGC ***/
 	DrawShutdown();
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, FALSE);
+	__SYS_InitTime();
 
 	/*** Shutdown all threads and exit to this method ***/
 	__lwp_thread_stopmultitasking(ARAMRunStub);
@@ -356,17 +358,12 @@ int DOLtoARAM(unsigned char *dol, char *argz, size_t argz_len)
         {
           argz = NULL;
           argz_len = 0;
-          unsetenv("TZ");
         }
         else if (entrypoint[9] == ENVP_MAGIC)
         {
           __env_lock(NULL);
           argz_create(environ, &envz, &envz_len);
           __env_unlock(NULL);
-        }
-        else
-        {
-          unsetenv("TZ");
         }
       }
 
@@ -480,17 +477,12 @@ int ELFtoARAM(unsigned char *elf, char *argz, size_t argz_len)
         {
           argz = NULL;
           argz_len = 0;
-          unsetenv("TZ");
         }
         else if (entrypoint[9] == ENVP_MAGIC)
         {
           __env_lock(NULL);
           argz_create(environ, &envz, &envz_len);
           __env_unlock(NULL);
-        }
-        else
-        {
-          unsetenv("TZ");
         }
       }
 

@@ -22,6 +22,37 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Refine the Controller Library icon's outline to more closely follow the
   original GameCube controller, retaining its live stick and button feedback.
 
+### Fixed
+
+- Fix returning to the main menu in **Call of Duty 2: Big Red One** by
+  skipping pre-patching on `frontend.dol` (from upstream Swiss).
+- Update loading-spinner progress counts atomically across background metadata
+  and file threads, and refresh the system and POSIX time bases cleanly across
+  SRAM updates and game handoff on `libogc2 r2500`.
+
+### Maintenance
+
+- Sync upstream Swiss through `4c9e30ae`, including updated Redump, No-Intro
+  and `[T-En]` databases, compile-time single-call BCJ initialization in the
+  return-loader packer, smaller C++ runtime linkage (`-fno-exceptions
+  -fno-rtti` with `libstdc++.cpp`), `VAR_RMODE` / `VAR_POSIX_TIMEBASE`
+  reserved-memory layout, and `AR_GetExpansionSize()` reporting. Retain
+  TinySMB without exporting SMB credentials to launched homebrew environments,
+  and keep legacy `swiss.ini` migration and Indigo's opt-in local-clock model
+  ([intake notes](docs/dev/upstream-intake-2026-11-14.md)).
+- Update the pinned toolchain and runner base to `libogc2 r2500.cb7745a`,
+  refreshing the isolated 540p60 VIDEO driver copy to the same SDK commit,
+  and harden the Dolphin UI test harness against host log-flush stalls and
+  PAL 576i scanline-parity shifts.
+
+### Coverage
+
+- Validated across the self-hosted build, reproducible build, host sanitizer
+  and 11 Dolphin emulator lanes (including 3D Boxes folder/launch walks and the
+  AESND reset stress test). Physical-console frame timing for 3D Boxes,
+  physical optical-drive launch, and MemCard PRO GC hardware qualification on
+  `libogc2 r2500` remain pending.
+
 ## v2.8.0 — Disc source badge
 
 ### New

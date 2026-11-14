@@ -4,7 +4,7 @@
 # Python with Pillow and NumPy, zlib), and a GitHub Actions runner that takes
 # one job. indigo_ci.py builds it from beta; a job checks it runs on the
 # toolchain its workflow names (buildtools/ci/toolchain.sh).
-FROM ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2
+FROM ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565
 
 ENV DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 TZ=UTC
 
@@ -30,7 +30,7 @@ RUN curl -fsSL -o /tmp/gh.tgz \
 
 RUN useradd --create-home --uid 1001 --shell /bin/bash runner \
  && mkdir -p /etc/indigo-ci \
- && echo "ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2" \
+ && echo "ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565" \
       > /etc/indigo-ci/toolchain
 
 # Last, so a new runner release rebuilds only this layer, never the toolchain.

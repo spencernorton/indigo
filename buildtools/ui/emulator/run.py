@@ -144,6 +144,7 @@ COUNTER_BOX = (560, 120, 610, 142)  # Settings' "row / rows", shown while a row 
 SETTINGS_ROW_TOPS = tuple(148 + 40 * n for n in range(6))
 SETTINGS_ROW_LABEL = (45, 4, 300, 30)
 SETTINGS_ROW_FILL = (320, 2, 480, 30)
+SETTINGS_ROW_VALUE = (465, 4, 570, 30)
 DETAIL_TITLE_BOX = (264, 106, 600, 134)
 # The cover on the game's details from the File Browser, inside its frame, and
 # how far (mean, 0-255) a frame of it may differ from where it settles.
@@ -236,12 +237,13 @@ HOME_STEADY_SECONDS = 0.3  # In Dolphin's time, not repeated captures of a cache
 WALL_FACTOR = 5
 WALL_FLOOR = 5
 TICKS_PER_SECOND = 486_000_000  # the GameCube's CPU clock, which Dolphin's ticks count
-# Of the console's time a button stays down, and up after. A press waits
-# fresh (Route.press), so with Dolphin's reports a tenth of a second apart it
-# lasts from this to about two reports more: 0.05 is at most about 0.2 s, well
-# inside the 0.32 s a held direction takes to repeat (UI_MENU_INPUT_INITIAL_
-# REPEAT_US), and still several frames.
+# Of the console's time a button stays down, and up after. Route.press aligns
+# to a fresh report before holding so a normal tap lasts one report (~0.1 s),
+# and caps a stalled log flush at PRESS_WALL_CAP when Dolphin was running at
+# full speed, staying well inside Settings' 0.32 s hold-to-repeat
+# (UI_MENU_INPUT_INITIAL_REPEAT_US) while still holding several frames.
 PRESS_SECONDS = 0.05
+PRESS_WALL_CAP = 0.2
 # Library Folders: how long the route holds a press that opens or leaves a
 # folder (library_folders), and how many pixels of a folder picture's colour
 # make it on screen: a card in front is tens of thousands.
@@ -859,12 +861,19 @@ def rows_moved(before: tuple[int, list[np.ndarray]], after: tuple[int, list[np.n
 
 
 def same_text(a: np.ndarray, b: np.ndarray) -> bool:
-    """The same words. A 480i picture can sit half a line higher after a slow
-    frame (it is drawn for the other field), which moves an antialiased word's
-    rows across TEXT_LEVEL, so the words are compared a pair of rows at a time."""
+    """The same words. An interlaced or PAL-scaled picture can sit half a line
+    higher (drawn for the other field, or at another vertical row's sample
+    phase), which moves an antialiased word's rows across TEXT_LEVEL, so the
+    words are compared a pair of rows at a time in either row parity."""
     def rows(mask: np.ndarray) -> np.ndarray:
         return mask[:mask.shape[0] // 2 * 2].reshape(-1, 2, mask.shape[1]).any(axis=1)
-    return overlap(rows(a), rows(b)) >= SAME
+
+    def odd_rows(mask: np.ndarray) -> np.ndarray:
+        middle = rows(mask[1:])
+        return np.concatenate([mask[:1], middle, mask[1 + middle.shape[0] * 2:]], axis=0)
+
+    return (overlap(rows(a), rows(b)) >= SAME or
+            (a.shape == b.shape and a.shape[0] >= 3 and overlap(odd_rows(a), odd_rows(b)) >= SAME))
 
 
 def has_label(mask: np.ndarray) -> bool:
@@ -1169,6 +1178,19 @@ class Emulator:
         ticks = self._ticks()
         return ticks[0] if ticks else None
 
+    def full_speed(self) -> bool:
+        """Whether the last TICKS step advanced near real time (>= 0.08 s in a
+        0.1 s report), as opposed to a crawling or paused emulator."""
+        try:
+            with open(self.log, "rb") as log:
+                log.seek(0, os.SEEK_END)
+                log.seek(max(0, log.tell() - 4096))
+                tail = log.read().decode(errors="replace")
+        except OSError:
+            return False
+        found = re.findall(r"^TICKS (\d+) ", tail, re.M)
+        return len(found) >= 2 and (int(found[-1]) - int(found[-2])) / TICKS_PER_SECOND >= 0.08
+
     def where(self) -> str | None:
         """Where the console's CPU was last seen, and when, for a check that failed."""
         ticks = self._ticks()
@@ -1219,6 +1241,7 @@ class Route:
         self.pad = emulator.pad
         self.files_root_reference: tuple[np.ndarray, np.ndarray] | None = None
         self.source_picker_name: np.ndarray | None = None
+        self.apps_face_value: np.ndarray | None = None
 
     # -- evidence
     def shot(self, name: str, frame: np.ndarray) -> np.ndarray:
@@ -1306,22 +1329,56 @@ class Route:
             self.pressed_again.append(button)
         return None, time.monotonic()
 
+    def sync_clock(self) -> bool:
+        """Wait while nothing is held for the next TICKS report, so a short
+        press starts on a fresh report and needs only one (~0.1 s) rather than
+        two (~0.2 s+, near Settings' 0.32 s repeat)."""
+        emulated = getattr(self.emulator, "emulated", None)
+        before = emulated() if callable(emulated) else None
+        if not isinstance(before, (int, float)):
+            return False
+        until = time.monotonic() + WALL_FLOOR
+        while time.monotonic() < until:
+            now = emulated()
+            if now != before:
+                return isinstance(now, (int, float))
+            time.sleep(0.005)
+        return False
+
     def press(self, button: str, seconds: float = PRESS_SECONDS) -> None:
         """Hold a button for some of the console's time, then leave it up for
-        a little: a busy machine must not shorten a press below a frame. Both
-        are fresh waits: from a stale report, a press begun just before the
-        next one could end within a frame and never reach the console."""
+        a little: a busy machine must not shorten a press below a frame, nor
+        let a stalled log flush at full speed stretch a tap into Settings'
+        0.32 s hold-to-repeat."""
+        synced = self.sync_clock()
+        full = getattr(self.emulator, "full_speed", None)
+        cap = (PRESS_WALL_CAP if synced and seconds < PRESS_WALL_CAP
+               and callable(full) and full() is True else None)
         self.pad.hold(button)
-        self.pause(seconds, fresh=True)
-        self.pad.hold()
-        self.pause(PRESS_SECONDS, fresh=True)
+        try:
+            capped = self._wait_hold(seconds, fresh=not synced, wall_cap=cap)
+        finally:
+            self.pad.hold()
+        self.pause(PRESS_SECONDS, fresh=not synced or capped)
+
+    def _wait_hold(self, seconds: float, fresh: bool, wall_cap: float | None) -> bool:
+        if wall_cap is None:
+            self.pause(seconds, fresh=fresh)
+            return False
+        wait = Deadline(self.emulator, seconds, fresh=fresh)
+        until = time.monotonic() + wall_cap
+        while not wait.expired():
+            if time.monotonic() >= until:
+                return True
+            time.sleep(0.005)
+        return False
 
     def pause(self, seconds: float, fresh: bool = False) -> None:
         """Let some of the console's time pass: a menu's animation takes as
         much of it however busy the machine is."""
         wait = Deadline(self.emulator, seconds, fresh=fresh)
         while not wait.expired():
-            time.sleep(0.02)
+            time.sleep(0.005)
 
     # -- the route
     def boot(self) -> np.ndarray:
@@ -1665,19 +1722,28 @@ class Route:
         opened = self.covered(settings)
         self.shot(f"settings-{name}-{tag}", self.last_rgb)
         self.check("A opens Settings", opened, **detail)
-        for button in ("R", "R"):
-            self.press(button)
-            self.pause(1.0)
+        title, _ = self.settled_label(box=SETTINGS_TITLE_BOX)
+        self.check("Settings shows a steady page title", title is not None, **detail)
+        for tab in ("Game Defaults", "Setup"):
+            title, _ = self.press_until("R", unlike=title, box=SETTINGS_TITLE_BOX)
+            self.check(f"R reaches {tab}", title is not None, **detail)
+        setup = title
         self.walk_rows(1, "Setup's DOWN reaches Console", **detail)
-        self.press("A")
-        self.pause(1.5)
+        title, _ = self.press_until("A", unlike=setup, box=SETTINGS_TITLE_BOX)
+        self.check("A opens Console settings", title is not None, **detail)
         self.walk_rows(downs, f"{downs} DOWNs reach the row", **detail)
-        for _ in range(presses):
-            self.press(change)
-            self.pause(1.0)
+        if name == "apps-face" and tag == "off":
+            self.apps_face_value = text_mask(self.gray(), self.setting_value_box())
+        after = None
+        for step in range(1, presses + 1):
+            after = self.step_setting_value(change, step=step, **detail)
+        if name == "apps-face" and tag == "on" and self.apps_face_value is not None:
+            self.check("Down Face returns to Apps",
+                       after is not None and same_text(after, self.apps_face_value), **detail)
         self.shot(f"{name}-{tag}", self.emulator.frame())
-        self.press("B")
-        self.pause(1.0)
+        self.check("B returns from Console settings to Setup",
+                   self.press_until("B", like=setup, box=SETTINGS_TITLE_BOX)[0] is not None,
+                   **detail)
         self.press("B")
         if not named:
             # No name is no proof of Home: Setup's page has none there either,
@@ -1689,6 +1755,37 @@ class Route:
         mask, _ = self.settled_label(like=settings)
         self.shot(f"{name}-{tag}-home", self.last_rgb)
         self.check("Save & Exit comes back to the Settings face", mask is not None, **detail)
+
+    def setting_value_box(self) -> tuple[int, int, int, int]:
+        focus, _ = self.settings_rows()
+        top = SETTINGS_ROW_TOPS[focus]
+        x0, y0, x1, y1 = SETTINGS_ROW_VALUE
+        return (x0, top + y0, x1, top + y1)
+
+    def step_setting_value(self, button: str, **detail: object) -> np.ndarray | None:
+        """Step the focused Settings row's value with button, retrying only a
+        press that left the value unchanged."""
+        box = self.setting_value_box()
+        before = text_mask(self.gray(), box)
+        after = None
+        for attempt in range(PRESSES):
+            self.press(button)
+            last = attempt == PRESSES - 1
+            after = self.text_until(
+                box,
+                lambda mask: int(mask.sum()) >= 24 and not same_text(mask, before),
+                SETTLE_SECONDS if last else MISSED_SECONDS,
+            )
+            if after is not None or last:
+                break
+            if not same_text(text_mask(self.gray(), box), before):
+                after = self.text_until(
+                    box, lambda mask: int(mask.sum()) >= 24 and not same_text(mask, before)
+                )
+                break
+            self.pressed_again.append(button)
+        self.check(f"{button} changes the setting's value", after is not None, **detail)
+        return after
 
     def settings_rows(self) -> tuple[int, list[np.ndarray]]:
         """Which of Settings' visible rows has the focus (the brightest fill),
@@ -1811,14 +1908,21 @@ class Route:
         library, source, settings = faces[0], faces[1], faces[2]
         self.press("A")
         self.check("A opens Settings", self.covered(settings), library_folders="on")
-        for button, pause in (("R", 1.0), ("R", 1.0), ("DOWN", 0.4), ("DOWN", 0.4),
-                              ("DOWN", 0.4), ("DOWN", 0.6), ("A", 1.5), ("DOWN", 0.6),
-                              ("RIGHT", 1.0)):
-            self.press(button)
-            self.pause(pause)
+        title, _ = self.settled_label(box=SETTINGS_TITLE_BOX)
+        self.check("Settings shows a steady page title", title is not None, library_folders="on")
+        for tab in ("Game Defaults", "Setup"):
+            title, _ = self.press_until("R", unlike=title, box=SETTINGS_TITLE_BOX)
+            self.check(f"R reaches {tab}", title is not None, library_folders="on")
+        setup = title
+        self.walk_rows(4, "Setup's DOWNs reach Library", library_folders="on")
+        title, _ = self.press_until("A", unlike=setup, box=SETTINGS_TITLE_BOX)
+        self.check("A opens Library settings", title is not None, library_folders="on")
+        self.walk_rows(1, "Library's DOWN reaches Library Folders", library_folders="on")
+        self.step_setting_value("RIGHT", library_folders="on")
         self.shot("library-folders-on", self.emulator.frame())
-        self.press("B")
-        self.pause(1.0)
+        self.check("B returns from Library settings to Setup",
+                   self.press_until("B", like=setup, box=SETTINGS_TITLE_BOX)[0] is not None,
+                   library_folders="on")
         self.press("B")
         mask, _ = self.settled_label(like=settings)
         self.check("Save & Exit comes back to the Settings face", mask is not None,

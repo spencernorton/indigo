@@ -127,11 +127,22 @@ class ReturnDecoder(unittest.TestCase):
                     self.assertEqual(result.stdout.strip(), f"decoder mode {mode} passed")
 
     def test_missing_mode_mutant_is_rejected(self):
+        config = (PACKER / "xz/xz_config.h").read_text()
+        private = (PACKER / "xz/xz_private.h").read_text()
+        self.assertIn("\n#define XZ_DEC_SINGLE\n", config)
+        self.assertNotIn("\n#define XZ_DEC_PREALLOC", config)
+        self.assertNotIn("\n#define XZ_DEC_DYNALLOC", config)
+        self.assertIn("#\tdefine DEC_IS_SINGLE(mode) (true)", private)
         source = (PACKER / "main.c").read_text()
-        needle = ".single_call = true"
+        needle = '#include "xz/xz_dec_bcj.c"'
         self.assertEqual(source.count(needle), 1)
+        mutated = source.replace(
+            needle,
+            "#undef DEC_IS_SINGLE\n#define DEC_IS_SINGLE(mode) (false)\n" + needle,
+            1,
+        )
         with tempfile.TemporaryDirectory() as name:
-            probe = compile_probe(Path(name), source.replace(needle, ".single_call = false", 1))
+            probe = compile_probe(Path(name), mutated)
             # The old initialization still decodes the valid fixture. Its short
             # output path must fail or hit the deadline, not silently pass.
             subprocess.run([str(probe), "0"], check=True, capture_output=True, timeout=5)

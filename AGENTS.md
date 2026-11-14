@@ -34,7 +34,7 @@ low-memory fallback, so renderer count and public setting count differ.
 ```bash
 # The DOL, in the pinned image CI uses (writes cube/swiss/swiss.dol):
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 make dev
+  ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 make dev
 
 # The performance build, after make dev: frame times and the GPU's counters
 # (vertices, pixels, texels, copy clocks) over the menus, to measure a change

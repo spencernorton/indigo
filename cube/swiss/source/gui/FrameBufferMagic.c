@@ -7,6 +7,7 @@
    ----------------------------------------------------------- */
 
 #include <fnmatch.h>
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -455,7 +456,7 @@ typedef struct drawProgressEvent {
 	float miniModeAlpha;
 	float seconds;	/* shown for: the spinner's and sweep's clock */
 	int percent;
-	int speed;	// in bytes
+	atomic_int speed;	// in bytes
 	int timestart;
 	int timeremain;
 	bool files;	/* the File Browser's copy: a scrim under it, and B Stop */
@@ -5226,7 +5227,7 @@ void DrawUpdateProgressBarDetail(uiDrawObj_t *evt, int percent, int speed, int t
 
 void DrawUpdateProgressLoading(uiDrawObj_t *evt, int increment) {
 	drawProgressEvent_t *data = (drawProgressEvent_t*)evt->data;
-	data->speed += increment;
+	atomic_fetch_add(&data->speed, increment);
 }
 
 static void _PrepareHomeText(drawHomeEvent_t *data)

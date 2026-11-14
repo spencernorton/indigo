@@ -1,8 +1,8 @@
 # The libogc2 commit the copy in libogc2/ is: the one the toolchain was built
-# from (its ogc/libversion.h: "libogc2 r2482.f0a7627"). Every file in libogc2/
+# from (its ogc/libversion.h: "libogc2 r2500.cb7745a"). Every file in libogc2/
 # is byte-identical to that commit; Indigo's changes are the patches beside
 # it, applied when Swiss is built. buildtools/ci/check_aesnd.py checks both,
 # and that the toolchain's libogc2 is still this one.
 upstream https://github.com/extremscorner/libogc2.git
-commit f0a762732ff0e250d1850bd930c8674ed634de87
-toolchain libogc2 r2482.f0a7627
+commit cb7745aa099e65c0a3295f482f691ad63ba7b730
+toolchain libogc2 r2500.cb7745a

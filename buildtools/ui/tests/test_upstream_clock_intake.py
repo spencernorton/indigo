@@ -180,5 +180,97 @@ int main(void)
             subprocess.run([str(path / "clock-setup")], check=True)
 
 
+    def test_startup_environ_clears_inherited_tz_and_refreshes_timebase(self):
+        source = (ROOT / "cube/swiss/source/config/config.c").read_text()
+        initializer = function(source, "void config_init_environ()")
+        driver = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#define AVE_COMPAT_MAX 4
+#define SRAM_LANGUAGE_MAX 2
+#define USBGECKO_MEMCARD_SLOT_A 1
+#define CODESET 0
+static struct {
+ int aveCompat,sramLanguage,enableUSBGecko,waitForUSBGecko;
+ bool cubebootInvoked,hasFlippyDrive,rt4kOptim;
+} swissSettings;
+static char txtbuffer[256];
+static const char *aveCompatStr[]={"a","b","c","d"};
+static const char *sramLanguageEnvStr[]={"en","fr"};
+static int tzsets,inits;
+static const char *nl_langinfo(int item) {(void)item;return "UTF-8";}
+static char *strchrnul_stub(const char *s, int c) {
+ const char *p = strchr(s, c);
+ return (char *)(p ? p : s + strlen(s));
+}
+#define strchrnul strchrnul_stub
+static void tzset(void) { tzsets++; }
+static void __SYS_InitTime(void) { assert(getenv("TZ")==NULL); inits++; }
+/* ENVIRON INITIALIZER */
+int main(void) {
+ unsetenv("TZ");
+ config_init_environ();
+ assert(tzsets==0&&inits==0);
+ setenv("TZ","EST5EDT,M3.2.0,M11.1.0",1);
+ config_init_environ();
+ assert(getenv("TZ")==NULL&&tzsets==1&&inits==1);
+ puts("startup environment: inherited TZ cleared before local-clock refresh");
+}
+'''
+        driver = driver.replace("/* ENVIRON INITIALIZER */", initializer)
+        with tempfile.TemporaryDirectory(prefix="indigo-clock-init-") as directory:
+            path = Path(directory)
+            (path / "init.c").write_text(driver)
+            command = shlex.split(os.environ.get("CC", "cc"))
+            subprocess.run(command + ["-std=c11", "-D_XOPEN_SOURCE=700", "-Wall", "-Wextra", "-Werror",
+                           str(path / "init.c"), "-o", str(path / "init")], check=True)
+            subprocess.run([str(path / "init")], check=True)
+
+    def test_loading_progress_updates_atomically_across_threads(self):
+        source = (ROOT / "cube/swiss/source/gui/FrameBufferMagic.c").read_text()
+        typedef_block = source[source.index("typedef struct drawProgressEvent"):source.index("} drawProgressEvent_t;") + len("} drawProgressEvent_t;")]
+        updater = function(source, "void DrawUpdateProgressLoading(")
+        self.assertIn("atomic_int speed;", typedef_block)
+        self.assertIn("atomic_fetch_add(&data->speed, increment);", updater)
+        driver = r'''
+#include <assert.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stdio.h>
+typedef struct uiDrawObj { void *data; } uiDrawObj_t;
+/* PROGRESS TYPEDEF */
+/* PROGRESS UPDATER */
+static void *worker(void *arg) {
+ uiDrawObj_t *evt = arg;
+ for (int i = 0; i < 20000; ++i) {
+  DrawUpdateProgressLoading(evt, +1);
+  DrawUpdateProgressLoading(evt, -1);
+ }
+ DrawUpdateProgressLoading(evt, +3);
+ return NULL;
+}
+int main(void) {
+ drawProgressEvent_t state = {0};
+ uiDrawObj_t evt = { .data = &state };
+ pthread_t threads[4];
+ for (int i = 0; i < 4; ++i) assert(pthread_create(&threads[i], NULL, worker, &evt) == 0);
+ for (int i = 0; i < 4; ++i) assert(pthread_join(threads[i], NULL) == 0);
+ assert(atomic_load(&state.speed) == 12);
+ puts("loading progress: concurrent atomic increments preserved exact count");
+}
+'''
+        driver = driver.replace("/* PROGRESS TYPEDEF */", typedef_block).replace("/* PROGRESS UPDATER */", updater)
+        with tempfile.TemporaryDirectory(prefix="indigo-progress-atomic-") as directory:
+            path = Path(directory)
+            (path / "atomic.c").write_text(driver)
+            command = shlex.split(os.environ.get("CC", "cc"))
+            subprocess.run(command + ["-std=c11", "-O2", "-pthread", "-Wall", "-Wextra", "-Werror",
+                           str(path / "atomic.c"), "-o", str(path / "atomic")], check=True)
+            subprocess.run([str(path / "atomic")], check=True)
+
 if __name__ == "__main__":
     unittest.main()

@@ -95,4 +95,6 @@ void updateSRAM(SwissSettings *settings, bool syncSram)
 
 	__SYS_UnlockSramEx(writeSram);
 	while (syncSram && !__SYS_SyncSram());
+
+	if (syncSram) __SYS_InitTime();
 }

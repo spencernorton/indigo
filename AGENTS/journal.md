@@ -1,3 +1,37 @@
+## 2026-11-14 — Sync Swiss through 4c9e30ae and update the SDK to libogc2 r2500
+
+Move `UPSTREAM` from `d9159b02` to `4c9e30ae` together with the `libogc2
+r2500.cb7745a` toolchain (`7c91503254af`). `libogc2 r2500` places
+`posix_timebase` at `0x800030F8`, so `5c1bed91` (`VAR_RMODE` moved to `0x09EC`
+and `VAR_POSIX_TIMEBASE` preserved at `0x30F8`) and the SDK bump travel
+together in one atomic change, alongside recording `v2.8.0` `main` ancestry on
+`beta`.
+
+Take the `frontend.dol` skip fix for Call of Duty 2: Big Red One (`670dfff6`),
+the No-Intro and `[T-En]` database updates (`62a8b9a2`, `0502ea95`), the C++
+allocator split and `-fno-exceptions -fno-rtti` flags (`9cf2a31b`, `fda972b0`),
+the compile-time single-call packer BCJ fix (`9cc94597`, dropping
+`cube/packer/source/main.c` from `UPSTREAM`), `AR_GetExpansionSize()` in
+`deviceHandler-SYS.c` and `gui/info.c` (`1d02198d`), atomic progress updates on
+`atomic_int speed` in `DrawUpdateProgressLoading` (`6330836b`), and
+`__SYS_InitTime()` refresh in `sram.c` (`84b5b0b1`) and upstream `sidestep.c`
+(dropping `cube/swiss/source/aram/sidestep.c` from `UPSTREAM`). Refresh
+`video_540_driver.c` and `cube/swiss/aesnd/UPSTREAM` to `cb7745aa099e`.
+
+Decline `libsmb2` (`2ae78094`) and SMB credential environment exports
+(`63932963`), keeping TinySMB and listing `deviceHandler-SMB.c` in `UPSTREAM`.
+Retain `config_parse_legacy` (`6330836b`), the SDK's `libuchardet`
+(`d00a2237`), and Indigo's opt-in local-clock model without automatic
+`GIT_TIMESTAMP` RTC clamping (`245ea76f`) or stock dummy Settings rows
+(`4c9e30ae`); clear any inherited `TZ` in `config_init_environ()` before
+refreshing the time base. Harden the Dolphin UI harness (`buildtools/ui/
+emulator/run.py`) against host `dolphin.log` flush stalls on PAL 576i:
+align short presses to a fresh `TICKS` report before holding, bound
+full-speed tap holds below Settings' 0.32 s repeat threshold while
+keeping slow-emulator console-time holds intact, compare interlaced
+row labels across both scanline parities in `same_text`, and observe
+tab and row-value transitions in `flip_console` and `library_folders`.
+
 ## 2026-11-13 — Let the jewel host tests compile on macOS
 
 The frame-budget host compiles include the target's `<malloc.h>`, which
