@@ -92,6 +92,41 @@ def files_source() -> str:
     return "\n\n".join(parts) + "\n"
 
 
+def boxes_source() -> str:
+    """The Library's 3D Boxes emitter (FrameBufferMagic.c) and its stateless
+    retail-case projector (ui_box_case.c), under the counting maths."""
+    fbm = (GUI / "FrameBufferMagic.c").read_text(encoding="utf-8")
+    fbm_h = (GUI / "FrameBufferMagic.h").read_text(encoding="utf-8")
+    start = fbm.index("typedef struct gameflowPoint {")
+    end = fbm.index("} gameflowRenderCard_t;", start) + len("} gameflowRenderCard_t;")
+    parts = [
+        '#include "ui_box_case.c"',
+        '#include "ui_gameflow.h"',
+        *re.findall(r"^#define UI_GAMEFLOW_CARD_CUSTOM\b.*$", fbm_h, re.M),
+        "typedef struct { u8 flags; u8 disc; } uiGameflowCardSnapshot_t;",
+        fbm[start:end],
+    ]
+    for name in (
+        "_GameflowClamp",
+        "_GameflowLerpPoint",
+        "_GameflowQuadPoint",
+        "_GameflowInsetQuad",
+        "_GameflowPresence",
+        "_GameflowAlpha",
+        "_GameflowPutVertex",
+        "_GameflowPutQuad",
+        "_GameflowPutBorder",
+        "_GameflowBoxQuad",
+        "_GameflowDrawBoxShell",
+        "_GameflowDrawBoxPoster",
+        "_GameflowDrawCustomMark",
+        "_GameflowDrawDiscMark",
+        "_GameflowDrawBoxMarks",
+    ):
+        parts.append(renderer_definition(fbm, name))
+    return "\n\n".join(parts) + "\n"
+
+
 def check_renderer_selection() -> None:
     """Forward declarations and unrelated pages must never enter the emitter."""
     current = (GUI / "FrameBufferMagic.c").read_text(encoding="utf-8")
@@ -117,6 +152,7 @@ def measure(renderer_source: str | None = None, driver_source: str | None = None
         Path(tmp, "hint_source.c").write_text(hint_source(), encoding="utf-8")
         Path(tmp, "save_cubes_source.c").write_text(save_cubes_source(renderer_source), encoding="utf-8")
         Path(tmp, "files_source.c").write_text(files_source(), encoding="utf-8")
+        Path(tmp, "boxes_source.c").write_text(boxes_source(), encoding="utf-8")
         binary = Path(tmp, "frame_budget")
         driver = HERE / "frame_budget.c"
         if driver_source is not None:

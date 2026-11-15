@@ -28,7 +28,7 @@ TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw t
 	test_gameflow_detail test_ui_game_history test_ui_about \
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual \
-	test_ui_lang test_ui_box_case
+	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim
 
 test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c tzdata_host.c
 test_ui_cheats.src := $(GUI)/ui_cheats.c
@@ -66,6 +66,14 @@ test_ui_settings_focus.libs := -lm
 test_ui_lang.src := $(GUI)/ui_lang.c
 test_ui_box_case.src := $(GUI)/ui_box_case.c
 test_ui_box_case.libs := -lm
+test_ui_perf.src := $(GUI)/ui_perf.c
+test_ui_perf.flags = $(GAMEFLOW_CFLAGS) -DUI_PERF_CAPTURE=1 -Ifixtures/gx
+test_ui_perf_disabled.main := test_ui_perf.c
+test_ui_perf_disabled.src := $(GUI)/ui_perf.c
+test_ui_perf_disabled.flags = $(GAMEFLOW_CFLAGS) -Ifixtures/gx
+test_ui_anim.src := $(GUI)/ui_anim.c $(GUI)/ui_perf.c
+test_ui_anim.flags = $(GAMEFLOW_CFLAGS) -DUI_PERF_CAPTURE=1 -Ifixtures/gx
+test_ui_anim.libs := -lm
 test_ui_system_info.src := $(GUI)/ui_system_info.c $(GUI)/ui_lang.c
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c

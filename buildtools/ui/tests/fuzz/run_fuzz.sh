@@ -57,6 +57,17 @@ echo "== building the fuzzers =="
 	python3 "$here/wiiload_source.py" "$out/fuzz_wiiload.c"
 	$cc $flags -std=gnu11 -w -o "$out/bin/wiiload" "$out/fuzz_wiiload.c" -lz
 }
+# Saved crash/regression inputs under corpus/<target>/ run even in --build-only
+# mode so every PR verifies past fuzzer findings deterministically in <1s.
+for target in $targets; do
+	if [ -d "$here/corpus/$target" ]; then
+		set -- "$here/corpus/$target"/*
+		if [ -f "$1" ]; then
+			echo "== replaying saved corpus for $target =="
+			"$out/bin/$target" -timeout=10 -rss_limit_mb=2048 "$@"
+		fi
+	fi
+done
 [ -n "$build_only" ] && exit 0
 python3 "$here/seeds.py" "$out/corpus"
 # Inputs that once broke something stay in the corpus for good: corpus/<target>/.

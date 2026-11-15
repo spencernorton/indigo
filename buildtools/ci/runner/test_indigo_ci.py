@@ -148,5 +148,105 @@ class Timestamps(unittest.TestCase):
         self.assertEqual(indigo_ci._epoch("2026-07-01T00:00:00Z"), 1782864000.0)
 
 
+class HealthAndBusyProtection(unittest.TestCase):
+    def setUp(self):
+        quiet = mock.patch.object(indigo_ci, "log", lambda *_: None)
+        quiet.start()
+        self.addCleanup(quiet.stop)
+
+    def _running_container(self, runner: str, image: str = "indigo-ci/emulator:abc") -> dict:
+        return {
+            "State": {"Running": True, "StartedAt": "1970-01-01T00:00:00Z"},
+            "Config": {"Image": image, "Labels": {f"{indigo_ci.LABEL}.runner": runner}},
+        }
+
+    def test_busy_runner_with_offline_status_blip_is_never_killed(self):
+        supervisor = indigo_ci.Supervisor({"emulator": 1})
+        supervisor.images = {"emulator": "indigo-ci/emulator:abc"}
+        supervisor.refresh = lambda now, force=False: None
+        supervisor.ensure_proxy = lambda busy=True: None
+        runner = "ci-host-emulator-1-111111"
+        removed = []
+        with mock.patch.object(indigo_ci, "inspect", return_value=self._running_container(runner)), \
+             mock.patch.object(indigo_ci, "repo_runners", return_value=[{
+                 "id": 7, "name": runner, "repo": indigo_ci.REPO, "status": "offline", "busy": True}]), \
+             mock.patch.object(indigo_ci, "docker", side_effect=lambda *args, **kw: removed.append(args)):
+            for step in range(5):
+                supervisor.tick(1000.0 + step * indigo_ci.HEALTH_EVERY)
+        self.assertEqual(removed, [])
+
+    def test_single_offline_blip_is_debounced_before_replacing_idle_runner(self):
+        supervisor = indigo_ci.Supervisor({"emulator": 1})
+        supervisor.images = {"emulator": "indigo-ci/emulator:abc"}
+        supervisor.refresh = lambda now, force=False: None
+        supervisor.ensure_proxy = lambda busy=True: None
+        runner = "ci-host-emulator-1-222222"
+        statuses = ["offline", "online", "offline", "offline"]
+        removed = []
+        deleted = []
+        supervisor.delete_registration = lambda reg: deleted.append(reg.get("id"))
+        with mock.patch.object(indigo_ci, "inspect", return_value=self._running_container(runner)), \
+             mock.patch.object(indigo_ci, "repo_runners", side_effect=lambda _: [{
+                 "id": 9, "name": runner, "repo": indigo_ci.REPO,
+                 "status": statuses.pop(0), "busy": False}]), \
+             mock.patch.object(indigo_ci, "docker", side_effect=lambda *args, **kw: removed.append(args)):
+            supervisor.tick(1000.0)
+            self.assertEqual(removed, [])  # 1st offline blip: kept
+            supervisor.tick(1000.0 + indigo_ci.HEALTH_EVERY)
+            self.assertEqual(removed, [])  # recovered online: strikes reset
+            supervisor.tick(1000.0 + 2 * indigo_ci.HEALTH_EVERY)
+            self.assertEqual(removed, [])  # 1st strike again: kept
+            supervisor.tick(1000.0 + 3 * indigo_ci.HEALTH_EVERY)
+            self.assertEqual(removed, [("rm", "--force", "indigo-ci-emulator-1")])
+            self.assertEqual(deleted, [9])
+
+    def test_cleanup_ignores_busy_and_survives_http_422_to_remove_next_runner(self):
+        import io
+        import urllib.error
+        live: set[str] = set()
+        self.assertFalse(indigo_ci.ours(
+            {"name": "ci-host-emulator-1-aaaaaa", "status": "offline", "busy": True}, live))
+        supervisor = indigo_ci.Supervisor({"emulator": 0})
+        supervisor.refresh = lambda now, force=False: None
+        supervisor.ensure_proxy = lambda busy=True: None
+        calls = []
+
+        def fake_github(method, path, body=None):
+            calls.append((method, path))
+            if path.endswith("/1"):
+                raise urllib.error.HTTPError(path, 422, "Unprocessable Entity", {}, io.BytesIO(b"busy"))
+            return {}
+
+        with mock.patch.object(indigo_ci, "repo_runners", return_value=[
+                {"id": 1, "name": "ci-host-emulator-1-aaaaaa", "repo": indigo_ci.REPO,
+                 "status": "offline", "busy": False},
+                {"id": 2, "name": "ci-host-emulator-2-bbbbbb", "repo": indigo_ci.REPO,
+                 "status": "offline", "busy": False},
+             ]), \
+             mock.patch.object(indigo_ci, "github", side_effect=fake_github):
+            supervisor.tick(1000.0)
+        self.assertEqual(calls, [
+            ("DELETE", f"/repos/{indigo_ci.REPO}/actions/runners/1"),
+            ("DELETE", f"/repos/{indigo_ci.REPO}/actions/runners/2"),
+        ])
+
+
+    def test_non_health_ticks_do_not_query_github_runner_api(self):
+        supervisor = indigo_ci.Supervisor({"emulator": 1})
+        supervisor.images = {"emulator": "indigo-ci/emulator:abc"}
+        supervisor.refresh = lambda now, force=False: None
+        supervisor.ensure_proxy = lambda busy=True: None
+        supervisor.next_health = 1060.0
+        supervisor.next_cleanup = 1300.0
+        runner = "ci-host-emulator-1-333333"
+        container = {
+            "State": {"Running": True, "StartedAt": "1970-01-01T00:16:00Z"},
+            "Config": {"Image": "indigo-ci/emulator:abc", "Labels": {f"{indigo_ci.LABEL}.runner": runner}},
+        }
+        with mock.patch.object(indigo_ci, "inspect", return_value=container), \
+             mock.patch.object(indigo_ci, "repo_runners", side_effect=AssertionError("unexpected API call")):
+            supervisor.tick(1005.0)
+            supervisor.tick(1010.0)
+
 if __name__ == "__main__":
     unittest.main()

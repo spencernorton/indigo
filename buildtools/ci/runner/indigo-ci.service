@@ -7,6 +7,8 @@
 [Unit]
 Description=Indigo CI: self-hosted GitHub Actions runners in one-job containers
 Documentation=https://github.com/spencernorton/indigo/blob/beta/buildtools/ci/runner/README.md
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 EnvironmentFile=-%h/.config/indigo-ci.env

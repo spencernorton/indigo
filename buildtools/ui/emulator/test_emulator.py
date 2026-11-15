@@ -2186,6 +2186,13 @@ class Screen(unittest.TestCase):
                            "the doubleword the DABR guards\n")
             self.assertEqual(len(run.fatal_lines(log)), 1, "a stack reached its guard")
 
+    def test_excessive_pressed_again_retries_fail_route(self):
+        self.assertIsNone(run.check_pressed_again([]))
+        self.assertIsNone(run.check_pressed_again(["RIGHT"] * run.MAX_PRESSED_AGAIN))
+        failure = run.check_pressed_again(["DOWN"] * (run.MAX_PRESSED_AGAIN + 1))
+        self.assertIsNotNone(failure)
+        self.assertIn(f"more than {run.MAX_PRESSED_AGAIN}", failure)
+
 
 class MediaRouteTests(unittest.TestCase):
     def test_optical_requires_a_probe_and_the_disc_drive(self):
