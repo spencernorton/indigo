@@ -35,6 +35,7 @@ class StackUsageTests(unittest.TestCase):
         errors = csu.check_records(records)
         self.assertEqual(len(errors), 1)
         self.assertIn("Indigo stack ceiling", errors[0])
+        self.assertTrue(csu.is_indigo_source("include/swiss.h"))
 
     def test_total_ceiling_catches_oversized_upstream_frame(self):
         records = csu.parse_su_text(

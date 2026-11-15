@@ -112,10 +112,11 @@ def release_gate_problems(text: str) -> list[str]:
     if not publish:
         return ["release.yml: missing publish job"]
     found = []
-    if not re.search(r"^\s*checks:\s*read\s*$", publish, re.M):
-        found.append("release.yml: publish needs checks: read permission to verify CI passed")
-    if "check-runs?check_name=CI%20passed" not in publish or "done:success" not in publish:
-        found.append("release.yml: publish must verify a completed successful 'CI passed' check run before releasing")
+    if not re.search(r"^\s*checks:\s*read\s*$", publish, re.M) or not re.search(r"^\s*actions:\s*read\s*$", publish, re.M):
+        found.append("release.yml: publish needs actions: read and checks: read permissions to verify CI passed")
+    if ("check-runs?check_name=CI%20passed" not in publish or "actions/workflows/ci.yml/runs" not in publish
+            or "done:success" not in publish):
+        found.append("release.yml: publish must wait on active ci.yml runs and verify a successful 'CI passed' check run")
     return found
 
 

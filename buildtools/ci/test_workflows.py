@@ -114,6 +114,8 @@ class PassedAndReleaseGateTests(unittest.TestCase):
         rel = (root / ".github/workflows/release.yml").read_text()
         self.assertEqual(release_gate_problems(rel), [])
         self.assertTrue(release_gate_problems(rel.replace("      checks: read\n", "", 1)))
+        self.assertTrue(release_gate_problems(rel.replace("      actions: read\n", "", 1)))
+        self.assertTrue(release_gate_problems(rel.replace("actions/workflows/ci.yml/runs", "actions/runs")))
         self.assertTrue(release_gate_problems(rel.replace("done:success", "done:skipped")))
 
 

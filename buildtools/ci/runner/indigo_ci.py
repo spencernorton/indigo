@@ -372,24 +372,25 @@ class Supervisor:
                     outdated = info["Config"]["Image"] != self.images.get(pool_name)
                     started = info["State"].get("StartedAt", "")
                     old = started and now - _epoch(started) > MAX_IDLE_AGE
-                    registration = registrations().get(runner, {})
-                    busy = bool(registration.get("busy", False))
-                    if health:
-                        if started and now - _epoch(started) > STUCK_AFTER and not busy and \
-                                registration.get("status") != "online":
-                            self.offline_strikes[runner] = self.offline_strikes.get(runner, 0) + 1
-                        else:
+                    if outdated or old or health:
+                        registration = registrations().get(runner, {})
+                        busy = bool(registration.get("busy", False))
+                        if health:
+                            if started and now - _epoch(started) > STUCK_AFTER and not busy and \
+                                    registration.get("status") != "online":
+                                self.offline_strikes[runner] = self.offline_strikes.get(runner, 0) + 1
+                            else:
+                                self.offline_strikes.pop(runner, None)
+                        if (outdated or old) and not registration.get("busy", True):
+                            log(f"retiring idle {runner} ({'new image' if outdated else 'age'})")
+                            docker("rm", "--force", container)
                             self.offline_strikes.pop(runner, None)
-                    if (outdated or old) and not registrations().get(runner, {}).get("busy", True):
-                        log(f"retiring idle {runner} ({'new image' if outdated else 'age'})")
-                        docker("rm", "--force", container)
-                        self.offline_strikes.pop(runner, None)
-                        self.delete_registration(registration)
-                    elif health and self.offline_strikes.get(runner, 0) >= OFFLINE_STRIKES:
-                        log(f"{runner} is not connected to GitHub after {OFFLINE_STRIKES} checks; replacing it")
-                        docker("rm", "--force", container)
-                        self.offline_strikes.pop(runner, None)
-                        self.delete_registration(registration)
+                            self.delete_registration(registration)
+                        elif health and self.offline_strikes.get(runner, 0) >= OFFLINE_STRIKES:
+                            log(f"{runner} is not connected to GitHub after {OFFLINE_STRIKES} checks; replacing it")
+                            docker("rm", "--force", container)
+                            self.offline_strikes.pop(runner, None)
+                            self.delete_registration(registration)
                     continue
                 if info:
                     code = info["State"].get("ExitCode")

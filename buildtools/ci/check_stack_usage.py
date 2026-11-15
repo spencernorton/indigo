@@ -20,7 +20,7 @@ INDIGO_CEILING = 16 * 1024
 TOTAL_CEILING = 28 * 1024
 
 INDIGO_SOURCE = re.compile(
-    r"(?:^|/)(?:gui|config|images)/"
+    r"(?:^|/)(?:gui|config|images|include)/"
     r"|(?:^|/)(?:swiss|main|input|mp3|wiiload|cheats|cheat_policy)\.c$"
     r"|video_lab/"
 )

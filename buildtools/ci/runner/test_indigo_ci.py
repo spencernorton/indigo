@@ -231,5 +231,22 @@ class HealthAndBusyProtection(unittest.TestCase):
         ])
 
 
+    def test_non_health_ticks_do_not_query_github_runner_api(self):
+        supervisor = indigo_ci.Supervisor({"emulator": 1})
+        supervisor.images = {"emulator": "indigo-ci/emulator:abc"}
+        supervisor.refresh = lambda now, force=False: None
+        supervisor.ensure_proxy = lambda busy=True: None
+        supervisor.next_health = 1060.0
+        supervisor.next_cleanup = 1300.0
+        runner = "ci-host-emulator-1-333333"
+        container = {
+            "State": {"Running": True, "StartedAt": "1970-01-01T00:16:00Z"},
+            "Config": {"Image": "indigo-ci/emulator:abc", "Labels": {f"{indigo_ci.LABEL}.runner": runner}},
+        }
+        with mock.patch.object(indigo_ci, "inspect", return_value=container), \
+             mock.patch.object(indigo_ci, "repo_runners", side_effect=AssertionError("unexpected API call")):
+            supervisor.tick(1005.0)
+            supervisor.tick(1010.0)
+
 if __name__ == "__main__":
     unittest.main()

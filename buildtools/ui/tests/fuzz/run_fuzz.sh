@@ -60,9 +60,12 @@ echo "== building the fuzzers =="
 # Saved crash/regression inputs under corpus/<target>/ run even in --build-only
 # mode so every PR verifies past fuzzer findings deterministically in <1s.
 for target in $targets; do
-	if [ -d "$here/corpus/$target" ] && [ -n "$(ls -A "$here/corpus/$target" 2>/dev/null)" ]; then
-		echo "== replaying saved corpus for $target =="
-		"$out/bin/$target" -runs=0 -timeout=10 -rss_limit_mb=2048 "$here/corpus/$target"
+	if [ -d "$here/corpus/$target" ]; then
+		set -- "$here/corpus/$target"/*
+		if [ -f "$1" ]; then
+			echo "== replaying saved corpus for $target =="
+			"$out/bin/$target" -timeout=10 -rss_limit_mb=2048 "$@"
+		fi
 	fi
 done
 [ -n "$build_only" ] && exit 0

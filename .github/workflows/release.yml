@@ -141,9 +141,10 @@ jobs:
     needs: build
     if: github.event_name == 'push'
     runs-on: [self-hosted, indigo-build]
-    timeout-minutes: 45
+    timeout-minutes: 50
     permissions:
       contents: write
+      actions: read
       checks: read
       id-token: write
       attestations: write
@@ -153,16 +154,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           COMMIT_SHA: ${{ needs.build.outputs.sha }}
         run: |
-          for attempt in $(seq 1 70); do
+          for attempt in $(seq 1 90); do
             state=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA/check-runs?check_name=CI%20passed&per_page=100" \
-              --jq '(.check_runs | sort_by(.id) | last) as $r | if $r == null then "missing" elif $r.status != "completed" then "pending:\($r.status)" else "done:\($r.conclusion)" end')
+              --jq '(.check_runs | sort_by(.id) | last) as $r | if $r == null then "missing" elif $r.status != "completed" then "pending:\($r.status)" else "done:\($r.conclusion)" end' 2>/dev/null) || state="pending:api-retry"
+            if [ "$state" = "missing" ]; then
+              # GitHub creates the "CI passed" check run only once its upstream jobs finish.
+              wf=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT_SHA&per_page=20" \
+                --jq '([.workflow_runs[] | select(.status != "completed")] | first) as $w | if $w != null then "pending:workflow-\($w.status)" else "missing" end' 2>/dev/null) || wf="pending:api-retry"
+              state="$wf"
+            fi
             case "$state" in
               done:success)
                 echo "Verified passing 'CI passed' check run on $COMMIT_SHA."
                 break
                 ;;
               pending:*)
-                echo "Waiting for 'CI passed' on $COMMIT_SHA ($state, attempt $attempt/70)..."
+                echo "Waiting for 'CI passed' on $COMMIT_SHA ($state, attempt $attempt/90)..."
                 sleep 30
                 ;;
               *)
