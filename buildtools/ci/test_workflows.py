@@ -3,7 +3,7 @@ import unittest
 import re
 from pathlib import Path
 
-from check_workflows import fuzz_gate_problems
+from check_workflows import fuzz_gate_problems, passed_gate_problems, release_gate_problems
 
 
 def workflow(condition=None, needs="passed"):
@@ -88,6 +88,33 @@ class VideoArtifactTests(unittest.TestCase):
         mutant = source[:start] + source[start:].replace(
             'name: dol-${{ github.sha }}', 'name: indigo-sd-card-${{ github.sha }}', 1)
         self.assertFalse(self.diagnostic_has_input(mutant))
+
+
+class PassedAndReleaseGateTests(unittest.TestCase):
+    def test_ci_passed_covers_all_jobs_and_rejects_blanket_skipped(self):
+        root = Path(__file__).resolve().parents[2]
+        ci = (root / ".github/workflows/ci.yml").read_text()
+        self.assertEqual(passed_gate_problems(ci), [])
+        # Dropping video-diagnostic from passed.needs must fail.
+        self.assertTrue(passed_gate_problems(ci.replace("video-diagnostic, ", "", 1)))
+        # Re-introducing blanket skipped acceptance must fail.
+        blanket = ci.replace(
+            'to_entries | all(.[]; (.key == "target" and .value.result == "skipped") or .value.result == "success")',
+            'all(.[]; .result == "success" or .result == "skipped")',
+            1,
+        )
+        self.assertTrue(passed_gate_problems(blanket))
+        # Re-coupling emulator behind video-diagnostic must fail.
+        coupled = ci.replace("  emulator:\n    name: ${{ matrix.name }}\n    needs: build",
+                             "  emulator:\n    name: ${{ matrix.name }}\n    needs: [build, video-diagnostic]", 1)
+        self.assertTrue(passed_gate_problems(coupled))
+
+    def test_release_publish_requires_verified_ci_passed_check_run(self):
+        root = Path(__file__).resolve().parents[2]
+        rel = (root / ".github/workflows/release.yml").read_text()
+        self.assertEqual(release_gate_problems(rel), [])
+        self.assertTrue(release_gate_problems(rel.replace("      checks: read\n", "", 1)))
+        self.assertTrue(release_gate_problems(rel.replace("done:success", "done:skipped")))
 
 
 if __name__ == "__main__":

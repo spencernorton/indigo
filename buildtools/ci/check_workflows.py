@@ -72,6 +72,53 @@ def fuzz_gate_problems(text: str) -> list[str]:
     return found
 
 
+def _parse_needs(raw: str) -> set[str]:
+    raw = raw.strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        return {item.strip() for item in raw[1:-1].split(",") if item.strip()}
+    return {raw} if raw else set()
+
+
+def passed_gate_problems(text: str) -> list[str]:
+    """CI passed must gate every non-fuzz job fail-closed; only target may skip."""
+    jobs_text = text.split("\njobs:\n", 1)[1] if "\njobs:\n" in text else ""
+    jobs = dict(re.findall(r"^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs_text, re.M | re.S))
+    if "passed" not in jobs:
+        return ["ci.yml: missing passed job"]
+    expected = set(jobs) - {"passed", "fuzz"}
+    passed_body = jobs["passed"]
+    needs_match = re.search(r"^    needs:\s*(.*?)\s*$", passed_body, re.M)
+    actual_needs = _parse_needs(needs_match.group(1)) if needs_match else set()
+    found = []
+    missing = sorted(expected - actual_needs)
+    if missing:
+        found.append(f"ci.yml: CI passed omits required job(s) from needs: {', '.join(missing)}")
+    if "emulator" in jobs:
+        emu_needs = re.search(r"^    needs:\s*(.*?)\s*$", jobs["emulator"], re.M)
+        if emu_needs and "video-diagnostic" in _parse_needs(emu_needs.group(1)):
+            found.append("ci.yml: emulator must not serialize behind video-diagnostic")
+    if re.search(r'(?<!\.value)\.result == ["\']skipped["\']', passed_body):
+        found.append("ci.yml: CI passed must not blanket-accept skipped ancestor jobs")
+    if '(.key == "target" and .value.result == "skipped") or .value.result == "success"' not in passed_body:
+        found.append("ci.yml: CI passed must allow skipped only for target and require success for all other jobs")
+    return found
+
+
+def release_gate_problems(text: str) -> list[str]:
+    """Release publish must verify a successful CI passed check run on the tagged commit."""
+    jobs_text = text.split("\njobs:\n", 1)[1] if "\njobs:\n" in text else ""
+    jobs = dict(re.findall(r"^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs_text, re.M | re.S))
+    publish = jobs.get("publish", "")
+    if not publish:
+        return ["release.yml: missing publish job"]
+    found = []
+    if not re.search(r"^\s*checks:\s*read\s*$", publish, re.M):
+        found.append("release.yml: publish needs checks: read permission to verify CI passed")
+    if "check-runs?check_name=CI%20passed" not in publish or "done:success" not in publish:
+        found.append("release.yml: publish must verify a completed successful 'CI passed' check run before releasing")
+    return found
+
+
 def problems(root: Path) -> list[str]:
     found: list[str] = []
     dockerfile = (root / "buildtools/ci/runner/build.Dockerfile").read_text()
@@ -89,6 +136,9 @@ def problems(root: Path) -> list[str]:
         lines = text.splitlines()
         if path.name == "ci.yml":
             found.extend(fuzz_gate_problems(text))
+            found.extend(passed_gate_problems(text))
+        elif path.name == "release.yml":
+            found.extend(release_gate_problems(text))
         for number, line in enumerate(lines, 1):
             code = line.split("#", 1)[0]
             key = re.match(r"^\s*([\w-]+):", code)

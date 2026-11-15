@@ -265,6 +265,7 @@ FATAL = re.compile("|".join((
 # stops (Indigo's debug output, a development console's). An overrun stops at
 # the stack's guard (DABR, above); this catches one that came close: a run
 # that used more than this share of it fails.
+MAX_PRESSED_AGAIN = 8
 POSTER_STACK_SHARE = 0.75
 POSTER_STACK = re.compile(r"card_art: poster stack (\d+) of (\d+) bytes used")
 # The DSP runs its real microcode (LLE): Dolphin's high-level stand-ins know
@@ -4179,6 +4180,11 @@ def main(argv: list[str] | None = None) -> int:
             status = 1
             report["failure"] = ("Indigo did not report the manual's memory" if memory is None else
                                  f"closing the manual left {-memory['returned']} bytes held")
+    if route and status == 0:
+        missed = check_pressed_again(route.pressed_again)
+        if missed:
+            status = 1
+            report["failure"] = missed
     report.update({
         "passed": status == 0,
         "checks": route.checks if route else [],
@@ -4193,6 +4199,13 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "summary.md").write_text(summary(report))
     print(f"emulator test {'passed' if status == 0 else 'FAILED'}: {args.out / 'report.json'}")
     return status
+
+
+def check_pressed_again(pressed_again: list[str]) -> str | None:
+    if len(pressed_again) > MAX_PRESSED_AGAIN:
+        return (f"the menu missed {len(pressed_again)} button presses "
+                f"({', '.join(pressed_again)}), more than {MAX_PRESSED_AGAIN}")
+    return None
 
 
 def summary(report: dict[str, object]) -> str:

@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 20
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
+      sha: ${{ steps.meta.outputs.sha }}
       title: ${{ steps.meta.outputs.title }}
       prerelease: ${{ steps.meta.outputs.prerelease }}
     steps:
@@ -64,6 +65,7 @@ jobs:
           fi
           {
             echo "tag=$TAG"
+            echo "sha=$(git rev-parse HEAD)"
             echo "title=$title"
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
@@ -81,9 +83,19 @@ jobs:
       - name: Check the DOL
         run: |
           mkdir -p dist
+          if [ -f buildtools/ci/check_unwind.sh ]; then
+            buildtools/ci/check_unwind.sh cube/swiss/swiss.elf
+          fi
+          if [ -f buildtools/ci/check_stack_usage.py ]; then
+            python3 buildtools/ci/check_stack_usage.py cube/swiss
+          fi
           python3 buildtools/ci/verify_dol.py cube/swiss/swiss.dol --toolchain "$TOOLCHAIN" \
             --revision "$(git rev-parse HEAD)" --short "$(git rev-parse HEAD | cut -c1-7)" \
             --out dist/provenance.json
+          if grep -qF "$PWD" cube/swiss/swiss.dol; then
+            echo "::error::The DOL names the folder it was built in ($PWD): a build elsewhere would differ."
+            exit 1
+          fi
       - name: Build the bundled web browser
         env:
           # The Web face launches this; built from a pinned commit of our
@@ -100,6 +112,14 @@ jobs:
           # mbed TLS is built into the DOL: its licence ships beside it.
           cp browser-src/third_party/mbedtls/LICENSE browser/LICENSE-mbedtls.txt
           rm -rf browser-src
+          if grep -qF "$PWD" browser/cubebrowser.dol; then
+            echo "::error::The bundled browser DOL names the folder it was built in ($PWD)."
+            exit 1
+          fi
+          if [ -f buildtools/ui/tests/test_boot_image.py ] && grep -q -- '--check-files' buildtools/ui/tests/test_boot_image.py; then
+            python3 buildtools/ui/tests/test_boot_image.py --check-files \
+              cube/swiss/swiss.dol cube/packer/swiss.dol cube/packer/reboot.dol browser/cubebrowser.dol
+          fi
       - name: Package the SD card zip and the notes
         env:
           TAG: ${{ steps.meta.outputs.tag }}
@@ -121,12 +141,37 @@ jobs:
     needs: build
     if: github.event_name == 'push'
     runs-on: [self-hosted, indigo-build]
-    timeout-minutes: 10
+    timeout-minutes: 45
     permissions:
       contents: write
+      checks: read
       id-token: write
       attestations: write
     steps:
+      - name: Require passing CI for tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          for attempt in $(seq 1 70); do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA/check-runs?check_name=CI%20passed&per_page=100" \
+              --jq '(.check_runs | sort_by(.id) | last) as $r | if $r == null then "missing" elif $r.status != "completed" then "pending:\($r.status)" else "done:\($r.conclusion)" end')
+            case "$state" in
+              done:success)
+                echo "Verified passing 'CI passed' check run on $COMMIT_SHA."
+                break
+                ;;
+              pending:*)
+                echo "Waiting for 'CI passed' on $COMMIT_SHA ($state, attempt $attempt/70)..."
+                sleep 30
+                ;;
+              *)
+                echo "::error::Cannot publish release for $COMMIT_SHA: 'CI passed' state is '$state'."
+                exit 1
+                ;;
+            esac
+          done
+          [ "$state" = "done:success" ]
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-${{ needs.build.outputs.tag }}

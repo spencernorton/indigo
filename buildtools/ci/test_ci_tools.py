@@ -236,7 +236,7 @@ jobs:
     if: always()
     runs-on: [self-hosted, indigo-build]
     steps:
-      - run: true
+      - run: echo "$RESULTS" | jq -e 'to_entries | all(.[]; (.key == "target" and .value.result == "skipped") or .value.result == "success")' > /dev/null
   fuzz:
     needs: passed
     if: ${{{{ !cancelled() && needs.passed.result == 'success' }}}}

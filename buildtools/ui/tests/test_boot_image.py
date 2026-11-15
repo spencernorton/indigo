@@ -56,7 +56,29 @@ static bool starts(const char *name,const u8 *image,size_t size,XXH64_hash_t has
     u8 *copy=malloc(size?size:1);assert(copy);memcpy(copy,image,size);
     bool ok=boot_image_valid(&file,copy,hash);free(copy);return ok;
 }
-int main(void) {
+static bool checkFile(const char *path) {
+    FILE *fp=fopen(path,"rb");if(!fp)return false;
+    if(fseek(fp,0,SEEK_END)!=0){fclose(fp);return false;}
+    long len=ftell(fp);if(len<=0||fseek(fp,0,SEEK_SET)!=0){fclose(fp);return false;}
+    u8 *buf=malloc((size_t)len);assert(buf);
+    if(fread(buf,1u,(size_t)len,fp)!=(size_t)len){free(buf);fclose(fp);return false;}
+    fclose(fp);
+    char logical[1024];snprintf(logical,sizeof logical,"sd:/%s",path);
+    bool ok=starts(logical,buf,(size_t)len,0);
+    free(buf);
+    return ok;
+}
+int main(int argc, char **argv) {
+    if(argc>1) {
+        for(int i=1;i<argc;++i) {
+            if(!checkFile(argv[i])) {
+                fprintf(stderr,"boot_image_valid rejected %s\n",argv[i]);
+                return 1;
+            }
+        }
+        printf("boot images: verified %d real build artifact(s) PASS\n",argc-1);
+        return 0;
+    }
     u8 dol[320]={0};memset(dol+256,0x55,64);
     be32(dol,256);be32(dol+0x48,0x80003100);be32(dol+0x90,64);be32(dol+0xe0,0x80003100);
     assert(starts("sd:/apps/browser.dol",dol,sizeof dol,0));
@@ -83,7 +105,42 @@ int main(void) {
     assert(starts("sd:/apps/branch.bin",raw,sizeof raw,0));
     assert(!starts("sd:/apps/branch.bin",raw,3,0));
     assert(!starts("sd:/apps/empty.dol",raw,0,0));
-    puts("boot images: whole DOLs and ELFs start, every cut-short one is refused, raw BINs load PASS");
+
+    /* Locked L1 cache BSS (0xe0000000..0xe0004000) is accepted; overflow is refused. */
+    u8 l1dol[320];memcpy(l1dol,dol,sizeof dol);
+    be32(l1dol+0xd8,0xe0000000u);be32(l1dol+0xdc,0x4000u);
+    assert(starts("sd:/apps/locked-cache.dol",l1dol,sizeof l1dol,0));
+    be32(l1dol+0xdc,0x4020u);
+    assert(!starts("sd:/apps/locked-cache.dol",l1dol,sizeof l1dol,0));
+
+    /* dolxz / Game Boy Interface (.dol and .dol+cli): final data section ends
+     * with a 0x400-byte embedded CLI slot seeded with argv[0]\n and stored
+     * without trailing NUL padding so .cli options can be concatenated. */
+    u8 gbi[0x2840 + 0x1400]={0};
+    memset(gbi+0x100,0x60,0x2740);
+    memset(gbi+0x2840,0xaa,0x1000);
+    be32(gbi+0x00,0x100u);be32(gbi+0x48,0x800b7100u);be32(gbi+0x90,0x2740u);
+    be32(gbi+0x1c,0x2840u);be32(gbi+0x64,0x800b9840u);be32(gbi+0xac,0x1400u);
+    be32(gbi+0xd8,0x800bac40u);be32(gbi+0xdc,0x7820u);be32(gbi+0xe0,0x800b712cu);
+    memcpy(gbi+0x3840,"gbi.dol\n",8);
+    assert(starts("sd:/apps/gbi/gbi.dol",gbi,0x3848u,0));
+    const char *preset="--aspect=4:3\n--format=hd60\n";
+    memcpy(gbi+0x3848,preset,strlen(preset)+1u);
+    assert(starts("sd:/apps/gbi/gbi-ossc.dol+cli",gbi,0x3848u+strlen(preset)+1u,0));
+    /* Truncated before or inside argv[0]\n, or carrying binary garbage in the CLI slot, is refused. */
+    assert(!starts("sd:/apps/gbi/gbi.dol",gbi,0x3840u,0));
+    assert(!starts("sd:/apps/gbi/gbi.dol",gbi,0x3847u,0));
+    assert(!starts("sd:/apps/gbi/gbi.dol",gbi,0x37ffu,0));
+    gbi[0x3849]=0xffu;
+    assert(!starts("sd:/apps/gbi/gbi-ossc.dol+cli",gbi,0x384au,0));
+    /* A text section is never treated as an omitted CLI tail. */
+    u8 badText[0x1400]={0};
+    be32(badText+0x00,0x100u);be32(badText+0x48,0x80003100u);be32(badText+0x90,0x1000u);
+    be32(badText+0xe0,0x80003100u);
+    memcpy(badText+0xd00,"app.dol\n",8);
+    assert(!starts("sd:/apps/bad.dol",badText,0xd08u,0));
+
+    puts("boot images: whole DOLs, GBI/.dol+cli, locked-cache BSS and ELFs start; cut-short ones refused PASS");
     return 0;
 }
 '''
@@ -96,6 +153,9 @@ def require_wiring():
     assert check < body.index("gameID_set(")
     assert check < min(body.index(f"{kind}toARAM(") for kind in ("DOL", "ELF", "BIN"))
     assert "valid_dol_xxh3(" not in body
+    # boot_dol zero-pads 0x400 bytes past file->size so .dol+cli tail slots never read heap garbage.
+    assert "(size_t)file->size + 0x400u" in body
+    assert "memset((u8*)buffer + file->size, 0, 0x400u);" in body
     # The helper treats as raw exactly what boot_dol loads raw.
     helper = extract_function(SWISS, "static bool boot_image_valid(")
     for test in ('endsWith(file->name, "/SDLOADER.BIN")', "branchResolve(buffer, PATCH_BIN, 0)",
@@ -105,10 +165,11 @@ def require_wiring():
 
 def main():
     require_wiring()
-    parts = [line for line in WIILOAD.splitlines() if line.startswith("#define WIILOAD_MAX_IMAGE ")]
+    parts = [line for line in WIILOAD.splitlines()
+             if line.startswith(("#define WIILOAD_MAX_IMAGE ", "#define WIILOAD_CLI_SLOT "))]
     parts += [extract_function(WIILOAD, marker) for marker in (
         "static u32 wiiload_be32(", "static u32 wiiload_be16(", "static bool wiiload_range(",
-        "bool wiiload_image_valid(")]
+        "static bool wiiload_cli_tail_valid(", "bool wiiload_image_valid(")]
     parts += [extract_function(UTIL, "char *endsWith("), extract_function(SWISS, "static bool boot_image_valid(")]
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp)
@@ -119,8 +180,14 @@ def main():
             command += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
             if sys.platform != "darwin":
                 command += ["-no-pie"]
+        files = []
+        if "--check-files" in sys.argv:
+            idx = sys.argv.index("--check-files")
+            files = [str(Path(p).resolve()) for p in sys.argv[idx + 1:]]
+            if not files:
+                raise SystemExit("--check-files requires at least one path")
         subprocess.run(command + [str(path / "boot.c"), "-o", str(path / "boot")], check=True)
-        subprocess.run([str(path / "boot")], check=True, timeout=10)
+        subprocess.run([str(path / "boot"), *files], check=True, timeout=30)
 
 
 if __name__ == "__main__":

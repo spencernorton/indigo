@@ -62,6 +62,7 @@ RUNNER_RELEASE_EVERY = 21600  # look for a new actions/runner release
 CLEANUP_EVERY = 300         # drop registrations whose container is gone
 MAX_IDLE_AGE = 12 * 3600    # replace an idle runner this old with a fresh one
 STUCK_AFTER = 180           # a runner still offline this long after it started is replaced
+OFFLINE_STRIKES = 2         # consecutive offline health checks before an idle runner is replaced
 HEALTH_EVERY = 60           # how often to ask GitHub whether running runners are connected
 ALERT_AFTER = 5             # consecutive failed starts, or failed ticks, before INDIGO_CI_ALERT
 
@@ -149,9 +150,9 @@ def image_tag(pool: Pool, context: Path, runner: tuple[str, str]) -> str:
 
 
 def ours(runner: dict, live: set[str]) -> bool:
-    """A registration this machine made whose container is gone and that is offline."""
+    """A registration this machine made whose container is gone and that is idle and offline."""
     return (str(runner.get("name", "")).startswith(NAME + "-") and runner.get("status") == "offline"
-            and runner.get("name") not in live)
+            and not runner.get("busy", False) and runner.get("name") not in live)
 
 
 # ---------------------------------------------------------------- side effects
@@ -227,6 +228,7 @@ class Supervisor:
         self.next_source = self.next_release = self.next_cleanup = self.next_health = 0.0
         self.failures: dict[str, int] = {}
         self.backoff: dict[str, float] = {}
+        self.offline_strikes: dict[str, int] = {}
         self.tick_failures = 0
         self.broken_images: set[str] = set()
         self.stopping = False
@@ -370,15 +372,24 @@ class Supervisor:
                     outdated = info["Config"]["Image"] != self.images.get(pool_name)
                     started = info["State"].get("StartedAt", "")
                     old = started and now - _epoch(started) > MAX_IDLE_AGE
+                    registration = registrations().get(runner, {})
+                    busy = bool(registration.get("busy", False))
+                    if health:
+                        if started and now - _epoch(started) > STUCK_AFTER and not busy and \
+                                registration.get("status") != "online":
+                            self.offline_strikes[runner] = self.offline_strikes.get(runner, 0) + 1
+                        else:
+                            self.offline_strikes.pop(runner, None)
                     if (outdated or old) and not registrations().get(runner, {}).get("busy", True):
                         log(f"retiring idle {runner} ({'new image' if outdated else 'age'})")
                         docker("rm", "--force", container)
-                        self.delete_registration(registrations().get(runner))
-                    elif health and started and now - _epoch(started) > STUCK_AFTER and \
-                            registrations().get(runner, {}).get("status") != "online":
-                        log(f"{runner} is not connected to GitHub; replacing it")
+                        self.offline_strikes.pop(runner, None)
+                        self.delete_registration(registration)
+                    elif health and self.offline_strikes.get(runner, 0) >= OFFLINE_STRIKES:
+                        log(f"{runner} is not connected to GitHub after {OFFLINE_STRIKES} checks; replacing it")
                         docker("rm", "--force", container)
-                        self.delete_registration(registrations().get(runner))
+                        self.offline_strikes.pop(runner, None)
+                        self.delete_registration(registration)
                     continue
                 if info:
                     code = info["State"].get("ExitCode")
@@ -405,6 +416,8 @@ class Supervisor:
                     log(f"cannot start {container}: {error}")
                     if count_failed == ALERT_AFTER:
                         alert(f"the {pool_name} pool cannot start runners: {error}", pool_name)
+        for stale in set(self.offline_strikes) - live:
+            self.offline_strikes.pop(stale, None)
         if now >= self.next_cleanup:
             self.next_cleanup = now + CLEANUP_EVERY
             try:
@@ -425,7 +438,10 @@ class Supervisor:
                 github("DELETE", f"/repos/{runner['repo']}/actions/runners/{runner['id']}")
                 log(f"removed registration {runner.get('name')}")
             except urllib.error.HTTPError as error:
-                if error.code != 404:
+                error.close()
+                if error.code == 422:
+                    log(f"skipping busy registration {runner.get('name')} (HTTP 422)")
+                elif error.code != 404:
                     raise
 
     def guarded_tick(self, now: float) -> None:
