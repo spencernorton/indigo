@@ -21,6 +21,8 @@ and log what is drawn. The tests then check:
   with the middle of its cover, and two cases while it moves: the one
   leaving and the one arriving. Without the memory for its case it is the
   carousel.
+- 3D Boxes draws bounded, separate front and case-edge surfaces, with an
+  unobstructed selected front and angled neighbors in painter's order.
 - From every layout the focused card flies to Detail's pose.
 """
 
@@ -96,7 +98,7 @@ PURE = ("ui_gameflow.c", "ui_motion.c", "ui_gameflow_library.c",
         "ui_command_rail.c", "ui_gameflow_detail.c", "ui_game_history.c")
 # The current renderer also draws the launch screen (test_launch_gx_stream.py),
 # and wraps Spotlight's description as the cheat browser wraps its names.
-LAUNCH = ("ui_launch.c", "ui_stage.c", "ui_cheats.c")
+LAUNCH = ("ui_launch.c", "ui_stage.c", "ui_cheats.c", "ui_box_case.c")
 
 
 def between(source: str, start: str, end: str, inclusive: bool = False) -> str:
@@ -109,9 +111,14 @@ def between(source: str, start: str, end: str, inclusive: bool = False) -> str:
 def reference_text_preparation() -> str:
     source = subprocess.check_output(["git", "-C", str(ROOT), "show",
                                       "v2.5.0:cube/swiss/source/gui/FrameBufferMagic.c"], text=True)
-    return "\n".join(extract_function(source, "static void " + name + "(").replace(
+    prepared = "\n".join(extract_function(source, "static void " + name + "(").replace(
         name + "(", "reference" + name + "(", 1)
         for name in ("_GameflowPrepareCardPresentation", "_GameflowPrepareSpotlight"))
+    # The archive has five layouts. Boxes deliberately uses Horizontal's
+    # existing text sizes; keep that reference independent of today's table.
+    prepared = prepared.replace("== UI_GAMEFLOW_LAYOUT_COUNT,", "== 5,")
+    return prepared.replace("data->snapshot.layout < UI_GAMEFLOW_LAYOUT_COUNT ?",
+                            "data->snapshot.layout <= UI_GAMEFLOW_LAYOUT_JEWEL_CASE ?")
 
 
 def renderer(frame_c: str, frame_h: str) -> str:
@@ -146,6 +153,7 @@ PRELUDE = r"""
 #include "ui_command_rail.h"
 #include "ui_scene.h"
 #if LAYOUTS
+#include "ui_box_case.h"
 #include "ui_cheats.h"
 #include "ui_jewel_case.h"
 #include "ui_launch.h"
@@ -600,17 +608,63 @@ def frames(log: str) -> list:
     return re.split(r"(?m)^F\n", log)[1:]
 
 
-def covers(frame: str) -> dict:
-    """gameId -> list of drawn cover quads (x0, y0, x1, y1) in one frame."""
-    found = {}
+def texture_primitives(frame: str):
+    """The complete vertex/UV stream of the primitive after each texture."""
     lines = frame.splitlines()
     for i, line in enumerate(lines):
         if line.startswith("X "):
-            points = [tuple(map(float, l.split()[1:])) for l in lines[i + 1:i + 14]
-                      if l.startswith("P ")][:4]
-            xs = [p[0] for p in points]
-            ys = [p[1] for p in points]
-            found.setdefault(line[2:], []).append((min(xs), min(ys), max(xs), max(ys)))
+            declaration = lines[i + 1].split()
+            assert declaration[0] == "B", lines[i:i + 2]
+            count = int(declaration[1])
+            block = lines[i + 2:i + 2 + 3 * count]
+            points = [tuple(map(float, value.split()[1:])) for value in block
+                      if value.startswith("P ")]
+            coordinates = [tuple(map(float, value.split()[1:])) for value in block
+                           if value.startswith("T ")]
+            assert len(points) == len(coordinates) == count
+            yield line[2:], points, coordinates
+
+
+def covers(frame: str) -> dict:
+    """gameId -> complete drawn artwork bounds (x0, y0, x1, y1)."""
+    found = {}
+    for name, points, _ in texture_primitives(frame):
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
+        found.setdefault(name, []).append((min(xs), min(ys), max(xs), max(ys)))
+    return found
+
+
+def texture_quads(frame: str) -> dict:
+    """Texture name -> its actual four front corners, in draw order."""
+    found = {}
+    for name, points, coordinates in texture_primitives(frame):
+        by_uv = dict(zip(coordinates, points))
+        left = min(s for s, _ in coordinates)
+        right = max(s for s, _ in coordinates)
+        top = min(t for _, t in coordinates)
+        bottom = max(t for _, t in coordinates)
+        found.setdefault(name, []).append([by_uv[corner] for corner in
+                                         ((left, top), (right, top),
+                                          (right, bottom), (left, bottom))])
+    return found
+
+
+def box_faces(frame: str) -> list:
+    """The box shells' (front, side), before the front artwork."""
+    found = []
+    previous = []
+    lines = frame.splitlines()
+    for i, line in enumerate(lines):
+        if not line.startswith("B ") or "strip" in line:
+            continue
+        count = int(line.split()[1])
+        block = lines[i + 1:i + 1 + 3 * count]
+        points = [tuple(map(float, value.split()[1:])) for value in block
+                  if value.startswith("P ")]
+        if count == 20 and block[1].startswith("C 15 13 25 "):
+            found.append((points[:4], previous))
+        previous = points if count == 4 else []
     return found
 
 
@@ -785,7 +839,8 @@ class GameflowGxStream(unittest.TestCase):
             return [l.split(" ", 6)[6] for l in frame.split("\n") if l.startswith("S ")]
 
         for layout, heading in ((0, "S 320 70 0.500 1"), (1, "S 262 177 0.420 0"),
-                                (2, "S 320 40 0.460 1"), (3, "S 36 62 0.420 0")):
+                                (2, "S 320 40 0.460 1"), (3, "S 36 62 0.420 0"),
+                                (5, "S 320 70 0.500 1")):
             with self.subTest(layout=layout):
                 last = last_frame(f"O {layout} 12 4\nN 40 0.0167\n")
                 self.assertTrue(any(l.startswith(heading) and l.endswith(" RACING / CLASSICS")
@@ -813,7 +868,8 @@ class GameflowGxStream(unittest.TestCase):
                          "No description for this game.")
         # Folder 6 has a picture: its poster, in front and in Spotlight's
         # panel.
-        for script in ("O 0 12 6\nN 40 0.0167\n", "O 3 40 6\nN 40 0.0167\n"):
+        for script in ("O 0 12 6\nN 40 0.0167\n", "O 3 40 6\nN 40 0.0167\n",
+                       "O 5 12 6\nN 40 0.0167\n"):
             self.assertIn("ART006", covers(last_frame(script)))
 
     def test_vertical_column(self):
@@ -850,7 +906,7 @@ class GameflowGxStream(unittest.TestCase):
         self.assertGreater(rest["G039E0"][0][3] - rest["G039E0"][0][1], 200)
 
     def test_game_folders_offer_navigation_without_identity_controls(self):
-        for layout in range(4):
+        for layout in (0, 1, 2, 3, 5):
             with self.subTest(layout=layout):
                 result = subprocess.run([str(self.binary)], input=f"O {layout} 12 2\nN 40 0.0167\n",
                                         capture_output=True, encoding="latin-1", timeout=120)
@@ -936,7 +992,7 @@ class GameflowGxStream(unittest.TestCase):
                 self.check_grid_move(count, start, move)
 
     def test_tiny_grids_and_columns_draw_each_game_once(self):
-        for layout in (1, 2, 3):
+        for layout in (1, 2, 3, 5):
             for count in range(1, 11):
                 for selected in range(count):
                     with self.subTest(layout=layout, count=count, selected=selected):
@@ -1032,7 +1088,7 @@ class GameflowGxStream(unittest.TestCase):
     def test_disc_mark_on_artwork_and_beside_custom_settings(self):
         # One disc-sourced game among card images: visible artwork adds only
         # the plate, disc and hole, without altering any existing mark.
-        for layout, game in [(i, 18) for i in range(5)] + [(3, 21), (3, 26)]:
+        for layout, game in [(i, 18) for i in range(6)] + [(3, 21), (3, 26)]:
             with self.subTest(layout=layout, game=game):
                 route = [f"L {layout} 40 {game}", "N 40 0.0167"]
                 if layout == 4:
@@ -1351,8 +1407,156 @@ class GameflowGxStream(unittest.TestCase):
         self.assertEqual(set(covers(frames(jewel)[-1])), {f"G{i:03d}E0" for i in range(18, 23)})
         self.assertEqual(frames(jewel)[-1], frames(carousel)[-1])
 
+    def test_boxes_show_separate_depth_and_unobstructed_fronts(self):
+        last = frames(self.run_script(["L 5 40 20", "N 40 0.0167"]))[-1]
+        drawn = texture_quads(last)
+        games = {f"G{index:03d}E0" for index in range(18, 23)}
+        self.assertEqual(set(drawn), games)
+        for game, quads in drawn.items():
+            self.assertEqual(len(quads), 1, game)
+            self.assertTrue(all(0 <= x <= 640 and 70 < y < 350
+                                for x, y in quads[0]), game)
+        center = drawn["G020E0"][0]
+        self.assertEqual(center[0][0], center[3][0])
+        self.assertEqual(center[1][0], center[2][0])
+        self.assertEqual(center[0][1], center[1][1])
+        self.assertEqual(center[2][1], center[3][1])
+        self.assertAlmostEqual(sum(x for x, _ in center) / 4, 320, delta=0.1)
+        self.assertGreater(center[1][0] - center[0][0], 160)
+        self.assertGreater(center[3][1] - center[0][1], 220)
+        # Perspective changes the two vertical edge heights of each neighbor.
+        for game in games - {"G020E0"}:
+            quad = drawn[game][0]
+            self.assertGreater(abs(quad[0][1] - quad[1][1]), 1, game)
+            self.assertGreater(abs((quad[3][1] - quad[0][1]) -
+                                   (quad[2][1] - quad[1][1])), 2, game)
+        shells_drawn = box_faces(last)
+        self.assertEqual(len(shells_drawn), 5)
+        for front, side in shells_drawn:
+            self.assertEqual(len(side), 4)
+            # The side shares its seam with the front; the artwork
+            # remains on its own inset face rather than extending over them.
+            self.assertGreaterEqual(len(set(side) & set(front)), 2)
+            if abs(sum(x for x, _ in front) / 4 - 320) > 1:
+                twice_area = abs(sum(side[i][0] * side[(i + 1) % 4][1] -
+                                     side[(i + 1) % 4][0] * side[i][1]
+                                     for i in range(4)))
+                self.assertGreater(twice_area, 100)
+        # Each complete case is drawn before the next, farthest first. A
+        # neighbor's front cannot be painted over the selected case's shell.
+        distances = [abs(int(name[1:4]) - 20) for name in drawn]
+        self.assertEqual(distances, [2, 2, 1, 1, 0])
+        self.assertIn("T 0.7500 1.0000", last)
+        self.assertIn("S 320 350 ", last)
+        self.assertIn("Game number 20", last)
+        self.assertIn("H 320 428 ", last)
+
+    def test_boxes_project_artwork_instead_of_stretching_an_affine_quad(self):
+        last = frames(self.run_script(["L 5 40 20", "N 40 0.0167"]))[-1]
+        corners = texture_quads(last)
+        for name, points, coordinates in texture_primitives(last):
+            self.assertEqual(len(points), 32, name)
+            self.assertEqual(len({s for s, _ in coordinates}), 9, name)
+            quad = corners[name][0]
+            # Solve a plane-to-screen homography from its four corners,
+            # independently of UIBoxCase_Strips and its camera/path helpers.
+            (x0, y0), (x1, y1), (x2, y2), (x3, y3) = quad
+            dx1, dx2, dx3 = x1 - x2, x3 - x2, x0 - x1 + x2 - x3
+            dy1, dy2, dy3 = y1 - y2, y3 - y2, y0 - y1 + y2 - y3
+            determinant = dx1 * dy2 - dx2 * dy1
+            g = (dx3 * dy2 - dx2 * dy3) / determinant
+            h = (dx1 * dy3 - dx3 * dy1) / determinant
+            a, b = x1 - x0 + g * x1, x3 - x0 + h * x3
+            d, e = y1 - y0 + g * y1, y3 - y0 + h * y3
+
+            def project(u, v):
+                divisor = g * u + h * v + 1
+                return ((a * u + b * v + x0) / divisor,
+                        (d * u + e * v + y0) / divisor)
+
+            for actual, (s, t) in zip(points, coordinates):
+                expected = project(s / 0.75, t)
+                for shown, wanted in zip(actual, expected):
+                    self.assertAlmostEqual(shown, wanted, delta=0.05, msg=name)
+            if name in ("G019E0", "G021E0"):
+                # At the neighboring angle, using the affine midpoint would
+                # visibly displace the cover's center rather than project it.
+                affine_x = sum(x for x, _ in quad) / 4
+                self.assertGreater(abs(project(0.5, 0.5)[0] - affine_x), 4)
+
+    def test_boxes_keep_banner_fallback_folders_and_one_game(self):
+        # The selected game has no poster. Its banner keeps its front useful;
+        # without that banner, its procedural card still identifies the game.
+        banner = frames(self.run_script(["W", "L 5 40 17", "N 40 0.0167"]))[-1]
+        self.assertNotIn("G017E0", covers(banner))
+        self.assertIn("banner:G017E0", covers(banner))
+        bare = frames(self.run_script(["L 5 40 17", "N 40 0.0167"]))[-1]
+        self.assertNotIn("G017E0", covers(bare))
+        self.assertIn(" G017E0\n", bare)
+        self.assertIn("Game number 17", bare)
+        self.assertEqual(len(box_faces(bare)), 5)
+        one = frames(self.run_script(["L 5 1 0", "N 40 0.0167"]))[-1]
+        self.assertEqual(set(covers(one)), {"G000E0"})
+        self.assertEqual(len(covers(one)["G000E0"]), 1)
+        self.assertEqual(len(box_faces(one)), 1)
+        result = subprocess.run([str(self.binary)], input="O 5 12 2\nN 40 0.0167\n",
+                                capture_output=True, encoding="latin-1", timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        folder = frames(result.stdout)[-1]
+        text = [line.split(" ", 6)[6] for line in folder.split("\n")
+                if line.startswith("S ")]
+        self.assertIn("FOLDER O\x85", text)
+        self.assertIn("FOLDER", text)
+        self.assertIn("Folder of games 2", text)
+        self.assertIn("RACING / CLASSICS", text)
+        self.assertIn("A  OPEN", folder)
+        self.assertNotIn("Y  SETTINGS", folder)
+
+    def test_boxes_moves_wrap_pages_and_return_from_detail(self):
+        for mode in (0, 1, 2):
+            for start, target, move in ((20, 21, "P 21 1 0 0"),
+                                        (20, 19, "P 19 -1 0 0"),
+                                        (39, 0, "P 0 1 0 0"),
+                                        (0, 39, "P 39 -1 0 0"),
+                                        (20, 29, "P 29 1 0 1")):
+                with self.subTest(mode=mode, start=start, target=target):
+                    route = [f"M {mode}", f"L 5 40 {start}", "N 40 0.0167", move,
+                             "N 1 0.0", "N 60 0.0167"]
+                    log = frames(self.run_script(route))
+                    if mode != 2 and not move.endswith(" 1"):
+                        before, after = covers(log[39]), covers(log[40])
+                        for game in before.keys() & after.keys():
+                            self.assertEqual(before[game], after[game], game)
+                    steady = frames(self.run_script([f"M {mode}", f"L 5 40 {target}",
+                                                     "N 40 0.0167"]))[-1]
+                    self.assertEqual(log[-1], steady)
+            route = [f"M {mode}", "L 5 40 20", "N 40 0.0167", "D 1",
+                     "N 60 0.0167", "D 0", "N 60 0.0167"]
+            log = frames(self.run_script(route))
+            self.assertEqual(set(covers(log[99])), {"G020E0"})
+            # Case depth has left by Detail, then returns with the same game.
+            self.assertEqual(box_faces(log[99])[0][1], [])
+            if mode != 2:
+                for moving in log[40:48]:
+                    for front, side in box_faces(moving):
+                        self.assertGreaterEqual(len(set(front) & set(side)), 2)
+            before = log[39].splitlines()
+            returned = log[-1].splitlines()
+            self.assertEqual(len(before), len(returned))
+            for initial, after in zip(before, returned):
+                if initial.startswith("P "):
+                    # The perspective path retains subpixel positions; a
+                    # settled spring can leave less than 1/50 pixel here.
+                    for a, b in zip(initial.split()[1:], after.split()[1:]):
+                        self.assertAlmostEqual(float(a), float(b), delta=0.02)
+                else:
+                    self.assertEqual(initial, after)
+        off = frames(self.run_script(["M 2", "L 5 40 20", "N 4 0.0167",
+                                      "P 21 1 0 0", "N 60 0.0167"]))
+        self.assertTrue(all(frame == off[4] for frame in off[4:]))
+
     def test_every_layout_flies_to_detail(self):
-        for layout in (0, 1, 2, 3, 4):
+        for layout in (0, 1, 2, 3, 4, 5):
             with self.subTest(layout=layout):
                 log = self.run_script([f"L {layout} 40 18", "N 30 0.0167", "D 1",
                                        "N 60 0.0167"])
@@ -1366,7 +1570,7 @@ class GameflowGxStream(unittest.TestCase):
                 self.assertNotIn("H 320 428", frames(log)[-1])
 
     def test_off_and_reduced_snap_like_the_carousel(self):
-        for layout in (1, 2, 3, 4):
+        for layout in (1, 2, 3, 4, 5):
             with self.subTest(layout=layout):
                 log = self.run_script(["M 2", f"L {layout} 40 17", "N 5 0.0167",
                                        "P 22 1 1 0", "N 1 0.0167"])
@@ -1374,7 +1578,7 @@ class GameflowGxStream(unittest.TestCase):
                     ["M 2", f"L {layout} 40 22", "N 5 0.0167"]).split("F\n")[-1])
 
     def test_staged_clipping_matches_release_and_keeps_input_immutable(self):
-        for layout in range(5):
+        for layout in range(6):
             log = self.run_script([f"L {layout} 40 17", "C", "N 1 0.0167"])
             self.assertEqual(len(frames(log)), 1, f"layout {layout}")
 

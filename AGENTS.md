@@ -23,12 +23,18 @@ Indigo is built on and lists the upstream files Indigo does change, with why.
 - User documentation: `README.md`, `docs/guide/` (every screen and setting,
   with pictures), `docs/SETTINGS.md` (the settings files), `CHANGELOG.md`.
 
+Library settings expose five choices, starting with 3D Boxes. Saved indices
+0..4 remain stable; the old `Horizontal` name is a compatibility alias for
+the new default. `gameflowLayout()` maps saved zero to the Boxes renderer.
+The flat Horizontal renderer stays internal for Apps and Jewel Case's
+low-memory fallback, so renderer count and public setting count differ.
+
 ## Build and test
 
 ```bash
 # The DOL, in the pinned image CI uses (writes cube/swiss/swiss.dol):
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 make dev
+  ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 make dev
 
 # The performance build, after make dev: frame times and the GPU's counters
 # (vertices, pixels, texels, copy clocks) over the menus, to measure a change
@@ -68,6 +74,12 @@ Every job runs on self-hosted runners, one throwaway container per job:
 
 Run tests from a git clone with tags: some checks compare today's renderer
 with a tagged release.
+
+The production DOL's size tripwire remains 4.25 MiB. CI verifies a performance
+DOL with `verify_dol.py --performance-baseline <normal.dol>`: that normal
+artifact must pass its original size, structure and revision checks, and
+diagnostic instrumentation may add at most 4 KiB. Its provenance records the
+normal artifact's hash and the measured overhead.
 
 ## Branches, versions and releases
 

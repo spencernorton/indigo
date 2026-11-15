@@ -9,7 +9,7 @@ def driver() -> str:
     source = (HERE / "frame_budget.c").read_text(encoding="utf-8")
     hooks = r'''
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <zlib.h>
 static unsigned allocationCall, failAllocation, liveAllocations;
 static void *assetMalloc(size_t bytes)
@@ -25,7 +25,7 @@ static void *assetCalloc(size_t count, size_t bytes)
 static void *assetMemalign(size_t align, size_t bytes)
 {
     if(++allocationCall == failAllocation) return NULL;
-    void *p = memalign(align,bytes); if(p) liveAllocations++; return p;
+    void *p = NULL; if(posix_memalign(&p,align,bytes)) return NULL; liveAllocations++; return p;
 }
 static void *assetRealloc(void *old, size_t bytes)
 {

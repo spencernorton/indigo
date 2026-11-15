@@ -1,83 +1,50 @@
 #!/usr/bin/env python3
-"""controller_outline.py -- regenerate the Library emblem's silhouette table.
+"""Regenerate the Library emblem's clockwise GameCube controller silhouette.
 
-Prints the `controllerOutline` table used by gui/indigo_background.c: the
-union of a GameCube controller's structural parts (two main lobes, the bridge
-that carries Start, the D-pad and C-stick lobes and the flared grips), traced
-on a raster, corner-cut so every junction is round enough for a mitred band,
-simplified, and ordered clockwise in face units (v up). Needs Pillow.
+The shell is hand-fitted to Nintendo's front-facing original-controller
+product photograph, leaving out the cable and triggers (drawn separately):
+https://www.nintendo.co.jp/ngc/specific/grap/gamecube.jpg
+
+Cubic landmarks preserve the arched shoulder bridge, straight outer grips,
+rounded grip tips and the deep opening between the two lower control lobes.
+Coordinates are in face units. The D-pad and C-stick sit 0.025 units higher
+to fit the original shell; their live input behavior is unchanged.
+Only the simplified table is used on the console; no image or curve sampling
+is kept in the draw path.
 """
 import math
 
-from PIL import Image, ImageDraw
-
-U0, U1, V0, V1 = -0.72, 0.72, -0.66, 0.50
-RES = 1400  # raster pixels per face unit
-
-
-def parts():
-    return [
-        ("circle", ((-0.335, 0.075), 0.235)), ("circle", ((0.335, 0.075), 0.235)),
-        ("poly", [(-0.34, -0.15), (-0.34, 0.262), (-0.17, 0.280), (0.0, 0.284),
-                  (0.17, 0.280), (0.34, 0.262), (0.34, -0.15)]),
-        ("circle", ((-0.165, -0.19), 0.13)), ("circle", ((0.165, -0.19), 0.13)),
-        ("hull", ((-0.45, -0.05), 0.14, (-0.565, -0.335), 0.105)),
-        ("hull", ((0.45, -0.05), 0.14, (0.565, -0.335), 0.105)),
-    ]
-
-
-def to_px(u, v):
-    return ((u - U0) * RES, (V1 - v) * RES)
-
-
-def hull(c0, r0, c1, r1, n=40):
-    pts = sorted({(c[0] + r * math.cos(2 * math.pi * i / n), c[1] + r * math.sin(2 * math.pi * i / n))
-                  for (c, r) in ((c0, r0), (c1, r1)) for i in range(n)})
-    def cross(o, a, b):
-        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-    lower, upper = [], []
-    for p in pts:
-        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
-            lower.pop()
-        lower.append(p)
-    for p in reversed(pts):
-        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
-            upper.pop()
-        upper.append(p)
-    return lower[:-1] + upper[:-1]
+# Front-view shell landmarks, scaled around the controller icon. Each row
+# is a cubic's two handles and endpoint; the previous endpoint is its start.
+START = (0.0, 0.378)
+CURVES = (
+    ((0.133, 0.378), (0.303, 0.343), (0.403, 0.285)),
+    ((0.478, 0.245), (0.520, 0.188), (0.528, 0.093)),
+    ((0.533, -0.038), (0.548, -0.250), (0.508, -0.323)),
+    ((0.485, -0.370), (0.433, -0.370), (0.405, -0.335)),
+    ((0.370, -0.288), (0.362, -0.165), (0.333, -0.165)),
+    ((0.304, -0.165), (0.258, -0.285), (0.183, -0.283)),
+    ((0.108, -0.283), (0.048, -0.240), (0.043, -0.173)),
+    ((0.038, -0.100), (0.070, -0.045), (0.113, 0.010)),
+    ((0.053, 0.023), (-0.053, 0.023), (-0.113, 0.008)),
+    ((-0.073, -0.040), (-0.035, -0.103), (-0.038, -0.170)),
+    ((-0.038, -0.233), (-0.093, -0.285), (-0.168, -0.285)),
+    ((-0.250, -0.285), (-0.304, -0.165), (-0.333, -0.165)),
+    ((-0.362, -0.165), (-0.363, -0.280), (-0.405, -0.335)),
+    ((-0.430, -0.368), (-0.483, -0.368), (-0.505, -0.318)),
+    ((-0.543, -0.240), (-0.528, -0.028), (-0.523, 0.090)),
+    ((-0.518, 0.188), (-0.480, 0.248), (-0.405, 0.285)),
+    ((-0.303, 0.345), (-0.135, 0.378), START),
+)
 
 
-def union_mask():
-    mask = Image.new("L", (int((U1 - U0) * RES), int((V1 - V0) * RES)), 0)
-    draw = ImageDraw.Draw(mask)
-    for kind, p in parts():
-        if kind == "circle":
-            (cx, cy), r = p
-            x, y = to_px(cx, cy)
-            draw.ellipse([x - r * RES, y - r * RES, x + r * RES, y + r * RES], fill=255)
-        else:
-            draw.polygon([to_px(*q) for q in (p if kind == "poly" else hull(*p))], fill=255)
-    return mask
-
-
-def trace(mask):
-    """Moore-neighbour trace of the single blob's boundary."""
-    width, height = mask.size
-    px = mask.load()
-    inside = lambda x, y: 0 <= x < width and 0 <= y < height and px[x, y] > 127
-    start = next((x, y) for y in range(height) for x in range(width) if inside(x, y))
-    around = [(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1)]
-    boundary, current, back = [start], start, 0
-    while True:
-        for k in range(8):
-            index = (back + k) % 8
-            step = (current[0] + around[index][0], current[1] + around[index][1])
-            if inside(*step):
-                back, current = (index + 5) % 8, step
-                break
-        if current == start:
-            return boundary
-        boundary.append(current)
+def curve_points(start, handles, steps=24):
+    a, b, end = handles
+    for i in range(1, steps + 1):
+        t = i / steps
+        s = 1 - t
+        yield tuple(s ** 3 * start[k] + 3 * s * s * t * a[k] +
+                    3 * s * t * t * b[k] + t ** 3 * end[k] for k in range(2))
 
 
 def douglas_peucker(points, eps):
@@ -100,17 +67,22 @@ def closed_simplify(points, eps):
             douglas_peucker(points[far:] + [points[0]], eps)[:-1])
 
 
-def corner_cut(points, rounds):
-    for _ in range(rounds):
-        points = [q for i, p in enumerate(points) for q in (
-            (0.75 * p[0] + 0.25 * points[(i + 1) % len(points)][0], 0.75 * p[1] + 0.25 * points[(i + 1) % len(points)][1]),
-            (0.25 * p[0] + 0.75 * points[(i + 1) % len(points)][0], 0.25 * p[1] + 0.75 * points[(i + 1) % len(points)][1]))]
-    return points
+def corner_cut(points):
+    # Round the four concave lobe junctions before offsetting the outline
+    # into a band, so its inner boundary never folds back over a sharp cusp.
+    return [q for i, p in enumerate(points) for q in (
+        tuple(0.75 * p[k] + 0.25 * points[(i + 1) % len(points)][k] for k in range(2)),
+        tuple(0.25 * p[k] + 0.75 * points[(i + 1) % len(points)][k] for k in range(2)))]
 
 
 def outline():
-    raw = [(x / RES + U0, V1 - y / RES) for (x, y) in trace(union_mask())]
-    loop = closed_simplify(corner_cut(closed_simplify(raw, 0.004), 3), 0.004)
+    points = [START]
+    for handles in CURVES:
+        points.extend(curve_points(points[-1], handles))
+    loop = closed_simplify(points[:-1], 0.01)
+    for _ in range(2):
+        loop = corner_cut(loop)
+    loop = closed_simplify(loop, 0.005)
     area = sum(p[0] * q[1] - q[0] * p[1] for p, q in zip(loop, loop[1:] + loop[:1]))
     return loop if area < 0 else loop[::-1]
 

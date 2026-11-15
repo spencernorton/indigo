@@ -1,5 +1,5 @@
 /* Indigo experimental extension of the pinned libogc2 VIDEO driver.
- * Original source: 84fec1435413e72e31e7d3d61ed817970bc7f6c3.
+ * Original source: cb7745aa099e65c0a3295f482f691ad63ba7b730.
  * Local change: add the HD60 540-line progressive timing, using this SDK
  * mode encoding and horizontal-field layout. Normal timing entries unchanged.
  */
@@ -2577,10 +2577,10 @@ static inline void __setVerticalRegs(u16 dispPosY,u16 dispSizeY,u8 equ,u16 acv,u
 
 	tmp = dispSizeY/div1;
 	if(black) {
-		prbodd += ((tmp<<1)-2);
-		prbeven += ((tmp<<1)-2);
-		psbodd += 2;
-		psbeven += 2;
+		prbodd += tmp;
+		psbodd += tmp;
+		prbeven += tmp;
+		psbeven += tmp;
 		tmp = 0;
 	}
 
@@ -2686,17 +2686,17 @@ static void __VIInit(u32 vimode)
 
 	_viReg[0] = cur_timing->equ;
 
-	_viReg[6] = (cur_timing->psbOdd+2);							//set PSB odd field
-	_viReg[7] = (cur_timing->prbOdd+((cur_timing->acv<<1)-2));	//set PRB odd field
+	_viReg[6] = (cur_timing->psbOdd+cur_timing->acv);		//set PSB odd field
+	_viReg[7] = (cur_timing->prbOdd+cur_timing->acv);		//set PRB odd field
 
-	_viReg[8] = (cur_timing->psbEven+2);						//set PSB even field
-	_viReg[9] = (cur_timing->prbEven+((cur_timing->acv<<1)-2));	//set PRB even field
+	_viReg[8] = (cur_timing->psbEven+cur_timing->acv);		//set PSB even field
+	_viReg[9] = (cur_timing->prbEven+cur_timing->acv);		//set PRB even field
 
-	_viReg[10] = ((cur_timing->be3<<5)|cur_timing->bs3);		//set BE3 & BS3
-	_viReg[11] = ((cur_timing->be1<<5)|cur_timing->bs1);		//set BE1 & BS1
+	_viReg[10] = ((cur_timing->be3<<5)|cur_timing->bs3);	//set BE3 & BS3
+	_viReg[11] = ((cur_timing->be1<<5)|cur_timing->bs1);	//set BE1 & BS1
 
-	_viReg[12] = ((cur_timing->be4<<5)|cur_timing->bs4);		//set BE4 & BS4
-	_viReg[13] = ((cur_timing->be2<<5)|cur_timing->bs2);		//set BE2 & BS2
+	_viReg[12] = ((cur_timing->be4<<5)|cur_timing->bs4);	//set BE4 & BS4
+	_viReg[13] = ((cur_timing->be2<<5)|cur_timing->bs2);	//set BE2 & BS2
 
 	_viReg[24] = (0x1000|((cur_timing->nhlines/2)+1));
 	_viReg[25] = (cur_timing->hlw+1);

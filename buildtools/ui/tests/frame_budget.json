@@ -2,14 +2,14 @@
  "boot-handoff": {
   "begins": 86,
   "copy_pixels": 0,
-  "hash": "9e3317e4eaef1a3d",
+  "hash": "2a6609e94e744714",
   "invalidations": 0,
   "minmax": 297,
   "scene": "boot-handoff",
   "sqrtf": 0,
   "state": 147,
   "trig": 337,
-  "vertices": 5202
+  "vertices": 5070
  },
  "files": {
   "begins": 148,
@@ -122,14 +122,14 @@
  "home-library": {
   "begins": 143,
   "copy_pixels": 239232,
-  "hash": "af39900d7748c67a",
+  "hash": "227fcdb2f13a44f0",
   "invalidations": 3,
   "minmax": 344,
   "scene": "home-library",
   "sqrtf": 0,
   "state": 382,
   "trig": 653,
-  "vertices": 8360
+  "vertices": 8096
  },
  "home-settings": {
   "begins": 71,
@@ -146,14 +146,14 @@
  "home-source": {
   "begins": 105,
   "copy_pixels": 238464,
-  "hash": "c1337248ed80e25b",
+  "hash": "dacd6fee3147c6e1",
   "invalidations": 3,
   "minmax": 345,
   "scene": "home-source",
   "sqrtf": 0,
   "state": 382,
   "trig": 351,
-  "vertices": 6326
+  "vertices": 6194
  },
  "home-system": {
   "begins": 69,
@@ -170,14 +170,14 @@
  "home-turning": {
   "begins": 138,
   "copy_pixels": 225920,
-  "hash": "f7891f3e1128187f",
+  "hash": "1b54abce59fa553d",
   "invalidations": 3,
   "minmax": 315,
   "scene": "home-turning",
   "sqrtf": 0,
   "state": 378,
   "trig": 653,
-  "vertices": 8156
+  "vertices": 7892
  },
  "jewel-case": {
   "begins": 828,
@@ -254,14 +254,14 @@
  "library-horizontal": {
   "begins": 138,
   "copy_pixels": 95104,
-  "hash": "571af7ed86584faa",
+  "hash": "37f5bc1e6462b596",
   "invalidations": 3,
   "minmax": 331,
   "scene": "library-horizontal",
   "sqrtf": 0,
   "state": 378,
   "trig": 653,
-  "vertices": 8212
+  "vertices": 7948
  },
  "library-jewel-case": {
   "begins": 22,
@@ -302,14 +302,14 @@
  "library-vertical": {
   "begins": 149,
   "copy_pixels": 94208,
-  "hash": "dab74da04079389e",
+  "hash": "c00985cac54753fe",
   "invalidations": 3,
   "minmax": 468,
   "scene": "library-vertical",
   "sqrtf": 0,
   "state": 382,
   "trig": 657,
-  "vertices": 9136
+  "vertices": 8872
  },
  "memory-cards": {
   "begins": 45,
@@ -374,25 +374,25 @@
  "settings": {
   "begins": 90,
   "copy_pixels": 21504,
-  "hash": "be0499fc4323d99d",
+  "hash": "cfacf42fafd0fb25",
   "invalidations": 1,
   "minmax": 356,
   "scene": "settings",
   "sqrtf": 0,
   "state": 184,
   "trig": 344,
-  "vertices": 5482
+  "vertices": 5350
  },
  "system": {
   "begins": 140,
   "copy_pixels": 137984,
-  "hash": "1e86974471a9b33e",
+  "hash": "2501eddf3d011be0",
   "invalidations": 3,
   "minmax": 329,
   "scene": "system",
   "sqrtf": 0,
   "state": 378,
   "trig": 653,
-  "vertices": 8192
+  "vertices": 7928
  }
 }

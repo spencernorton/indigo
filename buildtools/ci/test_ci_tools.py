@@ -2,7 +2,9 @@
 """The DOL, package and workflow checks catch what they are for."""
 
 import contextlib
+import hashlib
 import io
+import json
 import re
 import struct
 import subprocess
@@ -65,6 +67,92 @@ class Dol(unittest.TestCase):
             self.assertEqual(cli("--revision", FULL, "--short", SHORT, "--toolchain", IMAGE), 0)
             self.assertEqual(cli("--revision", "f" * 40, "--short", SHORT, "--toolchain", IMAGE), 1)
             self.assertEqual(cli("--revision", FULL, "--short", SHORT, "--toolchain", "libogc2:latest"), 1)
+
+
+    def test_the_normal_cap_stays_exact(self):
+        self.assertEqual(verify_dol.MAX_DOL_BYTES, 17 * 1024 * 1024 // 4)
+        at_cap = dol() + bytes(verify_dol.MAX_DOL_BYTES - len(dol()))
+        self.assertEqual(verify_dol.check(at_cap, SHORT)["sections"], 1)
+        with self.assertRaises(verify_dol.Invalid):
+            verify_dol.check(at_cap + b"\0", SHORT)
+
+    def test_performance_allowance_has_an_exact_boundary(self):
+        baseline = dol() + bytes(verify_dol.MAX_DOL_BYTES - len(dol()))
+        performance = baseline + bytes(4096)
+        self.assertEqual(verify_dol.check_performance(performance, baseline, SHORT)["sections"], 1)
+        with self.assertRaises(verify_dol.Invalid):
+            verify_dol.check_performance(performance + b"\0", baseline, SHORT)
+        with self.assertRaises(verify_dol.Invalid):
+            verify_dol.check(performance, SHORT)
+
+    def test_performance_allowance_is_relative_to_its_baseline(self):
+        performance = dol() + bytes(4097)
+        self.assertLess(len(performance), verify_dol.MAX_DOL_BYTES)
+        with self.assertRaises(verify_dol.Invalid):
+            verify_dol.check_performance(performance, dol(), SHORT)
+        # Instrumentation may make other linker decisions that save bytes.
+        self.assertEqual(verify_dol.check_performance(dol(), dol() + bytes(512), SHORT)["sections"], 1)
+
+    def test_invalid_large_or_foreign_baselines_cannot_grant_room(self):
+        wrong_revision = dol().replace(SHORT.encode(), b"f" * len(SHORT))
+        oversized = dol() + bytes(verify_dol.MAX_DOL_BYTES + 1 - len(dol()))
+        for baseline in (dol()[:0x80], dol(entry=0x90000000), dol(revisions=0),
+                         wrong_revision, oversized):
+            with self.subTest(bytes=len(baseline)), self.assertRaises(verify_dol.Invalid):
+                verify_dol.check_performance(dol(), baseline, SHORT)
+
+    def test_performance_keeps_structure_and_revision_checks(self):
+        wrong_revision = dol().replace(SHORT.encode(), b"f" * len(SHORT))
+        for performance in (dol()[:0x80], dol(entry=0x90000000), dol(text_offset=0x180),
+                            dol(revisions=0), dol(revisions=2), wrong_revision):
+            with self.subTest(bytes=len(performance)), self.assertRaises((verify_dol.Invalid, struct.error)):
+                verify_dol.check_performance(performance, dol(), SHORT)
+
+    def cli(self, path: Path, *extra: str) -> int:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return verify_dol.main([str(path), "--revision", FULL, "--short", SHORT,
+                                    "--toolchain", IMAGE, *extra])
+
+    def test_cli_refuses_nonregular_or_symlink_baselines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            performance, baseline = root / "swiss-perf.dol", root / "swiss.dol"
+            performance.write_bytes(dol())
+            baseline.write_bytes(dol())
+            link = root / "linked.dol"
+            link.symlink_to(baseline)
+            for bad in (root / "missing.dol", root, link):
+                with self.subTest(path=bad.name):
+                    self.assertEqual(self.cli(performance, "--performance-baseline", str(bad)), 1)
+
+    def test_cli_provenance_adds_accounting_only_for_performance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            normal, performance, output = root / "swiss.dol", root / "swiss-perf.dol", root / "provenance.json"
+            normal.write_bytes(dol() + bytes(512))
+            performance.write_bytes(dol())
+            self.assertEqual(self.cli(normal, "--out", str(output)), 0)
+            ordinary = json.loads(output.read_text())
+            self.assertEqual(set(ordinary), {"schema", "revision", "toolchain", "dol", "run"})
+            self.assertEqual(set(ordinary["dol"]), {"bytes", "sha256", "entry_point", "sections",
+                                                  "bss_bytes", "revision_offset"})
+            self.assertEqual(self.cli(performance, "--out", str(output),
+                                      "--performance-baseline", str(normal)), 0)
+            diagnostic = json.loads(output.read_text())
+            self.assertEqual(set(diagnostic), set(ordinary) | {"performance"})
+            self.assertEqual(diagnostic["performance"], {
+                "baseline": {"bytes": len(normal.read_bytes()),
+                             "sha256": hashlib.sha256(normal.read_bytes()).hexdigest()},
+                "overhead_bytes": -512,
+                "max_overhead_bytes": 4096,
+            })
+            for bad in (dol()[:0x80], dol().replace(SHORT.encode(), b"f" * len(SHORT))):
+                performance.write_bytes(bad)
+                self.assertEqual(self.cli(performance, "--performance-baseline", str(normal)), 1)
+            performance.write_bytes(dol())
+            normal.write_bytes(dol() + bytes(verify_dol.MAX_DOL_BYTES + 1 - len(dol())))
+            self.assertEqual(self.cli(normal), 1)
+            self.assertEqual(self.cli(performance, "--performance-baseline", str(normal)), 1)
 
 
 class Package(unittest.TestCase):

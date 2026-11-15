@@ -2,6 +2,7 @@
 """The emulator test's own parts, without Dolphin: the disc, the pad, the checks."""
 
 import itertools
+import re
 import shutil
 import socket
 import struct
@@ -1904,6 +1905,19 @@ class Screen(unittest.TestCase):
         with self.assertRaises(run.Failed):  # a row it can't find among the rows before
             route.walk_rows(2, "DOWNs reach the row")
 
+    def test_folder_route_follows_the_public_library_layout_order(self):
+        # The route changes the setting with one Right between layouts. Its
+        # names and title regions must follow today's actual Settings list,
+        # without walking the removed flat Horizontal option.
+        root = Path(__file__).resolve().parents[3]
+        settings = (root / "cube/swiss/source/gui/settings.c").read_text()
+        names = re.search(r'^char \*libraryLayoutStr\[\] = \{([^}]+)\};',
+                          settings, re.M).group(1)
+        self.assertEqual(list(run.FOLDER_LAYOUTS), re.findall(r'"([^"]+)"', names))
+        self.assertEqual(next(iter(run.FOLDER_LAYOUTS)), "3D Boxes")
+        self.assertEqual(run.FOLDER_LAYOUTS["3D Boxes"],
+                         (run.TITLE_BOX, "LEFT", "RIGHT"))
+
     def test_folder_layout_observes_settings_navigation_after_a_missed_tab_press(self):
         """A missed first R must not turn Setup > Library into a Defaults picker."""
         for missed in (0, 1, run.PRESSES):
@@ -1966,14 +1980,199 @@ class Screen(unittest.TestCase):
                 with mock.patch.object(run, "Deadline", ShortWait), mock.patch.object(run.time, "sleep"):
                     if missed == run.PRESSES:
                         with self.assertRaises(run.Failed):
-                            route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                            route.folder_layout([np.ones((4, 4), bool)] * 3, "3D Boxes", first=True)
                         self.assertEqual(presses.count("R"), run.PRESSES)
                         self.assertEqual(chosen, [], "a dead tab control stops before changing a setting")
                         continue
-                    route.folder_layout([np.ones((4, 4), bool)] * 3, "Horizontal", first=True)
+                    route.folder_layout([np.ones((4, 4), bool)] * 3, "3D Boxes", first=True)
                 self.assertEqual(chosen, [("Library", 1)])
                 self.assertEqual(presses.count("R"), 3 if missed else 2)
                 self.assertEqual(route.pressed_again, ["R"] if missed else [])
+
+    def test_press_syncs_to_clock_and_caps_stalled_log_flush_before_repeat(self):
+        """A full-speed press starts on a fresh report and releases at
+        PRESS_WALL_CAP when dolphin.log stalls, while a crawling emulator still
+        holds for PRESS_SECONDS of console time."""
+        with tempfile.TemporaryDirectory() as directory:
+            emulator = run.Emulator.__new__(run.Emulator)
+            emulator.log = Path(directory) / "dolphin.log"
+            ticks = [run.TICKS_PER_SECOND]
+            emulator.log.write_text(f"TICKS {ticks[0]} PC 80003100 LR 00000000\n")
+
+            now = [10.0]
+            held_at, released_at = [], []
+            current = [None]
+
+            class FakePad:
+                def hold(self, *buttons):
+                    button = buttons[0] if buttons else None
+                    if button is not None:
+                        held_at.append((now[0], ticks[0] / run.TICKS_PER_SECOND))
+                    elif current[0] is not None:
+                        released_at.append((now[0], ticks[0] / run.TICKS_PER_SECOND))
+                    current[0] = button
+
+            route = run.Route.__new__(run.Route)
+            route.emulator, route.pad = emulator, FakePad()
+
+            # 1) Stalled log flush at full speed (0.40 s wall gap after a 0.10 s report):
+            #    sync_clock sees 1.10 s, hold("RIGHT") starts, then log stalls 0.40 s;
+            #    press must release at PRESS_WALL_CAP (0.20 s < 0.32 s repeat).
+            stall_until = [None]
+
+            def stalled_sleep(dt):
+                now[0] += dt
+                if current[0] is None and ticks[0] == run.TICKS_PER_SECOND:
+                    ticks[0] += run.TICKS_PER_SECOND // 10  # 1.10 s: full_speed() is True
+                    with emulator.log.open("a") as log:
+                        log.write(f"TICKS {ticks[0]} PC 80003100 LR 00000000\n")
+                    stall_until[0] = now[0] + 0.40
+                elif stall_until[0] is not None and now[0] >= stall_until[0]:
+                    ticks[0] += int(0.40 * run.TICKS_PER_SECOND)
+                    with emulator.log.open("a") as log:
+                        log.write(f"TICKS {ticks[0]} PC 80003100 LR 00000000\n")
+                    stall_until[0] = now[0] + 0.10
+
+            with mock.patch.object(run.time, "monotonic", lambda: now[0]), \
+                 mock.patch.object(run.time, "sleep", stalled_sleep):
+                route.press("RIGHT")
+            hold_wall = released_at[0][0] - held_at[0][0]
+            self.assertGreaterEqual(hold_wall, run.PRESS_WALL_CAP)
+            self.assertLess(hold_wall, 0.25, "released well below Settings' 0.32 s repeat")
+            self.assertGreater(now[0] - released_at[0][0], 0.20, "waited with button up for stalled flush")
+
+            # 2) Crawling Dolphin (2 ms console time per 0.10 s wall): full_speed() is False,
+            #    so press("B") must NOT cap at 0.20 s wall and must hold >= PRESS_SECONDS emulated.
+            held_at.clear()
+            released_at.clear()
+            emulator.log.write_text(f"TICKS {run.TICKS_PER_SECOND} PC 80003100 LR 00000000\n")
+            ticks[0] = run.TICKS_PER_SECOND
+            next_report = [now[0] + 0.05]
+
+            def crawling_sleep(dt):
+                now[0] += dt
+                if now[0] >= next_report[0]:
+                    ticks[0] += run.TICKS_PER_SECOND // 500  # 2 ms per 0.10 s report
+                    with emulator.log.open("a") as log:
+                        log.write(f"TICKS {ticks[0]} PC 80003100 LR 00000000\n")
+                    next_report[0] = now[0] + 0.10
+
+            with mock.patch.object(run.time, "monotonic", lambda: now[0]), \
+                 mock.patch.object(run.time, "sleep", crawling_sleep):
+                route.press("B")
+            self.assertGreater(released_at[0][0] - held_at[0][0], 2.0)
+            self.assertGreaterEqual(released_at[0][1] - held_at[0][1], run.PRESS_SECONDS - 1e-6)
+
+    def test_same_text_and_rows_moved_tolerate_odd_boundary_interlaced_shift(self):
+        """PAL 576i / 480i vertical resampling can move a row's glyph edge across
+        an odd-to-even scanline boundary (row 9 -> row 10), dropping even-pair
+        overlap below SAME while odd-pair overlap stays high."""
+        def word(index: int, odd_shift: bool = False) -> np.ndarray:
+            mask = np.zeros((26, 255), bool)
+            x0 = 12 + index * 28
+            mask[8:18, x0:x0 + 36] = True
+            # Thin horizontal serifs on scanline 9 (or 10 after a half-line shift):
+            y = 10 if odd_shift else 9
+            mask[y, x0:x0 + 90] = True
+            return mask
+
+        a, b = word(0, False), word(0, True)
+        even = lambda m: m[:m.shape[0] // 2 * 2].reshape(-1, 2, m.shape[1]).any(axis=1)
+        self.assertLess(run.overlap(even(a), even(b)), run.SAME, "even pairing misses the 9->10 shift")
+        self.assertTrue(run.same_text(a, b), "odd pairing recovers the same word")
+        self.assertFalse(run.same_text(a, word(1, True)), "different words stay distinct")
+
+        before = (3, [word(n, False) for n in range(6)])
+        after = (3, [word(n + 3, True) for n in range(6)])
+        self.assertEqual(run.rows_moved(before, after), 3)
+
+    def test_flip_console_observes_tabs_and_value_steps_and_checks_apps_return(self):
+        """flip_console retries missed tab/value presses and verifies Down Face
+        returns to its observed Apps mask on 'on'."""
+        options = ("None", "Source", "Settings", "System", "Apps",
+                   "Memory Cards", "Emulators", "File Browser", "Web")
+        titles = {}
+        for idx, name in enumerate(("Quick", "Defaults", "Setup", "Console")):
+            mask = np.zeros((34, 200), bool)
+            mask[8:20, 8 + 35 * idx:38 + 35 * idx:3] = True
+            titles[name] = mask
+        values = {}
+        for idx, name in enumerate(options):
+            mask = np.zeros((26, 105), bool)
+            mask[6:20, 6 + idx * 8:26 + idx * 8] = True
+            values[name] = mask
+
+        state = {"page": "Home", "focus": 0, "idx": options.index("Apps"), "miss_right": 1}
+        presses = []
+
+        def gray():
+            frame = np.zeros((480, 640), np.uint8)
+            if state["page"] in titles:
+                x0, y0, x1, y1 = run.SETTINGS_TITLE_BOX
+                frame[y0:y1, x0:x1] = titles[state["page"]] * 255
+            first = max(0, state["focus"] - 3)
+            for slot, top in enumerate(run.SETTINGS_ROW_TOPS):
+                x = 50 + 10 * (first + slot)
+                frame[top + 8:top + 24, x:x + 8] = 255
+                if first + slot == state["focus"]:
+                    frame[top + 2:top + 30, 320:480] = 60
+                    frame[top + 8:top + 24, x + 8:x + 10] = 255
+                    vx0, vy0, vx1, vy1 = run.SETTINGS_ROW_VALUE
+                    frame[top + vy0:top + vy1, vx0:vx1] = values[options[state["idx"]]] * 255
+            return frame
+
+        def press(button, seconds=0):
+            presses.append(button)
+            if state["page"] == "Home" and button == "A":
+                state["page"], state["focus"] = "Quick", 0
+            elif button == "R":
+                state["page"] = {"Quick": "Defaults", "Defaults": "Setup"}[state["page"]]
+                state["focus"] = 0
+            elif button == "DOWN":
+                state["focus"] += 1
+            elif button == "A" and state["page"] == "Setup":
+                state["page"], state["focus"] = "Console", 0
+            elif button in ("RIGHT", "LEFT") and state["page"] == "Console":
+                if button == "RIGHT" and state["miss_right"] > 0:
+                    state["miss_right"] -= 1
+                    return
+                state["idx"] = (state["idx"] + (1 if button == "RIGHT" else -1)) % len(options)
+            elif button == "B":
+                state["page"] = "Setup" if state["page"] == "Console" else "Home"
+
+        class ShortWait:
+            def __init__(self, *args, **kwargs):
+                self.calls = 0
+
+            def expired(self):
+                self.calls += 1
+                return self.calls > 4
+
+        route = run.Route.__new__(run.Route)
+        route.checks, route.last_rgb, route.report, route.pressed_again = [], None, None, []
+        route.apps_face_value = None
+        route.emulator = mock.Mock(where=lambda: None, frame=gray)
+        route.gray, route.press, route.pause = gray, press, lambda seconds, fresh=False: None
+        route.covered = lambda *args: True
+        route.shot = lambda *args: None
+        settled = route.settled_label
+        route.settled_label = lambda *args, **kwargs: (np.ones((4, 4), bool), 0.0) \
+            if state["page"] == "Home" else settled(*args, **kwargs)
+
+        settings_face = np.ones((4, 4), bool)
+        with mock.patch.object(run, "Deadline", ShortWait), mock.patch.object(run.time, "sleep"):
+            route.flip_apps_face(settings_face, "off")
+            self.assertEqual(options[state["idx"]], "None")
+            self.assertEqual(route.pressed_again, ["RIGHT"])
+            route.flip_apps_face(settings_face, "files")
+            self.assertEqual(options[state["idx"]], "File Browser")
+            route.flip_apps_face(settings_face, "on")
+            self.assertEqual(options[state["idx"]], "Apps")
+
+            # Drift by +1 (e.g. landing on Source instead of Apps) is caught on "on":
+            state["idx"] = options.index("Web")  # 3 LEFTs from Web -> Memory Cards != Apps
+            with self.assertRaises(run.Failed):
+                route.flip_apps_face(settings_face, "on")
 
     def test_fatal_lines(self):
         with tempfile.TemporaryDirectory() as directory:

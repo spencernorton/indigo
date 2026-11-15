@@ -13,11 +13,11 @@ def driver() -> str:
     assert hashlib.sha256(reference.encode()).hexdigest() == REFERENCE_SHA
     hooks = r'''
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 static unsigned allocationCall, failAllocation, liveAllocations;
 static void *assetMalloc(size_t n) { if(++allocationCall==failAllocation)return NULL;void *p=malloc(n);if(p)liveAllocations++;return p; }
 static void *assetCalloc(size_t n,size_t b) { if(++allocationCall==failAllocation)return NULL;void *p=calloc(n,b);if(p)liveAllocations++;return p; }
-static void *assetMemalign(size_t a,size_t n) { if(++allocationCall==failAllocation)return NULL;void *p=memalign(a,n);if(p)liveAllocations++;return p; }
+static void *assetMemalign(size_t a,size_t n) { if(++allocationCall==failAllocation)return NULL;void *p=NULL;if(posix_memalign(&p,a,n))return NULL;liveAllocations++;return p; }
 static void *assetRealloc(void *old,size_t n) { if(++allocationCall==failAllocation)return NULL;void *p=realloc(old,n);if(p&&!old)liveAllocations++;return p; }
 static void assetFree(void *p) { if(p){assert(liveAllocations);liveAllocations--;}free(p); }
 #define malloc assetMalloc

@@ -756,6 +756,10 @@ static void testLibraryLayoutPoses(void)
 	settle(0.02f, UI_MOTION_FULL);
 	CHECK(UIScene_Frame()->cubeX < verticalX - 1.5f);
 	near(UIScene_Frame()->libraryReveal, 1.0f, 0.0f);
+	UIScene_RequestLibraryLayout(UI_GAMEFLOW_LAYOUT_BOXES);
+	settle(0.02f, UI_MOTION_FULL);
+	CHECK(UIScene_Frame()->cubeX < verticalX - 1.5f);
+	near(UIScene_Frame()->libraryReveal, 1.0f, 0.0f);
 	UIScene_Request(UI_SCENE_HOME); settle(0.02f, UI_MOTION_FULL);
 	near(UIScene_Frame()->cubeX, 0.0f, 0.002f);
 	/* Away from the Library a new layout moves nothing. */

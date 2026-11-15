@@ -462,7 +462,8 @@ static void retargetPose(uiSceneId_t scene, uiMotionMode_t motionMode)
 	else if(scene == UI_SCENE_LIBRARY &&
 		(state.libraryLayout == UI_GAMEFLOW_LAYOUT_GRID ||
 		state.libraryLayout == UI_GAMEFLOW_LAYOUT_SPOTLIGHT ||
-		state.libraryLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE)) {
+		state.libraryLayout == UI_GAMEFLOW_LAYOUT_JEWEL_CASE ||
+		state.libraryLayout == UI_GAMEFLOW_LAYOUT_BOXES)) {
 		/* The perspective widens with the stage. Keep the parked cube
 		 * beyond the actual left edge, including Menu Widescreen. */
 		resolvedHomePose = gridLibraryPose;

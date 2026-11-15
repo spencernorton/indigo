@@ -73,7 +73,7 @@ UI_PERF		?= 0
 # Source paths are relative so the DOL is the same wherever it is built.
 CFLAGS		= -g -Os -flto -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(shell git log -1 --format=%ct)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
 CFLAGS += -DUI_EXPERIMENTAL_540P=$(UI_540P)
-CXXFLAGS	= $(CFLAGS)
+CXXFLAGS	= $(CFLAGS) -fno-exceptions -fno-rtti
 
 ASFLAGS		= $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY $(INCLUDE)
 # One LTO partition keeps the size policy independent of build parallelism.

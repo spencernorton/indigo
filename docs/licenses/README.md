@@ -2,12 +2,12 @@
 
 ## lwIP
 
-lwip.txt preserves the licence header from libogc2 f0a7627's lwip/core/udp.c,
-part of the SDK pinned by Indigo. The legacy distribution and SD-card ZIP
-include it. This SDK predates the separate gamecube/share/licenses/lwip/COPYING
-file expected by newer Swiss, so packaging reads this vendored copy instead.
+lwip.txt preserves the BSD 3-clause licence notice of the lwIP stack bundled
+with the pinned libogc2 SDK, normalized without trailing whitespace. Both the
+legacy distribution and `buildtools/sd_package.sh` copy this tracked file so
+host and CI package checks work without requiring `$DEVKITPRO` on the host.
 
-Source: https://github.com/extremscorner/libogc2/blob/f0a7627/lwip/core/udp.c
+Source: https://github.com/extremscorner/libogc2/blob/cb7745aa099e65c0a3295f482f691ad63ba7b730/lwip/COPYING
 
 ## Noto Sans
 

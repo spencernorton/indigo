@@ -1708,10 +1708,6 @@ msgid "Web"
 msgstr "Інтернет"
 
 #: cube/swiss/source/gui/settings.c:106
-msgid "Horizontal"
-msgstr "Горизонтальний"
-
-#: cube/swiss/source/gui/settings.c:106
 msgid "Vertical"
 msgstr "Вертикальний"
 
@@ -1726,6 +1722,10 @@ msgstr "У фокусі"
 #: cube/swiss/source/gui/settings.c:106
 msgid "Jewel Case"
 msgstr "Футляр"
+
+#: cube/swiss/source/gui/settings.c:107
+msgid "3D Boxes"
+msgstr "3D-коробки"
 
 #: cube/swiss/source/gui/settings.c:108
 msgid "Full"
@@ -2447,7 +2447,7 @@ msgstr ""
 msgid ""
 "Library Layout:\n"
 "\n"
-"Horizontal - A row of covers; Left and Right move (default)\n"
+"3D Boxes - Game cases with depth; Left and Right move (default)\n"
 "Vertical - A column of covers; Up and Down move\n"
 "Grid - Rows of five covers; every direction moves\n"
 "Spotlight - A gameplay still over banners; Left and Right move\n"
@@ -2461,7 +2461,7 @@ msgid ""
 msgstr ""
 "Вигляд Бібліотеки:\n"
 "\n"
-"Горизонтальний - Ряд обкладинок; рух Вліво і Вправо (типово)\n"
+"3D-коробки - Об'ємні коробки ігор; рух Вліво і Вправо (типово)\n"
 "Вертикальний - Стовпчик обкладинок; рух Вгору і Вниз\n"
 "Сітка - Ряди по п'ять обкладинок; рух у всі боки\n"
 "У фокусі - Кадр із гри над банерами; рух Вліво і Вправо\n"

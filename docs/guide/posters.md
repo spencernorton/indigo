@@ -12,8 +12,11 @@ stills or disc art, so they do not compete with the pictures on screen;
 returning to that layout resumes them.
 
 <p align="center">
-  <img alt="1080° Avalanche in the Library twice: on the left without a poster pack, a card with its disc banner and game ID, GTEE01; on the right with one, its box art." src="images/posters-compare.png" width="640">
+  <img alt="The former Horizontal Library view compares 1080° Avalanche without a poster pack, showing its disc banner and game ID, GTEE01, and with a pack, showing its box art. The same artwork fallback now appears on the front of a 3D case." src="images/posters-compare.png" width="640">
 </p>
+
+This comparison shows the former Horizontal view; 3D Boxes uses the same
+poster and banner fallback on the case front.
 
 ## Download the pack
 
@@ -51,7 +54,7 @@ You can make a pack from your own cover images, from this repository:
 
    ```bash
    python3 -m pip install pillow
-   docker pull ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2
+   docker pull ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565
    python3 buildtools/ui/poster_pack.py --covers ~/covers --out posters.pak
    ```
 
@@ -60,6 +63,18 @@ You can make a pack from your own cover images, from this repository:
 
 A pack holds up to 2,048 covers. Indigo 2.0 and earlier read up to 1,024 and
 show banners with a bigger pack.
+
+## 3D Boxes
+
+The default **3D Boxes** Library layout replaces Horizontal and uses the
+same `posters.pak`; no extra pack is needed. Each front cover sits on the
+front of a case, with plain case edges drawn separately. Games without a
+cover keep their disc banner card on the front.
+
+Use flat front-cover images when building a pack. A picture that already
+includes a perspective view of a spine will still show that spine within
+the front artwork. Printed spine and back artwork are not supported by the
+current pack.
 
 ## Gameplay stills
 

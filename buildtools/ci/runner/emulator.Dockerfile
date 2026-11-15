@@ -4,9 +4,9 @@
 # software OpenGL, FFmpeg and the Python the harness in buildtools/ui/emulator/
 # uses, the FAT tools that make its SD card, gxtexconv for the demonstration
 # disc's posters, and a GitHub Actions runner that takes one job.
-FROM ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 AS toolchain
+FROM ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 AS toolchain
 
-FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944 AS dolphin
+FROM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c AS dolphin
 
 ENV DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 TZ=UTC
 
@@ -39,7 +39,7 @@ RUN cd /src && git apply patches/0001-sd2sp2-adapter.patch patches/0002-flush-sd
  && cmake --install /build \
  && strip /opt/dolphin/bin/dolphin-emu-nogui
 
-FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944
+FROM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c
 
 ENV DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 TZ=UTC
 

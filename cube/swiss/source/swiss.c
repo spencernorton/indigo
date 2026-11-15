@@ -4877,13 +4877,14 @@ static void filesOpenDetail(file_handle **directory, uiDrawObj_t **filePanel)
 	UIScene_Request(filesScene);
 }
 
-/* The Library's layout from Setup; anything unknown is the carousel. */
+/* The saved default (formerly Horizontal) now uses the 3D carousel. Keep
+ * the other saved indices stable; Apps resolves this to its own flat row. */
 uiGameflowLayout_t gameflowLayout(void)
 {
 	return swissSettings.libraryLayout > UI_GAMEFLOW_LAYOUT_HORIZONTAL &&
-		swissSettings.libraryLayout < UI_GAMEFLOW_LAYOUT_COUNT ?
+		swissSettings.libraryLayout < UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT ?
 		(uiGameflowLayout_t)swissSettings.libraryLayout :
-		UI_GAMEFLOW_LAYOUT_HORIZONTAL;
+		UI_GAMEFLOW_LAYOUT_BOXES;
 }
 
 /* The stick follows the layout: across the carousel, up and down the

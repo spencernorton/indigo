@@ -5,6 +5,7 @@
 #include <time.h>
 #include <malloc.h>
 #include <gccore.h>
+#include <ogc/aram.h>
 #include <ogc/exi.h>
 #include <ogc/libversion.h>
 #include <ogc/machine/processor.h>
@@ -93,8 +94,7 @@ static void infoGetDeviceInfoString(u32 location, char *out, size_t capacity)
 		}
 	}
 	else if(device == &__device_aram) {
-		formatBytes(out, __io_aram.numberOfSectors * __io_aram.bytesPerSector,
-			0, false);
+		formatBytes(out, AR_GetExpansionSize(), 0, false);
 		infoAppend(out, capacity, " ");
 		infoAppend(out, capacity, device->hwName);
 	}

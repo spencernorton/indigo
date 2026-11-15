@@ -137,7 +137,7 @@ is one, and where the console's CPU was.
 
 The **folders route** (`--route folders`) uses the build's exact SD-card zip
 on a fresh SD2SP2 FAT image, an NTSC console and component video. Through
-Settings it walks Horizontal, Vertical, Grid and Spotlight. `Nintendo.GC`
+Settings it walks 3D Boxes, Vertical, Grid, Spotlight and Jewel Case. `Nintendo.GC`
 is empty; `Racing.v1/Classics.Set/Old.Saves.v2` holds direct and flattened
 games. Each dotted ancestor and the multiple dots in the final component
 are ordinary folder names. A sibling `Racing.v1.png` becomes the folder's

@@ -2,12 +2,12 @@
 
 # Library
 
-The Library shows the games on your source as posters: in a row, in a column
-or in a grid, or as a gameplay still over a row of disc banners, as you
-choose. On Home, turn the cube to **Library** and press A.
+The Library shows the games on your source as posters, gameplay stills,
+clear jewel cases or 3D game boxes, as you choose. On Home, turn the cube to
+**Library** and press A.
 
 <p align="center">
-  <img alt="The Library: moving right through the James Bond games to 1080° Avalanche, each cover raised in turn between two covers either side, with its title and publisher below; A opens its details, B returns to the Library, and 1080° Avalanche is still selected." src="images/library-browse.png" width="640">
+  <img alt="The default 3D Boxes Library: Astral Circuit's front cover faces forward in the middle, with two game cases angled inward on each side and their plain case edges visible. Its title and publisher sit below the cover, above the controller hints." src="images/library-boxes.png" width="640">
 </p>
 
 For a game with two or more save copies, the [game details](game-details.md)
@@ -28,13 +28,12 @@ Library, sets how the Library lays out your games. Left and Right on it step
 through the five, A lists them, and the line above the buttons says how each
 one moves.
 
-<p align="center">
-  <img alt="Settings, Setup, Library: Library Layout, the first row, reads Horizontal, with Library Folders, Saves on Details, Recent List, Load at startup and Flatten directory below it; the line above the buttons reads A row of covers; Left and Right move (default)." src="images/library-layout-setting.png" width="640">
-</p>
-
-- **Horizontal**, the default: a row of covers, two either side of the
-  game in the middle. That one is raised, with its title and publisher
-  underneath, as the disc's own banner gives them.
+- **3D Boxes**, the default: a carousel of GameCube-style game cases. The
+  selected cover faces you, with its title and publisher underneath; the
+  cases beside it turn inward, showing their depth. It uses the existing
+  [poster pack](posters.md#3d-boxes), with plain case edges. Games without a
+  cover keep their banner card on the front. Left and Right move through the
+  cases; their motion follows **UI Motion**, including Reduced and Off.
 - **Vertical**: a column of covers down the left of the screen, turning like
   a wheel. The selected cover is large, with its title, publisher and game ID
   beside it.
@@ -64,6 +63,10 @@ one moves.
   [Swiss](https://github.com/portlandhodl/swiss-gc), itself after Ann
   Nguyen's [CD Case](https://www.bubbbly.com/cd-case).
 
+3D Boxes replaces the former Horizontal view. A saved **Horizontal** choice
+opens 3D Boxes automatically; the other saved layouts keep their choices.
+[Apps](apps.md) still uses its flat row of posters with 3D Boxes selected.
+
 <p align="center">
   <img alt="The Jewel Case layout: a clear CD jewel case in the middle of the screen, tilted a little, holding the demonstration game Dune Rally's disc, green with rings, a pale block and a row of small marks, turning slowly, with GAME LIBRARY above and the game's title and publisher below. Right swaps it: the case falls back to the left and fades as Ember and Ivy's case swings out to the right and lands in front, its disc printed with the middle of the game's blue cover, as the pack has no disc for it; Right again brings in Glacier Point's magenta disc the same way." src="images/library-jewel-case.png" width="640">
 </p>
@@ -80,14 +83,15 @@ one moves.
   <img alt="The Grid layout: five covers across and three rows on screen, the selected cover lit by a bright frame and a little larger, with its title and publisher above the controls. The frame slides right along the row, the rows scroll as it moves down and back up, and R moves three rows at a time." src="images/library-grid.png" width="640">
 </p>
 
-Grid, Spotlight and Jewel Case fill the Library screen; the Home cube waits
-outside the picture in both screen shapes, including Menu Widescreen.
+Grid, Spotlight, Jewel Case and 3D Boxes fill the Library screen; the Home
+cube waits outside the picture in both screen shapes, including Menu
+Widescreen.
 
 Every layout wraps round: after the last game comes the first.
 
 ## Moving around
 
-| To move | Horizontal, Spotlight, Jewel Case | Vertical | Grid |
+| To move | 3D Boxes, Spotlight, Jewel Case | Vertical | Grid |
 | --- | --- | --- | --- |
 | To the next or previous game | Left, Right | Up, Down | Left, Right |
 | To the game above or below | | | Up, Down |

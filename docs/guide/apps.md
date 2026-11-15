@@ -113,9 +113,12 @@ Boy Interface) share one and stand apart from the rest.
 
 On Home, turn the cube to **Apps** and press A. The apps show as posters in
 the layout you chose for the Library (Settings › Setup › Library › Library
-Layout), and move the same way:
+Layout), and move the same way. **3D Boxes**, **Spotlight** and **Jewel Case**
+keep Apps in its flat row of posters; **Vertical** and **Grid** use their
+column and grid. An older saved **Horizontal** choice uses the same flat
+row in Apps.
 
-| To move | Horizontal | Vertical | Grid |
+| To move | 3D Boxes, Spotlight, Jewel Case | Vertical | Grid |
 | --- | --- | --- | --- |
 | To the next or previous app | Left, Right | Up, Down | Left, Right |
 | To the app above or below | | | Up, Down |

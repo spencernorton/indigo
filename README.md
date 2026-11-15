@@ -69,28 +69,32 @@ Settings › Quick › Menu Music turns it off.
 **The library retains its posters.** The games in `/games` on the current
 source, with artwork kept across navigation rather than re-read per frame,
 and your selection restored when you come back from a game's details. It
-opens as a row, with two covers either side of the game in the middle; it
-can also be a column with the title beside the cover, a grid five covers
+opens in **3D Boxes**: GameCube-style cases with the selected front facing
+you and two neighbors angled inward on either side. This replaces the
+Horizontal view; existing Horizontal settings open 3D Boxes automatically.
+It can also be a column with the title beside the cover, a grid five covers
 wide, Spotlight: the selected game's gameplay still and description over
 a row of disc banners, a design that comes from mvizensk's
 [Gameplay Spotlight](https://github.com/mvizensk/gameplay-spotlight), with
 their permission, or Jewel Case: one clear CD jewel case at a time, the
 game's own disc spinning inside, from portlandhodl's
 [Swiss](https://github.com/portlandhodl/swiss-gc) after Ann Nguyen's
-[CD Case](https://www.bubbbly.com/cd-case) (Setup › Library › Library
-Layout). Y on a game opens its own settings. Cover art comes from a
+[CD Case](https://www.bubbbly.com/cd-case) (Setup › Library › Library Layout).
+3D Boxes uses the existing front covers, with plain case edges drawn
+separately. Y on a game opens its own settings. Cover art comes from a
 ready-made pack or one you build yourself (see [Posters](#posters)); without
 one, each game gets a card with its disc banner.
 
 <p align="center">
-  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/library-still.png"><img src="docs/demos/library.gif" alt="The game library in its four layouts in turn. Horizontal: a row of GameCube box art, the selected cover raised between two covers either side, with its title and publisher below it; two steps right. Vertical: a column of covers down the left, the selected one large with its title, publisher and game ID beside it; three steps down. Grid: five covers across and three rows on screen, a lit frame moving right, right, down and down. Spotlight: the selected game's gameplay still fills a framed panel, with its title, publisher, a few sentences about it and its game ID beside it, over a row of disc banners; two steps right bring 007: Everything or Nothing's and From Russia With Love's stills and text." width="640"></picture>
+  <img src="docs/guide/images/library-boxes.png" alt="The default 3D Boxes Library: Astral Circuit's cover faces forward in the middle, with two neighboring game cases angled inward on either side and plain case edges visible. The title and publisher sit below the cover." width="640">
 </p>
 
 **Apps keeps your other programs apart.** Emulators, Game Boy Interface,
 tools: put their `.dol` files in `/apps` and they get their own face of the
 cube, shown as posters and started the way games are, never mixed in with
 your games. Each app's picture is any PNG you put beside it (`gbi.png` for
-`gbi.dol`); Indigo turns it into a poster on the console. See
+`gbi.dol`); Indigo turns it into a poster on the console. With 3D Boxes
+selected, Apps keeps its flat row of posters. See
 [Apps](docs/guide/apps.md).
 
 **Change Source shows the devices themselves.** Choose it on the Source
@@ -235,7 +239,7 @@ support; the pinned Docker image includes them:
 git clone https://github.com/spencernorton/indigo.git
 cd indigo
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 make dev
+  ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 make dev
 # writes cube/swiss/swiss.dol inside this folder, on your computer
 ```
 
@@ -296,7 +300,7 @@ repository, and copy it to `/swiss/ui/posters.pak` on the card:
 
 ```bash
 python3 -m pip install pillow
-docker pull ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2
+docker pull ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565
 python3 buildtools/ui/poster_pack.py --covers ~/covers --out posters.pak
 ```
 
@@ -370,7 +374,7 @@ be checked in advance.
 
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  ghcr.io/extremscorner/libogc2@sha256:f9ffb7e33c4ba4010da8e40c01366f7c24732130146abd99690403bd42d3e4c2 make dev   # the DOL, as CI builds it
+  ghcr.io/extremscorner/libogc2@sha256:7c91503254afcf0acebc8edb6f81fc8535860c42ae31ca33dd1573464eb12565 make dev   # the DOL, as CI builds it
 buildtools/ui/tests/run_tests.sh all          # host tests: plain, sanitized, contracts
 buildtools/check_whitespace.sh origin/beta    # lint
 python3 buildtools/ci/check_upstream.py       # upstream's files match UPSTREAM

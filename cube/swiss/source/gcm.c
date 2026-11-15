@@ -330,7 +330,7 @@ int parse_gcm(file_handle *file, file_handle *file2, ExecutableFile *filesToPatc
 			memcpy(&file_offset,&FST[offset+4],4);
 			memcpy(&size,&FST[offset+8],4);
 			if(endsWith(filename,".dol")) {
-				if(strcasecmp(filename,"ffe.dol") && strcasecmp(filename,"game_mainmenu.dol")) {
+				if(strcasecmp(filename,"ffe.dol") && strcasecmp(filename,"frontend.dol") && strcasecmp(filename,"game_mainmenu.dol")) {
 					// Some games contain a single "default.dol", these do not need 
 					// pre-patching because they are what is actually pointed to by the apploader (and loaded by us)
 					if(dolOffset == file_offset || dolSize == size || !valid_dol_file(file, file_offset, size)) {
@@ -693,9 +693,7 @@ int patch_gcm(ExecutableFile *filesToPatch, int numToPatch) {
 			
 			// Make /swiss/, it'll likely exist already anyway.
 			ensure_path(DEVICE_PATCHES, "swiss", NULL, true);
-			
-			// If the old directory exists, lets move it to the new location (swiss_patches is now just patches under /swiss/)
-			ensure_path(DEVICE_PATCHES, "swiss/patches", "swiss_patches", false);	// TODO kill this off in our next major release.
+			ensure_path(DEVICE_PATCHES, "swiss/patches", NULL, false);
 			ensure_path(DEVICE_PATCHES, "swiss/patches/game", NULL, false);
 			
 			// File handle for a patch we might need to write

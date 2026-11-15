@@ -170,6 +170,7 @@ run_contracts() {
 	python3 ./test_page_tabs_gx_stream.py
 	echo "== native stroke GX stream and perspective coverage =="
 	python3 ./test_stroke_gx_stream.py
+	python3 ./test_controller_outline.py
 	echo "== wave and grid native coverage =="
 	python3 ./test_background_gx_stream.py
 	echo "== turned faces' icon pictures: doubled, copied, laid on the glass =="
