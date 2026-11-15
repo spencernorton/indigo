@@ -1,3 +1,18 @@
+## 2026-11-14 — Prepare v2.9.0 for publication
+
+Name the `v2.9.0` changelog section for the 3D Boxes Library replacement, the
+macOS host-test header stand-in, the Swiss `4c9e30ae` integration, and the
+`libogc2 r2500` toolchain update after `v2.9.0-rc.1` (`498d46b`) published from
+`beta`. This release preparation changes documentation only; product, build,
+and test code are unchanged from `v2.9.0-rc.1`.
+
+Keep hardware validation boundaries explicit in the release notes: Dolphin runs
+cover the 3D Boxes carousel, optical handoff, and memory-card routes, while
+physical-console frame timing for 3D Boxes, physical optical-drive launch, and
+MemCard PRO GC hardware qualification on `libogc2 r2500` remain pending. Open
+`Release v2.9.0` from `beta` into `main` for maintainer sign-off before
+promotion and site regeneration.
+
 ## 2026-11-14 — Sync Swiss through 4c9e30ae and update the SDK to libogc2 r2500
 
 Move `UPSTREAM` from `d9159b02` to `4c9e30ae` together with the `libogc2
