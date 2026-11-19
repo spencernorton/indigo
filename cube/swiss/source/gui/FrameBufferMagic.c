@@ -8701,7 +8701,10 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 		}
 		if(btns & BUTTON_START) {
 			if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP)) {
-				strcpy(src, text);
+				/* The text is size long at most by construction; say so,
+				 * so a longer one can never overrun the setting. */
+				strncpy(src, text, size);
+				((char *)src)[size] = '\0';
 			}
 			else {
 				// TODO fix this stuff at some point, we're checking based on text size rather than max val of the data type.
