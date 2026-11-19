@@ -1,3 +1,36 @@
+## 2026-11-19 — Harden the updater's swap, waits and wording
+
+Fix the on-console updater's install swap never landing: the FAT,
+KunaiGC and FlippyDrive `renameFile`s copy the new name into the source
+handle, so reading `file.name` after renaming it aside yielded the
+`.bak` name — the second rename failed onto itself and the rollback
+renamed `.bak` to itself while the screen claimed nothing changed. The
+sequence now lives in the pure core (`UIUpdate_Swap`/`UIUpdate_Rollback`
+over a file-ops vtable, `gui/ui_update.c`): all three names are
+snapshotted before any rename, each handle is refilled from its
+snapshot before every call and restored on the way out, and
+`gui/update.c` passes real device ops through fresh throwaway handles.
+`test_ui_update` drives the shipped swap against a fake device that
+mutates handles that same way, refuses renames onto existing names and
+fails any chosen rename (success, fresh install, fail at each rename,
+rollback landing, rollback failing to manual). A failed install now
+names the file it stopped on and which of its `.bak`/`.new` provably
+remain, and only claims "Nothing was changed" of a boot file re-probed
+present; a swap failure's verified `.new` is discarded. Also: overall
+deadlines and B-cancel in the HTTP head/manifest waits and a whole-file
+deadline on both transports (was: idle timeout alone, so a dribbling
+server could wait forever); the head-carry bytes clamped to the
+Content-Length; a full card (`freeSpace` 0 of a known total) refused as
+full instead of unknown; `GIT_TIMESTAMP` gets a Makefile fallback of 0
+so a git-less build compiles, with `UIUpdate_Decide` treating 0 as
+unknown — never "newer", offered as older/different, and unable to
+prove a stepping-stone floor (host-tested); the missing
+`SET_UPDATE_BOOTFILE` picker row and the five updater arms in the
+settings-semantics audit allowlist; and the copy tightened to the
+truth throughout — v1 integrity is a SHA-256 from the same channel as
+the file plus two confirmations, not authentication, and rollback is
+attempted, never guaranteed (design §4.2/§5.2, guide, changelog).
+
 ## 2026-11-19 — On-console software updates over HTTP and the SMB share
 
 Add the software updater (`docs/dev/software-update-design.md`, now in-tree):

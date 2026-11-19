@@ -17,9 +17,12 @@ tag on `beta`. The newest changes are at the top until their release is named.
   File** says which of `ipl.dol`, `boot.dol` or `apps/indigo.dol` an update
   replaces (Auto finds the one on the Configuration Device). Nothing runs
   until you press one of the two rows: the download lands beside the file
-  it replaces, is proven against its update list's SHA-256 and read back
+  it replaces, is checked against its update list's SHA-256 and read back
   whole before anything is installed, and two questions — download, then
-  install — stand in its way. The file it replaces stays beside it as
+  install — stand in its way. List and file arrive over the same channel,
+  so the check proves the download matches its list, not who published
+  it; the install question shows the hash to compare with the release
+  page. The file it replaces stays beside it as
   `.bak`, so going back is one rename on a computer. Each release now also
   attaches its update files (`indigo-<version>.dol`,
   `apploader-<version>.img` and the channel's list) and its provenance

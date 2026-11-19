@@ -151,13 +151,113 @@ const char *UIUpdate_ChannelName(int channel)
 ui_update_decision_t UIUpdate_Decide(const ui_update_manifest_t *manifest,
 	const char *runningCommit7, int64_t runningBuildTime)
 {
+	/* Unknown (0, a build without git) is before every floor: the
+	 * stepping stone goes on from a computer first, as it safely can. */
 	if(manifest->hasMinBuild && runningBuildTime < manifest->minBuildTime)
 		return UI_UPDATE_DECIDE_MIN_BUILD;
 	if(runningCommit7 != NULL && strncmp(manifest->commit, runningCommit7, 7) == 0)
 		return UI_UPDATE_DECIDE_CURRENT;
-	if(manifest->buildTime > runningBuildTime)
+	/* Unknown is never "newer": offered as older/different, warned. */
+	if(runningBuildTime > 0 && manifest->buildTime > runningBuildTime)
 		return UI_UPDATE_DECIDE_NEWER;
 	return UI_UPDATE_DECIDE_OLDER;
+}
+
+/* One handle's name, copied where a rename cannot reach it. A name with
+ * no end inside its buffer is not a name this swap will touch. */
+static bool snapshotName(char *out, const char *handle, size_t capacity)
+{
+	size_t length = 0;
+
+	if(capacity == 0 || capacity > UI_UPDATE_NAME_MAX)
+		return false;
+	while(length < capacity && handle[length] != '\0')
+		length++;
+	if(length >= capacity)
+		return false;
+	memcpy(out, handle, length + 1u);
+	return true;
+}
+
+static void setHandle(char *handle, const char *name)
+{
+	strcpy(handle, name);
+}
+
+/* The handles go back to naming what they named on the way in, whatever
+ * the renames left in them, so the caller's later stat/delete/message
+ * still talks about the same three files. */
+static void restoreHandles(char *file, char *staged, char *backup,
+	const char *fileName, const char *stagedName, const char *backupName)
+{
+	if(file != NULL && fileName != NULL)
+		setHandle(file, fileName);
+	if(staged != NULL && stagedName != NULL)
+		setHandle(staged, stagedName);
+	if(backup != NULL && backupName != NULL)
+		setHandle(backup, backupName);
+}
+
+ui_update_swap_t UIUpdate_Swap(const ui_update_swap_ops_t *ops,
+	char *file, char *staged, char *backup, size_t capacity, bool present)
+{
+	char fileName[UI_UPDATE_NAME_MAX];
+	char stagedName[UI_UPDATE_NAME_MAX];
+	char backupName[UI_UPDATE_NAME_MAX];
+	ui_update_swap_t result = UI_UPDATE_SWAP_FAIL;
+
+	if(ops == NULL || ops->deleteFile == NULL || ops->renameFile == NULL ||
+		file == NULL || staged == NULL || backup == NULL)
+		return UI_UPDATE_SWAP_FAIL;
+	/* Every name, copied before any rename can overwrite its handle. */
+	if(!snapshotName(fileName, file, capacity) ||
+		!snapshotName(stagedName, staged, capacity) ||
+		!snapshotName(backupName, backup, capacity))
+		return UI_UPDATE_SWAP_FAIL;
+
+	setHandle(backup, backupName);
+	(void)ops->deleteFile(ops->ctx, backup, capacity);
+	if(present) {
+		setHandle(file, fileName);
+		if(ops->renameFile(ops->ctx, file, capacity, backupName) != 0)
+			goto out; /* nothing moved: the old file never left */
+	}
+	setHandle(staged, stagedName);
+	if(ops->renameFile(ops->ctx, staged, capacity, fileName) != 0) {
+		if(!present)
+			goto out; /* nothing was moved aside to put back */
+		setHandle(backup, backupName);
+		result = ops->renameFile(ops->ctx, backup, capacity, fileName) == 0 ?
+			UI_UPDATE_SWAP_FAIL : UI_UPDATE_SWAP_MANUAL;
+		goto out;
+	}
+	result = UI_UPDATE_SWAP_OK;
+out:
+	restoreHandles(file, staged, backup, fileName, stagedName, backupName);
+	return result;
+}
+
+bool UIUpdate_Rollback(const ui_update_swap_ops_t *ops,
+	char *file, char *backup, size_t capacity, bool present)
+{
+	char fileName[UI_UPDATE_NAME_MAX];
+	char backupName[UI_UPDATE_NAME_MAX];
+	bool restored;
+
+	if(!present)
+		return true; /* nothing was moved aside */
+	if(ops == NULL || ops->deleteFile == NULL || ops->renameFile == NULL ||
+		file == NULL || backup == NULL)
+		return false;
+	if(!snapshotName(fileName, file, capacity) ||
+		!snapshotName(backupName, backup, capacity))
+		return false;
+	setHandle(file, fileName);
+	(void)ops->deleteFile(ops->ctx, file, capacity);
+	setHandle(backup, backupName);
+	restored = ops->renameFile(ops->ctx, backup, capacity, fileName) == 0;
+	restoreHandles(file, NULL, backup, fileName, NULL, backupName);
+	return restored;
 }
 
 /* One manifest value into its field. False is a broken manifest; the two

@@ -287,11 +287,13 @@ With a network adapter fitted, **Check for updates** and **Update from SMB
 share** can replace Indigo where it sits, without taking the card out.
 Nothing runs in the background: an update starts only when you press one of
 the two rows, asks before it downloads, checks the download against its
-update list (the install question shows the start of its SHA-256, the same
-start the release page shows, so you can compare them on a computer), and
-asks again before it installs. The file it replaced stays beside the new
-one with `.bak` at the end of its name. The update settings take effect
-straight away, whether or not you have saved them yet.
+update list, and asks again before it installs. The list and the file come
+from the same place, so that check (its SHA-256) proves the download
+matches its list — it cannot prove who published them. The install
+question shows the start of the SHA-256, the same start the release page
+shows: compare them on a computer before you install. The file it replaced
+stays beside the new one with `.bak` at the end of its name. The update
+settings take effect straight away, whether or not you have saved them yet.
 
 For **Update from SMB share**, put the release's update files (the
 `indigo-….dol`, `apploader-….img` and `stable.txt` — or `rc.txt` — from its
@@ -316,8 +318,12 @@ new file takes the old one's place can leave the name empty for a moment;
 if the console then starts something else, put the old Indigo back on a
 computer by renaming `ipl.dol.bak` (or `boot.dol.bak`,
 `apps/indigo.dol.bak`) to its name without the `.bak`, and
-`swiss/patches/apploader.img.bak` the same way. The same two renames are
-how you go back to the Indigo you had, whenever you like.
+`swiss/patches/apploader.img.bak` the same way. An install that fails
+part-way tries the same rename itself and says whether it landed; if even
+that fails, the screen stays up naming the file that is missing and the
+`.bak` (and any `.new`) still on the card, so the rename above is all
+there is to do. The same two renames are how you go back to the Indigo
+you had, whenever you like.
 
 </details>
 

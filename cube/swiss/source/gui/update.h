@@ -20,7 +20,10 @@ enum update_source {
 
 /* One whole check, download, verify and install, in the press that asked:
  * it shows its own progress, asks before it downloads and again before it
- * installs, and leaves the card as it found it unless it finished. */
+ * installs, and leaves the running install in place unless it finished —
+ * except the brief moment the new file takes the old one's name, after
+ * which the .bak beside it is the way back (the guide spells out that
+ * rename, and a failed install names the exact files it left). */
 void updateRun(enum update_source source);
 
 #endif

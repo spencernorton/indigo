@@ -10,8 +10,11 @@
  * and the file it replaces stays beside it as .bak.
  *
  * The console has no TLS and no DNS (docs/SETTINGS.md), so the server is a
- * plain-HTTP IPv4 address and the manifest's SHA-256, shown for a
- * cross-check before installing, is the whole of the proof. The reading
+ * plain-HTTP IPv4 address and the manifest's SHA-256 — shown before
+ * installing so it can be compared with the release page — proves the
+ * download matches the list it arrived with. List and file travel the
+ * same channel, so that is integrity, not authentication: it does not
+ * prove who published them. The reading
  * and deciding live in gui/ui_update.c; the design is
  * docs/dev/software-update-design.md. */
 
@@ -41,6 +44,13 @@
 #define UPDATE_CHUNK (256u * 1024u)  /* the copy core's piece */
 #define UPDATE_HEAD_MAX 4096u        /* an HTTP head, whole */
 #define UPDATE_IDLE_SECONDS 10       /* wiiload's read patience */
+/* Whole-wait ceilings beside the idle one: a server dribbling a byte
+ * inside every idle window still finishes or is given up, and B is
+ * watched while waiting. The blocking connect and a single SMB read
+ * keep the stack's and the device's own bounds (the design says so). */
+#define UPDATE_HEAD_SECONDS 60       /* an HTTP head, whole */
+#define UPDATE_MANIFEST_SECONDS 60   /* the update list's body */
+#define UPDATE_TRANSFER_SECONDS 600  /* one whole file, either transport */
 #define UPDATE_APPLOADER_DIR "swiss/patches"
 #define UPDATE_APPLOADER_NAME "swiss/patches/apploader.img"
 #define UPDATE_SMB_DIR "indigo-updates"
@@ -237,31 +247,82 @@ static bool updateExists(file_handle *file)
 	return updateDevice()->statFile(file) == 0;
 }
 
-/* A failed rename after the old file moved aside: put it back, and say
- * whether even that failed. */
-static bool updateRollbackOne(update_target_t *target)
+/* B while waiting somewhere with no progress bar of its own — the same
+ * press updateProgress watches between chunks. */
+static bool updateCancelPressed(void)
 {
-	DEVICEHANDLER_INTERFACE *device = updateDevice();
-
-	if(!target->present)
-		return true; /* nothing was moved aside */
-	return device->renameFile(&target->backup, target->file.name) == 0;
+	return ((padsButtonsHeld() | padsButtonsTaken(BUTTON_B)) & BUTTON_B) != 0;
 }
 
-/* current -> .bak, then .new -> current (config_file_write's order). */
+static bool updateDeadlineHit(u64 started, unsigned int seconds)
+{
+	return diff_msec(started, SYS_GetSystemTime()) > seconds * 1000u;
+}
+
+/* The pure swap's hands (ui_update.h): each call dresses a fresh handle
+ * in the snapshot name the swap filled in, so what a handler's rename
+ * copies back into its handle (the FAT, KunaiGC and FlippyDrive
+ * handlers all do) lands in this throwaway, never in a name the swap
+ * still has to read. */
+static int updateSwapDelete(void *ctx, char *handle, size_t capacity)
+{
+	DEVICEHANDLER_INTERFACE *device = (DEVICEHANDLER_INTERFACE *)ctx;
+	file_handle file;
+
+	(void)capacity;
+	memset(&file, 0, sizeof(file));
+	strncpy(file.name, handle, PATHNAME_MAX - 1);
+	file.device = device;
+	return (int)device->deleteFile(&file);
+}
+
+static int updateSwapRename(void *ctx, char *handle, size_t capacity,
+	const char *newName)
+{
+	DEVICEHANDLER_INTERFACE *device = (DEVICEHANDLER_INTERFACE *)ctx;
+	file_handle file;
+	int renamed;
+
+	memset(&file, 0, sizeof(file));
+	strncpy(file.name, handle, PATHNAME_MAX - 1);
+	file.device = device;
+	renamed = (int)device->renameFile(&file, (char *)newName);
+	/* Mirror the handler exactly: whatever name it left in its handle
+	 * is what the swap's handle now holds (and never reads back). */
+	strncpy(handle, file.name, capacity - 1u);
+	handle[capacity - 1u] = '\0';
+	return renamed;
+}
+
+/* A file already replaced, put back; false when even that failed. */
+static bool updateRollbackOne(update_target_t *target)
+{
+	ui_update_swap_ops_t ops;
+
+	ops.ctx = updateDevice();
+	ops.deleteFile = updateSwapDelete;
+	ops.renameFile = updateSwapRename;
+	return UIUpdate_Rollback(&ops, target->file.name, target->backup.name,
+		PATHNAME_MAX, target->present);
+}
+
+/* current -> .bak, then .new -> current (UIUpdate_Swap's order). */
 static update_result_t updateSwapOne(update_target_t *target)
 {
-	DEVICEHANDLER_INTERFACE *device = updateDevice();
+	ui_update_swap_ops_t ops;
 
-	device->deleteFile(&target->backup);
-	if(target->present &&
-		device->renameFile(&target->file, target->backup.name) != 0)
-		return UPDATE_SWAP_FAIL;
-	if(device->renameFile(&target->staged, target->file.name) != 0) {
-		return updateRollbackOne(target) ?
-			UPDATE_SWAP_FAIL : UPDATE_SWAP_FAIL_MANUAL;
+	ops.ctx = updateDevice();
+	ops.deleteFile = updateSwapDelete;
+	ops.renameFile = updateSwapRename;
+	switch(UIUpdate_Swap(&ops, target->file.name, target->staged.name,
+		target->backup.name, PATHNAME_MAX, target->present)) {
+		case UI_UPDATE_SWAP_OK:
+			return UPDATE_OK;
+		case UI_UPDATE_SWAP_MANUAL:
+			return UPDATE_SWAP_FAIL_MANUAL;
+		default:
+			return UPDATE_SWAP_FAIL;
 	}
-	return UPDATE_OK;
 }
 
 static void updateDropStaging(update_run_t *run)
@@ -395,6 +456,7 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 	char request[192];
 	char *head = source->state.http.scratch;
 	size_t headLength = 0;
+	u64 started;
 	s32 socket;
 
 	*socketOut = -1;
@@ -422,12 +484,23 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 		return UPDATE_CONNECT_FAIL;
 	}
 	head[0] = '\0';
+	/* The head as a whole is bounded, and B is watched between reads:
+	 * idle patience alone lets a dribbling server wait out the user. */
+	started = SYS_GetSystemTime();
 	for(;;) {
 		int status;
 		uint32_t contentLength;
 		bool hasLength;
 		bool chunked;
 
+		if(updateCancelPressed()) {
+			net_close(socket);
+			return UPDATE_CANCELLED;
+		}
+		if(updateDeadlineHit(started, UPDATE_HEAD_SECONDS)) {
+			net_close(socket);
+			return UPDATE_TIMEOUT;
+		}
 		if(UIUpdate_ParseHttpHead(head, headLength, &status,
 			&contentLength, &hasLength, &chunked)) {
 			/* The body starts after the head's blank line. */
@@ -499,6 +572,7 @@ static update_result_t httpFetchManifest(update_source_state_t *source,
 	size_t carryLength;
 	uint32_t total;
 	size_t done;
+	u64 started;
 	s32 socket;
 	update_result_t result;
 
@@ -513,8 +587,19 @@ static update_result_t httpFetchManifest(update_source_state_t *source,
 	}
 	done = carryLength < (size_t)total ? carryLength : (size_t)total;
 	memcpy(buffer, carry, done);
+	started = SYS_GetSystemTime();
 	while(done < (size_t)total) {
-		int got = httpRecvSome(socket, buffer + done, (size_t)total - done);
+		int got;
+
+		if(updateCancelPressed()) {
+			net_close(socket);
+			return UPDATE_CANCELLED;
+		}
+		if(updateDeadlineHit(started, UPDATE_MANIFEST_SECONDS)) {
+			net_close(socket);
+			return UPDATE_TIMEOUT;
+		}
+		got = httpRecvSome(socket, buffer + done, (size_t)total - done);
 		if(got == -1) {
 			net_close(socket);
 			return UPDATE_TIMEOUT;
@@ -550,6 +635,10 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 		return result;
 	target->staged.offset = 0;
 	updateProgressStart(&pace);
+	/* Bytes that arrived with the head count toward the body, never
+	 * past its length (the manifest read clamps the same way). */
+	if(carryLength > (size_t)total)
+		carryLength = (size_t)total;
 	if(carryLength > 0) {
 		if(!updateStageWrite(target, carry, (uint32_t)carryLength)) {
 			net_close(socket);
@@ -561,6 +650,10 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 	while(done < total) {
 		uint32_t want = total - done;
 		int got;
+		if(updateDeadlineHit(pace.started, UPDATE_TRANSFER_SECONDS)) {
+			net_close(socket);
+			return UPDATE_TIMEOUT;
+		}
 		if(want > UPDATE_CHUNK)
 			want = UPDATE_CHUNK;
 		got = httpRecvSome(socket, chunk, want);
@@ -665,6 +758,12 @@ static update_result_t smbFetchFile(update_source_state_t *source,
 	while(done < expectedSize) {
 		uint32_t want = expectedSize - done;
 		s32 got;
+		/* Between chunks is all this transport can promise: one SMB
+		 * read blocks in the device until it answers. */
+		if(updateDeadlineHit(pace.started, UPDATE_TRANSFER_SECONDS)) {
+			__device_smb.closeFile(&file);
+			return UPDATE_TIMEOUT;
+		}
 		if(want > UPDATE_CHUNK)
 			want = UPDATE_CHUNK;
 		__device_smb.seekFile(&file, (s64)done, DEVICE_HANDLER_SEEK_SET);
@@ -761,7 +860,9 @@ static update_result_t updateCheckSpace(update_run_t *run, uint32_t needed)
 	if(updateDevice()->info == NULL)
 		return UPDATE_OK; /* unknown is not a refusal */
 	info = updateDevice()->info(updateDevice()->initial);
-	if(info == NULL || info->freeSpace == 0)
+	/* Nothing free on a card of a known size is a full card, not an
+	 * unknown one; only free and total both unknown (0) is unknown. */
+	if(info == NULL || (info->freeSpace == 0 && info->totalSpace == 0))
 		return UPDATE_OK;
 	if(info->freeSpace < (uint64_t)needed) {
 		char have[16];
@@ -907,8 +1008,15 @@ static void updateReportFailure(update_run_t *run, update_result_t result)
 				"The download isn't a whole\nIndigo program. Not installed.");
 			break;
 		case UPDATE_SWAP_FAIL:
-			snprintf(message, sizeof(message), "%s",
-				"The install couldn't finish.\nNothing was changed.");
+			/* "Nothing was changed" is only ever said of a boot file
+			 * proven still there; otherwise name what survives. */
+			if(updateExists(&run->dol.file))
+				snprintf(message, sizeof(message), "%s",
+					"The install couldn't finish.\nNothing was changed.");
+			else
+				snprintf(message, sizeof(message),
+					"The install couldn't finish.\n%s is missing; rename %s.bak\nback on a computer.",
+					run->dol.file.name, run->dol.file.name);
 			break;
 		default:
 			snprintf(message, sizeof(message), "%s", "The update failed.");
@@ -967,6 +1075,7 @@ void updateRun(enum update_source source)
 	const char *channel;
 	bool answered;
 	bool stagingLive = false;
+	update_target_t *failedTarget = NULL; /* the file a swap stopped on */
 
 	if(run == NULL) {
 		updateTell(D_FAIL, "Not enough memory to update.");
@@ -1132,11 +1241,12 @@ void updateRun(enum update_source source)
 	if(result != UPDATE_OK)
 		goto report;
 
-	/* Proven against the list it came with; the hash is the cross-check
-	 * against the release page, and this is the last way back. */
+	/* Matched against the list it came with (same channel, so this is
+	 * integrity, not proof of who published it); the hash is there to
+	 * cross-check against the release page. Last way back. */
 	UIUpdate_Hex16(run->manifest.sha256, hex16);
 	snprintf(message, sizeof(message),
-		"Checked. SHA-256: %s\nInstall over %s?\nA  INSTALL    B  CANCEL",
+		"Matches its update list (SHA-256 %s).\nInstall over %s?\nA  INSTALL    B  CANCEL",
 		hex16, run->dol.file.name);
 	if(!updateAsk(D_WARN, message, &answered)) {
 		result = UPDATE_CANCELLED;
@@ -1146,26 +1256,52 @@ void updateRun(enum update_source source)
 	/* The swap: apploader first, the boot file last, and no cancelling. */
 	box = DrawPublish(DrawProgressBar(true, 0,
 		"Installing\205 do not switch off."));
-	if(run->manifest.hasApploader)
+	if(run->manifest.hasApploader) {
 		result = updateSwapOne(&run->apploader);
+		if(result != UPDATE_OK)
+			failedTarget = &run->apploader;
+	}
 	if(result == UPDATE_OK) {
 		update_result_t dolResult = updateSwapOne(&run->dol);
-		if(dolResult != UPDATE_OK && run->manifest.hasApploader &&
-			dolResult != UPDATE_SWAP_FAIL_MANUAL) {
-			/* The pair travels together: put the apploader back. */
-			DEVICEHANDLER_INTERFACE *device = updateDevice();
-			device->deleteFile(&run->apploader.file);
-			updateRollbackOne(&run->apploader);
+		if(dolResult != UPDATE_OK) {
+			failedTarget = &run->dol;
+			if(run->manifest.hasApploader &&
+				dolResult != UPDATE_SWAP_FAIL_MANUAL &&
+				!updateRollbackOne(&run->apploader)) {
+				/* The pair travels together, and the apploader
+				 * would not go back either: its name is the one
+				 * now needing a computer (the boot file was
+				 * restored by its own swap). */
+				failedTarget = &run->apploader;
+				dolResult = UPDATE_SWAP_FAIL_MANUAL;
+			}
 		}
 		result = dolResult;
 	}
 	DrawDispose(box);
 	box = NULL;
 	stagingLive = false;
+	if(result == UPDATE_SWAP_FAIL)
+		updateDropStaging(run); /* old files restored; .new discarded */
 	if(result == UPDATE_SWAP_FAIL_MANUAL) {
-		snprintf(message, sizeof(message),
-			"Rename %s.bak back to\n%s on a computer to undo this.",
-			run->dol.file.name, getRelativeName(run->dol.file.name));
+		/* Say exactly what is left, from looking, so the rename on a
+		 * computer is mechanical. The handles name their files again
+		 * (the swap restores them), so these probes are truthful. */
+		update_target_t *target = failedTarget != NULL ?
+			failedTarget : &run->dol;
+		bool hasBackup = updateExists(&target->backup);
+		bool hasStaged = updateExists(&target->staged);
+
+		if(hasBackup)
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\nStill there: %s%s.\nRename it back on a computer.",
+				target->file.name, target->backup.name,
+				hasStaged ? " and the .new beside it" : "");
+		else
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\n%sPut Indigo back from a computer.",
+				target->file.name,
+				hasStaged ? "Its .new is still beside it.\n" : "");
 		updateTell(D_FAIL, message);
 		goto done;
 	}

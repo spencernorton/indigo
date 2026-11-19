@@ -344,7 +344,9 @@ Everything after bytes land in the staging file is transport-independent.
    deleted. Free space via `info()->freeSpace` (`deviceHandler.h:75-79`)
    is recorded; if known and below the manifest sizes (step 3), fail
    `NO_SPACE` before downloading a byte. (The backup is a rename, so no
-   second copy's space is needed.)
+   second copy's space is needed.) Known means what the FAT handler
+   reports: `freeSpace` 0 with a nonzero total is a **full** card and
+   refuses; only free and total both 0 (or no `info`) is unknown.
 2. **Network up.** `init_network()` (`bba.c:113-119`). False →
    `NO_NETWORK`, one message covering no-adapter/no-DHCP/no-link (the SDK
    does not distinguish them). Note this call also waits for Sync Clock
@@ -362,6 +364,11 @@ Everything after bytes land in the staging file is transport-independent.
    - otherwise (different commit, not newer) → **older/different build**:
      still offered, but the confirm box says "older than this build"
      in so many words. Never silently treat "different" as "newer".
+     A build made without git carries `GIT_TIMESTAMP` 0 (the Makefile's
+     numeric fallback, so a tarball build compiles): unknown is never
+     "newer" — it lands here, warned — and it cannot prove a
+     `MinBuildTime` floor, so a stepping stone still goes on from a
+     computer first.
 5. **Confirm #1 — download.** Shows: new `Version` + `Date`, commit (7),
    running commit (7), total size (DOL + apploader, MiB), source
    (`http://…` base or `smb:/indigo-updates/`), and the resolved absolute
@@ -388,9 +395,13 @@ Everything after bytes land in the staging file is transport-independent.
    no structural validator exists for it). Failures → `HASH_MISMATCH` /
    `IMAGE_INVALID`, `.new` files deleted, stop.
 8. **Confirm #2 — install.** Mandatory because there is no TLS: shows
-   "Verified" with the first 16 hex of the DOL's SHA-256 (the same
-   truncation the website download button shows) and the target path,
-   inviting a cross-check against the release page on a computer.
+   that the download matches its update list, with the first 16 hex of
+   the DOL's SHA-256 (the same truncation the website download button
+   shows) and the target path, inviting a cross-check against the
+   release page on a computer. Manifest and file travel the same
+   channel, so this proves integrity against corruption and casual
+   substitution — not who published them (§2, §7.3); the screen's
+   wording says "matches its update list", never "verified" alone.
    A = install, B = stop (`.new` deleted). This is the last cancel point.
 9. **Apply (no cancel, "Installing… do not switch off").** Order is
    apploader first, boot DOL last, so the single point of no return is
@@ -403,9 +414,24 @@ Everything after bytes land in the staging file is transport-independent.
      `.new`, `SWAP_FAIL`, stop (if the apploader already swapped, roll
      it back from its `.bak` first).
    - Final rename fails → **immediate rollback**: rename `.bak` back.
-     Rollback succeeds → `SWAP_FAIL` ("nothing was changed"). Rollback
-     also fails → `SWAP_FAIL_MANUAL`, a box that stays on screen naming
-     both paths ("rename `ipl.dol.bak` to `ipl.dol` on a computer").
+     Rollback succeeds → `SWAP_FAIL` ("nothing was changed" — said only
+     after re-probing that the boot file is in place; if it is somehow
+     absent the box names the missing file and its `.bak` instead).
+     Rollback also fails → `SWAP_FAIL_MANUAL`, a box that stays on
+     screen naming the file that failed and which of its `.bak`/`.new`
+     are provably still on the card ("rename `ipl.dol.bak` to `ipl.dol`
+     on a computer"). Rollback is attempted, never guaranteed: a card
+     that refuses the second rename may refuse the third.
+   - Implementation caution (found after this design was written): the
+     FAT/KunaiGC/FlippyDrive `renameFile`s copy the new name into the
+     source handle on success. The swap therefore snapshots all three
+     names before any rename, refills each handle from the snapshot
+     before every call, and never re-reads a renamed handle's name —
+     reading `file.name` after the first rename yields the `.bak` name,
+     the second rename then fails onto itself, and the naive rollback
+     renames `.bak` to itself. The sequence lives in the pure core
+     (`UIUpdate_Swap`) and is host-tested against a fake that mutates
+     handles exactly this way.
    - Power loss between the two renames leaves the boot file missing
      for a window of milliseconds: the loader's own fallback applies,
      and recovery is the same manual `.bak` rename. This window is
@@ -477,7 +503,10 @@ core so it is host-tested.
    cannot interrupt this one call. Stated, not papered over.
 2. Send `GET <path> HTTP/1.0\r\nHost: <ipv4[:port]>\r\nAccept: */*\r\n\r\n`
    (HTTP/1.0 requests close-delimited simplest-server behaviour).
-3. Read the head (≤4096 B) with `net_select` **10 s idle** timeouts.
+3. Read the head (≤4096 B) with `net_select` **10 s idle** timeouts,
+   B-cancel polled between reads, and a 60 s overall deadline for the
+   head (likewise the manifest body): idle patience alone lets a
+   dribbling server wait out the user forever.
    Parse (`UIUpdate_ParseHttpHead`, pure): status must be `200`;
    `Content-Length` is **required** and must equal the expected size
    (manifest: ≤4096; files: exactly the manifest `Size`);
@@ -488,8 +517,12 @@ core so it is host-tested.
    showing the code.
 4. Stream the body in 256 KiB chunks straight into the staging writer,
    10 s idle timeout per read, pad poll per chunk for B-cancel, SHA-256
-   incremental. Short/over-long body → `SIZE_MISMATCH`. No overall
-   deadline beyond idle timeout + cancel (a slow LAN server is legitimate).
+   incremental, and a generous 600 s whole-file deadline (a slow LAN
+   server is legitimate; an endless dribble is not). Bytes that arrived
+   with the head are clamped to the remaining Content-Length, as the
+   manifest read clamps its carry. Short/over-long body →
+   `SIZE_MISMATCH`. The SMB fetch checks the same deadline between
+   chunks — all it can promise, since one SMB read blocks in the device.
 5. `net_close` on every path. One connection per file (manifest, DOL,
    apploader = up to 3); no keep-alive, no pipelining.
 
