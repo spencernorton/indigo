@@ -1,3 +1,38 @@
+## 2026-11-19 — On-console software updates over HTTP and the SMB share
+
+Add the software updater (`docs/dev/software-update-design.md`, now in-tree):
+Settings › Setup › Network gains Update Channel, Update Server, Update Boot
+File, **Check for updates** and **Update from SMB share** as its last five
+rows (hidden with Sync Clock's trio when no adapter is fitted). Both actions
+run one synchronous pipeline in new `gui/update.c` over the pure core in
+`gui/ui_update.c` (manifest reader, newer/older decision by commit and
+build time, IPv4 channel-base grammar, HTTP head reader) and a vendored
+public-domain SHA-256 (`gui/sha256.c`): stage beside the target on the
+Configuration Device, verify the streamed hash, read back whole and prove
+hash plus `wiiload_image_valid`, then swap with `.bak` kept, apploader
+first and the boot DOL last. HTTP is plain, one connection per file, 10 s
+idle reads, HTTP/1.0, Content-Length required; SMB reuses `__device_smb`
+at fixed `smb:/indigo-updates/` paths and never lists a directory. The
+boot file resolves by probing `ipl.dol`, `boot.dol`, `apps/indigo.dol`
+(Auto) or the row's named one. Includes the `strncpy` bound on
+`DrawGetTextEntry`'s accept path (`FrameBufferMagic.c`), three
+`global.ini` keys, host tests (`test_ui_update`, settings round-trips) and
+the `update` fuzz target. `UPDATE_DEFAULT_SERVER` ships empty: no public
+plain-HTTP host exists yet, so HTTP users name their own mirror.
+
+Release side: `buildtools/update_manifest.py` writes `indigo-<tag>.dol`,
+`apploader-<tag>.img` and `stable.txt`/`rc.txt` out of the release zip for
+published tags only (with `buildtools/ci/test_update_manifest.py`);
+`release.yml` generates them after `check_package.py` and attaches them,
+plus `dist/provenance.json`, to the GitHub Release. The DOL size tripwire
+rises 4.25 → 4.5 MiB as the explicit decision its comment anticipates:
+`beta` already measured 4,456,928 B in the pinned image (480 B past the
+old line) before the updater's own share. No upstream file is touched;
+the Swiss pin-move (design §1 PR-0) stays a separate follow-up. Nothing
+here has run on hardware: the design's §12 checklist is the qualification
+path, and the download page's stale Settings pictures are noted for the
+pull request.
+
 ## 2026-11-15 — Fix GBI DOL validation (#215) and harden the CI/release gates
 
 Allow `dolxz`-packed GameCube homebrew such as Game Boy Interface (`gbi.dol`,
