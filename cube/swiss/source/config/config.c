@@ -634,6 +634,9 @@ int config_update_global(bool checkConfigDevice) {
 	fprintf(fp, "NTPSync=%s\r\n", swissSettings.ntpSync ? "Yes":"No");
 	fprintf(fp, "NTPHostIP=%s\r\n", swissSettings.ntpHostIp);
 	fprintf(fp, "TimeZone=%s\r\n", swissSettings.timeZone);
+	fprintf(fp, "UpdateChannel=%s\r\n", updateChannelStr[swissSettings.updateChannel]);
+	fprintf(fp, "UpdateServer=%s\r\n", swissSettings.updateServer);
+	fprintf(fp, "UpdateBootFile=%s\r\n", updateBootFileStr[swissSettings.updateBootFile]);
 	fprintf(fp, "LabServer=%s\r\n", swissSettings.labServer ? "Yes":"No");
 	fprintf(fp, "LogHost=%s\r\n", swissSettings.logHost);
 	fprintf(fp, "ShowHiddenFiles=%s\r\n", swissSettings.showHiddenFiles ? "Yes":"No");
@@ -1857,6 +1860,25 @@ void config_parse_global(char *configData, bool settingsFile) {
 				}
 				else if(!strcmp("TimeZone", name) || !strcmp("System Time Zone", name)) {
 					strlcpy(swissSettings.timeZone, value, sizeof(swissSettings.timeZone));
+				}
+				else if(!strcmp("UpdateChannel", name)) {
+					for(int i = 0; i < 2; i++) {
+						if(!strcmp(updateChannelStr[i], value)) {
+							swissSettings.updateChannel = i;
+							break;
+						}
+					}
+				}
+				else if(!strcmp("UpdateServer", name)) {
+					strlcpy(swissSettings.updateServer, value, sizeof(swissSettings.updateServer));
+				}
+				else if(!strcmp("UpdateBootFile", name)) {
+					for(int i = 0; i < 4; i++) {
+						if(!strcmp(updateBootFileStr[i], value)) {
+							swissSettings.updateBootFile = i;
+							break;
+						}
+					}
 				}
 				else if(!strcmp("LabServer", name)) {
 					swissSettings.labServer = !strcmp("Yes", value);

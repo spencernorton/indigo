@@ -23,6 +23,7 @@
 #include "rt4k.h"
 #include "time_sync.h"
 #include "ui_time_sync.h"
+#include "update.h"
 #include "input.h"
 #include "ui_color.h"
 #include "ui_lang.h"
@@ -38,7 +39,7 @@ _Static_assert(UI_SETLAYOUT_TAB_COUNT == VIEW_SETUP + 1, "tab count drift");
 _Static_assert(UI_SETLAYOUT_TAB_SETUP == VIEW_SETUP, "Setup tab drift");
 /* Game Defaults shows every default but the vertical offset (see gameDefaultsRows). */
 _Static_assert(UI_SETLAYOUT_ROWS_GAME_DEFAULTS == SET_DEFAULT_DEFAULTS, "defaults rows drift");
-_Static_assert(UI_SETLAYOUT_ROWS_NETWORK == SET_RT4K_PORT + 1, "network rows drift");
+_Static_assert(UI_SETLAYOUT_ROWS_NETWORK == SET_UPDATE_SMB + 1, "network rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_GAME == SET_DEFAULTS + 1, "game rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_SETUP == VIEW_DEVELOPER - VIEW_DISPLAY + 1, "Setup sections drift");
 _Static_assert((int)UI_SETLAYOUT_MOTION_FULL == (int)UI_MOTION_FULL,
@@ -106,6 +107,11 @@ _Static_assert(sizeof(rightFaceStr) / sizeof(rightFaceStr[0]) == UI_HOME_FACE_CO
 _Static_assert(sizeof(downFaceStr) / sizeof(downFaceStr[0]) == UI_HOME_FACE_COUNT, "down face names drift");
 char *libraryLayoutStr[] = {"3D Boxes", "Vertical", "Grid", "Spotlight", "Jewel Case"};
 _Static_assert(sizeof(libraryLayoutStr) / sizeof(libraryLayoutStr[0]) == UI_GAMEFLOW_LIBRARY_LAYOUT_COUNT, "library layout names drift");
+char *updateChannelStr[] = {"Stable", "Release candidate"};
+_Static_assert(sizeof(updateChannelStr) / sizeof(updateChannelStr[0]) == 2, "update channel names drift");
+/* Auto first, then the names gui/update.c probes for, in its order. */
+char *updateBootFileStr[] = {"Auto", "ipl.dol", "boot.dol", "apps/indigo.dol"};
+_Static_assert(sizeof(updateBootFileStr) / sizeof(updateBootFileStr[0]) == 4, "update boot file names drift");
 static const char *uiMotionModeStr[] = {"Full", "Reduced", "Off"};
 
 const int simulatedMemSizeInt[] = {
@@ -205,7 +211,12 @@ static char *tooltips_network[PAGE_NETWORK_MAX+1] = {
 	[SET_SMB_USER] = "SMB Username:\n\nUser name for the share.",
 	[SET_SMB_PASS] = "SMB Password:\n\nPassword for the share. It is stored as plain text in global.ini.",
 	[SET_RT4K_HOSTIP] = "RetroTINK-4K Host IP:\n\nAddress of a RetroTINK-4K on your network. Indigo switches it to\neach game's RetroTINK-4K profile.",
-	[SET_RT4K_PORT] = "RetroTINK-4K Port:\n\nPort of the RetroTINK-4K's network control."
+	[SET_RT4K_PORT] = "RetroTINK-4K Port:\n\nPort of the RetroTINK-4K's network control.",
+	[SET_UPDATE_CHANNEL] = "Update Channel:\n\nStable is the latest finished release. Release candidate is\nthe next release, for testing before it is finished.",
+	[SET_UPDATE_SERVER] = "Update Server:\n\nA computer serving Indigo's update files over plain HTTP:\nan IPv4 address, with :port and /folder if it needs them,\nsuch as 192.168.1.10:8080/indigo. Names don't work: the\nconsole has no DNS, and there is no HTTPS. The : is on the\nUPPERCASE keyboard.",
+	[SET_UPDATE_BOOTFILE] = "Update Boot File:\n\nThe Indigo file an update replaces. Auto looks for ipl.dol,\nboot.dol, then apps/indigo.dol on the Configuration Device\nand uses the one it finds; say which one if more than one\nis there.",
+	[SET_UPDATE_CHECK] = "Check for updates:\n\nAsks the Update Server whether a newer Indigo is ready.\nNothing is downloaded until you say so, and nothing is\ninstalled until its check passes and you say so again.",
+	[SET_UPDATE_SMB] = "Update from SMB share:\n\nLooks for the update files in indigo-updates on the SMB\nshare above (its server must allow SMB 1.0). Nothing is\ndownloaded until you say so, and nothing is installed\nuntil its check passes and you say so again."
 };
 
 static char *tooltips_game_global[PAGE_GAME_GLOBAL_MAX+1] = {
@@ -687,13 +698,19 @@ static const settingsRowRef_t networkRows[] = {
 	{PAGE_NETWORK, SET_SMB_PASS},
 	{PAGE_NETWORK, SET_RT4K_HOSTIP},
 	{PAGE_NETWORK, SET_RT4K_PORT},
-	/* Sync Clock's rows stay last: without a network adapter, Settings hides
-	 * them (SETTINGS_SYNC_CLOCK_ROWS, UISetLayout_HideTail). */
+	/* Sync Clock's and the updater's rows stay last: without a network
+	 * adapter, Settings hides them (SETTINGS_NETWORK_TAIL_ROWS,
+	 * UISetLayout_HideTail). */
 	{PAGE_NETWORK, SET_NTP_SYNC},
 	{PAGE_NETWORK, SET_NTP_HOSTIP},
 	{PAGE_NETWORK, SET_TIME_ZONE},
+	{PAGE_NETWORK, SET_UPDATE_CHANNEL},
+	{PAGE_NETWORK, SET_UPDATE_SERVER},
+	{PAGE_NETWORK, SET_UPDATE_BOOTFILE},
+	{PAGE_NETWORK, SET_UPDATE_CHECK},
+	{PAGE_NETWORK, SET_UPDATE_SMB},
 };
-#define SETTINGS_SYNC_CLOCK_ROWS 3
+#define SETTINGS_NETWORK_TAIL_ROWS 8
 
 /* Whether a network adapter is there, read once as Settings opens. */
 static bool settingsNetAdapter;
@@ -1189,6 +1206,11 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_SMB_PASS: rowText(row, "SMB Password:", "*****", netEnable); break;
 			case SET_RT4K_HOSTIP: rowText(row, "RetroTINK-4K Host IP:", swissSettings.rt4kHostIp, netEnable); break;
 			case SET_RT4K_PORT: rowTextNumber(row, "RetroTINK-4K Port:", swissSettings.rt4kPort, netEnable); break;
+			case SET_UPDATE_CHANNEL: rowCycle(row, "Update Channel:", updateChannelStr[swissSettings.updateChannel], netEnable); break;
+			case SET_UPDATE_SERVER: rowText(row, "Update Server:", swissSettings.updateServer[0] ? swissSettings.updateServer : UPDATE_DEFAULT_SERVER[0] ? UPDATE_DEFAULT_SERVER : "Not set", netEnable); break;
+			case SET_UPDATE_BOOTFILE: rowCycle(row, "Update Boot File:", updateBootFileStr[swissSettings.updateBootFile], netEnable); break;
+			case SET_UPDATE_CHECK: rowAction(row, "Check for updates", netEnable); break;
+			case SET_UPDATE_SMB: rowAction(row, "Update from SMB share", netEnable); break;
 		}
 	}
 	else if(page == PAGE_GAME_GLOBAL) {
@@ -1328,7 +1350,10 @@ static void settingsDescribeFocus(uiSetPageSnapshot_t *page, int view,
 		}
 		else if(row.kind == SET_ROWKIND_ACTION) {
 			if(row.enabled) {
-				hints[count++] = "A  Reset";
+				hints[count++] = (ref->page == PAGE_NETWORK &&
+					ref->option == SET_UPDATE_CHECK) ? "A  Check" :
+					(ref->page == PAGE_NETWORK &&
+					ref->option == SET_UPDATE_SMB) ? "A  Update" : "A  Reset";
 			}
 		}
 		else if(settingsIsLiveVideoRow(ref->page, ref->option)) {
@@ -1938,6 +1963,25 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			case SET_RT4K_PORT:
 				DrawGetTextEntry(ENTRYMODE_NUMERIC, "RetroTINK-4K Port", &swissSettings.rt4kPort, 5);
 			break;
+			case SET_UPDATE_CHANNEL:
+				swissSettings.updateChannel += direction;
+				swissSettings.updateChannel = (swissSettings.updateChannel + 2) % 2;
+			break;
+			case SET_UPDATE_SERVER:
+				DrawGetTextEntry(ENTRYMODE_NUMERIC|ENTRYMODE_ALPHA, "Update Server", &swissSettings.updateServer, sizeof(swissSettings.updateServer) - 1);
+			break;
+			case SET_UPDATE_BOOTFILE:
+				swissSettings.updateBootFile += direction;
+				swissSettings.updateBootFile = (swissSettings.updateBootFile + 4) % 4;
+			break;
+			case SET_UPDATE_CHECK:
+				if(direction == 0)
+					updateRun(UPDATE_SOURCE_HTTP);
+			break;
+			case SET_UPDATE_SMB:
+				if(direction == 0)
+					updateRun(UPDATE_SOURCE_SMB);
+			break;
 		}
 	}
 	else if(page == PAGE_GAME_GLOBAL) {
@@ -2422,7 +2466,9 @@ static bool settingsRowIsAction(int page, int option)
 		case PAGE_NETWORK:
 			return in_range(option, SET_BBA_LOCALIP, SET_BBA_GATEWAY) ||
 				in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
-				in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT);
+				in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT) ||
+				option == SET_UPDATE_SERVER ||
+				in_range(option, SET_UPDATE_CHECK, SET_UPDATE_SMB);
 		case PAGE_GAME_GLOBAL:
 			return option == SET_GLOBAL_DEFAULTS;
 		case PAGE_GAME_DEFAULTS:
@@ -2883,7 +2929,9 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 		return in_range(option, SET_BBA_LOCALIP, SET_BBA_GATEWAY) ||
 			(option == SET_NTP_SYNC && UITimeSync_KeepsOffset(swissSettings.timeZone)) ||
 			in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
-			in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT);
+			in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT) ||
+			option == SET_UPDATE_SERVER ||
+			in_range(option, SET_UPDATE_CHECK, SET_UPDATE_SMB);
 	}
 	if(page == PAGE_GAME_DEFAULTS && (horizontal || activate)) {
 		return option == SET_DEFAULT_AUDIO_STREAM ||
@@ -2928,7 +2976,7 @@ int show_settings_view(int view, int option, ConfigEntry *config) {
 	}
 	wait_network();
 	settingsNetAdapter = net_initialized || bba_exists(LOC_ANY);
-	UISetLayout_HideTail(VIEW_NETWORK, settingsNetAdapter ? 0 : SETTINGS_SYNC_CLOCK_ROWS);
+	UISetLayout_HideTail(VIEW_NETWORK, settingsNetAdapter ? 0 : SETTINGS_NETWORK_TAIL_ROWS);
 	if(option >= UISetLayout_RowCount(view)) {
 		option = 0;
 	}
