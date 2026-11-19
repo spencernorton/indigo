@@ -100,8 +100,10 @@ ui_update_swap_t UIUpdate_Swap(const ui_update_swap_ops_t *ops,
 	char *file, char *staged, char *backup, size_t capacity, bool present);
 
 /* Puts a file this swap already replaced back: drops the file at `file`
- * and renames `backup` onto its name. False when even that rename failed
- * (the .bak is still there for a computer to rename). */
+ * and renames `backup` onto its name; with `present` false there was no
+ * old file, so putting it back is dropping the freshly installed file.
+ * False when even that failed (the .bak, if any, is still there for a
+ * computer to rename). */
 bool UIUpdate_Rollback(const ui_update_swap_ops_t *ops,
 	char *file, char *backup, size_t capacity, bool present);
 

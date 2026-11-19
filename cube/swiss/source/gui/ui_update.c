@@ -244,8 +244,6 @@ bool UIUpdate_Rollback(const ui_update_swap_ops_t *ops,
 	char backupName[UI_UPDATE_NAME_MAX];
 	bool restored;
 
-	if(!present)
-		return true; /* nothing was moved aside */
 	if(ops == NULL || ops->deleteFile == NULL || ops->renameFile == NULL ||
 		file == NULL || backup == NULL)
 		return false;
@@ -253,6 +251,14 @@ bool UIUpdate_Rollback(const ui_update_swap_ops_t *ops,
 		!snapshotName(backupName, backup, capacity))
 		return false;
 	setHandle(file, fileName);
+	if(!present) {
+		/* Nothing was moved aside, so putting it back is taking the
+		 * freshly installed file off again; leaving it would pair
+		 * it with the other file's restored old half. */
+		restored = ops->deleteFile(ops->ctx, file, capacity) == 0;
+		restoreHandles(file, NULL, backup, fileName, NULL, backupName);
+		return restored;
+	}
 	(void)ops->deleteFile(ops->ctx, file, capacity);
 	setHandle(backup, backupName);
 	restored = ops->renameFile(ops->ctx, backup, capacity, fileName) == 0;

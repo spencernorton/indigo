@@ -1,3 +1,20 @@
+## 2026-11-19 — Pair rollback takes a first apploader back off
+
+Adversarial re-review caught the pair travelling apart in one corner:
+with no previous apploader (`present` false, so its swap leaves no
+`.bak`), a boot-file swap that then failed and restored itself left the
+fresh apploader in place — `UIUpdate_Rollback` treated "nothing moved
+aside" as a silent no-op — while the failure screen claimed "Nothing
+was changed" over the mismatched pair. Rollback of a not-present file
+now deletes the freshly installed file (that is what "put back" means
+when there was no old one), and `test_ui_update` carries the whole pair
+sequence against the shipped swap: first apploader in, boot-file
+rename failed and restored, pair rollback, old boot file alone again.
+The manual-recovery screen for a boot file stuck after the apploader
+already swapped now names both files (rename the apploader's `.bak`
+back over it, or delete a first apploader), and the swap-failure screen
+only tells the user to rename a `.bak` it has probed present.
+
 ## 2026-11-19 — Harden the updater's swap, waits and wording
 
 Fix the on-console updater's install swap never landing: the FAT,

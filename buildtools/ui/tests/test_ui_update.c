@@ -483,9 +483,37 @@ static void testSwap(void)
 	CHECK(UIUpdate_Rollback(&ops, file, backup, FAKE_NAME_MAX, true));
 	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
 	CHECK(!fakeHas(&fs, "ipl.dol.bak", NULL));
-	/* And with nothing moved aside, rollback is a silent no-op. */
-	CHECK(UIUpdate_Rollback(&ops, file, backup, FAKE_NAME_MAX, false));
 	CHECK(fs.renameCalls == 1);
+
+	/* The pair, with a FIRST apploader (nothing to move aside, so its
+	 * swap leaves no .bak): the apploader lands, the boot file's swap
+	 * then fails and restores itself, and putting the pair back must
+	 * take the fresh apploader OFF again — a new apploader beside the
+	 * restored old boot file is a mismatched pair, not "unchanged".
+	 * Renames: 1 apploader in, 2 boot file aside, 3 (failed) new boot
+	 * file in, 4 its rollback. */
+	memset(&fs, 0, sizeof(fs));
+	fakePut(&fs, "apploader.img.new", "NEWAPP");
+	fakePut(&fs, "ipl.dol", "OLD");
+	fakePut(&fs, "ipl.dol.new", "NEWDOL");
+	strcpy(file, "apploader.img");
+	strcpy(staged, "apploader.img.new");
+	strcpy(backup, "apploader.img.bak");
+	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, false) ==
+		UI_UPDATE_SWAP_OK);
+	CHECK(fakeHas(&fs, "apploader.img", "NEWAPP"));
+	fs.failMask = 1u << 3;
+	strcpy(file, "ipl.dol");
+	strcpy(staged, "ipl.dol.new");
+	strcpy(backup, "ipl.dol.bak");
+	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
+		UI_UPDATE_SWAP_FAIL);
+	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
+	strcpy(file, "apploader.img");
+	strcpy(backup, "apploader.img.bak");
+	CHECK(UIUpdate_Rollback(&ops, file, backup, FAKE_NAME_MAX, false));
+	CHECK(!fakeHas(&fs, "apploader.img", NULL));
+	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
 }
 
 static void baseIs(const char *text, bool ok, ui_update_base_err_t why,

@@ -1013,10 +1013,14 @@ static void updateReportFailure(update_run_t *run, update_result_t result)
 			if(updateExists(&run->dol.file))
 				snprintf(message, sizeof(message), "%s",
 					"The install couldn't finish.\nNothing was changed.");
+			else if(updateExists(&run->dol.backup))
+				snprintf(message, sizeof(message),
+					"The install couldn't finish.\n%s is missing; rename %s\nback on a computer.",
+					run->dol.file.name, run->dol.backup.name);
 			else
 				snprintf(message, sizeof(message),
-					"The install couldn't finish.\n%s is missing; rename %s.bak\nback on a computer.",
-					run->dol.file.name, run->dol.file.name);
+					"The install couldn't finish.\n%s is missing; put Indigo back\nfrom a computer.",
+					run->dol.file.name);
 			break;
 		default:
 			snprintf(message, sizeof(message), "%s", "The update failed.");
@@ -1291,8 +1295,32 @@ void updateRun(enum update_source source)
 			failedTarget : &run->dol;
 		bool hasBackup = updateExists(&target->backup);
 		bool hasStaged = updateExists(&target->staged);
+		/* The boot file is the one stuck, but the apploader already
+		 * swapped: restoring only the boot file would leave the new
+		 * apploader paired with the old program, so name both. */
+		bool pairSwapped = run->manifest.hasApploader &&
+			target == &run->dol;
 
-		if(hasBackup)
+		if(pairSwapped && hasBackup && run->apploader.present)
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\nRename %s back, and %s\nover %s, on a computer.",
+				target->file.name, target->backup.name,
+				run->apploader.backup.name, run->apploader.file.name);
+		else if(pairSwapped && hasBackup)
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\nRename %s back and delete\n%s on a computer.",
+				target->file.name, target->backup.name,
+				run->apploader.file.name);
+		else if(pairSwapped && run->apploader.present)
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\nPut Indigo back from a computer,\nand rename %s over %s.",
+				target->file.name, run->apploader.backup.name,
+				run->apploader.file.name);
+		else if(pairSwapped)
+			snprintf(message, sizeof(message),
+				"Install stopped: %s is missing.\nPut Indigo back from a computer,\nand delete %s.",
+				target->file.name, run->apploader.file.name);
+		else if(hasBackup)
 			snprintf(message, sizeof(message),
 				"Install stopped: %s is missing.\nStill there: %s%s.\nRename it back on a computer.",
 				target->file.name, target->backup.name,
