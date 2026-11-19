@@ -123,6 +123,7 @@ jobs:
       - name: Package the SD card zip and the notes
         env:
           TAG: ${{ steps.meta.outputs.tag }}
+          COMMIT_SHA: ${{ steps.meta.outputs.sha }}
         run: |
           buildtools/sd_package.sh "$TAG" cube/swiss/swiss.dol dist
           python3 buildtools/ci/check_package.py "dist/Indigo-$TAG.zip" \
@@ -130,6 +131,11 @@ jobs:
           (cd dist && sha256sum "Indigo-$TAG.zip" > SHA256SUMS.txt)
           buildtools/release_notes.sh "$TAG" > dist/notes.md
           cat dist/SHA256SUMS.txt
+          # The on-console updater's files, from the zip just checked:
+          # Settings > Network reads these from a server or an SMB share.
+          python3 buildtools/update_manifest.py "$TAG" "$COMMIT_SHA" \
+            "$(git log -1 --format=%ct)" "$(git log -1 --format=%cs)" \
+            "dist/Indigo-$TAG.zip" --out dist/update
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ steps.meta.outputs.tag }}
@@ -196,4 +202,6 @@ jobs:
           if [ "$PRERELEASE" = true ]; then set -- --prerelease --latest=false; else set -- --latest; fi
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "$TITLE" --notes-file dist/notes.md "$@" \
-            "dist/Indigo-$TAG.zip" dist/SHA256SUMS.txt
+            "dist/Indigo-$TAG.zip" dist/SHA256SUMS.txt dist/provenance.json \
+            "dist/update/indigo-$TAG.dol" "dist/update/apploader-$TAG.img" \
+            dist/update/*.txt

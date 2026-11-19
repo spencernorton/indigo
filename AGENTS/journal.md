@@ -1,3 +1,88 @@
+## 2026-11-19 — Pair rollback takes a first apploader back off
+
+Adversarial re-review caught the pair travelling apart in one corner:
+with no previous apploader (`present` false, so its swap leaves no
+`.bak`), a boot-file swap that then failed and restored itself left the
+fresh apploader in place — `UIUpdate_Rollback` treated "nothing moved
+aside" as a silent no-op — while the failure screen claimed "Nothing
+was changed" over the mismatched pair. Rollback of a not-present file
+now deletes the freshly installed file (that is what "put back" means
+when there was no old one), and `test_ui_update` carries the whole pair
+sequence against the shipped swap: first apploader in, boot-file
+rename failed and restored, pair rollback, old boot file alone again.
+The manual-recovery screen for a boot file stuck after the apploader
+already swapped now names both files (rename the apploader's `.bak`
+back over it, or delete a first apploader), and the swap-failure screen
+only tells the user to rename a `.bak` it has probed present.
+
+## 2026-11-19 — Harden the updater's swap, waits and wording
+
+Fix the on-console updater's install swap never landing: the FAT,
+KunaiGC and FlippyDrive `renameFile`s copy the new name into the source
+handle, so reading `file.name` after renaming it aside yielded the
+`.bak` name — the second rename failed onto itself and the rollback
+renamed `.bak` to itself while the screen claimed nothing changed. The
+sequence now lives in the pure core (`UIUpdate_Swap`/`UIUpdate_Rollback`
+over a file-ops vtable, `gui/ui_update.c`): all three names are
+snapshotted before any rename, each handle is refilled from its
+snapshot before every call and restored on the way out, and
+`gui/update.c` passes real device ops through fresh throwaway handles.
+`test_ui_update` drives the shipped swap against a fake device that
+mutates handles that same way, refuses renames onto existing names and
+fails any chosen rename (success, fresh install, fail at each rename,
+rollback landing, rollback failing to manual). A failed install now
+names the file it stopped on and which of its `.bak`/`.new` provably
+remain, and only claims "Nothing was changed" of a boot file re-probed
+present; a swap failure's verified `.new` is discarded. Also: overall
+deadlines and B-cancel in the HTTP head/manifest waits and a whole-file
+deadline on both transports (was: idle timeout alone, so a dribbling
+server could wait forever); the head-carry bytes clamped to the
+Content-Length; a full card (`freeSpace` 0 of a known total) refused as
+full instead of unknown; `GIT_TIMESTAMP` gets a Makefile fallback of 0
+so a git-less build compiles, with `UIUpdate_Decide` treating 0 as
+unknown — never "newer", offered as older/different, and unable to
+prove a stepping-stone floor (host-tested); the missing
+`SET_UPDATE_BOOTFILE` picker row and the five updater arms in the
+settings-semantics audit allowlist; and the copy tightened to the
+truth throughout — v1 integrity is a SHA-256 from the same channel as
+the file plus two confirmations, not authentication, and rollback is
+attempted, never guaranteed (design §4.2/§5.2, guide, changelog).
+
+## 2026-11-19 — On-console software updates over HTTP and the SMB share
+
+Add the software updater (`docs/dev/software-update-design.md`, now in-tree):
+Settings › Setup › Network gains Update Channel, Update Server, Update Boot
+File, **Check for updates** and **Update from SMB share** as its last five
+rows (hidden with Sync Clock's trio when no adapter is fitted). Both actions
+run one synchronous pipeline in new `gui/update.c` over the pure core in
+`gui/ui_update.c` (manifest reader, newer/older decision by commit and
+build time, IPv4 channel-base grammar, HTTP head reader) and a vendored
+public-domain SHA-256 (`gui/sha256.c`): stage beside the target on the
+Configuration Device, verify the streamed hash, read back whole and prove
+hash plus `wiiload_image_valid`, then swap with `.bak` kept, apploader
+first and the boot DOL last. HTTP is plain, one connection per file, 10 s
+idle reads, HTTP/1.0, Content-Length required; SMB reuses `__device_smb`
+at fixed `smb:/indigo-updates/` paths and never lists a directory. The
+boot file resolves by probing `ipl.dol`, `boot.dol`, `apps/indigo.dol`
+(Auto) or the row's named one. Includes the `strncpy` bound on
+`DrawGetTextEntry`'s accept path (`FrameBufferMagic.c`), three
+`global.ini` keys, host tests (`test_ui_update`, settings round-trips) and
+the `update` fuzz target. `UPDATE_DEFAULT_SERVER` ships empty: no public
+plain-HTTP host exists yet, so HTTP users name their own mirror.
+
+Release side: `buildtools/update_manifest.py` writes `indigo-<tag>.dol`,
+`apploader-<tag>.img` and `stable.txt`/`rc.txt` out of the release zip for
+published tags only (with `buildtools/ci/test_update_manifest.py`);
+`release.yml` generates them after `check_package.py` and attaches them,
+plus `dist/provenance.json`, to the GitHub Release. The DOL size tripwire
+rises 4.25 → 4.5 MiB as the explicit decision its comment anticipates:
+`beta` already measured 4,456,928 B in the pinned image (480 B past the
+old line) before the updater's own share. No upstream file is touched;
+the Swiss pin-move (design §1 PR-0) stays a separate follow-up. Nothing
+here has run on hardware: the design's §12 checklist is the qualification
+path, and the download page's stale Settings pictures are noted for the
+pull request.
+
 ## 2026-11-15 — Fix GBI DOL validation (#215) and harden the CI/release gates
 
 Allow `dolxz`-packed GameCube homebrew such as Game Boy Interface (`gbi.dol`,

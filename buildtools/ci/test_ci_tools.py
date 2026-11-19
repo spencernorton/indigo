@@ -70,7 +70,8 @@ class Dol(unittest.TestCase):
 
 
     def test_the_normal_cap_stays_exact(self):
-        self.assertEqual(verify_dol.MAX_DOL_BYTES, 17 * 1024 * 1024 // 4)
+        # 4.5 MiB since the on-console updater (verify_dol.py records why).
+        self.assertEqual(verify_dol.MAX_DOL_BYTES, 18 * 1024 * 1024 // 4)
         at_cap = dol() + bytes(verify_dol.MAX_DOL_BYTES - len(dol()))
         self.assertEqual(verify_dol.check(at_cap, SHORT)["sections"], 1)
         with self.assertRaises(verify_dol.Invalid):

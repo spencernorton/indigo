@@ -31,7 +31,10 @@
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
 # the clock sync arms flip swissSettings.ntpSync and open the zone editor
 # when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
-# server and SET_TIME_ZONE opens the same validated editor. The three File Browser Type arms
+# server and SET_TIME_ZONE opens the same validated editor. The updater's
+# five Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
+# SET_UPDATE_BOOTFILE, SET_UPDATE_CHECK, SET_UPDATE_SMB) only step or edit
+# their own settings, or start their update run on A. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
 #
@@ -285,6 +288,38 @@ normalized, browsers = re.subn(
     r"\t+break;\n",
     lambda arm: "" if arm.group(1).lower() == arm.group(2) else arm.group(0),
     normalized)
+# So are the updater's five Network arms: Channel and Boot File only step
+# their own settings, Server only edits its text, and the two update rows
+# only start their run on A (direction 0).
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_CHANNEL:\n"
+    r"\t+swissSettings\.updateChannel \+= direction;\n"
+    r"\t+swissSettings\.updateChannel = \(swissSettings\.updateChannel \+ 2\) % 2;\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_SERVER:\n"
+    r"\t+DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Update Server\", &swissSettings\.updateServer, sizeof\(swissSettings\.updateServer\) - 1\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_BOOTFILE:\n"
+    r"\t+swissSettings\.updateBootFile \+= direction;\n"
+    r"\t+swissSettings\.updateBootFile = \(swissSettings\.updateBootFile \+ 4\) % 4;\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_CHECK:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateRun\(UPDATE_SOURCE_HTTP\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_SMB:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateRun\(UPDATE_SOURCE_SMB\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
 # Swiss and Apps Video Mode add 540p60 at index 9.
 normalized = normalized.replace(
     "swissSettings.uiVMode = (swissSettings.uiVMode + 10) % 10;",
@@ -311,9 +346,9 @@ for fn in settings_toggle; do
 			normalize_intended_changes "$TMP/base_$fn" "$TMP/base_${fn}_normalized"
 			normalize_intended_changes "$TMP/head_$fn" "$TMP/head_${fn}_normalized"
 			if cmp -s "$TMP/base_${fn}_normalized" "$TMP/head_${fn}_normalized"; then
-				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
+				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels, clock sync and update arms, the File Browser Type arms and game reset\n' "$fn"
 			else
-				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
+				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_UPDATE_*, SET_*BROWSER_TYPE and the game reset" >&2
 				diff -u "$TMP/base_${fn}_normalized" \
 					"$TMP/head_${fn}_normalized" | head -40 >&2 || true
 				fail=1

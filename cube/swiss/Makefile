@@ -71,7 +71,7 @@ UI_PERF		?= 0
 # C needs no unwind tables; crash reports walk the stack back chain.
 # Prebuilt dependencies retain their own exception metadata and compiler flags.
 # Source paths are relative so the DOL is the same wherever it is built.
-CFLAGS		= -g -Os -flto -fstack-usage -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(shell git log -1 --format=%ct)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
+CFLAGS		= -g -Os -flto -fstack-usage -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(or $(shell git log -1 --format=%ct 2>/dev/null),0)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
 CFLAGS += -DUI_EXPERIMENTAL_540P=$(UI_540P)
 CXXFLAGS	= $(CFLAGS) -fno-exceptions -fno-rtti
 

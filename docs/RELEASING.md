@@ -14,10 +14,17 @@ tag.
 Pushing a tag runs `.github/workflows/release.yml`. It checks that the tag
 sits on its branch, builds the DOL from the tagged commit in the pinned
 image, checks that the DOL names that commit, packages the drag-and-drop zip
-(`buildtools/sd_package.sh`), and publishes the release with the zip,
-`SHA256SUMS.txt`, a build provenance attestation and notes from
+(`buildtools/sd_package.sh`), writes the on-console updater's files from
+that zip (`buildtools/update_manifest.py`: `indigo-<tag>.dol`,
+`apploader-<tag>.img` and the channel's `stable.txt` or `rc.txt`), and
+publishes the release with the zip, `SHA256SUMS.txt`, the provenance
+record, those update files, a build provenance attestation and notes from
 `CHANGELOG.md` (`buildtools/release_notes.sh`). To check the pipeline without
-publishing, run the workflow by hand with an existing tag.
+publishing, run the workflow by hand with an existing tag, and read the
+dry run's manifest before tagging for real. After a release, refresh
+whatever mirror serves the update files (the SMB shares people keep need
+no help; the HTTP default waits on a public plain-HTTP host —
+`UPDATE_DEFAULT_SERVER` in `cube/swiss/source/gui/update.h`).
 
 ## A beta
 
