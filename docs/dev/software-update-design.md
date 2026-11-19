@@ -1002,8 +1002,3 @@ GC Loader `boot.dol` and once launched as `apps/indigo.dol`):
 6. **Settings wiring is 7+ sites** (§6.1); the existing host gates catch
    omissions, but only if PR-1 actually runs `run_tests.sh all` before
    pushing — listed first in §10 for that reason.
-
-
-
-
-
