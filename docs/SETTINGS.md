@@ -199,6 +199,9 @@ most use the same key there.
 | `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
 | `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
 | `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the current UTC offset, rounded to the nearest offset a real zone uses, without applying daylight saving rules. | empty | Time Zone |
+| `UpdateChannel` | `Stable`, `Release candidate`. Which releases Check for updates and Update from SMB share offer: the latest finished release, or the next one for testing. | `Stable` | Update Channel |
+| `UpdateServer` | A computer serving Indigo's update files over plain HTTP: an IPv4 address with `:port` and `/folder` if it needs them, such as `192.168.1.10:8080/indigo` (a leading `http://` is fine). Names don't work: the console has no DNS, and there is no HTTPS. Empty means no server is set. | empty | Update Server |
+| `UpdateBootFile` | `Auto`, `ipl.dol`, `boot.dol`, `apps/indigo.dol`. The Indigo file an update replaces. `Auto` looks for those three names on the Configuration Device, in that order, and uses the one it finds; name one if more than one is there. | `Auto` | Update Boot File |
 | `FSPHostIP` | An IPv4 address. | empty | FSP Host IP |
 | `FSPPort` | A port number. | `21` | FSP Port |
 | `FSPPassword` | Text, stored as written. | empty | FSP Password |

@@ -6,6 +6,25 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+### New
+
+- Update Indigo over the network from Settings › Setup › Network, without
+  taking the card out: **Check for updates** reads a release's update files
+  from a plain-HTTP server you name (**Update Server**, an IPv4 address —
+  the console has no DNS and no HTTPS), and **Update from SMB share** reads
+  the same files from `indigo-updates/` on the share above it. **Update
+  Channel** chooses Stable or Release candidate releases, and **Update Boot
+  File** says which of `ipl.dol`, `boot.dol` or `apps/indigo.dol` an update
+  replaces (Auto finds the one on the Configuration Device). Nothing runs
+  until you press one of the two rows: the download lands beside the file
+  it replaces, is proven against its update list's SHA-256 and read back
+  whole before anything is installed, and two questions — download, then
+  install — stand in its way. The file it replaces stays beside it as
+  `.bak`, so going back is one rename on a computer. Each release now also
+  attaches its update files (`indigo-<version>.dol`,
+  `apploader-<version>.img` and the channel's list) and its provenance
+  record beside the zip.
+
 ### Fixed
 
 - Launch **Game Boy Interface** (`.dol` and `.dol+cli` presets) and homebrew
