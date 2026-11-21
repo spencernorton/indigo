@@ -1,3 +1,22 @@
+## 2026-11-21 — Prepare v2.9.1 for publication
+
+Name the `v2.9.1` changelog section for the Game Boy Interface launch fix
+(#215, #218) after `v2.9.1-rc.1` (`8070d19`) published from `beta`. This
+changes documentation only; product, build and test code are unchanged from
+`v2.9.1-rc.1`.
+
+The release candidate's `ipl.dol` is byte-identical to CI's build of
+`8070d19`. All 20 programs in the current Game Boy Interface package (`gbi`,
+`gbihf`, `gbisr` and their `.dol+cli` presets) pass
+`test_boot_image.py --sanitize --check-files`, while `v2.9.0`'s validator
+rejects all 20; `v2.9.0` accepts them again with 1,024 zero bytes appended,
+the workaround #218 describes. In Dolphin, `gbi.dol` started from Apps reaches
+GBI's own entry code on this build, where `v2.9.0` shows "DOL is corrupted",
+and `v2.9.0` with the padded file follows the identical trace after the
+launch. Dolphin cannot run GBI further, even booted directly. The maintainer
+released on that basis: #218's reporter ran the padded file on a GameCube
+through the same loader, and this build loads the unpadded file the same way.
+
 ## 2026-11-15 — Fix GBI DOL validation (#215) and harden the CI/release gates
 
 Allow `dolxz`-packed GameCube homebrew such as Game Boy Interface (`gbi.dol`,
