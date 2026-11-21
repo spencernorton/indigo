@@ -146,6 +146,19 @@ int main(void) {
     assert(tcp_read(3,plain,4)<0);idleSocket=false;chunk=1;
     assert(tcp_read(3,plain,4)==4);
     assert(disposes==7&&progresses>0);
+    {
+        u8 gbi[0x1500]={0};memset(gbi+0x100,0x60,0x400);memset(gbi+0x500,0xaa,0xc00);
+        be32(gbi,0x100u);be32(gbi+0x48,0x80003100u);be32(gbi+0x90,0x400u);
+        be32(gbi+0x1c,0x500u);be32(gbi+0x64,0x80003500u);be32(gbi+0xac,0x1000u);
+        be32(gbi+0xe0,0x80003100u);
+        memcpy(gbi+0x1100,"gbi.dol\n--format=ntsc\n",22);
+        size_t gbiSize=0x1100u+22u;
+        size_t gn=compressed(gbi,gbiSize);
+        u8 *gout=wiiload_read(0,gn,gbiSize,reader,NULL);
+        assert(gout&&wiiload_image_valid(gout,gbiSize,false));
+        for(size_t z=0;z<WIILOAD_CLI_SLOT;++z)assert(gout[gbiSize+z]==0u);
+        free(gout);
+    }
     puts("uploads: bounded exact streams, executable ranges, EOF, timeouts, args and video-safe handoff PASS");
     return 0;
 }

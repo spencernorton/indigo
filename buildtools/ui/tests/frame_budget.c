@@ -112,6 +112,7 @@ static void drawString(int x, int y, const char *text, float scale, int align, G
 }
 #include "files_source.c"	/* and this */
 #include "ui_jewel_case.c"
+#include "boxes_source.c"	/* and this */
 #undef sqrtf
 #undef sinf
 #undef cosf
@@ -366,12 +367,25 @@ static void settle(int frames)
 /* The Library's jewel case, drawn over the backdrop when it is on stage. */
 static const uiJewelCaseShot_t *jewelShots;
 static int jewelCount, jewelDirection;
+static gameflowRenderCard_t boxCards[9];
+static uiGameflowCardSnapshot_t boxRecords[9];
+static uiGameflowFrame_t boxFrame;
+static GXTexObj boxCover;
+static int boxCardCount;
 
 static void drawFrame(bool bootOverlay)
 {
 	IndigoBackground_Draw(seconds, true, true, UIScene_Frame(), &clock, &pad, icons);
 	if(jewelCount > 0) {
 		UIJewelCase_Draw(jewelShots, jewelCount, jewelDirection, DT, 0.0f, 0.0f, UI_MOTION_FULL, true);
+	}
+	if(boxCardCount > 0) {
+		int i;
+		for(i = 0; i < boxCardCount; i++) {
+			_GameflowDrawBoxShell(&boxCards[i], &boxFrame, 1.0f);
+			_GameflowDrawBoxPoster(&boxCards[i], &boxCover, 1.0f);
+			_GameflowDrawBoxMarks(&boxCards[i], 1.0f);
+		}
 	}
 	if(bootOverlay) {
 		IndigoBackground_DrawBootOverlay(seconds, true, UIScene_Frame(), &clock, icons);
@@ -462,6 +476,61 @@ static void jewelCase(const char *name, bool printed, bool moving, bool wide)
 	measure(name, false);
 	UIStage_SetWide(false);
 	jewelCount = 0;
+}
+
+/* The default 3D Boxes layout: projected retail cases in painter's order,
+ * each with its side, shell, eight-strip perspective cover and marks, at
+ * rest (five visible cases) and half way through a step (six visible). */
+static void boxCases(const char *name, bool wide, bool moving)
+{
+	float travel = moving ? 0.5f : 0.0f;
+	int count = 0, slotIndex, i;
+
+	memset(&boxFrame, 0, sizeof(boxFrame));
+	boxFrame.carouselTravel = travel;
+	for(slotIndex = -4; slotIndex <= 4; slotIndex++) {
+		float slot = (float)slotIndex + travel;
+		float presence = _GameflowPresence(slot);
+		uiBoxCasePose_t pose;
+		gameflowRenderCard_t card;
+
+		if(presence <= 0.001f || !UIBoxCase_Pose(slot, &pose)) {
+			continue;
+		}
+		memset(&boxRecords[count], 0, sizeof(boxRecords[count]));
+		if(slotIndex == 0) {
+			boxRecords[count].flags = UI_GAMEFLOW_CARD_CUSTOM;
+			boxRecords[count].disc = 1u;
+		}
+		memset(&card, 0, sizeof(card));
+		card.record = &boxRecords[count];
+		card.recordIndex = (u32)count;
+		card.visualSlot = slot;
+		card.artSlot = slot;
+		card.focus = 1.0f - _GameflowClamp(fabsf(slot), 0.0f, 1.0f);
+		card.presence = presence;
+		card.art = true;
+		card.quad = _GameflowBoxQuad(&pose.front);
+		boxCards[count++] = card;
+	}
+	for(i = 1; i < count; i++) {
+		gameflowRenderCard_t card = boxCards[i];
+		int j = i;
+		while(j > 0 && fabsf(boxCards[j - 1].visualSlot) < fabsf(card.visualSlot)) {
+			boxCards[j] = boxCards[j - 1];
+			j--;
+		}
+		boxCards[j] = card;
+	}
+	UIStage_SetWide(wide);
+	startScene();
+	UIScene_Request(UI_SCENE_LIBRARY);
+	UIScene_RequestLibraryLayout(UI_GAMEFLOW_LAYOUT_BOXES);
+	settle(600);
+	boxCardCount = count;
+	measure(name, false);
+	UIStage_SetWide(false);
+	boxCardCount = 0;
 }
 
 static void scene(const char *name, uiSceneId_t id)
@@ -861,5 +930,9 @@ int main(void)
 	jewelCase("jewel-case-wide", true, false, true);
 	jewelCase("jewel-case-bare", false, false, false);
 	jewelCase("jewel-case-moving", true, true, false);
+	library("library-boxes", UI_GAMEFLOW_LAYOUT_BOXES, false);
+	boxCases("box-cases", false, false);
+	boxCases("box-cases-wide", true, false);
+	boxCases("box-cases-moving", false, true);
 	return 0;
 }

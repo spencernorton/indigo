@@ -4,6 +4,29 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## v2.9.1 — Game Boy Interface starts again
+
+### Fixed
+
+- Launch **Game Boy Interface** (`.dol` and `.dol+cli` presets) and homebrew
+  programs that reserve a `dolxz` 1 KiB trailing command-line slot or Gekko
+  locked L1 cache `.bss` (`0xE0000000..0xE0004000`) without reporting `"DOL is
+  corrupted"` ([#215](https://github.com/spencernorton/indigo/issues/215)), and
+  zero-fill the trailing CLI slot before `DOLtoARAM` reads it.
+
+### Maintenance
+
+- Harden the CI and release pipelines: include `video-diagnostic` in the
+  fail-closed `CI passed` gate while decoupling `Emulator` from waiting on it,
+  require a completed passing `CI passed` check run on the tagged commit before
+  publishing a GitHub Release, verify byte-for-byte reproducibility of packed
+  `swiss.dol`, `reboot.dol` and `SDLOADER.BIN` alongside `swiss.dol`, check
+  every built DOL through `wiiload_image_valid`, enforce PowerPC `-fstack-usage`
+  static frame ceilings (`check_stack_usage.py`), add **3D Boxes** frame-budget
+  scenes plus `ui_perf`/`ui_anim` host unit tests and deterministic fuzz-corpus
+  replay, cap missed controller retries (`pressed_again`) in Dolphin routes, and
+  keep busy ephemeral runners alive across brief GitHub status blips.
+
 ## v2.9.0 — 3D Boxes Library and Swiss updates
 
 ### New

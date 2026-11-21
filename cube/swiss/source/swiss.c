@@ -5836,7 +5836,8 @@ static bool boot_image_valid(file_handle *file, void *buffer, XXH64_hash_t hash)
 
 void boot_dol(file_handle* file, int argc, char *argv[])
 {
-	void *buffer = memalign(32, file->size);
+	void *buffer = file->size >= 0 && (size_t)file->size <= 16u * 1024u * 1024u ?
+		memalign(32, (size_t)file->size + 0x400u) : NULL;
 	if(!buffer) {
 		uiDrawObj_t *msgBox = DrawMessageBox(D_FAIL,"DOL is too big. Press A.");
 		DrawPublish(msgBox);
@@ -5867,6 +5868,7 @@ void boot_dol(file_handle* file, int argc, char *argv[])
   		ptr+=size;
 	}
 	
+	memset((u8*)buffer + file->size, 0, 0x400u);
 	XXH64_hash_t hash = XXH3_64bits(buffer, file->size);
 	if(!boot_image_valid(file, buffer, hash)) {
 		DrawDispose(progBar);

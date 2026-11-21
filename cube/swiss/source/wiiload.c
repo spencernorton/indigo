@@ -52,6 +52,7 @@ typedef int wiiload_read_function_t(int, void *, size_t);
 /* One transfer at a time, bounded by the GameCube's available address space. */
 #define WIILOAD_MAX_IMAGE (16u * 1024u * 1024u)
 #define WIILOAD_MAX_DEFLATE (WIILOAD_MAX_IMAGE + 65536u)
+#define WIILOAD_CLI_SLOT 0x400u
 #define WIILOAD_IDLE_SECONDS 10
 static mutex_t upload_mutex = LWP_MUTEX_NULL;
 
@@ -123,8 +124,9 @@ static void *wiiload_read(int sd, size_t insize, size_t outsize, wiiload_read_fu
 	if (insize == 0u || insize > WIILOAD_MAX_DEFLATE ||
 	    outsize < 4u || outsize > WIILOAD_MAX_IMAGE) return NULL;
 	/* One guard byte lets inflate consume a split checksum after filling
-	 * the exact output. Any use of that byte is an oversized stream. */
-	outbuf = malloc(outsize + 1u);
+	 * the exact output; WIILOAD_CLI_SLOT zero bytes also pad a .dol+cli's
+	 * omitted trailing NULs so sidestep never reads past outbuf. */
+	outbuf = malloc(outsize + WIILOAD_CLI_SLOT);
 	if (!outbuf) return NULL;
 	if (inflateInit(&zstream) != Z_OK) {
 		free(outbuf);
@@ -153,6 +155,7 @@ static void *wiiload_read(int sd, size_t insize, size_t outsize, wiiload_read_fu
 		free(outbuf);
 		return NULL;
 	}
+	memset((u8 *)outbuf + outsize, 0, WIILOAD_CLI_SLOT);
 	DrawUpdateProgressBar(progress, 100);
 	return outbuf;
 }
@@ -192,6 +195,46 @@ static bool wiiload_range(size_t offset, size_t length, size_t size)
 /* Sidestep has no input-length argument. Prove its header/table/payload
  * reads fit before calling it, including its entrypoint's argv probe.
  * boot_dol checks a file from a card with it too. */
+/* dolxz-packed DOLs (such as Game Boy Interface and its .dol+cli presets)
+ * reserve a 1 KiB CLI buffer at the end of their final data section, seeded
+ * with argv[0]\n and stored without trailing NULs so .cli lines can be
+ * concatenated onto the DOL. Both loaders zero-pad WIILOAD_CLI_SLOT bytes. */
+static bool wiiload_cli_tail_valid(const u8 *image, size_t size, u32 section)
+{
+	if (section < 7u) return false;
+	u32 file = wiiload_be32(image + section * 4u);
+	u32 bytes = wiiload_be32(image + 0x90u + section * 4u);
+	if (bytes < WIILOAD_CLI_SLOT || !wiiload_range(file, bytes, WIILOAD_MAX_IMAGE))
+		return false;
+	size_t end = (size_t)file + bytes;
+	size_t slot = end - WIILOAD_CLI_SLOT;
+	if (size <= slot || size >= end) return false;
+	for (u32 j = 0u; j < 18u; ++j) {
+		u32 otherFile = wiiload_be32(image + j * 4u);
+		u32 otherBytes = wiiload_be32(image + 0x90u + j * 4u);
+		if (otherFile == 0u || otherBytes == 0u || j == section) continue;
+		if (!wiiload_range(otherFile, otherBytes, slot)) return false;
+	}
+	const u8 *cli = image + slot;
+	size_t present = size - slot;
+	size_t arg0End = 0u;
+	while (arg0End < present && arg0End < 64u && cli[arg0End] >= 0x21u && cli[arg0End] <= 0x7eu)
+		++arg0End;
+	if (arg0End == 0u || arg0End >= present) return false;
+	if (cli[arg0End] == '\r') {
+		++arg0End;
+		if (arg0End >= present || cli[arg0End] != '\n') return false;
+	} else if (cli[arg0End] != '\n') {
+		return false;
+	}
+	for (size_t k = arg0End + 1u; k < present; ++k) {
+		u8 c = cli[k];
+		if (c != 0u && c != '\t' && c != '\r' && c != '\n' && (c < 0x20u || c > 0x7eu))
+			return false;
+	}
+	return true;
+}
+
 bool wiiload_image_valid(const u8 *image, size_t size, bool raw)
 {
 	bool entryFound = false;
@@ -223,16 +266,18 @@ bool wiiload_image_valid(const u8 *image, size_t size, bool raw)
 	}
 	if (size < 256u || (wiiload_be32(image) != 0x100u && wiiload_be32(image) != 0x620u))
 		return false;
-	if (wiiload_be32(image + 0xdc) != 0u &&
-	    !wiiload_range(wiiload_be32(image + 0xd8) & 0x3fffffffu,
-	                   wiiload_be32(image + 0xdc), 24u * 1024u * 1024u)) return false;
+	u32 bssAddr = wiiload_be32(image + 0xd8), bssLen = wiiload_be32(image + 0xdc);
+	if (bssLen != 0u &&
+	    !wiiload_range(bssAddr & 0x3fffffffu, bssLen, 24u * 1024u * 1024u) &&
+	    !(bssAddr >= 0xe0000000u && wiiload_range(bssAddr - 0xe0000000u, bssLen, 16u * 1024u)))
+		return false;
 	entry = wiiload_be32(image + 0xe0);
 	for (u32 i = 0u; i < 18u; ++i) {
 		u32 file = wiiload_be32(image + i * 4u);
 		u32 address = wiiload_be32(image + 0x48u + i * 4u);
 		u32 bytes = wiiload_be32(image + 0x90u + i * 4u);
 		if (file == 0u || bytes == 0u) continue;
-		if (!wiiload_range(file, bytes, size) ||
+		if ((!wiiload_range(file, bytes, size) && !wiiload_cli_tail_valid(image, size, i)) ||
 		    !wiiload_range(address & 0x3fffffffu, bytes, 24u * 1024u * 1024u)) return false;
 		if (i < 7u && entry >= address && entry - address < bytes) {
 			size_t at = (size_t)file + (entry - address);

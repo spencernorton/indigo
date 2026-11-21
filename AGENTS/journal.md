@@ -1,3 +1,48 @@
+## 2026-11-21 — Prepare v2.9.1 for publication
+
+Name the `v2.9.1` changelog section for the Game Boy Interface launch fix
+(#215, #218) after `v2.9.1-rc.1` (`8070d19`) published from `beta`. This
+changes documentation only; product, build and test code are unchanged from
+`v2.9.1-rc.1`.
+
+The release candidate's `ipl.dol` is byte-identical to CI's build of
+`8070d19`. All 20 programs in the current Game Boy Interface package (`gbi`,
+`gbihf`, `gbisr` and their `.dol+cli` presets) pass
+`test_boot_image.py --sanitize --check-files`, while `v2.9.0`'s validator
+rejects all 20; `v2.9.0` accepts them again with 1,024 zero bytes appended,
+the workaround #218 describes. In Dolphin, `gbi.dol` started from Apps reaches
+GBI's own entry code on this build, where `v2.9.0` shows "DOL is corrupted",
+and `v2.9.0` with the padded file follows the identical trace after the
+launch. Dolphin cannot run GBI further, even booted directly. The maintainer
+released on that basis: #218's reporter ran the padded file on a GameCube
+through the same loader, and this build loads the unpadded file the same way.
+
+## 2026-11-15 — Fix GBI DOL validation (#215) and harden the CI/release gates
+
+Allow `dolxz`-packed GameCube homebrew such as Game Boy Interface (`gbi.dol`,
+`gbihf.dol`, `gbisr.dol` and `.dol+cli` presets) to pass `wiiload_image_valid`
+when the final data section reserves a trailing 1024-byte (`0x400`) command-line
+buffer seeded with printable `argv[0]\n` text, and accept `.bss` ranges inside
+the 16 KiB Gekko locked L1 cache (`0xE0000000..0xE0004000`) while continuing to
+reject cut-short binary DOLs. Allocate and zero-fill an extra `0x400` bytes in
+both `boot_dol` and `wiiload_read` so `DOLtoARAM` never copies uninitialized
+heap bytes past the file end into the reserved CLI slot (#215).
+
+Close the CI and release gate gaps: add `video-diagnostic` to `passed.needs`
+while decoupling `emulator.needs` to `build` alone, restrict `"skipped"` in `CI
+passed` to `target` only, and verify a completed passing `CI passed` check run
+on the tagged commit in `release.yml` before `publish` creates a GitHub Release
+(enforced by `check_workflows.py`). Extend `Reproducible build` to compare
+`cube/packer/swiss.dol`, `cube/packer/reboot.dol` and `cube/packer/SDLOADER.BIN`
+across paths and locales, validate every built DOL via `test_boot_image.py
+--check-files`, enforce PowerPC `-fstack-usage` ceilings and zero dynamic frames
+(`check_stack_usage.py`), add 3D Boxes scenes to `frame_budget.c`, add host unit
+tests for `ui_perf.c` and `ui_anim.c` plus saved fuzz-corpus replay in
+`run_fuzz.sh --build-only`, bound `pressed_again` retries in `emulator/run.py`,
+and debounce offline health checks in `indigo_ci.py` so busy runners are never
+killed mid-job during transient GitHub API blips. Record `v2.9.0` `main`
+ancestry on `beta`.
+
 ## 2026-11-14 — Prepare v2.9.0 for publication
 
 Name the `v2.9.0` changelog section for the 3D Boxes Library replacement, the

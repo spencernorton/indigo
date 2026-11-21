@@ -11,6 +11,42 @@
   "trig": 337,
   "vertices": 5070
  },
+ "box-cases": {
+  "begins": 57,
+  "copy_pixels": 0,
+  "hash": "34c74c7f0fb615bc",
+  "invalidations": 5,
+  "minmax": 22,
+  "scene": "box-cases",
+  "sqrtf": 0,
+  "state": 87,
+  "trig": 41,
+  "vertices": 2300
+ },
+ "box-cases-moving": {
+  "begins": 60,
+  "copy_pixels": 0,
+  "hash": "1053f8daca491083",
+  "invalidations": 6,
+  "minmax": 23,
+  "scene": "box-cases-moving",
+  "sqrtf": 0,
+  "state": 89,
+  "trig": 43,
+  "vertices": 2356
+ },
+ "box-cases-wide": {
+  "begins": 57,
+  "copy_pixels": 0,
+  "hash": "c0275c424b170d89",
+  "invalidations": 5,
+  "minmax": 22,
+  "scene": "box-cases-wide",
+  "sqrtf": 0,
+  "state": 87,
+  "trig": 41,
+  "vertices": 2300
+ },
  "files": {
   "begins": 148,
   "copy_pixels": 0,
@@ -226,6 +262,18 @@
   "state": 227,
   "trig": 203,
   "vertices": 23346
+ },
+ "library-boxes": {
+  "begins": 22,
+  "copy_pixels": 0,
+  "hash": "0da86d2dc75b467a",
+  "invalidations": 0,
+  "minmax": 16,
+  "scene": "library-boxes",
+  "sqrtf": 0,
+  "state": 77,
+  "trig": 31,
+  "vertices": 1140
  },
  "library-grid": {
   "begins": 22,
