@@ -300,6 +300,46 @@ static void testContextAndSceneReturns(void)
 		matrixNear(&UIScene_Frame()->homeOrientation[0][0], target, 0.0f);
 	}
 }
+/* Idle Animation › Sway's blend comes with Home's first rest, holds through
+ * Home's turns while Home's idle blend all but goes, and goes when the cube
+ * leaves Home (the Source picker included) or motion stops being Full. */
+static void testSwayBlend(void)
+{
+	uiHomeState_t home = start(0.02f, UI_MOTION_FULL);
+	float idleLow = 1.0f;
+
+	advance(2.0f, 0.02f, UI_MOTION_FULL);
+	near(UIScene_Frame()->homeIdleBlend, 1.0f, 0.0001f);
+	near(UIScene_Frame()->homeSwayBlend, 1.0f, 0.0f);
+	for(int step = 0; step < 4; ++step) {
+		turn(&home, step & 1 ? UI_HOME_INPUT_DOWN : UI_HOME_INPUT_RIGHT);
+		for(int frame = 0; frame < 150; ++frame) {
+			tick(0.02f, UI_MOTION_FULL);
+			idleLow = fminf(idleLow, UIScene_Frame()->homeIdleBlend);
+			near(UIScene_Frame()->homeSwayBlend, 1.0f, 0.0f);
+		}
+	}
+	CHECK(idleLow < 0.01f);
+	near(UIScene_Frame()->homeIdleBlend, 1.0f, 0.0001f);
+	UIScene_Request(UI_SCENE_SOURCE); settle(0.02f, UI_MOTION_FULL);
+	advance(2.0f, 0.02f, UI_MOTION_FULL);
+	near(UIScene_Frame()->homeSwayBlend, 0.0f, 0.0f);
+	/* Back on Home it waits for Home to rest before it comes back. */
+	UIScene_Request(UI_SCENE_HOME); tick(0.02f, UI_MOTION_FULL);
+	near(UIScene_Frame()->homeSwayBlend, 0.0f, 0.0f);
+	settle(0.02f, UI_MOTION_FULL); advance(2.0f, 0.02f, UI_MOTION_FULL);
+	near(UIScene_Frame()->homeSwayBlend, 1.0f, 0.0f);
+	for(int destination = UI_SCENE_LIBRARY; destination < UI_SCENE_COUNT; ++destination) {
+		if(destination == UI_SCENE_SOURCE) continue;
+		UIScene_Request((uiSceneId_t)destination); settle(0.02f, UI_MOTION_FULL);
+		near(UIScene_Frame()->homeSwayBlend, 0.0f, 0.0f);
+		UIScene_Request(UI_SCENE_HOME); settle(0.02f, UI_MOTION_FULL);
+		advance(2.0f, 0.02f, UI_MOTION_FULL);
+		near(UIScene_Frame()->homeSwayBlend, 1.0f, 0.0f);
+	}
+	advance(2.0f, 0.02f, UI_MOTION_REDUCED);
+	near(UIScene_Frame()->homeSwayBlend, 0.0f, 0.0f);
+}
 static void testPublicationAndInvalidRequests(void)
 {
 	uiHomeState_t home;
@@ -824,7 +864,7 @@ int main(void)
 	testPhysicalAxesAndArrival(); testHalfTurnDirection();
 	testHalfTurnsFromEveryOrientation();
 	testMixedCoalescingAndInterruptions(); testModeChangesAndBadTiming();
-	testContextAndSceneReturns(); testPublicationAndInvalidRequests();
+	testContextAndSceneReturns(); testSwayBlend(); testPublicationAndInvalidRequests();
 	testSystemRows();
 	testAppsRing();
 	testClassicCube();

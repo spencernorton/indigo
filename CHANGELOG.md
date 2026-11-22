@@ -4,6 +4,16 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+### Changed
+
+- Idle Animation › **Sway** goes on as you turn the Home cube: the next face
+  picks the swing up where the last one left off, instead of the cube
+  turning back to its resting pose and starting over
+  ([#116](https://github.com/spencernorton/indigo/issues/116)). Coming back
+  to Home from another menu still starts it from the resting pose.
+
 ## v2.9.1 — Game Boy Interface starts again
 
 ### Fixed
