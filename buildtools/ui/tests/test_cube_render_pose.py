@@ -150,7 +150,7 @@ static float yaw(void) { return atan2f(-loaded[2][0], loaded[0][0]); }
 int main(void) {
  (void)semanticFacePoint; (void)transformed;  /* the face checks' helpers */
  uiHomeState_t home; UIHome_Init(&home,(uiHomeCapabilities_t){.hasSource=true});
- uiSceneFrame_t frame; frameFor(&frame,&home); frame.cubeYaw=0.28f; frame.homeIdleBlend=1.0f;
+ uiSceneFrame_t frame; frameFor(&frame,&home); frame.cubeYaw=0.28f; frame.homeSwayBlend=1.0f;
  cubeRasterTransform_t raster; memset(&raster,0,sizeof(raster));
  const float start=100.0f, half=3.14159265f/CUBE_SWAY_RATE;
  float low=1.0f, high=-1.0f, at;
@@ -165,9 +165,9 @@ int main(void) {
  CHECK(fabsf(yaw()+0.28f)<0.01f); CHECK(low>=-0.2801f && high<=0.2801f);
  /* A frame five seconds long holds the swing rather than jumping it. */
  at=yaw(); setupCubePipeline(&frame,start+half+5.0f,true,&raster); CHECK(fabsf(yaw()-at)<0.05f);
- /* Home stops resting, then rests again: the next swing starts from the pose. */
- frame.homeIdleBlend=0.0f; setupCubePipeline(&frame,start+half+5.1f,true,&raster); CHECK(fabsf(yaw()-0.28f)<0.001f);
- frame.homeIdleBlend=1.0f; setupCubePipeline(&frame,start+half+5.2f,true,&raster); CHECK(fabsf(yaw()-0.28f)<0.002f);
+ /* The cube leaves Home, then rests there again: the next swing starts from the pose. */
+ frame.homeSwayBlend=0.0f; setupCubePipeline(&frame,start+half+5.1f,true,&raster); CHECK(fabsf(yaw()-0.28f)<0.001f);
+ frame.homeSwayBlend=1.0f; setupCubePipeline(&frame,start+half+5.2f,true,&raster); CHECK(fabsf(yaw()-0.28f)<0.002f);
  /* Motion off keeps the pose. */
  setupCubePipeline(&frame,start+half+8.0f,false,&raster); CHECK(fabsf(yaw()-0.28f)<0.0001f);
  /* Calm, the default, stays within its slight drift of the pose. */
@@ -177,62 +177,69 @@ int main(void) {
 }
 '''
 
-# Sway through a turn and a shallow dip. The turn: Home's own idle blend,
-# from the real scene's springs, as the cube turns a face at the far end of a
-# swing (the pose stays Home's here, so the yaw is the swing alone). The dip: a
-# spring of its own dropped for 0.3 s mid-swing, where the swing moves
-# fastest, shallow enough that the blend stays above the restart level.
+# Sway through a turn, out of Home and back, and through two dips. The turn and
+# the trip out: the real scene's springs, as the cube turns a face mid-swing,
+# where the swing moves fastest (the pose stays Home's here, so the yaw is the
+# swing alone). The dips: a spring of their own, one dropped for 0.3 s, shallow
+# enough that the blend stays above the restart level, and one deep enough to
+# pass under it without reaching 0, as leaving Home and coming straight back.
 SWAY_TURN_MAIN = SWAY_MAIN[:SWAY_MAIN.index('int main(void) {')] + r'''
 static uiSceneFrame_t frame; static cubeRasterTransform_t raster; static float now=100.0f;
 static const float dt=1.0f/60.0f, reach=CUBE_SWAY_RADIANS;
-static float drawAt(float blend) { now+=dt; frame.homeIdleBlend=blend; setupCubePipeline(&frame,now,true,&raster); return yaw(); }
+/* The swing's own clock, counted as Sway's should: back to 0 under the
+   restart level, a step a frame while the blend holds or rises. */
+static int steps; static float lastBlend;
+static float drawAt(float blend) {
+ if(blend<CUBE_SWAY_RESTART_BLEND) steps=0; else if(blend>=lastBlend) steps++;
+ lastBlend=blend; now+=dt; frame.homeSwayBlend=blend; setupCubePipeline(&frame,now,true,&raster); return yaw();
+}
 static float swing(float seconds) { return 0.28f-reach*(1.0f-cosf(seconds*CUBE_SWAY_RATE)); }
+static float onSwing(float blend) { return 0.28f+(swing(steps*dt)-0.28f)*blend; }
+static float scene(void) { UIScene_Update(dt,UI_MOTION_FULL); return UIScene_Frame()->homeSwayBlend; }
 int main(void) {
  (void)semanticFacePoint; (void)transformed;
  uiHomeCapabilities_t caps={.hasSource=true,.hasRecent=true,.hasApps=true};
  uiHomeState_t home; UIHome_Init(&home,caps); frameFor(&frame,&home); frame.cubeYaw=0.28f;
  memset(&raster,0,sizeof(raster)); IndigoBackground_SetIdleSway(true);
  UIScene_Reset(); UIScene_RequestHome(&home); UIScene_Activate();
- float y=0.0f, last, blend=0.0f;
- /* Home rests until the swing is at its far end, the mirror of the pose. */
- for(int i=0;i<60*40 && !(blend>=1.0f && y<-0.27f);i++) { UIScene_Update(dt,UI_MOTION_FULL); blend=UIScene_Frame()->homeIdleBlend; y=drawAt(blend); }
- CHECK(blend>=1.0f && y<-0.27f);
- /* A turn: the blend all but goes and comes back, as Home comes to rest. */
+ float y=0.0f, last, blend=0.0f, idleLow=1.0f;
+ /* Home rests until the swing is halfway to the mirror of the pose. */
+ for(int i=0;i<60*40 && !(blend>=1.0f && y<0.0f);i++) { blend=scene(); y=drawAt(blend); CHECK(fabsf(y-onSwing(blend))<0.002f); }
+ CHECK(blend>=1.0f && y<0.0f);
+ /* A turn: Home's idle blend all but goes and comes back; Sway's holds, so
+    the swing goes on through it, never back to the pose, never a jump. */
  UIHome_Apply(&home,UI_HOME_INPUT_RIGHT,caps); UIScene_RequestHome(&home);
- float blends[300], yaws[300]; int low=0;
+ last=y;
  for(int i=0;i<300;i++) {
-  UIScene_Update(dt,UI_MOTION_FULL); blends[i]=UIScene_Frame()->homeIdleBlend; yaws[i]=drawAt(blends[i]);
-  if(blends[i]<blends[low]) low=i;
+  blend=scene(); idleLow=fminf(idleLow,UIScene_Frame()->homeIdleBlend); y=drawAt(blend);
+  CHECK(blend>=1.0f && fabsf(y-swing(steps*dt))<0.002f && fabsf(y-last)<0.03f); last=y;
  }
- CHECK(blends[low]<0.01f && blends[low]>0.0f && blends[299]>=1.0f);
- last=yaws[0];
- for(int i=1;i<300;i++) {
-  /* Never a jump; from the blend's lowest the swing starts again from the
-     pose and goes no faster than a swing does. */
-  CHECK(fabsf(yaws[i]-last)<0.03f); last=yaws[i];
-  if(i>low) {
-   CHECK(yaws[i]<=0.28f+0.0001f && yaws[i]>=swing((i-low)*dt)-0.003f);
-   CHECK(fabsf(yaws[i]-yaws[i-1])/dt<=reach*CUBE_SWAY_RATE*1.2f);
-  }
- }
- CHECK(yaws[299]<0.2f);  /* and it is swinging */
+ CHECK(idleLow<0.01f && y<-0.2f);
+ /* Out to the Library: Sway's blend goes, and the cube eases back to the
+    pose without a jump. Back on Home, the next swing starts from the pose. */
+ UIScene_Request(UI_SCENE_LIBRARY);
+ for(int i=0;i<60*3;i++) { blend=scene(); y=drawAt(blend); CHECK(fabsf(y-last)<0.03f); last=y; }
+ CHECK(blend<0.001f && fabsf(y-0.28f)<0.006f);
+ UIScene_Request(UI_SCENE_HOME);
+ for(int i=0;i<60*6;i++) { blend=scene(); y=drawAt(blend); CHECK(fabsf(y-last)<0.03f && fabsf(y-onSwing(blend))<0.002f); last=y; }
+ CHECK(blend>=1.0f && y<0.2f);
  /* A shallow dip mid-swing: the swing waits while the blend falls, takes
-    no step, and goes on from where it was. */
- drawAt(0.0f);
- int rest=(int)(3.14159265f/2.0f/CUBE_SWAY_RATE*60.0f), steps=rest;
- for(int i=0;i<rest;i++) y=drawAt(1.0f);
- uiMotionSpring_t dip; UIMotion_SpringInit(&dip,1.0f,7.0f);
- UIMotion_SpringRetarget(&dip,0.0f,UI_MOTION_FULL);
- last=y; blend=1.0f;
- for(int i=0;i<60*3;i++) {
-  if(i==18) UIMotion_SpringRetarget(&dip,1.0f,UI_MOTION_FULL);
-  float b=UIMotion_SpringUpdate(&dip,dt,UI_MOTION_FULL);
-  if(b>=blend) steps++;
-  blend=b; y=drawAt(b);
-  CHECK(fabsf(y-last)<0.03f); last=y;
+    no step, and goes on from where it was. A deep one starts it over. */
+ for(int deep=0;deep<2;deep++) {
+  drawAt(0.0f);
+  for(int i=0;i<(int)(3.14159265f/2.0f/CUBE_SWAY_RATE*60.0f);i++) y=drawAt(1.0f);
+  uiMotionSpring_t dip; UIMotion_SpringInit(&dip,1.0f,7.0f);
+  UIMotion_SpringRetarget(&dip,0.0f,UI_MOTION_FULL);
+  last=y; blend=1.0f; float low=1.0f;
+  for(int i=0;i<60*4;i++) {
+   if(deep ? blend<0.008f : i==18) UIMotion_SpringRetarget(&dip,1.0f,UI_MOTION_FULL);
+   blend=UIMotion_SpringUpdate(&dip,dt,UI_MOTION_FULL); low=fminf(low,blend);
+   y=drawAt(blend);
+   CHECK(fabsf(y-last)<0.03f && fabsf(y-onSwing(blend))<0.002f); last=y;
+  }
+  CHECK(blend>=1.0f && (deep ? low<CUBE_SWAY_RESTART_BLEND && low>0.0f : low>CUBE_SWAY_RESTART_BLEND));
  }
- CHECK(blend>=1.0f && fabsf(y-swing(steps*dt))<0.004f);
- puts("cube idle: through a turn Sway starts again from Home's pose without a jump; a shallow dip picks the swing up where it was"); return 0;
+ puts("cube idle: Sway swings on through a turn, starts again from Home's pose after the Library and a deep dip, and picks a shallow dip up where it was"); return 0;
 }
 '''
 
@@ -284,18 +291,20 @@ class CubeRenderPose(unittest.TestCase):
         mutant=self.setup.replace('swaySeconds = 0.0f;','swaySeconds += 0.0f;')
         self.assertNotEqual(mutant,self.setup)
         self.assertNotEqual(self.execute(mutant,self.point,SWAY_MAIN).returncode,0)
-    def test_sway_through_a_turn_and_a_shallow_dip(self):
+    def test_sway_through_a_turn_the_library_and_two_dips(self):
         result=self.execute(self.setup,self.point,SWAY_TURN_MAIN)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
     def test_sway_that_starts_over_late_or_never_waits_is_rejected(self):
         for name,old,new in (
-            # Only once the blend is exactly 0, which a turn's never reaches.
-            ('starts over only at 0','idleBlend < CUBE_SWAY_RESTART_BLEND','idleBlend <= 0.0f'),
+            # Only once the blend is exactly 0, which a deep dip never reaches.
+            ('starts over only at 0','swayBlend < CUBE_SWAY_RESTART_BLEND','swayBlend <= 0.0f'),
             # Running on while the blend falls: a dip moves the swing on.
-            ('never waits','else if(idleBlend >= swayLastBlend) {','else {'),
+            ('never waits','else if(swayBlend >= swayLastBlend) {','else {'),
             # Starting over as the blend rises again: a dip drops the yaw.
-            ('starts over rising','else if(idleBlend >= swayLastBlend) {',
-             'else if(idleBlend > swayLastBlend && idleBlend < 1.0f) {\n\t\tswaySeconds = 0.0f;\n\t}\n\telse if(idleBlend >= swayLastBlend) {'),
+            ('starts over rising','else if(swayBlend >= swayLastBlend) {',
+             'else if(swayBlend > swayLastBlend && swayBlend < 1.0f) {\n\t\tswaySeconds = 0.0f;\n\t}\n\telse if(swayBlend >= swayLastBlend) {'),
+            # Home's idle blend instead of Sway's: a turn starts the swing over.
+            ('fades in a turn','float swayBlend = scene->homeSwayBlend;','float swayBlend = scene->homeIdleBlend;'),
         ):
             with self.subTest(name):
                 mutant=self.setup.replace(old,new)

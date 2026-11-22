@@ -1,3 +1,24 @@
+## 2026-11-21 — Let Sway carry on through Home's turns (#116)
+
+#116's follow-up: with Idle Animation › Sway, turning the cube to another face
+eased it back to Home's resting pose and started the swing over, because the
+sway was scaled by `homeIdleBlend`, which falls to almost 0 during every turn
+(the face's lift, pitch and orientation springs all move). Sway now has its
+own `homeSwayBlend` in `ui_scene.c`: it comes on with Home's first rest, holds
+at 1 through Home's turns and row moves, and falls only when the cube leaves
+Home (the Source picker included) or UI Motion stops being Full. The renderer
+scales the swing and feeds its clock with it, so the next face picks the
+swing up where the last one left it; coming back to Home still starts from
+the pose. Calm's drift and the glass drift keep `homeIdleBlend`.
+
+`test_cube_render_pose.py` now drives the real scene through a mid-swing turn,
+out to the Library and back, and a shallow and a deep dip, against a model of
+the swing's clock; `test_ui_scene.c` checks the blend through four turns, the
+Source picker, every other scene and Reduced motion. Using `homeIdleBlend` for
+Sway, dropping the held target, or dropping the Home-only condition each
+fails them. Only host tests ran locally (this Mac has no Pillow for the poster
+lane); CI runs every lane and Dolphin. Not seen on a console.
+
 ## 2026-11-21 — Prepare v2.9.1 for publication
 
 Name the `v2.9.1` changelog section for the Game Boy Interface launch fix

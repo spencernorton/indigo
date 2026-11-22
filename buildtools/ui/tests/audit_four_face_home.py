@@ -625,25 +625,30 @@ sway = re.search(r"#define CUBE_IDLE_SWAY_RADIANS\s+([0-9.]+)f", INDIGO)
 assert sway and 0.0 < float(sway.group(1)) <= 0.08
 # Idle Animation > Sway turns from Home's pose to its mirror image and back:
 # its reach is Home's own turn and no more, so the front face stays in front
-# and the outline is never wider than Home's. Only while Home itself rests
-# (not the Source picker), with motion on, from a clock that waits while the
-# cube leaves its rest and starts over once the idle blend is all but gone.
-# test_cube_render_pose.py runs it through a turn and a shallow dip.
+# and the outline is never wider than Home's. Only once Home itself has rested
+# (not the Source picker), with motion on, and on through Home's turns, from a
+# clock that waits while the cube leaves Home and starts over once Sway's blend
+# is all but gone. test_cube_render_pose.py runs it through a turn, out to the
+# Library and back, and two dips.
 home_pose = re.search(r"\[UI_SCENE_HOME\] = \{([^}]*)\}", SCENE_C)
 home_yaw = float(home_pose.group(1).split(",")[4].strip().rstrip("f"))
 sway_reach = re.search(r"#define CUBE_SWAY_RADIANS\s+([0-9.]+)f", INDIGO)
 assert sway_reach and 0.0 < float(sway_reach.group(1)) <= home_yaw
 assert "if(idleSway) {" in setup_cube
-assert "float sway = swayClock(seconds, animated ? idleBlend : 0.0f);" in setup_cube
+assert "float swayBlend = scene->homeSwayBlend;" in setup_cube
+assert "float sway = swayClock(seconds, animated ? swayBlend : 0.0f);" in setup_cube
 assert ("idleYaw = animated ? -CUBE_SWAY_RADIANS *\n"
-        "\t\t\t(1.0f - cosf(sway * CUBE_SWAY_RATE)) * idleBlend : 0.0f;") in setup_cube
+        "\t\t\t(1.0f - cosf(sway * CUBE_SWAY_RATE)) * swayBlend : 0.0f;") in setup_cube
 sway_clock = extract_function(INDIGO, "static float swayClock(")
 assert "#define CUBE_SWAY_RESTART_BLEND 0.01f" in INDIGO
-assert "if(idleBlend < CUBE_SWAY_RESTART_BLEND) {\n\t\tswaySeconds = 0.0f;" in sway_clock
-assert "else if(idleBlend >= swayLastBlend) {" in sway_clock
-assert "swayLastBlend = idleBlend;" in sway_clock
+assert "if(swayBlend < CUBE_SWAY_RESTART_BLEND) {\n\t\tswaySeconds = 0.0f;" in sway_clock
+assert "else if(swayBlend >= swayLastBlend) {" in sway_clock
+assert "swayLastBlend = swayBlend;" in sway_clock
 assert ("idleTarget = motionMode == UI_MOTION_FULL &&\n"
         "\t\tstate.appliedScene == UI_SCENE_HOME &&") in scene_update
+assert ("swayTarget = motionMode == UI_MOTION_FULL &&\n"
+        "\t\tstate.appliedScene == UI_SCENE_HOME &&\n"
+        "\t\t(idleTarget > 0.0f || state.homeSwayBlend.target > 0.0f) ? 1.0f : 0.0f;") in scene_update
 # The frame sets Waves and Idle Animation from Setup > Console before it
 # draws the backdrop; test_background_gx_stream.py runs the waves' gate.
 draw_background = extract_function(FRAME_C, "static void _DrawBackground(")

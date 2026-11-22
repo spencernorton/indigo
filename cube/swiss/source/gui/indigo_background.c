@@ -25,7 +25,8 @@
 #define CUBE_IDLE_SWAY_RATE 0.31f
 #define CUBE_IDLE_SWAY_RADIANS 0.035f
 /* Idle Animation › Sway: while Home rests, the cube turns from Home's own
- * pose (turned 0.28 rad, ui_scene.c) to its mirror image and back, once in
+ * pose (turned 0.28 rad, ui_scene.c) to its mirror image and back, and goes
+ * on swinging as Home turns a face, once in
  * 2 pi / CUBE_SWAY_RATE seconds (14): at the far end it shows its left side
  * as much as Home shows its right, and never more, so the face in front
  * stays in front and the cube's outline is never wider than Home's. */
@@ -490,14 +491,13 @@ void IndigoBackground_SetWaves(bool shown)
 	wavesShown = shown;
 }
 
-/* Sway's clock: how long Home has rested. While the cube leaves its rest
- * (the idle blend falling) it waits, so a shallow dip (one that keeps the
- * blend above CUBE_SWAY_RESTART_BLEND) picks the same swing up where it was.
- * A press that takes Home off its rest takes the blend under that, and the
- * clock starts over from 0, so the next swing starts from Home's own pose;
- * a turn's blend never quite reaches 0 before Home rests again, and what the
- * restart drops is under 2 * CUBE_SWAY_RADIANS * CUBE_SWAY_RESTART_BLEND
- * (0.006).
+/* Sway's clock: how long Home has rested, turns included (homeSwayBlend
+ * holds through them). While the cube leaves Home (the blend falling) it
+ * waits, so a shallow dip (one that keeps the blend above
+ * CUBE_SWAY_RESTART_BLEND) picks the same swing up where it was. Leaving
+ * Home takes the blend under that, and the clock starts over from 0, so the
+ * swing after it starts from Home's own pose; what the restart drops is
+ * under 2 * CUBE_SWAY_RADIANS * CUBE_SWAY_RESTART_BLEND (0.006).
  * A frame's two cube passes read it at the same seconds and step it once; a
  * frame that took long holds the swing rather than jumping it. */
 static bool idleSway;
@@ -508,7 +508,7 @@ void IndigoBackground_SetIdleSway(bool sway)
 	idleSway = sway;
 }
 
-static float swayClock(float seconds, float idleBlend)
+static float swayClock(float seconds, float swayBlend)
 {
 	float step = swayLastSeconds < 0.0f ? 0.0f : seconds - swayLastSeconds;
 
@@ -516,14 +516,14 @@ static float swayClock(float seconds, float idleBlend)
 		step += UI_ANIM_TIME_WRAP_SECONDS;  /* the menu clock wrapped */
 	}
 	swayLastSeconds = seconds;
-	if(idleBlend < CUBE_SWAY_RESTART_BLEND) {
+	if(swayBlend < CUBE_SWAY_RESTART_BLEND) {
 		swaySeconds = 0.0f;
 	}
-	else if(idleBlend >= swayLastBlend) {
+	else if(swayBlend >= swayLastBlend) {
 		swaySeconds = fmodf(swaySeconds + fminf(step, 0.1f),
 			6.28318531f / CUBE_SWAY_RATE);
 	}
-	swayLastBlend = idleBlend;
+	swayLastBlend = swayBlend;
 	return swaySeconds;
 }
 
@@ -646,10 +646,11 @@ static void setupCubePipeline(const uiSceneFrame_t *scene, float seconds, bool a
 
 	/* Sway turns to the mirror of Home's pose and back instead. */
 	if(idleSway) {
-		float sway = swayClock(seconds, animated ? idleBlend : 0.0f);
+		float swayBlend = scene->homeSwayBlend;
+		float sway = swayClock(seconds, animated ? swayBlend : 0.0f);
 
 		idleYaw = animated ? -CUBE_SWAY_RADIANS *
-			(1.0f - cosf(sway * CUBE_SWAY_RATE)) * idleBlend : 0.0f;
+			(1.0f - cosf(sway * CUBE_SWAY_RATE)) * swayBlend : 0.0f;
 	}
 	yaw = scene->cubeYaw + idleYaw;
 
