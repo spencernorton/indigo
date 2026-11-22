@@ -25,11 +25,11 @@
 #define CUBE_IDLE_SWAY_RATE 0.31f
 #define CUBE_IDLE_SWAY_RADIANS 0.035f
 /* Idle Animation › Sway: while Home rests, the cube turns from Home's own
- * pose (turned 0.28 rad, ui_scene.c) to its mirror image and back, and goes
- * on swinging as Home turns a face, once in
- * 2 pi / CUBE_SWAY_RATE seconds (14): at the far end it shows its left side
- * as much as Home shows its right, and never more, so the face in front
- * stays in front and the cube's outline is never wider than Home's. */
+ * pose (turned 0.28 rad, ui_scene.c) to its mirror image and back, once in
+ * 2 pi / CUBE_SWAY_RATE seconds (14), and goes on swinging as Home turns a
+ * face. At the far end it shows its left side as much as Home shows its
+ * right, and never more, so the face in front stays in front and the
+ * cube's outline is never wider than Home's. */
 #define CUBE_SWAY_RADIANS 0.28f
 #define CUBE_SWAY_RATE 0.45f
 #define CUBE_SWAY_RESTART_BLEND 0.01f
