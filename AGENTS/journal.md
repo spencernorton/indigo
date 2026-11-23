@@ -1,3 +1,17 @@
+## 2026-11-23 — Prepare v3.0.0 for publication
+
+Name the `v3.0.0` changelog section after PR #223 (`28ebb6f`) landed on `beta`
+with 22/22 CI checks green (build, reproducible build, video diagnostic, all 11
+Dolphin emulator routes, all host/sanitized/contract test lanes, fuzzing
+including `fuzz_bnr`, and source checks). This changes documentation only;
+product, build and test code are unchanged from `28ebb6f`.
+
+Real GameCube hardware verification (GC Loader + SD2SP2 + BBA) confirmed
+`swiss.dol` boot via wiiload and direct GC Loader `/apps` launch,
+`cube/packer/reboot.dol` (`apploader.img` payload) boot, BNR1/BNR2 and
+folder-slug fallback rendering in Apps on GX hardware, `Web` face removal and
+legacy `global.ini` fallback, and live In-Game Reset back to Indigo.
+
 ## 2026-11-21 — Let Sway carry on through Home's turns (#116)
 
 #116's follow-up: with Idle Animation › Sway, turning the cube to another face
