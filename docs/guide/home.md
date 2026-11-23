@@ -54,23 +54,8 @@ A change of Cube takes effect as you leave Settings.
 
 Settings › Setup › Console › **Up Face**, **Left Face**, **Right Face** and
 **Down Face** choose the menu above, left of, right of and below Library:
-Source, Settings, System, Apps, Memory Cards, Emulators, File Browser, Web,
-or **None** to leave that side empty. Web opens the web browser that comes
-with Indigo, with a network adapter and the browser on the card
-([Where everything goes](install.md#where-everything-goes)). In the browser,
-select **< Indigo** at top-left and press A once, or use **Return to Indigo**
-in the START menu. It restarts
-the Indigo installed on the card; a build sent over the network or opened
-from Apps does not replace that startup file. The browser follows Indigo's
-menu colour, screen shape, video mode, motion, sound, rumble and time zone.
-START opens its menu; X opens the address keyboard and Y opens Bookmarks.
-Its lightweight [start page](https://norvitech.com/indigo/start/) offers search
-and controls help. It can save a weather ZIP for future browser launches;
-**Forget ZIP** clears it. A saved custom home page takes precedence.
-
-<p align="center">
-  <img alt="Indigo Web in Dolphin: native dark toolbar, top-left Indigo return, verified HTTPS start page, search form and controller hints." src="images/web-start.png" width="640">
-</p>
+Source, Settings, System, Apps, Memory Cards, Emulators, File Browser,
+or **None** to leave that side empty.
 
 Memory Cards opens the same screen as
 System's Memory Cards row, and [File Browser](system.md#file-browser) the

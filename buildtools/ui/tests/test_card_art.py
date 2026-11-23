@@ -125,6 +125,7 @@ DRIVER = r"""
 #include "IPLFontWrite.h"
 #include "card_art.h"
 #include <assert.h>
+#include "ui_bnr.h"
 #include "ui_png.h"
 
 /* -- the counter ------------------------------------------------------------ */
@@ -421,7 +422,17 @@ static void expect(int card)
 		static u8 bytes[8u << 20];
 		size_t size = fread(bytes, 1u, sizeof(bytes), file);
 		fclose(file);
-		if(size <= UI_PNG_MAX_FILE && UIPng_Poster(bytes, size, picturePoster[card])) return;
+		if(size <= UI_PNG_MAX_FILE) {
+			if(UIBnr_IsBanner(bytes, size)) {
+				u8 rgba[UI_BNR_RGBA_BYTES];
+				if(UIBnr_DecodeRgba(bytes, size, rgba) &&
+				   UIPng_RgbaPoster(rgba, UI_BNR_WIDTH, UI_BNR_HEIGHT,
+					picturePoster[card]))
+					return;
+			} else if(UIPng_Poster(bytes, size, picturePoster[card])) {
+				return;
+			}
+		}
 	}
 	free(picturePoster[card]);
 	picturePoster[card] = NULL;
@@ -608,7 +619,8 @@ def build(work: pathlib.Path) -> pathlib.Path:
     counted = ["-include", str(work / "count.h")]
     objects = []
     for source, extra in ((work / "card_art.c", counted), (GUI / "ui_png.c", counted),
-                          (GUI / "ui_apps.c", []), (work / "driver.c", [])):
+                          (GUI / "ui_bnr.c", counted), (GUI / "ui_apps.c", []),
+                          (work / "driver.c", [])):
         target = work / (source.stem + ".o")
         subprocess.run([CC, *FLAGS, *include, *extra, "-c", str(source), "-o", str(target)],
                        check=True)
@@ -817,6 +829,19 @@ class CardArtTests(unittest.TestCase):
         # Nothing read, nothing made: the renderer draws the card's name.
         self.assertEqual(self.cards(out)[0], ("none", 0, 0, []))
         self.assertEqual([m[0] for m in self.mems(out)], [0, 0])
+
+    def test_opening_bnr_renders_a_poster_without_leaking(self):
+        bnr = bytearray(6496)
+        bnr[:4] = b"BNR1"
+        for i in range(0, 96 * 32 * 2, 2):
+            struct.pack_into(">H", bnr, 32 + i, 0x8000 | (8 << 10) | (6 << 5) | 24)
+        bnr_path = self.work / "opening.bnr"
+        bnr_path.write_bytes(bytes(bnr))
+        out = self.run_script(f"card 0 {bnr_path} Indigo", "open 1", "want 0",
+                              "settle 20000", "show 0", "mem", "close", "mem")
+        self.assertIn("settled", out)
+        self.assertEqual(self.cards(out)[0], ("picture", 1, 1, [1]))
+        self.assertEqual([m[0] for m in self.mems(out)], [SLOTS_BYTES, 0])
 
 
 if __name__ == "__main__":

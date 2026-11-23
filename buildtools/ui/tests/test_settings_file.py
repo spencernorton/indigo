@@ -106,6 +106,10 @@ typedef uint32_t u32;
 #define SYS_BOOT_PRODUCTION 0x80
 #define SYS_SOUND_MONO 0
 #define SYS_SOUND_STEREO 1
+/* cube/reservedarea.h */
+#define IGR_OFF 0
+#define IGR_HOTRESET 1
+#define IGR_APPLOADER 2
 
 static size_t harness_strlcpy(char *dst, const char *src, size_t size)
 {
@@ -637,10 +641,18 @@ class SettingsFileTest(unittest.TestCase):
         # Each side's choices start at its default and go round the faces,
         # None among them (UIHome_SideFace): zeroed settings are that cube.
         faces = ["None", "Source", "Settings", "System", "Apps", "Memory Cards", "Emulators",
-                 "File Browser", "Web"]
+                 "File Browser"]
         for side, default in (("up", 1), ("left", 2), ("right", 3), ("down", 4)):
             self.assertEqual(VALUES[f"{side}FaceStr"],
                              [faces[(default + i) % len(faces)] for i in range(len(faces))], side)
+        # Legacy v2.x files naming the removed Web face fall back safely to each side's default.
+        self.assertEqual(self.global_file("Up Face=Web\r\n")["Up Face"], "Source")
+        self.assertEqual(self.global_file("Down Face=Web\r\n")["Down Face"], "Apps")
+
+    def test_igr_defaults_to_apploader(self):
+        self.assertEqual(self.global_file()["IGRType"], "Apploader")
+        self.assertEqual(self.global_file("IGRType=Disabled\r\n")["IGRType"], "Disabled")
+        self.assertEqual(self.global_file("IGRType=Reboot\r\n")["IGRType"], "Reboot")
 
     def test_a_face_icon_only_takes_that_faces_own(self):
         # Each face has its own four icons; a name from another face's list
@@ -979,8 +991,8 @@ class SettingsFileTest(unittest.TestCase):
         long = "".join(f"# note {i} about {line.split('=')[0]}\r\n" * 3 + line + "\r\n"
                        for i, line in enumerate(re.split(r"\r\n", example)) if "=" in line)
         self.assertGreater(long.count("\n"), 300)
-        merged = self.saved(long, "IGRType=Apploader\n")
-        self.assertEqual(merged, long.replace("IGRType=Disabled", "IGRType=Apploader"))
+        merged = self.saved(long, "IGRType=Reboot\n")
+        self.assertEqual(merged, long.replace("IGRType=Apploader", "IGRType=Reboot"))
 
     def test_a_game_file_drops_a_setting_back_at_its_default(self):
         example = (EXAMPLES / "game/GALE.ini").read_text()

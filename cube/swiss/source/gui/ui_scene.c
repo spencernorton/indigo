@@ -189,12 +189,12 @@ static bool homeRequestValid(const uiHomeState_t *home)
 
 static uiScenePose_t homePose(void)
 {
-	/* Memory Cards, Emulators, File Browser and Web sit as Apps does. */
+	/* Memory Cards, Emulators and File Browser sit as Apps does. */
 	static const float faceLift[UI_HOME_FACE_COUNT] = {
-		0.000f, 0.065f, -0.045f, 0.035f, -0.030f, -0.030f, -0.030f, -0.030f, -0.030f
+		0.000f, 0.065f, -0.045f, 0.035f, -0.030f, -0.030f, -0.030f, -0.030f
 	};
 	static const float facePitch[UI_HOME_FACE_COUNT] = {
-		0.000f, 0.070f, -0.090f, 0.045f, 0.055f, 0.055f, 0.055f, 0.055f, 0.055f
+		0.000f, 0.070f, -0.090f, 0.045f, 0.055f, 0.055f, 0.055f, 0.055f
 	};
 	uiScenePose_t pose = poses[UI_SCENE_HOME];
 	int face = isHomeFace((int)state.appliedHomeFace) ?

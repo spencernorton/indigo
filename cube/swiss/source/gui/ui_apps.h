@@ -32,17 +32,23 @@ typedef struct {
 } uiAppsEntry_t;
 
 typedef struct {
-	char name[UI_APPS_NAME_LENGTH];	/* shown: the file name, no extension */
+	char name[UI_APPS_NAME_LENGTH];	/* shown: BNR title, folder slug for default.dol, else filename */
+	char author[UI_APPS_NAME_LENGTH];	/* from opening.bnr when present, else "" */
 	char program[UI_APPS_PATH_LENGTH];
 	char picture[UI_APPS_PATH_LENGTH];	/* "" when it has none */
+	char banner[UI_APPS_PATH_LENGTH];	/* opening.bnr for default.dol, else "" */
 	uint32_t size;
 	uint32_t pictureSize;
-	/* The listing's entries for the program and its picture (NULL for
-	 * none), for reading them as the device reads them; valid while the
-	 * listings are. */
+	uint32_t bannerSize;
+	/* The listing's entries for the program, its picture and its opening.bnr
+	 * (NULL for none), for reading them as the device reads them; valid while
+	 * the listings are. */
 	const void *programHandle;
 	const void *pictureHandle;
+	const void *bannerHandle;
 	uint8_t type;		/* uiAppsType_t */
+	bool isDefaultDol;	/* folder/default.dol (Dolphin Depot standard) */
+	bool pictureIsBnr;	/* picture is an opening.bnr rather than a PNG */
 	bool pictureFailed;	/* its picture couldn't be read: not tried again */
 } uiApp_t;
 
@@ -60,12 +66,19 @@ const char *UIApps_TypeLabel(uiAppsType_t type);
 
 /* Adds the programs in one folder's listing to list, which holds *count and
  * has room for max: /apps itself when folder is "", or one folder in it by
- * its name. Hidden programs are left out. Each program's picture is
- * name.png beside it, else, in a folder of /apps, that folder's icon.png
- * (the Homebrew Channel's), matched ignoring case. A program whose path
- * would not fit is left out. Returns false when list filled up first. */
+ * its name. Hidden programs are left out. In a folder of /apps, default.dol
+ * (and default.dol+cli) follows the Dolphin Depot layout: it names itself
+ * after folder until opening.bnr metadata is applied, and records opening.bnr
+ * for metadata and banner art. Each program's picture is name.png beside it,
+ * else, in a folder of /apps, that folder's icon.png, else opening.bnr,
+ * matched ignoring case. A program whose path would not fit is left out.
+ * Returns false when list filled up first. */
 bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 	const char *folder, const uiAppsEntry_t *entries, size_t entryCount);
+
+/* Applies parsed opening.bnr title/author to an app (keeping its fallback
+ * name if title is empty). */
+void UIApps_ApplyBanner(uiApp_t *app, const char *title, const char *author);
 
 /* By name, ignoring case, then by path: the order Apps shows. */
 void UIApps_Sort(uiApp_t *list, size_t count);

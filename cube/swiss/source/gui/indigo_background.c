@@ -2226,18 +2226,6 @@ static void liftFaceIcon(cubeRasterTransform_t *raster, int face, float lift)
 		raster->semanticFaces[face][row][2] *= stretch;
 }
 
-/* Web: a globe, its outline with a meridian and three latitudes. */
-static void drawWebIcon(const cubeRasterTransform_t *raster, int face, GXColor glow)
-{
-	const float plane = FACE_ICON_PLANE;
-
-	drawFaceRing(raster, face, 0.0f, 0.0f, 0.42f, 40, 0.022f, plane, glow);
-	drawFaceBar(raster, face, -0.013f, -0.40f, 0.013f, 0.40f, plane, glow);
-	drawFaceBar(raster, face, -0.40f, -0.013f, 0.40f, 0.013f, plane, glow);
-	drawFaceBar(raster, face, -0.30f, 0.175f, 0.30f, 0.199f, plane, glow);
-	drawFaceBar(raster, face, -0.30f, -0.199f, 0.30f, -0.175f, plane, glow);
-}
-
 /* One face's icon, choice one of that face's four. */
 static void drawOneFaceIcon(const cubeRasterTransform_t *raster, int face,
 		int choice, float seconds, bool animated, const uiClockFrame_t *clock,
@@ -2277,7 +2265,6 @@ static void drawOneFaceIcon(const cubeRasterTransform_t *raster, int face,
 		case UI_HOME_ICON_SAVES: drawSavesIcon(raster, face, glow); break;
 		case UI_HOME_ICON_EMULATORS: drawEmulatorsIcon(raster, face, glow); break;
 		case UI_HOME_ICON_FILES: drawFolderIcon(raster, face, glow); break;
-		case UI_HOME_ICON_WEB: drawWebIcon(raster, face, glow); break;
 		default: break;
 	}
 }

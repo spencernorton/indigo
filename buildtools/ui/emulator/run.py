@@ -1701,14 +1701,14 @@ class Route:
                    memory=f"{report['memsize']:08X}")
 
     def flip_apps_face(self, settings: np.ndarray, tag: str) -> None:
-        """Down Face, thirteen DOWNs into Console (flip_console): five RIGHTs
-        from Apps pass Memory Cards, Emulators, File Browser and Web to None
-        ("off"), two LEFTs from None reach File Browser ("files"), and three
+        """Down Face, thirteen DOWNs into Console (flip_console): four RIGHTs
+        from Apps pass Memory Cards, Emulators and File Browser to None
+        ("off"), one LEFT from None reaches File Browser ("files"), and three
         LEFTs more come back to Apps ("on")."""
         # The press counts follow the Down Face option order: None, Source,
-        # Settings, System, Apps, Memory Cards, Emulators, File Browser, Web.
+        # Settings, System, Apps, Memory Cards, Emulators, File Browser.
         # A face added to that list must update them.
-        change, presses = {"off": ("RIGHT", 5), "files": ("LEFT", 2), "on": ("LEFT", 3)}[tag]
+        change, presses = {"off": ("RIGHT", 4), "files": ("LEFT", 1), "on": ("LEFT", 3)}[tag]
         self.flip_console(settings, 13, "apps-face", tag, change=change, presses=presses)
 
     def flip_console(self, settings: np.ndarray, downs: int, name: str, tag: str,

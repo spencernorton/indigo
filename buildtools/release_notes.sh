@@ -41,11 +41,11 @@ Follow the **[install guide](https://norvitech.com/indigo/guide/install/)**: pic
 | GC Loader | \`boot.dol\` at the top of the card, keeping \`boot.iso\` (Swiss starts it) | When you switch on |
 | PicoBoot or PicoLoader | \`ipl.dol\` at the top of the card, replacing the old one | When you switch on |
 | FlippyDrive | \`boot.dol\` at the top of its microSD card | When you switch on |
-| Something else, or not sure | \`apps/indigo.dol\` (make \`apps\` if needed) | From Swiss: open \`apps\`, then \`indigo.dol\` |
+| Something else, or not sure | \`apps/indigo/default.dol\` (or install via [Dolphin Depot](https://dolphindepot.org/)) | From Swiss or Dolphin Depot: open \`apps\`, then \`indigo\` |
 
-The second file is \`swiss/patches/apploader.img\`: copy it into the card's \`swiss/patches\` folder (make the folders if needed), replacing the old one, so In-Game Reset set to Apploader returns to Indigo. Any setup can use \`apps/indigo.dol\` and keep starting as it does today. Some PicoBoot and PicoLoader chips have Swiss built in and never read \`ipl.dol\`: the guide shows how to check.
+The second file is \`swiss/patches/apploader.img\`: copy it into the card's \`swiss/patches\` folder (make the folders if needed), replacing the old one, so In-Game Reset (which defaults to Apploader) returns to Indigo out of the box. Any setup can use \`apps/indigo/default.dol\` (or \`apps/indigo.dol\`) and keep starting as it does today. Some PicoBoot and PicoLoader chips have Swiss built in and never read \`ipl.dol\`: the guide shows how to check.
 
-**Updating:** back up the card's \`swiss\` folder, rename the new \`ipl.dol\` to the name of the Indigo file you start now (\`ipl.dol\`, \`boot.dol\` or \`indigo.dol\`) and copy it over that file. Then copy the new \`swiss/patches/apploader.img\` over the old one.
+**Updating:** back up the card's \`swiss\` folder, rename the new \`ipl.dol\` to the name of the Indigo file you start now (\`ipl.dol\`, \`boot.dol\`, \`apps/indigo/default.dol\` or \`indigo.dol\`) and copy it over that file. Then copy the new \`swiss/patches/apploader.img\` over the old one.
 
 **Posters and cheats** (optional; unzip one and copy the files in its \`swiss/ui\` or \`swiss/cheats\` folder into the card's folder of the same name, making it if needed): [Posters](https://indigo.norvitech.com/indigo-posters-all.zip) (every region, with Spotlight's stills/descriptions and Jewel Case's disc art) · [Cheats](https://indigo.norvitech.com/indigo-cheats.zip)
 
@@ -53,11 +53,6 @@ For Jewel Case, copy the poster pack's \`swiss/ui/discs.pak\` onto the card
 holding your games too, even if Indigo starts on another card. Updating
 Indigo's executable alone does not install disc art. Restart after updating
 the pack. Games absent from the pack keep the cover-image fallback.
-
-**Web:** copy the new \`swiss/indigo/cubebrowser.dol\` and its licences to
-the settings card, and \`gcbrowser\` to a supported card. The browser's
-**Return to Indigo** button at bottom-left exits with one press and restarts
-the Indigo installed on the card.
 
 **Verify:** \`SHA256SUMS.txt\` lists the zip's SHA-256, and the zip carries a build provenance attestation: \`gh attestation verify Indigo-$tag.zip --repo spencernorton/indigo\`.
 NOTES
