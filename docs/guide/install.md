@@ -384,7 +384,7 @@ SD card
         └── discs.pak        disc art for Jewel Case
 ```
 
-- **`ipl.dol`, `boot.dol` or `apps/indigo/default.dol`:** Indigo itself. Step 3 of your
+- **`ipl.dol`, `boot.dol`, `indigo.dol` or `apps/indigo/default.dol`:** Indigo itself. Step 3 of your
   setup says which name it has and where it goes (or install via [Dolphin Depot](https://dolphindepot.org/)).
 - **`boot.iso`:** On a GC Loader card, the disc image that starts Swiss.
   Leave it as it is.
@@ -400,6 +400,9 @@ SD card
   folder, one file per game, such as `GMSE01.txt`. Unzip the pack on your
   computer and copy the files in its `swiss/cheats` folder into this one;
   make it if it isn't there.
+- **`swiss/indigo`:** Licence and notice files plus the Ukrainian language file
+  (`uk.po`) from the download (also installed by Dolphin Depot). Optional on
+  the card unless you use Ukrainian menus.
 - **`apploader.img`:** From the download (and included in Dolphin Depot installs).
   It makes leaving a game return to Indigo out of the box; copy it to every card
   you use with Swiss. See [Leaving a game](#leaving-a-game).
