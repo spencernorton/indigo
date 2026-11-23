@@ -43,6 +43,7 @@ typedef struct {
 	uiMotionSpring_t cubeYaw;
 	uiMotionSpring_t orbitStrength;
 	uiMotionSpring_t homeIdleBlend;
+	uiMotionSpring_t homeSwayBlend;
 	uiMotionSpring_t homeDecorative;
 	uiSceneFrame_t frame;
 	float bootElapsed;
@@ -188,12 +189,12 @@ static bool homeRequestValid(const uiHomeState_t *home)
 
 static uiScenePose_t homePose(void)
 {
-	/* Memory Cards, Emulators, File Browser and Web sit as Apps does. */
+	/* Memory Cards, Emulators and File Browser sit as Apps does. */
 	static const float faceLift[UI_HOME_FACE_COUNT] = {
-		0.000f, 0.065f, -0.045f, 0.035f, -0.030f, -0.030f, -0.030f, -0.030f, -0.030f
+		0.000f, 0.065f, -0.045f, 0.035f, -0.030f, -0.030f, -0.030f, -0.030f
 	};
 	static const float facePitch[UI_HOME_FACE_COUNT] = {
-		0.000f, 0.070f, -0.090f, 0.045f, 0.055f, 0.055f, 0.055f, 0.055f, 0.055f
+		0.000f, 0.070f, -0.090f, 0.045f, 0.055f, 0.055f, 0.055f, 0.055f
 	};
 	uiScenePose_t pose = poses[UI_SCENE_HOME];
 	int face = isHomeFace((int)state.appliedHomeFace) ?
@@ -294,6 +295,7 @@ static void clearSpringVelocities(void)
 	state.orbitStrength.velocity = 0.0f;
 	state.homeDecorative.velocity = 0.0f;
 	state.homeIdleBlend.velocity = 0.0f;
+	state.homeSwayBlend.velocity = 0.0f;
 	for(int i = 0; i < 4; ++i) state.orientation[i].velocity = 0.0f;
 }
 
@@ -625,6 +627,7 @@ void UIScene_Reset(void)
 	/* The boot arrives on Home. */
 	UIMotion_SpringInit(&state.homeDecorative, 1.0f, 5.5f);
 	UIMotion_SpringInit(&state.homeIdleBlend, 0.0f, 7.0f);
+	UIMotion_SpringInit(&state.homeSwayBlend, 0.0f, 7.0f);
 	state.frame = (uiSceneFrame_t) {
 		.scene = UI_SCENE_BOOT,
 		.cubeX = bootPose->cubeX,
@@ -640,6 +643,7 @@ void UIScene_Reset(void)
 		.homeTurnDirection = 0,
 		.homeFocusProgress = 1.0f,
 		.homeIdleBlend = 0.0f,
+		.homeSwayBlend = 0.0f,
 		.homeRevision = 0u,
 		.homeSurface = UI_HOME_SURFACE_RING,
 		.homeSelection = 0,
@@ -701,6 +705,7 @@ void UIScene_Update(float deltaSeconds, uiMotionMode_t motionMode)
 {
 	uiSceneId_t targetScene;
 	float idleTarget;
+	float swayTarget;
 
 	if(!__atomic_load_n(&sceneReady, __ATOMIC_RELAXED)) {
 		return;
@@ -776,6 +781,15 @@ void UIScene_Update(float deltaSeconds, uiMotionMode_t motionMode)
 		orientationSettled() && !state.motifs.changing ? 1.0f : 0.0f;
 	UIMotion_SpringRetarget(&state.homeIdleBlend, idleTarget, motionMode);
 	state.frame.homeIdleBlend = UIMotion_SpringUpdate(&state.homeIdleBlend,
+		deltaSeconds, motionMode);
+	/* Sway's own blend: on from Home's first rest and held through its turns,
+	 * so the next face takes the swing up where the last one left it; it
+	 * goes only when the cube leaves Home or motion stops being Full. */
+	swayTarget = motionMode == UI_MOTION_FULL &&
+		state.appliedScene == UI_SCENE_HOME &&
+		(idleTarget > 0.0f || state.homeSwayBlend.target > 0.0f) ? 1.0f : 0.0f;
+	UIMotion_SpringRetarget(&state.homeSwayBlend, swayTarget, motionMode);
+	state.frame.homeSwayBlend = UIMotion_SpringUpdate(&state.homeSwayBlend,
 		deltaSeconds, motionMode);
 	state.frame.orbitStrength = UIMotion_SpringUpdate(&state.orbitStrength,
 		deltaSeconds, motionMode);

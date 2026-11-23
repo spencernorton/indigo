@@ -26,6 +26,7 @@
 #include "util.h"
 #include "input.h"
 #include "ui_apps.h"
+#include "ui_bnr.h"
 #include "ui_gameflow_library.h"
 #include "ui_menu_input.h"
 #include "ui_png.h"
@@ -185,6 +186,36 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 			folderCount++;
 		}
 	}
+	/* Read opening.bnr metadata for Dolphin Depot-layout default.dol entries
+	 * before sorting so apps order by their real display titles. */
+	if(files != NULL && found > 0u && device->readFile != NULL &&
+		device->closeFile != NULL) {
+		uint8_t *bnrBuf = NULL;
+
+		for(i = 0u; i < found; ++i) {
+			uiBnrInfo_t info;
+			file_handle bnrFile;
+			s32 read;
+
+			if(!list[i].isDefaultDol || list[i].bannerHandle == NULL ||
+				list[i].bannerSize < UI_BNR1_SIZE ||
+				list[i].bannerSize > UI_BNR_MAX_FILE) {
+				continue;
+			}
+			if(bnrBuf == NULL && (bnrBuf = malloc(UI_BNR_MAX_FILE)) == NULL) {
+				break;
+			}
+			takeEntry(&bnrFile, list[i].bannerHandle);
+			read = device->readFile(&bnrFile, bnrBuf, list[i].bannerSize);
+			device->closeFile(&bnrFile);
+			if(read == (s32)list[i].bannerSize &&
+				UIBnr_ParseMeta(bnrBuf, (size_t)read,
+					(uint8_t)swissSettings.sramLanguage, &info)) {
+				UIApps_ApplyBanner(&list[i], info.title, info.author);
+			}
+		}
+		free(bnrBuf);
+	}
 	UIApps_Sort(list, found);
 	/* Keep what the listings say of each app before they go. */
 	if(files != NULL && found > 0u &&
@@ -197,7 +228,7 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 		}
 	}
 	for(i = 0u; i < found; ++i) {
-		list[i].programHandle = list[i].pictureHandle = NULL;
+		list[i].programHandle = list[i].pictureHandle = list[i].bannerHandle = NULL;
 	}
 	for(i = 0u; i < folderCount; ++i) {
 		freeFolder(&folders[i]);
@@ -307,7 +338,8 @@ static bool buildSnapshot(uiGameflowRenderSnapshot_t *snapshot,
 		record->flags = UI_GAMEFLOW_CARD_VALID | UI_GAMEFLOW_CARD_APP;
 		record->size = app->size;
 		snprintf(record->title, sizeof(record->title), "%s", app->name);
-		snprintf(record->company, sizeof(record->company), "%s", app->program);
+		snprintf(record->company, sizeof(record->company), "%s",
+			app->author[0] != '\0' ? app->author : app->program);
 		formatBytes(size, app->size, 0,
 			!(appsDevice->location & LOC_SYSTEM));
 		snprintf(record->facts, sizeof(record->facts), "%s  |  %s",

@@ -19,6 +19,9 @@ it:
 
 ```
 apps/
+  dolphindepot/
+    default.dol
+    opening.bnr
   gbi.dol
   gbi.png
   gbihf.dol
@@ -31,7 +34,11 @@ apps/
 
 - A program is any `.dol`, `.dol+cli` or `.elf` file, in `/apps` or in a
   folder inside it. Folders inside those folders aren't read.
-- An app is called by its file name without the extension: `gbihf.dol`
+- **Dolphin Depot apps** (`/apps/<slug>/default.dol` with an optional
+  `opening.bnr`) are recognized natively: Indigo reads the app's title,
+  author and 96 × 32 banner artwork from `opening.bnr` (falling back to the
+  folder's name if there is no `opening.bnr`), and sorts them by title.
+- Any other app is called by its file name without the extension: `gbihf.dol`
   shows as gbihf. Rename the file to rename the app.
 - Apps are in alphabetical order, and up to 256 of them show.
 - Left out: a file called `boot.dol` or `boot.elf`, which in the Wii's
@@ -87,9 +94,10 @@ and a `.dcp` file lists choices to pick from before it starts.
 ## Give an app a picture
 
 Put a PNG beside the program, with the same name: `gbi.png` for `gbi.dol`.
-An app in a folder can use the folder's `icon.png` instead, the Homebrew
-Channel's icon file, and every program in that folder without a picture of
-its own then shares it.
+An app in a folder can use the folder's `icon.png` instead (the Homebrew
+Channel's icon file), or a Dolphin Depot `opening.bnr` banner (BNR1 or BNR2)
+when no PNG is present; a matching PNG or `icon.png` takes precedence over
+`opening.bnr`.
 
 - Any size up to 2048 × 2048 pixels, and up to 2 MB.
 - Any PNG, with or without transparency, but not interlaced. Most programs

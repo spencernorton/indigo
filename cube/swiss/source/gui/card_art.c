@@ -14,6 +14,7 @@
 #include "FrameBufferMagic.h"
 #include "IPLFontWrite.h"
 #include "ui_apps.h"
+#include "ui_bnr.h"
 #include "ui_png.h"
 #include "util.h"
 #include "card_art.h"
@@ -220,7 +221,20 @@ static void *posterMain(void *unused)
 		 * picture, and its slot keeps waiting for it. */
 		job->ok = false;
 		if(job->data != NULL) {
-			job->ok = UIPng_PosterUntil(job->data, job->size, out, &posterStop);
+			if(UIBnr_IsBanner(job->data, job->size)) {
+				uint8_t *rgba = malloc(UI_BNR_RGBA_BYTES);
+
+				if(rgba != NULL) {
+					if(UIBnr_DecodeRgba(job->data, job->size, rgba)) {
+						job->ok = UIPng_RgbaPosterUntil(rgba, UI_BNR_WIDTH,
+							UI_BNR_HEIGHT, out, &posterStop);
+					}
+					free(rgba);
+				}
+			}
+			else {
+				job->ok = UIPng_PosterUntil(job->data, job->size, out, &posterStop);
+			}
 			if(!posterStop) {
 				source.verdict(job->card, job->ok);
 			}

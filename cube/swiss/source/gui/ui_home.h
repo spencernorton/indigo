@@ -20,9 +20,6 @@ typedef enum {
 	/* File Browser, also a row on System, the same way: Swiss's own file
 	 * list at the source's root. */
 	UI_HOME_FACE_FILES,
-	/* Web browser: a bundled cubebrowser.dol, launched like an app. Always
-	 * available; on a side only when Settings puts it there. */
-	UI_HOME_FACE_WEB,
 	UI_HOME_FACE_COUNT
 } uiHomeFace_t;
 
@@ -49,12 +46,11 @@ typedef enum {
 	UI_HOME_ICON_POWER,
 	UI_HOME_ICON_CHIP,
 	/* Apps has one picture; its other choices draw nothing. So have Memory
-	 * Cards, Emulators, File Browser (Source's folder) and the web browser. */
+	 * Cards, Emulators and File Browser (Source's folder). */
 	UI_HOME_ICON_APPS,
 	UI_HOME_ICON_SAVES = UI_HOME_FACE_SAVES * UI_HOME_ICON_CHOICES,
 	UI_HOME_ICON_EMULATORS = UI_HOME_FACE_EMULATORS * UI_HOME_ICON_CHOICES,
 	UI_HOME_ICON_FILES = UI_HOME_FACE_FILES * UI_HOME_ICON_CHOICES,
-	UI_HOME_ICON_WEB = UI_HOME_FACE_WEB * UI_HOME_ICON_CHOICES,
 	UI_HOME_ICON_COUNT
 } uiHomeIcon_t;
 
@@ -93,9 +89,7 @@ typedef enum {
 	UI_HOME_EFFECT_OPEN_EMULATORS,
 	/* Swiss's own file list at the source's root, even where the Library
 	 * would show. */
-	UI_HOME_EFFECT_OPEN_FILES,
-	/* Launch the bundled web browser DOL. */
-	UI_HOME_EFFECT_OPEN_WEB
+	UI_HOME_EFFECT_OPEN_FILES
 } uiHomeEffect_t;
 
 /* How the faces sit on the cube (Setup > Console > Cube). Infinite turns

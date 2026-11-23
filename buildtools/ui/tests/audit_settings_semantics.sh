@@ -99,6 +99,9 @@ if count != 1:
     raise SystemExit("could not normalize SET_UI_ANIMS")
 normalized = normalized.replace("\t\t\t\t\tsettingsResetGame(gameConfig);\n",
                                 "\t\t\t\t\tconfig_defaults(gameConfig);\n")
+# Indigo defaults In-Game Reset to Apploader out of the box.
+normalized = normalized.replace("\t\t\t\t\tswissSettings.igrType = IGR_APPLOADER;\n",
+                                "\t\t\t\t\tswissSettings.igrType = 0;\n")
 # The Menu Color arm is new, so the base has nothing to compare it with.
 normalized = re.sub(
     r"(?ms)^\t+case SET_UI_COLOR:\n"

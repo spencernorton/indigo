@@ -8,9 +8,6 @@
 #     swiss/ui/                      posters.pak, if you add one
 #     swiss/indigo/LICENSE.txt, NOTICE.txt
 #     swiss/indigo/uk.po             Menu Language Ukrainian's words
-#     swiss/indigo/cubebrowser.dol   the web browser the Web face launches (if bundled)
-#     gcbrowser/cacert.pem           the browser's trusted certificates (if bundled)
-#     swiss/indigo/LICENSE-mbedtls.txt  the licence of mbed TLS, built into the browser
 # Usage: buildtools/sd_package.sh <version> [swiss.dol] [out dir]
 # Run `make dev` first (see README, Install); run from the repository root.
 set -eu
@@ -36,31 +33,6 @@ cp docs/licenses/lwip.txt "$card/swiss/indigo/LICENSE-lwip.txt"
 # are drawn from.
 cp cube/swiss/source/gui/lang/uk.po "$card/swiss/indigo/uk.po"
 cp docs/licenses/noto-sans-ofl.txt "$card/swiss/indigo/LICENSE-NotoSans.txt"
-# Web browser (optional): a separate program the Web face launches, built from
-# the hardened fork (docs/dev/web-browser.md). Its CA bundle goes in gcbrowser/
-# at the card root, where the browser looks for it. Without it the Web face
-# reports the browser isn't installed.
-browser_dol=${BROWSER_DOL:-browser/cubebrowser.dol}
-browser_gcbrowser=${BROWSER_GCBROWSER:-browser/gcbrowser}
-# mbed TLS is built into the browser, and its licence goes with it.
-browser_mbedtls_license=${BROWSER_MBEDTLS_LICENSE:-browser/LICENSE-mbedtls.txt}
-browser_zip=
-if [ -f "$browser_dol" ]; then
-	if [ ! -f "$browser_mbedtls_license" ]; then
-		echo "sd_package: $browser_dol needs mbed TLS's licence at $browser_mbedtls_license" >&2
-		exit 1
-	fi
-	cp "$browser_dol" "$card/swiss/indigo/cubebrowser.dol"
-	cp "$browser_mbedtls_license" "$card/swiss/indigo/LICENSE-mbedtls.txt"
-	if [ -d "$browser_gcbrowser" ]; then
-		mkdir -p "$card/gcbrowser"
-		cp -R "$browser_gcbrowser/." "$card/gcbrowser/"
-		browser_zip=gcbrowser
-	fi
-	echo "sd_package: bundled the web browser ($browser_dol)"
-else
-	echo "sd_package: no web browser at $browser_dol; the Web face will report it is not installed" >&2
-fi
 cat > "$card/Indigo-README.txt" <<TXT
 Indigo $version - an unofficial fork of Swiss with the interface rebuilt
 Guide:  https://norvitech.com/indigo/
@@ -86,32 +58,30 @@ https://norvitech.com/indigo/guide/install/
          the old one. Indigo then starts when you switch on.
        FlippyDrive: rename it boot.dol and put it at the top of its
          microSD card. Indigo then starts when you switch on.
-       Something else, or not sure: rename it indigo.dol and put it in
-         the card's apps folder (make it if it isn't there). Your
-         console starts as it does today.
-     Any setup can use apps/indigo.dol and open Indigo from Swiss. Some
-     PicoBoot and PicoLoader chips have Swiss built in and never read
-     ipl.dol: the guide shows how to check.
+       Something else, or not sure: rename it default.dol and put it in
+         apps/indigo/ on the card (make the folders if needed). Your
+         console starts as it does today, or install via Dolphin Depot.
+     Any setup can use apps/indigo/default.dol (or apps/indigo.dol) and open
+     Indigo from Swiss. Some PicoBoot and PicoLoader chips have Swiss built in
+     and never read ipl.dol: the guide shows how to check.
    Copy files, not the whole swiss folder: on a Mac, Replace on a folder
    deletes the settings and saves inside it.
 4. Put the card back and switch on. If you put Indigo at the top of the
    card as ipl.dol or boot.dol, it starts. Otherwise start Swiss as usual
    and open the card (on FlippyDrive: FlippyDrive, not FlippyDrive Flash),
-   then apps, then indigo.dol.
+   then apps, then indigo.
 
 UPDATING INDIGO
 Back up the card's swiss folder. Rename the new ipl.dol to the name of the
-Indigo file you start now (ipl.dol, boot.dol or indigo.dol) and copy it
-over that file. Then copy the new swiss/patches/apploader.img over the old
-one. If you use the Web face, copy the new cubebrowser.dol and gcbrowser
-folder too (see WEB BROWSER).
+Indigo file you start now (ipl.dol, boot.dol, apps/indigo/default.dol or
+apps/indigo.dol) and copy it over that file. Then copy the new
+swiss/patches/apploader.img over the old one.
 
 WHAT EACH FILE IS FOR
   ipl.dol                      Indigo itself (renamed for some setups)
   swiss/patches/apploader.img  In-Game Reset returns to Indigo (see below)
   swiss/ui/                    the poster pack goes here, if you add it
-  swiss/indigo/                licences, notices and the web browser
-  gcbrowser/                   the web browser's certificates
+  swiss/indigo/                licences, notices and Menu Language files
 
 GAMES
 Put your games in /games, either one folder per game or the disc images
@@ -139,28 +109,15 @@ swiss/ui/discs.pak on the card holding the games (even if Indigo starts
 from another card). Updating Indigo itself does not add the disc pack.
 Restart Indigo after adding or replacing artwork packs.
 
-WEB BROWSER
-If this download has swiss/indigo/cubebrowser.dol and a gcbrowser folder,
-copy both: cubebrowser.dol into the swiss/indigo folder of the card that
-holds Indigo's settings (make the folder if it isn't there), and the
-gcbrowser folder to the top of the card beside ipl.dol. The Web face on
-the Home cube (give it a side under Settings > Setup > Console) opens the
-browser; it needs a network adapter. The browser reads gcbrowser from an
-SD2SP2, an SD Gecko or a GC Loader, not from a FlippyDrive's card: with a
-FlippyDrive, put gcbrowser on a card in an SD2SP2 or SD Gecko. With only a
-FlippyDrive, secure (https) pages don't open and the browser saves nothing.
-To leave the browser, select Return to Indigo at bottom-left and press A
-once. It restarts the Indigo installed on the card. A network/Apps test
-build does not replace that startup file.
-
 IN-GAME RESET
-With In-Game Reset set to Apploader (Settings > Quick), A + Z + START
-during a game returns to Indigo: swiss/patches/apploader.img is Indigo.
-It replaces stock Swiss's copy, so a game started from stock Swiss returns
-to Indigo too. Reboot resets the console, back to whatever your loader boots.
+In-Game Reset defaults to Apploader (Settings > Quick), so A + Z + START
+during a game returns to Indigo out of the box when swiss/patches/apploader.img
+is on the card. It replaces stock Swiss's copy, so a game started from stock
+Swiss returns to Indigo too. Reboot resets the console, back to whatever your
+loader boots.
 TXT
 
 rm -f "$out/Indigo-$version.zip"
 # Directory entries included, so the ZIP shows the card's folders.
-(cd "$card" && zip -qrX "$out/Indigo-$version.zip" Indigo-README.txt ipl.dol swiss ${browser_zip})
+(cd "$card" && zip -qrX "$out/Indigo-$version.zip" Indigo-README.txt ipl.dol swiss)
 shasum -a 256 "$out/Indigo-$version.zip"

@@ -214,15 +214,16 @@ each setup.
 | [GC Loader](https://norvitech.com/indigo/guide/install/?loader=gcloader) | `boot.dol` at the top of the card, keeping `boot.iso` (Swiss starts it) | When you switch on |
 | [PicoBoot or PicoLoader](https://norvitech.com/indigo/guide/install/?loader=picoboot) | `ipl.dol` at the top of the card, replacing the old one | When you switch on |
 | [FlippyDrive](https://norvitech.com/indigo/guide/install/?loader=flippy) | `boot.dol` at the top of its microSD card | When you switch on |
-| [Something else, or not sure](https://norvitech.com/indigo/guide/install/?loader=other) | `apps/indigo.dol` (make `apps` if needed) | From Swiss |
+| [Something else, or not sure](https://norvitech.com/indigo/guide/install/?loader=other) | `apps/indigo/default.dol` (or install from Dolphin Depot) | From Swiss or Dolphin Depot |
 
 First back up the card's `swiss` folder (Swiss hides it, so show hidden
 folders) and the `ipl.dol` or `boot.dol` you replace. Then also copy the
 download's `swiss/patches/apploader.img` into the card's `swiss/patches`
-folder. Any setup can use `apps/indigo.dol` and open Indigo from Swiss. Some
-PicoBoot and PicoLoader chips have Swiss built in and never read `ipl.dol`:
-the [install guide](docs/guide/install.md) shows how to check, and has every
-step, updating and going back to stock Swiss.
+folder so In-Game Reset (`A + Z + START`) returns to Indigo out of the box.
+Any setup can use `apps/indigo/default.dol` (or `apps/indigo.dol`) and open
+Indigo from Swiss. Some PicoBoot and PicoLoader chips have Swiss built in and
+never read `ipl.dol`: the [install guide](docs/guide/install.md) shows how to
+check, and has every step, updating and going back to stock Swiss.
 
 ### Any platform — from source
 
@@ -327,10 +328,15 @@ from pictures of the discs (at least 160×160):
 ### Apps
 
 Put other programs (`.dol`, `.dol+cli` or `.elf`) in `/apps` at the root of
-the card, loose or each in a folder of its own, and a picture beside each,
-a PNG with the program's name. Home then gets an Apps face:
+the card, loose or each in a folder of its own. Apps installed via
+[Dolphin Depot](https://dolphindepot.org/) (`/apps/<slug>/default.dol` +
+`opening.bnr`) are recognized natively with their banner artwork, title and
+author; other programs can place a matching PNG or `icon.png` beside them. Home
+then gets an Apps face:
 
 ```text
+/apps/dolphindepot/default.dol
+/apps/dolphindepot/opening.bnr
 /apps/gbi.dol
 /apps/gbi.png
 /apps/Genesis Plus GX/genplus_cube.dol

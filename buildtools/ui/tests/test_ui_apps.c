@@ -152,6 +152,70 @@ static void testAppFolder(void)
 	}
 }
 
+static void testDolphinDepotLayout(void)
+{
+	/* Dolphin Depot standard: /apps/<slug>/default.dol + opening.bnr, plus
+	 * optional variant .dol files and PNG override precedence. */
+	uiAppsEntry_t cleanrip[] = {
+		FILE_ENTRY("default.dol"), FILE_ENTRY("opening.bnr")
+	};
+	uiAppsEntry_t customPng[] = {
+		FILE_ENTRY("default.dol"), FILE_ENTRY("opening.bnr"),
+		FILE_ENTRY("icon.png"), FILE_ENTRY("gbihf.dol")
+	};
+	uiAppsEntry_t hiddenBnr[] = {
+		FILE_ENTRY("default.dol"), {"opening.bnr", false, true, 6496u, NULL}
+	};
+	uiApp_t list[8];
+	size_t count = 0u;
+	const uiApp_t *app;
+
+	cleanrip[0].handle = &cleanrip[0];
+	cleanrip[1].handle = &cleanrip[1];
+	cleanrip[1].size = 6496u;
+	CHECK(UIApps_AddFolder(list, &count, 8u, "cleanrip", cleanrip, 2u));
+	CHECK(count == 1u);
+	app = &list[0];
+	CHECK(app->isDefaultDol);
+	/* Before opening.bnr is parsed, default.dol takes its folder slug, never "default". */
+	CHECK(strcmp(app->name, "cleanrip") == 0);
+	CHECK(strcmp(app->program, "cleanrip/default.dol") == 0);
+	CHECK(strcmp(app->banner, "cleanrip/opening.bnr") == 0);
+	CHECK(app->bannerSize == 6496u && app->bannerHandle == &cleanrip[1]);
+	CHECK(strcmp(app->picture, "cleanrip/opening.bnr") == 0);
+	CHECK(app->pictureIsBnr && app->pictureHandle == &cleanrip[1]);
+	UIApps_ApplyBanner(&list[0], "CleanRip", "emu_kidid");
+	CHECK(strcmp(list[0].name, "CleanRip") == 0);
+	CHECK(strcmp(list[0].author, "emu_kidid") == 0);
+	/* Empty title preserves the folder slug fallback. */
+	UIApps_ApplyBanner(&list[0], "", NULL);
+	CHECK(strcmp(list[0].name, "CleanRip") == 0);
+
+	/* icon.png beats opening.bnr for poster art, while opening.bnr stays for metadata. */
+	customPng[1].handle = &customPng[1];
+	customPng[1].size = 6496u;
+	customPng[2].handle = &customPng[2];
+	customPng[2].size = 1024u;
+	CHECK(UIApps_AddFolder(list, &count, 8u, "gbi", customPng, 4u));
+	CHECK(count == 3u);
+	app = find(list, count, "gbi");
+	CHECK(app != NULL && app->isDefaultDol);
+	CHECK(!app->pictureIsBnr && strcmp(app->picture, "gbi/icon.png") == 0);
+	CHECK(strcmp(app->banner, "gbi/opening.bnr") == 0);
+	/* Variant .dol keeps its own descriptive name. */
+	app = find(list, count, "gbihf");
+	CHECK(app != NULL && !app->isDefaultDol);
+	CHECK(strcmp(app->program, "gbi/gbihf.dol") == 0);
+	CHECK(strcmp(app->picture, "gbi/icon.png") == 0);
+	CHECK(app->banner[0] == '\0');
+
+	/* Hidden opening.bnr is ignored; default.dol still falls back to folder slug. */
+	CHECK(UIApps_AddFolder(list, &count, 8u, "hidden-app", hiddenBnr, 2u));
+	app = find(list, count, "hidden-app");
+	CHECK(app != NULL && app->isDefaultDol);
+	CHECK(app->banner[0] == '\0' && app->picture[0] == '\0');
+}
+
 static void testLimits(void)
 {
 	uiAppsEntry_t entries[] = {
@@ -342,6 +406,7 @@ int main(void)
 	testProgramTypes();
 	testTopFolder();
 	testAppFolder();
+	testDolphinDepotLayout();
 	testLimits();
 	testSort();
 	testArtSlots();
