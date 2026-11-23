@@ -1,0 +1,13 @@
+FormatVersion=1
+Channel=stable
+Version=v3.0.0
+Commit=28c52697f322c6eaa2c264ba52e31f2eaba52e3e
+Date=2026-11-23
+BuildTime=1795465694
+File=indigo-v3.0.0.dol
+Size=4451264
+SHA256=5308a524ec4358e3b263e407a18ad05965223b5a4bc0d0ccac64c23299942be6
+ApploaderFile=apploader-v3.0.0.img
+ApploaderSize=2447360
+ApploaderSHA256=3866f9b4ba680d1df3fb61de9bc4e718df8cb655f8c47144b08e94865b9abd35
+NotesURL=https://github.com/spencernorton/indigo/releases/tag/v3.0.0
