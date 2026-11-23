@@ -56,6 +56,9 @@ typedef struct {
 	float homeMotifAlpha[UI_HOME_FACE_COUNT];
 	float homeFocusProgress;
 	float homeIdleBlend;
+	/* Idle Animation › Sway's strength: like homeIdleBlend, but once Home
+	 * has rested it stays 1 through Home's turns, until the cube leaves Home. */
+	float homeSwayBlend;
 	uint32_t homeRevision;
 	uiHomeSurface_t homeSurface;
 	int homeSelection;

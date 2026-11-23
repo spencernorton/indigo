@@ -123,17 +123,16 @@ face_enum = re.search(
     r"(?:/\*.*?\*/\s*)?UI_HOME_FACE_SAVES\s*,\s*"
     r"UI_HOME_FACE_EMULATORS\s*,\s*"
     r"(?:/\*.*?\*/\s*)?UI_HOME_FACE_FILES\s*,\s*"
-    r"(?:/\*.*?\*/\s*)?UI_HOME_FACE_WEB\s*,\s*"
     r"UI_HOME_FACE_COUNT\s*\}\s*uiHomeFace_t\s*;",
     HOME_H,
     re.S,
 )
 assert face_enum, ("Home faces are not Library/Source/Settings/System, then Apps, "
-                   "Memory Cards, Emulators, File Browser and Web")
+                   "Memory Cards, Emulators and File Browser")
 assert re.search(
     r"faceLabels\s*\[UI_HOME_FACE_COUNT\]\s*=\s*\{\s*"
     r'"LIBRARY"\s*,\s*"SOURCE"\s*,\s*"SETTINGS"\s*,\s*"SYSTEM"\s*,\s*"APPS"\s*,\s*'
-    r'"MEMORY CARDS"\s*,\s*"EMULATORS"\s*,\s*"FILE BROWSER"\s*,\s*"WEB"\s*\}',
+    r'"MEMORY CARDS"\s*,\s*"EMULATORS"\s*,\s*"FILE BROWSER"\s*\}',
     HOME_C,
     re.S,
 ), "visible Home labels no longer match the semantic enum order"
@@ -315,21 +314,6 @@ assert SWISS.count("homeFileBrowser = true;") == 1
 assert "homeState" not in open_files
 assert "homeFileBrowser = false;" in home_input
 assert "swissSettings.enableFileManagement =" not in SWISS
-# Web reads the browser's DOL from the config device, which is mounted only
-# while something reads it unless it is the Source too: mount it to look, let
-# it go when the DOL isn't there, and keep it through boot_dol, which reads
-# the DOL from it. The browser gets lab=1, its own console lab, only while
-# Indigo's is on.
-ordered(dispatch, "case UI_HOME_EFFECT_OPEN_WEB:", "launchWebBrowser();")
-web_launch = extract_function(SWISS, "static void launchWebBrowser(void)\n{")
-ordered(web_launch, "mounted = config_set_device();", "device = devices[DEVICE_CONFIG];",
-    "if(mounted && ", "device->readDir(", "if(found < 0) {", "if(mounted) {",
-    "config_unset_device();", "return;", ".lab = swissSettings.labServer",
-    "UIBrowserLaunch_Arguments(&browserArgs, &context);",
-    "boot_dol(&curFile, browserArgs.argc, browserArgs.argv);",
-    "device->closeFile(&curFile);", "config_unset_device();")
-assert web_launch.count("config_unset_device();") == 2
-assert web_launch.count("boot_dol(") == 1
 assert SWISS.count("show_saves();") == 1
 # Memory Cards hands the Home cube over where it stands, System side to the
 # front: any scene but Home's would turn it while it goes and comes back.
@@ -625,25 +609,30 @@ sway = re.search(r"#define CUBE_IDLE_SWAY_RADIANS\s+([0-9.]+)f", INDIGO)
 assert sway and 0.0 < float(sway.group(1)) <= 0.08
 # Idle Animation > Sway turns from Home's pose to its mirror image and back:
 # its reach is Home's own turn and no more, so the front face stays in front
-# and the outline is never wider than Home's. Only while Home itself rests
-# (not the Source picker), with motion on, from a clock that waits while the
-# cube leaves its rest and starts over once the idle blend is all but gone.
-# test_cube_render_pose.py runs it through a turn and a shallow dip.
+# and the outline is never wider than Home's. Only once Home itself has rested
+# (not the Source picker), with motion on, and on through Home's turns, from a
+# clock that waits while the cube leaves Home and starts over once Sway's blend
+# is all but gone. test_cube_render_pose.py runs it through a turn, out to the
+# Library and back, and two dips.
 home_pose = re.search(r"\[UI_SCENE_HOME\] = \{([^}]*)\}", SCENE_C)
 home_yaw = float(home_pose.group(1).split(",")[4].strip().rstrip("f"))
 sway_reach = re.search(r"#define CUBE_SWAY_RADIANS\s+([0-9.]+)f", INDIGO)
 assert sway_reach and 0.0 < float(sway_reach.group(1)) <= home_yaw
 assert "if(idleSway) {" in setup_cube
-assert "float sway = swayClock(seconds, animated ? idleBlend : 0.0f);" in setup_cube
+assert "float swayBlend = scene->homeSwayBlend;" in setup_cube
+assert "float sway = swayClock(seconds, animated ? swayBlend : 0.0f);" in setup_cube
 assert ("idleYaw = animated ? -CUBE_SWAY_RADIANS *\n"
-        "\t\t\t(1.0f - cosf(sway * CUBE_SWAY_RATE)) * idleBlend : 0.0f;") in setup_cube
+        "\t\t\t(1.0f - cosf(sway * CUBE_SWAY_RATE)) * swayBlend : 0.0f;") in setup_cube
 sway_clock = extract_function(INDIGO, "static float swayClock(")
 assert "#define CUBE_SWAY_RESTART_BLEND 0.01f" in INDIGO
-assert "if(idleBlend < CUBE_SWAY_RESTART_BLEND) {\n\t\tswaySeconds = 0.0f;" in sway_clock
-assert "else if(idleBlend >= swayLastBlend) {" in sway_clock
-assert "swayLastBlend = idleBlend;" in sway_clock
+assert "if(swayBlend < CUBE_SWAY_RESTART_BLEND) {\n\t\tswaySeconds = 0.0f;" in sway_clock
+assert "else if(swayBlend >= swayLastBlend) {" in sway_clock
+assert "swayLastBlend = swayBlend;" in sway_clock
 assert ("idleTarget = motionMode == UI_MOTION_FULL &&\n"
         "\t\tstate.appliedScene == UI_SCENE_HOME &&") in scene_update
+assert ("swayTarget = motionMode == UI_MOTION_FULL &&\n"
+        "\t\tstate.appliedScene == UI_SCENE_HOME &&\n"
+        "\t\t(idleTarget > 0.0f || state.homeSwayBlend.target > 0.0f) ? 1.0f : 0.0f;") in scene_update
 # The frame sets Waves and Idle Animation from Setup > Console before it
 # draws the backdrop; test_background_gx_stream.py runs the waves' gate.
 draw_background = extract_function(FRAME_C, "static void _DrawBackground(")
@@ -687,7 +676,7 @@ for icon, name in (("CONTROLLER", "Controller"), ("BOOKS", "Books"), ("COVERS", 
 		("FOLDER", "Folder"), ("SLIDERS", "Sliders"), ("GEAR", "Gear"), ("TOGGLES", "Toggles"),
 		("DIAL", "Dial"), ("CLOCK", "Clock"), ("INFO", "Info"), ("POWER", "Power"),
 		("CHIP", "Chip"), ("APPS", "Apps"), ("SAVES", "Saves"), ("EMULATORS", "Emulators"),
-		("FILES", "Folder"), ("WEB", "Web")):
+		("FILES", "Folder")):
 	assert f"case UI_HOME_ICON_{icon}:" in dispatch
 	helper = extract_function(INDIGO, f"static void draw{name}Icon(")
 	assert "int face" in helper and "UI_HOME_FACE_" not in helper

@@ -1,3 +1,57 @@
+## 2026-11-23 — Prepare v3.0.0 for publication
+
+Name the `v3.0.0` changelog section after PR #223 (`28ebb6f`) landed on `beta`
+with 22/22 CI checks green (build, reproducible build, video diagnostic, all 11
+Dolphin emulator routes, all host/sanitized/contract test lanes, fuzzing
+including `fuzz_bnr`, and source checks). This changes documentation only;
+product, build and test code are unchanged from `28ebb6f`.
+
+Real GameCube hardware verification (GC Loader + SD2SP2 + BBA) confirmed
+`swiss.dol` boot via wiiload and direct GC Loader `/apps` launch,
+`cube/packer/reboot.dol` (`apploader.img` payload) boot, BNR1/BNR2 and
+folder-slug fallback rendering in Apps on GX hardware, `Web` face removal and
+legacy `global.ini` fallback, and live In-Game Reset back to Indigo.
+
+## 2026-11-21 — Let Sway carry on through Home's turns (#116)
+
+#116's follow-up: with Idle Animation › Sway, turning the cube to another face
+eased it back to Home's resting pose and started the swing over, because the
+sway was scaled by `homeIdleBlend`, which falls to almost 0 during every turn
+(the face's lift, pitch and orientation springs all move). Sway now has its
+own `homeSwayBlend` in `ui_scene.c`: it comes on with Home's first rest, holds
+at 1 through Home's turns and row moves, and falls only when the cube leaves
+Home (the Source picker included) or UI Motion stops being Full. The renderer
+scales the swing and feeds its clock with it, so the next face picks the
+swing up where the last one left it; coming back to Home still starts from
+the pose. Calm's drift and the glass drift keep `homeIdleBlend`.
+
+`test_cube_render_pose.py` now drives the real scene through a mid-swing turn,
+out to the Library and back, and a shallow and a deep dip, against a model of
+the swing's clock; `test_ui_scene.c` checks the blend through four turns, the
+Source picker, every other scene and Reduced motion. Using `homeIdleBlend` for
+Sway, dropping the held target, or dropping the Home-only condition each
+fails them. Only host tests ran locally (this Mac has no Pillow for the poster
+lane); CI runs every lane and Dolphin. Not seen on a console.
+
+## 2026-11-21 — Prepare v2.9.1 for publication
+
+Name the `v2.9.1` changelog section for the Game Boy Interface launch fix
+(#215, #218) after `v2.9.1-rc.1` (`8070d19`) published from `beta`. This
+changes documentation only; product, build and test code are unchanged from
+`v2.9.1-rc.1`.
+
+The release candidate's `ipl.dol` is byte-identical to CI's build of
+`8070d19`. All 20 programs in the current Game Boy Interface package (`gbi`,
+`gbihf`, `gbisr` and their `.dol+cli` presets) pass
+`test_boot_image.py --sanitize --check-files`, while `v2.9.0`'s validator
+rejects all 20; `v2.9.0` accepts them again with 1,024 zero bytes appended,
+the workaround #218 describes. In Dolphin, `gbi.dol` started from Apps reaches
+GBI's own entry code on this build, where `v2.9.0` shows "DOL is corrupted",
+and `v2.9.0` with the padded file follows the identical trace after the
+launch. Dolphin cannot run GBI further, even booted directly. The maintainer
+released on that basis: #218's reporter ran the padded file on a GameCube
+through the same loader, and this build loads the unpadded file the same way.
+
 ## 2026-11-19 — Pair rollback takes a first apploader back off
 
 Adversarial re-review caught the pair travelling apart in one corner:

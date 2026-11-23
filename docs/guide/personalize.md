@@ -93,8 +93,10 @@ Settings › Setup › Console › **Idle Animation** chooses how the cube moves
 while Home rests, with UI Motion on Full: **Calm**, the slight drift it has
 always had, turned a little to the right, or **Sway**, which turns it slowly
 left and right, so the faces beside the one in front peek round its edges and
-their icons show. After a turn the sway starts again from where the cube
-rests. Over Change Source's devices the cube holds still.
+their icons show. The sway goes on as you turn the cube, so the next face
+picks it up where the last one left off; back from another menu, it starts
+again from where the cube rests. Over Change Source's devices the cube holds
+still.
 
 Two more in Settings › Setup › Library: **Animated Backdrop** keeps the
 backdrop still when it's off, and **Panel Transparency** makes the panels

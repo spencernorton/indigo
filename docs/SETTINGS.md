@@ -94,7 +94,7 @@ Setup sections. The last column names the row on that screen.
 | `Disable Menu Music` | `Yes`, `No`. `Yes` shows as Menu Music › Off. | `No` | Menu Music |
 | `Disable Menu SFX` | `Yes`, `No`. `Yes` shows as Menu Sounds › Off. | `No` | Menu Sounds |
 | `AutoBoot` | `Yes`, `No` | `No` | Boot without prompts |
-| `IGRType` | `Disabled`, `Reboot`, `Apploader` | `Disabled` | In-Game Reset |
+| `IGRType` | `Disabled`, `Reboot`, `Apploader` | `Apploader` | In-Game Reset |
 | `BS2Boot` | `No`, `Yes`, `Sound 1`, `Sound 2` | `No` | Load GameCube Main Menu |
 | `Emulate Memory Card` | `Yes`, `No`. Applies to every game; there is no per-game version. | `No` | Emulate Memory Card |
 | `AutoCheats` | `Yes`, `No` | `No` | Auto-load cheats |
@@ -160,10 +160,10 @@ most use the same key there.
 | `Wave Speed` | `Normal`, `Fast`, `Slow`. How fast the waves drift: `Fast` three times as fast, `Slow` half as fast. | `Normal` | Wave Speed |
 | `Clock` | `Right`, `Left`, `Off`. Where the time sits: the top right or top left corner, or neither. | `Right` | Clock |
 | `Temperature` | `Right`, `Left`, `Off`. Where the temperature dial sits, the same way. Without this line, the dial follows `Clock`. | `Right` | Temperature |
-| `Up Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`, `Web`. The menu above Library on the Home cube; `None` leaves that side empty. A face named for two sides keeps the first, in the order Up, Left, Right, Down. Apps shows only while `/apps` has a program, and Emulators while `/emulators` has one. | `Source` | Up Face |
-| `Left Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`, `Web`. The menu left of Library, the same way. | `Settings` | Left Face |
-| `Right Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`, `Web`. The menu right of Library, the same way. | `System` | Right Face |
-| `Down Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`, `Web`. The menu below Library, the same way. | `Apps` | Down Face |
+| `Up Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu above Library on the Home cube; `None` leaves that side empty. A face named for two sides keeps the first, in the order Up, Left, Right, Down. Apps shows only while `/apps` has a program, and Emulators while `/emulators` has one. | `Source` | Up Face |
+| `Left Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu left of Library, the same way. | `Settings` | Left Face |
+| `Right Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu right of Library, the same way. | `System` | Right Face |
+| `Down Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu below Library, the same way. | `Apps` | Down Face |
 | `Cube` | `Infinite`, `Classic`. How Home's faces sit on the cube: `Infinite` turns round them in a ring; `Classic` gives each its own side, Library in front, as the GameCube's menu does. Any other value means `Infinite`. | `Infinite` | Cube |
 | `Idle Animation` | `Calm`, `Sway`. How the cube moves while Home rests: `Calm` drifts a little, turned to the right; `Sway` turns it slowly left and right, so the faces beside the one in front peek round its edges. Any other value means `Calm`. | `Calm` | Idle Animation |
 | `Hide Face Labels` | `Yes`, `No`. `Yes` shows as Face Labels › Off: Home shows no face name under the cube. | `No` | Face Labels |

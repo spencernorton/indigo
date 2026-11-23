@@ -13,6 +13,7 @@
 #include "IPLFontWrite.h"
 #include "swiss.h"
 #include "main.h"
+#include "reservedarea.h"
 #include "info.h"
 #include "config.h"
 #include "settings.h"
@@ -97,10 +98,10 @@ _Static_assert(sizeof(systemIconStr) / sizeof(systemIconStr[0]) == UI_HOME_ICON_
 /* What each of Library's sides can show, its default first and then each
  * face after it round (UIHome_SideFace), so a zeroed setting is the cube of
  * before. */
-char *upFaceStr[] = {"Source", "Settings", "System", "Apps", "Memory Cards", "Emulators", "File Browser", "Web", "None"};
-char *leftFaceStr[] = {"Settings", "System", "Apps", "Memory Cards", "Emulators", "File Browser", "Web", "None", "Source"};
-char *rightFaceStr[] = {"System", "Apps", "Memory Cards", "Emulators", "File Browser", "Web", "None", "Source", "Settings"};
-char *downFaceStr[] = {"Apps", "Memory Cards", "Emulators", "File Browser", "Web", "None", "Source", "Settings", "System"};
+char *upFaceStr[] = {"Source", "Settings", "System", "Apps", "Memory Cards", "Emulators", "File Browser", "None"};
+char *leftFaceStr[] = {"Settings", "System", "Apps", "Memory Cards", "Emulators", "File Browser", "None", "Source"};
+char *rightFaceStr[] = {"System", "Apps", "Memory Cards", "Emulators", "File Browser", "None", "Source", "Settings"};
+char *downFaceStr[] = {"Apps", "Memory Cards", "Emulators", "File Browser", "None", "Source", "Settings", "System"};
 _Static_assert(sizeof(upFaceStr) / sizeof(upFaceStr[0]) == UI_HOME_FACE_COUNT, "up face names drift");
 _Static_assert(sizeof(leftFaceStr) / sizeof(leftFaceStr[0]) == UI_HOME_FACE_COUNT, "left face names drift");
 _Static_assert(sizeof(rightFaceStr) / sizeof(rightFaceStr[0]) == UI_HOME_FACE_COUNT, "right face names drift");
@@ -180,10 +181,10 @@ static char *tooltips_interface[PAGE_INTERFACE_MAX+1] = {
 	[SET_WAVE_SPEED] = "Wave Speed:\n\nHow fast the waves behind the cube drift.\nSlow - Half as fast\nNormal - As they always have (default)\nFast - Three times as fast\n\nUI Motion Off or Reduced, or Animated Backdrop off (Setup >\nLibrary), still stops them.",
 	[SET_CLOCK_POSITION] = "Clock:\n\nRight - The time sits in the top right corner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nTemperature places the temperature dial on its own.",
 	[SET_TEMPERATURE_POSITION] = "Temperature:\n\nRight - The CPU temperature dial sits in the top right\ncorner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nIn the clock's corner, the dial sits nearer the edge.",
-	[SET_UP_FACE] = "Up Face:\n\nThe menu above Library: Source (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators, File Browser and Web. Classic turns Up to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
-	[SET_LEFT_FACE] = "Left Face:\n\nThe menu left of Library: Settings (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators, File Browser and Web. Classic turns Left to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
-	[SET_RIGHT_FACE] = "Right Face:\n\nThe menu right of Library: System (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators, File Browser and Web. Classic turns Right to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
-	[SET_DOWN_FACE] = "Down Face:\n\nThe menu below Library: Apps (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators, File Browser and Web. Classic turns Down to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
+	[SET_UP_FACE] = "Up Face:\n\nThe menu above Library: Source (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Up to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
+	[SET_LEFT_FACE] = "Left Face:\n\nThe menu left of Library: Settings (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Left to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
+	[SET_RIGHT_FACE] = "Right Face:\n\nThe menu right of Library: System (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Right to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
+	[SET_DOWN_FACE] = "Down Face:\n\nThe menu below Library: Apps (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Down to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
 	[SET_CUBE] = "Cube:\n\nInfinite - Left and Right turn round every face in a ring (default)\nClassic - Every menu sits on its own side of the cube, as on\nthe GameCube\n\nIn Classic, turn to a side, and back to Library to reach the\nothers; Up Face, Left Face, Right Face and Down Face say\nwhat is on each side. B turns back to Library.",
 	[SET_AUTOBOOT] = "Boot without prompts:\n\nStarts a game as soon as you choose it, without its detail screen.\nHold B while choosing a game to see the screen instead; that turns\nthis off for the rest of the session."
 };
@@ -2025,7 +2026,7 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_GLOBAL_DEFAULTS:
 				if(direction == 0) {
-					swissSettings.igrType = 0;
+					swissSettings.igrType = IGR_APPLOADER;
 					swissSettings.bs2Boot = 0;
 					swissSettings.emulateMemoryCard = 0;
 					swissSettings.disableMCPGameID = 0;

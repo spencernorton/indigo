@@ -146,9 +146,12 @@ again and press **Z**: the shortcut changes from "Autoload On" back to
 
 The Apps face shows only when `/apps`, at the root of the source, holds a
 program: a `.dol`, `.dol+cli` or `.elf` that isn't called `boot.dol` (the
-Wii's), and Settings › Setup › Console puts Apps on a side (Down Face, by default). Programs two folders deep, hidden ones and names starting with a dot
-are left out. A picture must be a PNG with the program's name, or its
-folder's `icon.png`, up to 2048 pixels a side and 2 MB, and not interlaced.
+Wii's), including Dolphin Depot's `/apps/<app>/default.dol` packages, and
+Settings › Setup › Console puts Apps on a side (Down Face, by default).
+Programs two folders deep, hidden ones and names starting with a dot
+are left out. A picture can be a PNG with the program's name, its
+folder's `icon.png` (up to 2048 pixels a side and 2 MB, not interlaced),
+or its folder's GameCube `opening.bnr` banner.
 [Apps](apps.md#when-apps-doesnt-look-right) has the details.
 
 ## Still stuck

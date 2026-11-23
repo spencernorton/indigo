@@ -18,7 +18,7 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 # A test builds <name>.c (or <name>.main) with the sources in <name>.src,
 # the flags in <name>.flags (GAMEFLOW_CFLAGS unless set) and the libraries in
 # <name>.libs: plain as <name>, under ASan/UBSan as <name>_san.
-TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_png \
+TESTS := test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_bnr test_ui_png \
 	test_ui_assets test_ui_assets_target_sync test_blank_banner \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
 	test_ui_menu_input test_ui_clock test_ui_hint test_ui_stage \
@@ -30,7 +30,6 @@ TESTS := test_ui_browser_launch test_ui_cheats test_ui_saves test_ui_saves_raw t
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual \
 	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim test_ui_update
 
-test_ui_browser_launch.src := $(GUI)/ui_browser_launch.c $(GUI)/ui_time_sync.c tzdata_host.c
 test_ui_cheats.src := $(GUI)/ui_cheats.c
 test_ui_saves.src := $(GUI)/ui_saves.c $(GUI)/ui_lang.c
 test_ui_saves_raw.src := $(GUI)/ui_saves_raw.c $(GUI)/ui_saves.c $(GUI)/ui_lang.c
@@ -40,6 +39,8 @@ test_ui_saves_details.src := $(GUI)/ui_saves_details.c
 test_ui_save_cubes.src := $(GUI)/ui_save_cubes.c $(GUI)/ui_motion.c $(GUI)/ui_saves.c $(GUI)/ui_folder.c $(GUI)/ui_lang.c
 test_ui_save_cubes.libs := -lm
 test_ui_apps.src := $(GUI)/ui_apps.c
+test_ui_bnr.src := $(GUI)/ui_bnr.c $(GUI)/ui_png.c
+test_ui_bnr.libs := -lz -lm
 # test_ui_png.py drives these with the pictures it writes. test_ui_png.c
 # builds ui_png.c in, to count what it allocates for the memory tests.
 test_ui_png.flags = $(GAMEFLOW_CFLAGS) -DUI_PNG_COUNT
@@ -81,7 +82,6 @@ test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c
 # See tzdata_host.c for the imported table's two isolated warning exemptions.
 TIME_SYNC_FLAGS := $(GAMEFLOW_CFLAGS) -I$(GUI)/../../include
 test_ui_time_sync.flags = $(TIME_SYNC_FLAGS)
-test_ui_browser_launch.flags = $(TIME_SYNC_FLAGS)
 # Memory card slots around a GameID switch (indigo#102), against scripted cards.
 test_ui_card_slots.src := $(GUI)/ui_card_slots.c
 test_ui_clock.libs := -lm

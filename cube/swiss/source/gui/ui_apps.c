@@ -84,8 +84,8 @@ static const uiAppsEntry_t *findPicture(const uiAppsEntry_t *entries,
 	for(i = 0u; i < entryCount; ++i) {
 		const char *name = entries[i].name;
 
-		if(entries[i].folder || name == NULL || strlen(name) != length + 4u ||
-			!endsFolded(name, length + 4u, ".png")) {
+		if(entries[i].folder || entries[i].hidden || name == NULL ||
+			strlen(name) != length + 4u || !endsFolded(name, length + 4u, ".png")) {
 			continue;
 		}
 		{
@@ -98,6 +98,39 @@ static const uiAppsEntry_t *findPicture(const uiAppsEntry_t *entries,
 		}
 	}
 	return NULL;
+}
+
+/* entries' file matching exactName ignoring ASCII case, or NULL. */
+static const uiAppsEntry_t *findNamedFile(const uiAppsEntry_t *entries,
+	size_t entryCount, const char *exactName)
+{
+	size_t i;
+
+	for(i = 0u; i < entryCount; ++i) {
+		if(entries[i].folder || entries[i].hidden || entries[i].name == NULL) {
+			continue;
+		}
+		if(compareFolded(entries[i].name, exactName) == 0) {
+			return &entries[i];
+		}
+	}
+	return NULL;
+}
+
+static bool isDefaultBase(const char *name, size_t base)
+{
+	static const char def[] = "default";
+	size_t k;
+
+	if(base != sizeof(def) - 1u) {
+		return false;
+	}
+	for(k = 0u; k < base; ++k) {
+		if(lower((unsigned char)name[k]) != (unsigned char)def[k]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /* folder/name into out; false when it doesn't fit. */
@@ -115,6 +148,7 @@ bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 	const char *folder, const uiAppsEntry_t *entries, size_t entryCount)
 {
 	const uiAppsEntry_t *icon = NULL;
+	const uiAppsEntry_t *banner = NULL;
 	size_t i;
 
 	if(list == NULL || count == NULL || folder == NULL ||
@@ -125,6 +159,7 @@ bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 		static const char iconName[] = "icon";
 
 		icon = findPicture(entries, entryCount, iconName, sizeof(iconName) - 1u);
+		banner = findNamedFile(entries, entryCount, "opening.bnr");
 	}
 	for(i = 0u; i < entryCount; ++i) {
 		const uiAppsEntry_t *entry = &entries[i];
@@ -132,6 +167,8 @@ bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 		uiAppsType_t type;
 		uiApp_t *app;
 		size_t base;
+		bool isDefault;
+		bool pictureIsBnr = false;
 
 		if(entry->folder || entry->hidden ||
 			(type = UIApps_ProgramType(entry->name)) == UI_APPS_TYPE_NONE) {
@@ -146,25 +183,56 @@ bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 			continue;
 		}
 		base = strlen(entry->name) - extensionLength(type);
+		isDefault = folder[0] != '\0' && isDefaultBase(entry->name, base);
 		picture = findPicture(entries, entryCount, entry->name, base);
 		if(picture == NULL) {
 			picture = icon;
 		}
+		if(picture == NULL && banner != NULL) {
+			picture = banner;
+			pictureIsBnr = true;
+		}
 		if(picture != NULL && !joinPath(app->picture, folder, picture->name)) {
 			app->picture[0] = '\0';
 			picture = NULL;
+			pictureIsBnr = false;
 		}
-		snprintf(app->name, sizeof(app->name), "%.*s",
-			(int)(base < sizeof(app->name) ? base : sizeof(app->name) - 1u),
-			entry->name);
+		if(isDefault && banner != NULL &&
+			joinPath(app->banner, folder, banner->name)) {
+			app->bannerSize = banner->size;
+			app->bannerHandle = banner->handle;
+		}
+		if(isDefault) {
+			snprintf(app->name, sizeof(app->name), "%s", folder);
+		}
+		else {
+			snprintf(app->name, sizeof(app->name), "%.*s",
+				(int)(base < sizeof(app->name) ? base : sizeof(app->name) - 1u),
+				entry->name);
+		}
 		app->size = entry->size;
 		app->pictureSize = picture != NULL ? picture->size : 0u;
 		app->programHandle = entry->handle;
 		app->pictureHandle = picture != NULL ? picture->handle : NULL;
 		app->type = (uint8_t)type;
+		app->isDefaultDol = isDefault;
+		app->pictureIsBnr = pictureIsBnr;
 		(*count)++;
 	}
 	return true;
+}
+
+void UIApps_ApplyBanner(uiApp_t *app, const char *title, const char *author)
+{
+	if(app == NULL) {
+		return;
+	}
+	if(title != NULL && title[0] != '\0') {
+		snprintf(app->name, sizeof(app->name), "%s", title);
+	}
+	if(author != NULL && author[0] != '\0') {
+		snprintf(app->author, sizeof(app->author), "%s", author);
+	}
 }
 
 static int appOrder(const void *a, const void *b)

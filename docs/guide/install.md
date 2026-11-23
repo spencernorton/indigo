@@ -349,8 +349,8 @@ starts as it does today, and you open Indigo from Swiss.
 
 ## Where everything goes
 
-The card with everything Indigo can use. Only Indigo's own file,
-`apploader.img` and the web browser come from the download: the rest are
+The card with everything Indigo can use. Only Indigo's own file and
+`apploader.img` come from the download: the rest are
 your files, and downloads you can add any time. Indigo's own file and
 `boot.iso` aren't drawn here, because they depend on your setup: its step 3
 shows them. Most
@@ -359,7 +359,10 @@ your apps on the card with your games.
 
 ```text
 SD card
-├── apps/                    programs for the Apps face
+├── apps/                    programs for the Apps face (including Dolphin Depot apps)
+│   ├── dolphindepot/
+│   │   ├── default.dol
+│   │   └── opening.bnr
 │   ├── gbi.dol              a homebrew program
 │   └── gbi.png              its picture
 ├── games/                   games for the Library
@@ -367,11 +370,9 @@ SD card
 │   ├── Nintendo/            a folder of games
 │   │   └── The Wind Waker.iso
 │   └── Nintendo.png         the folder's picture
-├── gcbrowser/               the web browser's certificates
 └── swiss/
     ├── cheats/              cheats, one file per game
-    ├── indigo/
-    │   └── cubebrowser.dol  the web browser, for the Web face
+    ├── indigo/              licences, notices and uk.po
     ├── patches/
     │   └── apploader.img    returns to Indigo after a game
     ├── saves/               saves copied off memory cards
@@ -383,14 +384,14 @@ SD card
         └── discs.pak        disc art for Jewel Case
 ```
 
-- **`ipl.dol`, `boot.dol` or `indigo.dol`:** Indigo itself. Step 3 of your
-  setup says which name it has and where it goes.
+- **`ipl.dol`, `boot.dol`, `indigo.dol` or `apps/indigo/default.dol`:** Indigo itself. Step 3 of your
+  setup says which name it has and where it goes (or install via [Dolphin Depot](https://dolphindepot.org/)).
 - **`boot.iso`:** On a GC Loader card, the disc image that starts Swiss.
   Leave it as it is.
 - **`apps`:** Programs for the Apps face on Home: `.dol`, `.dol+cli` or
-  `.elf` files. A PNG beside a program, with its name, is its picture. On a
-  from-Swiss setup, Indigo's own `indigo.dol` is here too and shows as an
-  app. See [Apps](apps.md#set-up-the-apps-folder).
+  `.elf` files, including Dolphin Depot apps (`/apps/<slug>/default.dol` +
+  `opening.bnr`). A PNG beside a program, `icon.png`, or `opening.bnr` gives
+  it a picture. See [Apps](apps.md#set-up-the-apps-folder).
 - **`games`:** Your games, loose or one folder per game. To browse your own
   folders of games, turn on **Library Folders** (Settings › Setup › Library).
   A PNG beside a folder, with its name, is its picture. See
@@ -399,18 +400,12 @@ SD card
   folder, one file per game, such as `GMSE01.txt`. Unzip the pack on your
   computer and copy the files in its `swiss/cheats` folder into this one;
   make it if it isn't there.
-- **`gcbrowser` and `swiss/indigo/cubebrowser.dol`:** From the download,
-  for the Web face: the web browser and its certificates. Put
-  `cubebrowser.dol` on the card with your settings. Indigo names that card to
-  the browser (GC Loader, SD2SP2 or SD Gecko); standalone launches retain
-  automatic card detection. The browser reads
-  `gcbrowser` from an SD2SP2, an SD Gecko or a GC Loader, not from a
-  FlippyDrive's card: with a FlippyDrive, put `gcbrowser` on a card in an
-  SD2SP2 or SD Gecko. With only a FlippyDrive, secure (`https`) pages don't
-  open and the browser saves nothing.
-- **`apploader.img`:** From the download. It makes leaving a game return to
-  Indigo; copy it to every card you use with Swiss. See
-  [Leaving a game](#leaving-a-game).
+- **`swiss/indigo`:** Licence and notice files plus the Ukrainian language file
+  (`uk.po`) from the download (also installed by Dolphin Depot). Optional on
+  the card unless you use Ukrainian menus.
+- **`apploader.img`:** From the download (and included in Dolphin Depot installs).
+  It makes leaving a game return to Indigo out of the box; copy it to every card
+  you use with Swiss. See [Leaving a game](#leaving-a-game).
 - **`saves` and `settings`:** Indigo makes these. Memory Cards copies saves
   into `saves`, and your settings are in `settings/global.ini`.
 - **`ui`:** The [poster pack](posters.md#download-the-pack) goes here:
@@ -455,9 +450,9 @@ Next: [set up the library](library.md#set-up-the-games-folder),
 
 ## Leaving a game
 
-Set **In-Game Reset** (Settings › Quick) to **Apploader**; it starts at
-Disabled. Then hold **A + Z + START** to leave a game and return to Indigo,
-or **R + Z + START** to restart it. Apploader starts the `apploader.img` in
+**In-Game Reset** (Settings › Quick) defaults to **Apploader**, so holding
+**A + Z + START** during a game returns to Indigo out of the box (and
+**R + Z + START** restarts the game). Apploader starts the `apploader.img` in
 `swiss/patches`, so copy the download's `apploader.img` to every card you use
 with Swiss. **Reboot** restarts the console the normal way instead, which can
 start the normal Swiss rather than Indigo.

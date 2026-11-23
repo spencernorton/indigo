@@ -28,6 +28,38 @@ tag on `beta`. The newest changes are at the top until their release is named.
   `apploader-<version>.img` and the channel's list) and its provenance
   record beside the zip.
 
+## v3.0.0 — Dolphin Depot support and standalone build
+
+### New
+
+- **Dolphin Depot on-device app support:** Apps and Emulators natively recognize
+  the `/apps/<slug>/default.dol` + `opening.bnr` layout used by
+  [Dolphin Depot](https://dolphindepot.org/). Each app displays its title and
+  author from `opening.bnr` (falling back to the folder name instead of
+  `default`), sorts by title, and renders its 96 × 32 RGB5A3 banner into a
+  framed Indigo poster when no custom PNG or `icon.png` is present.
+
+### Changed
+
+- **In-Game Reset** (`IGRType`) now defaults to **Apploader** out of the box,
+  so `A + Z + START` returns directly to Indigo whenever
+  `swiss/patches/apploader.img` is on the card.
+- Idle Animation › **Sway** goes on as you turn the Home cube: the next face
+  picks the swing up where the last one left off, instead of the cube
+  turning back to its resting pose and starting over
+  ([#116](https://github.com/spencernorton/indigo/issues/116)). Coming back
+  to Home from another menu still starts it from the resting pose.
+
+### Removed
+
+- **Bundled web browser (`Web` face / `cubebrowser.dol` / `gcbrowser/`):**
+  Removed from Indigo's standard build, release ZIP and Home cube face list.
+  Install standalone homebrew apps such as CubeBrowser via Dolphin Depot into
+  `/apps` and launch them from the Apps face instead. Existing `global.ini`
+  files naming `Web` on a cube side safely fall back to that side's default.
+
+## v2.9.1 — Game Boy Interface starts again
+
 ### Fixed
 
 - Launch **Game Boy Interface** (`.dol` and `.dol+cli` presets) and homebrew

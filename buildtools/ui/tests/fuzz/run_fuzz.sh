@@ -21,7 +21,7 @@ if [ "${1:-}" = --build-only ]; then
 	shift
 	set -- 0 "${1:-fuzz-out}"
 fi
-targets="history saves raw_saves posters manual about settings fst png cheats wiiload time_sync lab lang update"
+targets="history saves raw_saves posters manual about settings fst png bnr cheats wiiload time_sync lab lang update"
 seconds=${1:-30}
 case $seconds in
 total:*) seconds=$(( ${seconds#total:} / $(echo "$targets" | wc -w) )) ;;
@@ -48,6 +48,7 @@ echo "== building the fuzzers =="
 	$cc $flags -std=c11 -DUI_ASSETS_HOST_BUILD -I"$gui" -o "$out/bin/posters" \
 		"$here/fuzz_posters.c" "$gui/ui_assets.c" -lz
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/png" "$here/fuzz_png.c" "$gui/ui_png.c" -lz -lm
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/bnr" "$here/fuzz_bnr.c" "$gui/ui_bnr.c" "$gui/ui_png.c" -lz -lm
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/time_sync" "$here/fuzz_time_sync.c" "$gui/ui_time_sync.c" "$here/../tzdata_host.c" -I"$gui/../../include"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/manual" "$here/fuzz_manual.c" "$gui/ui_manual.c" -lz -lm
 	python3 "$here/settings_source.py" "$out/fuzz_settings.c"

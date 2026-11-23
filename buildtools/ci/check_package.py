@@ -22,18 +22,9 @@ LAYOUT = {
     "swiss/indigo/NOTICE.txt", "swiss/indigo/LICENSE-lwip.txt",
     "swiss/indigo/uk.po", "swiss/indigo/LICENSE-NotoSans.txt",
 }
-# Allowed but not required: the bundled web browser, which the Web face launches.
-# A release ships it; a plain build need not. mbed TLS is built into it, so its
-# licence must come with it.
-BROWSER = "swiss/indigo/cubebrowser.dol"
-MBEDTLS_LICENSE = "swiss/indigo/LICENSE-mbedtls.txt"
-OPTIONAL = {
-    BROWSER, MBEDTLS_LICENSE, "gcbrowser/", "gcbrowser/cacert.pem",
-}
-# A tripwire: the zip is about 6.1 MiB since upstream Swiss r2119's text-encoding
-# libraries (5 MB before, with the menu music); the bundled browser adds ~1 MiB.
+# A tripwire: the zip is about 5.3 MiB without a bundled browser.
 # Raise it on purpose.
-MAX_ZIP_BYTES = 9 * 1024 * 1024
+MAX_ZIP_BYTES = 7 * 1024 * 1024
 
 
 def problems(zip_path: Path, dol: bytes, version: str) -> list[str]:
@@ -46,12 +37,10 @@ def problems(zip_path: Path, dol: bytes, version: str) -> list[str]:
         names = [info.filename for info in archive.infolist()]
         if len(names) != len(set(names)):
             found.append("duplicate entries")
-        for name in sorted(set(names) - LAYOUT - OPTIONAL):
+        for name in sorted(set(names) - LAYOUT):
             found.append(f"unexpected entry: {name}")
         for name in sorted(LAYOUT - set(names)):
             found.append(f"missing entry: {name}")
-        if BROWSER in names and MBEDTLS_LICENSE not in names:
-            found.append(f"{BROWSER} ships without mbed TLS's licence, {MBEDTLS_LICENSE}")
         for info in archive.infolist():
             mode = info.external_attr >> 16
             if stat.S_ISLNK(mode) or mode & (stat.S_ISUID | stat.S_ISGID):

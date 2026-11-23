@@ -234,6 +234,27 @@ def png(out: Path) -> None:
     (out / "name-separators").write_bytes(b"N-_. +a")
 
 
+def bnr(out: Path) -> None:
+    # Real BNR1 (6496 B) and BNR2 (8096 B) opening.bnr banners plus a truncated one.
+    bnr1 = bytearray(6496)
+    bnr1[:4] = b"BNR1"
+    for i in range(0, 96 * 32 * 2, 2):
+        struct.pack_into(">H", bnr1, 32 + i, 0x8000 | (8 << 10) | (6 << 5) | 24)
+    desc = 32 + 96 * 32 * 2
+    bnr1[desc:desc + 6] = b"Indigo"
+    bnr1[desc + 0x20:desc + 0x2E] = b"Spencer Norton"
+    bnr1[desc + 0x40:desc + 0x46] = b"Indigo"
+    bnr1[desc + 0x80:desc + 0x8E] = b"Spencer Norton"
+    bnr1[desc + 0xC0:desc + 0xDE] = b"GameCube launcher built on Swiss"
+    (out / "bnr1.bnr").write_bytes(bytes(bnr1))
+    bnr2 = bytearray(8096)
+    bnr2[:4] = b"BNR2"
+    bnr2[32:desc] = bnr1[32:desc]
+    bnr2[desc:desc + 320] = bnr1[desc:desc + 320]
+    (out / "bnr2.bnr").write_bytes(bytes(bnr2))
+    (out / "truncated.bnr").write_bytes(bytes(bnr1[:100]))
+
+
 def cheats(out: Path) -> None:
     # A cheats file as the downloads write it (each name above its codes),
     # one with an unsupported XX code, and a code with no name above it.
@@ -284,7 +305,7 @@ def update(out: Path) -> None:
 
 def main() -> int:
     out = Path(sys.argv[1])
-    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, cheats, wiiload, time_sync, lang, update):
+    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang, update):
         folder = out / target.__name__
         folder.mkdir(parents=True, exist_ok=True)
         target(folder)

@@ -152,7 +152,7 @@ Press Y on any row for the same explanations on the console.
 | Menu Sounds | The soft sounds as you move and choose. |
 | UI Motion | **Full**: calm motion and ambient detail. **Reduced**: faster transitions, no decorative movement. **Off**: everything moves instantly. |
 | Controller Rumble | Whether controllers can rumble in games. |
-| In-Game Reset | **Reboot** or **Apploader** lets you leave a game with A + Z + START (R + Z + START restarts it). Apploader returns to Indigo through `/swiss/patches/apploader.img`, which the zip includes; Reboot resets the console. |
+| In-Game Reset | Defaults to **Apploader**, so you can leave a game with A + Z + START (R + Z + START restarts it) and return to Indigo through `/swiss/patches/apploader.img`, which the zip includes. **Reboot** resets the console instead; **Disabled** turns it off. |
 | Load GameCube Main Menu | Starts games through the GameCube logo and main menu, with patches applied. |
 | Emulate Memory Card | Games save to a memory card image on the device they start from, instead of a real memory card. Needs a device that supports it. |
 | Auto-load cheats | Applies a game's saved cheats every time it starts. See [Cheats](cheats.md#start-with-your-cheats-every-time). |
@@ -222,7 +222,7 @@ The Settings tour above predates the Apps Video Mode row.
 | Waves | **Off** takes the waves away, leaving the backdrop and its rings. Wave Color and Wave Speed apply while they're on. See [Make it yours](personalize.md#backdrop-and-wave-color). |
 | Wave Speed | How fast the waves drift: **Slow** (half as fast), **Normal** or **Fast** (three times as fast). See [Make it yours](personalize.md#backdrop-and-wave-color). |
 | Library Icon, Source Icon, Settings Icon, System Icon | The icon on each face of the Home cube. See [Make it yours](personalize.md#cube-icons). |
-| Up Face, Left Face, Right Face, Down Face | Which menu sits above, left of, right of and below Library on the [Home](home.md#choose-the-sides) cube: Source, Settings, System, Apps, Memory Cards, Emulators, File Browser, Web, or **None** for an empty side. By default Source is up, Settings left, System right and Apps down. A menu on no side is off the cube; Y on Home still opens Settings. |
+| Up Face, Left Face, Right Face, Down Face | Which menu sits above, left of, right of and below Library on the [Home](home.md#choose-the-sides) cube: Source, Settings, System, Apps, Memory Cards, Emulators, File Browser, or **None** for an empty side. By default Source is up, Settings left, System right and Apps down. A menu on no side is off the cube; Y on Home still opens Settings. |
 | Cube | How the [Home](home.md#infinite-or-classic) cube turns. **Infinite** turns round every face in a ring. **Classic** puts each menu on its own side of the cube, as on the GameCube, and you turn back to Library to reach another. |
 | Idle Animation | How the cube moves while Home rests: **Calm**, a slight drift turned a little to the right, or **Sway**, which turns it slowly left and right so the faces beside the one in front peek round its edges. UI Motion Reduced or Off keeps it still. See [Make it yours](personalize.md#motion). |
 | Face Labels | **Off** takes the face's name from under the cube on Home. See [Make it yours](personalize.md#just-the-cube). |

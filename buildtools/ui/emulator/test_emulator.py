@@ -2090,7 +2090,7 @@ class Screen(unittest.TestCase):
         """flip_console retries missed tab/value presses and verifies Down Face
         returns to its observed Apps mask on 'on'."""
         options = ("None", "Source", "Settings", "System", "Apps",
-                   "Memory Cards", "Emulators", "File Browser", "Web")
+                   "Memory Cards", "Emulators", "File Browser")
         titles = {}
         for idx, name in enumerate(("Quick", "Defaults", "Setup", "Console")):
             mask = np.zeros((34, 200), bool)
@@ -2169,8 +2169,8 @@ class Screen(unittest.TestCase):
             route.flip_apps_face(settings_face, "on")
             self.assertEqual(options[state["idx"]], "Apps")
 
-            # Drift by +1 (e.g. landing on Source instead of Apps) is caught on "on":
-            state["idx"] = options.index("Web")  # 3 LEFTs from Web -> Memory Cards != Apps
+            # Drift by +1 (e.g. landing on None instead of File Browser) is caught on "on":
+            state["idx"] = options.index("None")  # 3 LEFTs from None -> Memory Cards != Apps
             with self.assertRaises(run.Failed):
                 route.flip_apps_face(settings_face, "on")
 

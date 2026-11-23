@@ -189,15 +189,13 @@ class Package(unittest.TestCase):
                 self.assertNotEqual(check_package.problems(self.build(here, **case), dol(), "v9.9.9"),
                                     [], case)
 
-    def test_the_browser_brings_mbed_tls_licence(self):
-        browser = (check_package.BROWSER, "gcbrowser/", "gcbrowser/cacert.pem")
+    def test_bundled_browser_files_are_refused(self):
         with tempfile.TemporaryDirectory() as directory:
             here = Path(directory)
-            whole = self.build(here, also=browser + (check_package.MBEDTLS_LICENSE,))
-            self.assertEqual(check_package.problems(whole, dol(), "v9.9.9"), [])
-            self.assertEqual(check_package.problems(self.build(here, also=browser), dol(), "v9.9.9"),
-                             ["swiss/indigo/cubebrowser.dol ships without mbed TLS's licence, "
-                              "swiss/indigo/LICENSE-mbedtls.txt"])
+            for extra in ("swiss/indigo/cubebrowser.dol", "gcbrowser/cacert.pem",
+                          "swiss/indigo/LICENSE-mbedtls.txt"):
+                self.assertEqual(check_package.problems(self.build(here, extra=extra), dol(), "v9.9.9"),
+                                 [f"unexpected entry: {extra}"])
 
     def test_a_long_version_is_cut_to_the_header_field(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -455,11 +453,11 @@ class Release(unittest.TestCase):
         self.assertLess(install.index("back up the card's `swiss` folder"), install.index("copy two files"))
         self.assertIn("`swiss/patches/apploader.img`", install)
         self.assertNotIn("Merge", install)
-        for destination in ("`apps/indigo.dol`", "`ipl.dol` at the top of the card",
+        for destination in ("`apps/indigo/default.dol`", "`ipl.dol` at the top of the card",
                             "`boot.dol` at the top of its microSD card"):
             self.assertIn(destination, install)
         updating = install.split("**Updating:**", 1)[1]
-        for name in ("`ipl.dol`", "`boot.dol`", "`indigo.dol`"):
+        for name in ("`ipl.dol`", "`boot.dol`", "`apps/indigo/default.dol`", "`indigo.dol`"):
             self.assertIn(name, updating)
 
 

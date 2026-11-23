@@ -131,6 +131,18 @@ def expected_main(base: str) -> str:
     include = '#include "gui/FrameBufferMagic.h"\n'
     assert base.count(include) == 1
     base = base.replace(include, include + '#include "gui/ui_540p.h"\n', 1)
+    # In-Game Reset defaults to Apploader so A + Z + START returns to Indigo
+    # out of the box when swiss/patches/apploader.img is present.
+    main_inc = '#include "main.h"\n'
+    assert base.count(main_inc) == 1
+    base = base.replace(main_inc, main_inc + '#include "reservedarea.h"\n', 1)
+    igr_anchor = "\tswissSettings.enableUSBGecko = USBGECKO_OFF;\n"
+    assert base.count(igr_anchor) == 1
+    base = base.replace(
+        igr_anchor,
+        igr_anchor + "\tswissSettings.igrType = IGR_APPLOADER;\n",
+        1,
+    )
     # The experiment starts only after normal startup and the Cubeboot return,
     # is absent from ordinary builds, and cannot intercept source discovery.
     anchor = '\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}\n\twhile(1) {'
@@ -406,6 +418,8 @@ runtime_mutants = [
 		"\tif(swissSettings.cubebootInvoked) {\n\t\tUI540_Request(argc, argv);\n\t\treturn 0;\n\t}", 1), SWISS),
     ("startup failure pointer retained", MAIN.replace(
         "\t\t\tdevices[DEVICE_CUR] = NULL;\n", "", 1), SWISS),
+    ("default IGR_APPLOADER removed", MAIN.replace(
+        "\tswissSettings.igrType = IGR_APPLOADER;\n", "", 1), SWISS),
     ("startup DOL autoload restored", MAIN.replace(
         NO_AUTOLOAD, UPSTREAM_AUTOLOAD, 1), SWISS),
     ("Recent same-handler retry removed", MAIN, SWISS.replace(
