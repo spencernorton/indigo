@@ -6,7 +6,7 @@
 
 static const char *const faceLabels[UI_HOME_FACE_COUNT] = {
 	"LIBRARY", "SOURCE", "SETTINGS", "SYSTEM", "APPS", "MEMORY CARDS",
-	"EMULATORS", "FILE BROWSER", "WEB"
+	"EMULATORS", "FILE BROWSER"
 };
 
 /* Absent faces are bits of a mask. */
@@ -463,8 +463,6 @@ static uiHomeEffect_t applyRing(uiHomeState_t *state, uiHomeInput_t input,
 				return UI_HOME_EFFECT_OPEN_EMULATORS;
 			case UI_HOME_FACE_FILES:
 				return openFiles(capabilities);
-			case UI_HOME_FACE_WEB:
-				return UI_HOME_EFFECT_OPEN_WEB;
 			default:
 				break;
 		}
@@ -724,7 +722,6 @@ const char *UIHome_PrimaryHint(uiHomeFace_t face,
 		case UI_HOME_FACE_APPS:
 		case UI_HOME_FACE_SAVES:
 		case UI_HOME_FACE_EMULATORS:
-		case UI_HOME_FACE_WEB:
 			return "A  OPEN";
 		default:
 			return "";

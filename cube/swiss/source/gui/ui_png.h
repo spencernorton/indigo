@@ -83,6 +83,14 @@ bool UIPng_PosterUntil(const uint8_t *png, size_t size, uint8_t *out,
 bool UIPng_NamePosterUntil(const char *name, const uiPngFont_t *font,
 	uint8_t *out, const volatile bool *stop);
 
+/* Straight RGBA8888 image (width x height, up to UI_PNG_MAX_SIDE per side)
+ * composed and CMPR-encoded as a Library poster (e.g. a decoded opening.bnr
+ * 96x32 banner). */
+bool UIPng_RgbaPoster(const uint8_t *rgba, uint32_t width, uint32_t height,
+	uint8_t *out);
+bool UIPng_RgbaPosterUntil(const uint8_t *rgba, uint32_t width, uint32_t height,
+	uint8_t *out, const volatile bool *stop);
+
 /* The encoder the poster uses, for tests: rgb is a size x size image (8-bit
  * RGB, rows top to bottom), size a multiple of 8; out takes size*size/2
  * bytes of GX CMPR (8x8 tiles, each four DXT1 blocks, big-endian colors). */

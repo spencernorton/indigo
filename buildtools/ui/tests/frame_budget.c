@@ -354,7 +354,7 @@ void guOrtho(Mtx44 p, float t, float b, float l, float r, float n, float f)
 static float seconds;
 static uiClockFrame_t clock;
 static const indigoPadFrame_t pad = {true, 0, 0, 0, 0, 0};
-static int icons[UI_HOME_FACE_COUNT] = {0, 0, 0, 0, -1, -1, -1, -1, -1};
+static int icons[UI_HOME_FACE_COUNT] = {0, 0, 0, 0, -1, -1, -1, -1};
 
 static void settle(int frames)
 {

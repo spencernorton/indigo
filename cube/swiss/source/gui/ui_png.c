@@ -1300,3 +1300,52 @@ done:
 	free(levels[1]);
 	return ok;
 }
+
+bool UIPng_RgbaPoster(const uint8_t *rgba, uint32_t width, uint32_t height,
+	uint8_t *out)
+{
+	return UIPng_RgbaPosterUntil(rgba, width, height, out, NULL);
+}
+
+bool UIPng_RgbaPosterUntil(const uint8_t *rgba, uint32_t width, uint32_t height,
+	uint8_t *out, const volatile bool *stop)
+{
+	uint8_t *reduced = NULL;
+	uint8_t *levels[2] = {NULL, NULL};
+	pngSum_t *sums = NULL;
+	pngFit_t fit;
+	uint32_t y;
+	bool ok = false;
+
+	if(rgba == NULL || out == NULL || width == 0u || height == 0u ||
+		width > UI_PNG_MAX_SIDE || height > UI_PNG_MAX_SIDE) {
+		return false;
+	}
+	fitPicture(width, height, &fit);
+	reduced = malloc((size_t)fit.reducedW * fit.reducedH * 4u);
+	levels[0] = malloc(UI_PNG_CANVAS * UI_PNG_CANVAS * 3u);
+	levels[1] = malloc((UI_PNG_CANVAS / 2u) * (UI_PNG_CANVAS / 2u) * 3u);
+	sums = calloc(fit.reducedW, sizeof(pngSum_t));
+	if(reduced == NULL || levels[0] == NULL || levels[1] == NULL ||
+		sums == NULL) {
+		goto done;
+	}
+	for(y = 0u; y < height; ++y) {
+		if(stopped(stop)) {
+			goto done;
+		}
+		addRow(rgba + (size_t)y * width * 4u, width, fit.reduce, sums);
+		if((y + 1u) % fit.reduce == 0u || y + 1u == height) {
+			emitRow(sums, fit.reducedW, reduced +
+				(size_t)(y / fit.reduce) * fit.reducedW * 4u);
+		}
+	}
+	ok = composeCanvas(reduced, &fit, width, height, levels[0], stop) &&
+		encodeLevels(levels, out, stop);
+done:
+	free(sums);
+	free(reduced);
+	free(levels[0]);
+	free(levels[1]);
+	return ok;
+}

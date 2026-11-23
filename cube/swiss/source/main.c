@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <sdcard/gcsd.h>
 #include "main.h"
+#include "reservedarea.h"
 #include "settings.h"
 #include "swiss.h"
 #include "bba.h"
@@ -254,6 +255,7 @@ int main(int argc, char *argv[])
 	// Sane defaults
 	refreshSRAM(&swissSettings);
 	swissSettings.enableUSBGecko = USBGECKO_OFF;
+	swissSettings.igrType = IGR_APPLOADER;
 	swissSettings.exiSpeed = 1;		// 32MHz
 	swissSettings.uiVMode = 0; 		// Auto UI mode
 	swissSettings.gameVMode = 0;	// Auto video mode

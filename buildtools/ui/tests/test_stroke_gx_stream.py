@@ -1163,7 +1163,7 @@ class StrokeGXStreamTests(unittest.TestCase):
             "drawBooksIcon", "drawDiscIcon", "drawGearIcon", "drawCoversIcon",
             "drawPlayIcon", "drawSdCardIcon", "drawFolderIcon", "drawTogglesIcon",
             "drawDialIcon", "drawInfoIcon", "drawPowerIcon", "drawChipIcon",
-            "drawAppsIcon", "drawSavesIcon", "drawEmulatorsIcon", "drawWebIcon")]
+            "drawAppsIcon", "drawSavesIcon", "drawEmulatorsIcon")]
         blocks += [extract_function(indigo, "static float faceFacing(")]
         blocks += [extract_function(indigo, "static float faceStrokeShare(")]
         blocks += [extract_function(indigo, "static float faceIconLift(")]
