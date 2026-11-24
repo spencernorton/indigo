@@ -97,17 +97,30 @@ void sha256_init(sha256_ctx *ctx)
 
 void sha256_update(sha256_ctx *ctx, const uint8_t *data, size_t len)
 {
-	uint32_t i;
-
-	for (i = 0; i < len; ++i) {
-		ctx->data[ctx->datalen] = data[i];
-		ctx->datalen++;
-		if (ctx->datalen == 64) {
-			sha256_transform(ctx, ctx->data);
-			ctx->bitlen += 512;
-			ctx->datalen = 0;
-		}
+	if(len == 0)
+		return;
+	if(ctx->datalen != 0) {
+		size_t fill = 64u - ctx->datalen;
+		if(fill > len)
+			fill = len;
+		memcpy(ctx->data + ctx->datalen, data, fill);
+		ctx->datalen += (uint32_t)fill;
+		if(ctx->datalen < 64u)
+			return;
+		sha256_transform(ctx, ctx->data);
+		ctx->bitlen += 512;
+		ctx->datalen = 0;
+		data += fill;
+		len -= fill;
 	}
+	while(len >= 64u) {
+		sha256_transform(ctx, data);
+		ctx->bitlen += 512;
+		data += 64u;
+		len -= 64u;
+	}
+	memcpy(ctx->data, data, len);
+	ctx->datalen = (uint32_t)len;
 }
 
 void sha256_final(sha256_ctx *ctx, uint8_t hash[SHA256_BLOCK_SIZE])

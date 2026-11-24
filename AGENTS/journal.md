@@ -1,3 +1,14 @@
+## 2026-11-23 — Authenticate startup updates and retain a bootable recovery copy
+
+Home checks the selected release channel once in the background. Indigo
+authenticates the manifest with Ed25519 and hashes the inactive slot on
+download and readback. The signed trial becomes the preferred boot only when
+the new program reaches Home. X + Y starts the installed recovery copy.
+The release workflow signs in its tag-only environment and advances the
+GitHub Pages feed after publication. The production DOL size tripwire is
+4 MiB + 320 KiB. Hardware interruption and comparative frame timing require
+native qualification.
+
 ## 2026-11-23 — Prepare v3.0.0 for publication
 
 Name the `v3.0.0` changelog section after PR #223 (`28ebb6f`) landed on `beta`

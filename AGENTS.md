@@ -75,10 +75,7 @@ Every job runs on self-hosted runners, one throwaway container per job:
 Run tests from a git clone with tags: some checks compare today's renderer
 with a tagged release.
 
-The production DOL's size tripwire is 4.5 MiB (raised from 4.25 MiB with
-the on-console updater: beta already measured 480 bytes past the old line,
-and the updater adds its measured share; `verify_dol.py` records the
-decision). CI verifies a performance
+The production DOL's size tripwire is 4 MiB + 320 KiB (4,521,984 bytes), including the signed updater. CI verifies a performance
 DOL with `verify_dol.py --performance-baseline <normal.dol>`: that normal
 artifact must pass its original size, structure and revision checks, and
 diagnostic instrumentation may add at most 4 KiB. Its provenance records the

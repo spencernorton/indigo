@@ -19,7 +19,6 @@
 #define UI_UPDATE_DOL_MAX (16u * 1024u * 1024u) /* boot_dol's ceiling */
 #define UI_UPDATE_APPLOADER_MAX (8u * 1024u * 1024u) /* a packed DOL: ~2.4 MiB today */
 #define UI_UPDATE_CHANNELS 2           /* Stable, Release candidate */
-#define UI_UPDATE_BOOT_AUTO 0          /* Update Boot File: look on the card */
 
 typedef struct {
 	char version[24];        /* "v2.10.0": shown, never compared */
@@ -68,44 +67,6 @@ typedef enum {
  * manifest is offered as an older/different build, with that warning. */
 ui_update_decision_t UIUpdate_Decide(const ui_update_manifest_t *manifest,
 	const char *runningCommit7, int64_t runningBuildTime);
-
-#define UI_UPDATE_NAME_MAX 1024u /* deviceHandler.h's PATHNAME_MAX */
-
-typedef enum {
-	UI_UPDATE_SWAP_OK = 0,  /* the staged file is in place, .bak beside it */
-	UI_UPDATE_SWAP_FAIL,    /* not installed; the old file is back in place */
-	UI_UPDATE_SWAP_MANUAL   /* the name is empty; .bak holds the old file */
-} ui_update_swap_t;
-
-/* The swap's reach onto the card, shaped like the device layer it rides:
- * `handle` is a name buffer holding the file's name, `renameFile` renames
- * it and — exactly as the FAT, KunaiGC and FlippyDrive handlers do —
- * copies the new name into the handle on success (and a rename onto a
- * name that exists fails). 0 is success, as the handlers answer. The
- * swap therefore never reads a handle's name back after renaming it: it
- * snapshots all three names first and refills each handle from the
- * snapshot before every call, and leaves the three handles holding their
- * original names on every way out. */
-typedef struct {
-	void *ctx;
-	int (*deleteFile)(void *ctx, char *handle, size_t capacity);
-	int (*renameFile)(void *ctx, char *handle, size_t capacity,
-		const char *newName);
-} ui_update_swap_ops_t;
-
-/* current -> .bak, then .new -> current (config_file_write's order). A
- * failed second rename puts .bak straight back; `present` is false when
- * there is no current file to move aside (a first apploader). */
-ui_update_swap_t UIUpdate_Swap(const ui_update_swap_ops_t *ops,
-	char *file, char *staged, char *backup, size_t capacity, bool present);
-
-/* Puts a file this swap already replaced back: drops the file at `file`
- * and renames `backup` onto its name; with `present` false there was no
- * old file, so putting it back is dropping the freshly installed file.
- * False when even that failed (the .bak, if any, is still there for a
- * computer to rename). */
-bool UIUpdate_Rollback(const ui_update_swap_ops_t *ops,
-	char *file, char *backup, size_t capacity, bool present);
 
 /* "stable" or "rc" for the Update Channel setting (0 is Stable). */
 const char *UIUpdate_ChannelName(int channel);

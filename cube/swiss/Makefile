@@ -72,6 +72,7 @@ UI_PERF		?= 0
 # Prebuilt dependencies retain their own exception metadata and compiler flags.
 # Source paths are relative so the DOL is the same wherever it is built.
 CFLAGS		= -g -Os -flto -fstack-usage -Wall -Wno-format-truncation -Wno-scalar-storage-order -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffile-prefix-map=$(abspath $(CURDIR)/..)/= -D_GNU_SOURCE $(MACHDEP) $(INCLUDE) $(shell $(PREFIX)pkg-config --cflags libdeflate iconv mad uchardet libxxhash zlib) -D'GIT_COMMIT="$(shell git rev-parse HEAD | cut -c1-7)"' -D'GIT_REVISION="$(shell git rev-list HEAD | wc -l)"' -D'GIT_TIMESTAMP=$(or $(shell git log -1 --format=%ct 2>/dev/null),0)' -DLFS_MULTIVERSION -DUI_PERF_CAPTURE=$(UI_PERF)
+CFLAGS += -D'INDIGO_BUILD_COMMIT="$(shell git rev-parse HEAD 2>/dev/null)"'
 CFLAGS += -DUI_EXPERIMENTAL_540P=$(UI_540P)
 CXXFLAGS	= $(CFLAGS) -fno-exceptions -fno-rtti
 
@@ -85,7 +86,7 @@ LDFLAGS		= $(CFLAGS) -flto-partition=one -Werror=lto-type-mismatch -Wl,--no-eh-f
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-ldvm -ltinysmb -lbba -ldb -logc -lm -lpsoarchive $(shell $(PREFIX)pkg-config --libs libdeflate iconv mad uchardet libxxhash zlib)
+LIBS	:=	-ldvm -ltinysmb -lbba -ldb -logc -lm -lpsoarchive $(shell $(PREFIX)pkg-config --libs libdeflate iconv mad uchardet libxxhash zlib libsodium)
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

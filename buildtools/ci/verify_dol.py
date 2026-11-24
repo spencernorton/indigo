@@ -26,20 +26,9 @@ import struct
 import sys
 from pathlib import Path
 
-# A tripwire, not a hardware limit: the uncompressed production DOL stays
-# below 4.5 MiB. Music, supported character encodings and dependency unwind
-# data remain intact. Growth past this remains an explicit decision.
-# Raised from 4.25 MiB with the on-console updater (Settings > Network):
-# beta already measured 4,456,928 bytes in the pinned image — 480 past the
-# old line — and the updater's SHA-256, parsers, HTTP client and pipeline
-# add their measured share on top (docs/dev/software-update-design.md
-# section 11). The real ceilings are far away: 24 MiB of RAM, and the
-# 16 MiB a boot image may be.
-MAX_DOL_BYTES = 18 * 1024 * 1024 // 4
-
-# The diagnostic build is accounted for separately against its validated
-# normal counterpart. The existing profiler added 3,168 bytes in native CI;
-# a 4 KiB allowance bounds instrumentation without spending production room.
+# The signed updater and its SDK Ed25519 verifier fit in the production
+# budget. Diagnostic instrumentation has its own measured allowance.
+MAX_DOL_BYTES = 4 * 1024 * 1024 + 320 * 1024
 MAX_PERFORMANCE_OVERHEAD_BYTES = 4096
 
 

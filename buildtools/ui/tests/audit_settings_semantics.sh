@@ -33,7 +33,7 @@
 # when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
 # server and SET_TIME_ZONE opens the same validated editor. The updater's
 # five Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
-# SET_UPDATE_BOOTFILE, SET_UPDATE_CHECK, SET_UPDATE_SMB) only step or edit
+# SET_UPDATE_STARTUP, SET_UPDATE_CHECK, SET_UPDATE_SMB) only step or edit
 # their own settings, or start their update run on A. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
@@ -306,9 +306,8 @@ normalized = re.sub(
     r"\t+break;\n",
     "", normalized, count=1)
 normalized = re.sub(
-    r"(?ms)^\t+case SET_UPDATE_BOOTFILE:\n"
-    r"\t+swissSettings\.updateBootFile \+= direction;\n"
-    r"\t+swissSettings\.updateBootFile = \(swissSettings\.updateBootFile \+ 4\) % 4;\n"
+    r"(?ms)^\t+case SET_UPDATE_STARTUP:\n"
+    r"\t+swissSettings\.skipStartupUpdates \^= 1;\n"
     r"\t+break;\n",
     "", normalized, count=1)
 normalized = re.sub(

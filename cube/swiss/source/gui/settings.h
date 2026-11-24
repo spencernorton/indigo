@@ -135,7 +135,7 @@ enum SETTINGS_NETWORK {
 	SET_RT4K_PORT,
 	SET_UPDATE_CHANNEL,
 	SET_UPDATE_SERVER,
-	SET_UPDATE_BOOTFILE,
+	SET_UPDATE_STARTUP,
 	SET_UPDATE_CHECK,
 	SET_UPDATE_SMB,
 	SET_PAGE_3_BACK,
@@ -264,7 +264,6 @@ extern char *rightFaceStr[];
 extern char *downFaceStr[];
 extern char *libraryLayoutStr[];
 extern char *updateChannelStr[];
-extern char *updateBootFileStr[];
 
 int show_settings(int page, int option, ConfigEntry *config);
 int show_settings_view(int view, int option, ConfigEntry *config);

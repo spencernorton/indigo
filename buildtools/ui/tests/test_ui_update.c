@@ -7,6 +7,7 @@
 
 #include "sha256.h"
 #include "ui_update.h"
+#include "ui_update_slot.h"
 
 static unsigned long checks;
 
@@ -291,229 +292,24 @@ static void testDecide(void)
 		UI_UPDATE_DECIDE_CURRENT);
 }
 
-/* The shipped swap (UIUpdate_Swap) against a fake device that behaves
- * like the real handlers where it matters: rename copies the new name
- * into the source handle (deviceHandler-FAT.c's strcpy, mirrored by
- * KunaiGC and FlippyDrive), a rename onto an existing name fails
- * (FatFs FR_EXIST), and any chosen rename can be made to fail. A swap
- * that re-read a renamed handle's name — the old update.c bug, where
- * the destination had quietly become the .bak name — fails here. */
-#define FAKE_NAME_MAX 64u
-
-typedef struct {
-	char name[FAKE_NAME_MAX];
-	char data[16];
-	bool exists;
-} fake_file_t;
-
-typedef struct {
-	fake_file_t files[8];
-	size_t count;
-	int renameCalls;
-	unsigned int failMask; /* bit N: rename call N (1-based) fails */
-} fake_fs_t;
-
-static fake_file_t *fakeFind(fake_fs_t *fs, const char *name)
+static void testSlots(void)
 {
-	size_t i;
-
-	for(i = 0; i < fs->count; i++) {
-		if(strcmp(fs->files[i].name, name) == 0)
-			return &fs->files[i];
-	}
-	return NULL;
-}
-
-static void fakePut(fake_fs_t *fs, const char *name, const char *data)
-{
-	fake_file_t *file = fakeFind(fs, name);
-
-	if(file == NULL) {
-		CHECK(fs->count < sizeof(fs->files) / sizeof(fs->files[0]));
-		file = &fs->files[fs->count++];
-		strcpy(file->name, name);
-	}
-	strcpy(file->data, data);
-	file->exists = true;
-}
-
-static bool fakeHas(fake_fs_t *fs, const char *name, const char *data)
-{
-	fake_file_t *file = fakeFind(fs, name);
-
-	return file != NULL && file->exists &&
-		(data == NULL || strcmp(file->data, data) == 0);
-}
-
-static int fakeDelete(void *ctx, char *handle, size_t capacity)
-{
-	fake_file_t *file = fakeFind((fake_fs_t *)ctx, handle);
-
-	(void)capacity;
-	if(file != NULL)
-		file->exists = false;
-	return 0;
-}
-
-static int fakeRename(void *ctx, char *handle, size_t capacity,
-	const char *newName)
-{
-	fake_fs_t *fs = (fake_fs_t *)ctx;
-	fake_file_t *from;
-	fake_file_t *to;
-
-	fs->renameCalls++;
-	if(fs->failMask & (1u << (unsigned int)fs->renameCalls))
-		return 1; /* an injected failure: nothing moved */
-	from = fakeFind(fs, handle);
-	if(from == NULL || !from->exists) {
-		/* FR_NO_FILE: the FAT handler still copies the name over. */
-		strncpy(handle, newName, capacity - 1u);
-		handle[capacity - 1u] = '\0';
-		return 2;
-	}
-	to = fakeFind(fs, newName);
-	if(to != NULL && to->exists)
-		return 3; /* FR_EXIST: refused, handle untouched */
-	if(to == NULL) {
-		CHECK(fs->count < sizeof(fs->files) / sizeof(fs->files[0]));
-		to = &fs->files[fs->count++];
-		strcpy(to->name, newName);
-	}
-	strcpy(to->data, from->data);
-	to->exists = true;
-	from->exists = false;
-	/* The aliasing itself: the source handle now holds the new name. */
-	strncpy(handle, newName, capacity - 1u);
-	handle[capacity - 1u] = '\0';
-	return 0;
-}
-
-static void testSwap(void)
-{
-	ui_update_swap_ops_t ops;
-	fake_fs_t fs;
-	char file[FAKE_NAME_MAX];
-	char staged[FAKE_NAME_MAX];
-	char backup[FAKE_NAME_MAX];
-
-	ops.deleteFile = fakeDelete;
-	ops.renameFile = fakeRename;
-
-	/* Present file: old aside to .bak, new in place, handles restored. */
-	memset(&fs, 0, sizeof(fs));
-	ops.ctx = &fs;
-	fakePut(&fs, "ipl.dol", "OLD");
-	fakePut(&fs, "ipl.dol.new", "NEW");
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
-		UI_UPDATE_SWAP_OK);
-	CHECK(fakeHas(&fs, "ipl.dol", "NEW"));
-	CHECK(fakeHas(&fs, "ipl.dol.bak", "OLD"));
-	CHECK(!fakeHas(&fs, "ipl.dol.new", NULL));
-	CHECK(strcmp(file, "ipl.dol") == 0);
-	CHECK(strcmp(staged, "ipl.dol.new") == 0);
-	CHECK(strcmp(backup, "ipl.dol.bak") == 0);
-
-	/* Fresh install: no file to move aside, no .bak left. */
-	memset(&fs, 0, sizeof(fs));
-	fakePut(&fs, "ipl.dol.new", "NEW");
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, false) ==
-		UI_UPDATE_SWAP_OK);
-	CHECK(fakeHas(&fs, "ipl.dol", "NEW"));
-	CHECK(!fakeHas(&fs, "ipl.dol.bak", NULL));
-
-	/* First rename fails: nothing moved, both files as they were. */
-	memset(&fs, 0, sizeof(fs));
-	fs.failMask = 1u << 1;
-	fakePut(&fs, "ipl.dol", "OLD");
-	fakePut(&fs, "ipl.dol.new", "NEW");
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
-		UI_UPDATE_SWAP_FAIL);
-	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
-	CHECK(fakeHas(&fs, "ipl.dol.new", "NEW"));
-	CHECK(!fakeHas(&fs, "ipl.dol.bak", NULL));
-
-	/* Second rename fails, rollback lands: boot file byte-identical. */
-	memset(&fs, 0, sizeof(fs));
-	fs.failMask = 1u << 2;
-	fakePut(&fs, "ipl.dol", "OLD");
-	fakePut(&fs, "ipl.dol.new", "NEW");
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
-		UI_UPDATE_SWAP_FAIL);
-	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
-	CHECK(fakeHas(&fs, "ipl.dol.new", "NEW"));
-	CHECK(!fakeHas(&fs, "ipl.dol.bak", NULL));
-
-	/* Second rename and its rollback both fail: manual recovery, with
-	 * the .bak (and the verified .new) still on the card to rename. */
-	memset(&fs, 0, sizeof(fs));
-	fs.failMask = (1u << 2) | (1u << 3);
-	fakePut(&fs, "ipl.dol", "OLD");
-	fakePut(&fs, "ipl.dol.new", "NEW");
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
-		UI_UPDATE_SWAP_MANUAL);
-	CHECK(!fakeHas(&fs, "ipl.dol", NULL));
-	CHECK(fakeHas(&fs, "ipl.dol.bak", "OLD"));
-	CHECK(fakeHas(&fs, "ipl.dol.new", "NEW"));
-	CHECK(strcmp(file, "ipl.dol") == 0);
-	CHECK(strcmp(backup, "ipl.dol.bak") == 0);
-
-	/* Putting an already-replaced file back (the apploader, when the
-	 * boot file's swap failed): new dropped, .bak restored. */
-	memset(&fs, 0, sizeof(fs));
-	fakePut(&fs, "ipl.dol", "NEW");
-	fakePut(&fs, "ipl.dol.bak", "OLD");
-	strcpy(file, "ipl.dol");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Rollback(&ops, file, backup, FAKE_NAME_MAX, true));
-	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
-	CHECK(!fakeHas(&fs, "ipl.dol.bak", NULL));
-	CHECK(fs.renameCalls == 1);
-
-	/* The pair, with a FIRST apploader (nothing to move aside, so its
-	 * swap leaves no .bak): the apploader lands, the boot file's swap
-	 * then fails and restores itself, and putting the pair back must
-	 * take the fresh apploader OFF again — a new apploader beside the
-	 * restored old boot file is a mismatched pair, not "unchanged".
-	 * Renames: 1 apploader in, 2 boot file aside, 3 (failed) new boot
-	 * file in, 4 its rollback. */
-	memset(&fs, 0, sizeof(fs));
-	fakePut(&fs, "apploader.img.new", "NEWAPP");
-	fakePut(&fs, "ipl.dol", "OLD");
-	fakePut(&fs, "ipl.dol.new", "NEWDOL");
-	strcpy(file, "apploader.img");
-	strcpy(staged, "apploader.img.new");
-	strcpy(backup, "apploader.img.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, false) ==
-		UI_UPDATE_SWAP_OK);
-	CHECK(fakeHas(&fs, "apploader.img", "NEWAPP"));
-	fs.failMask = 1u << 3;
-	strcpy(file, "ipl.dol");
-	strcpy(staged, "ipl.dol.new");
-	strcpy(backup, "ipl.dol.bak");
-	CHECK(UIUpdate_Swap(&ops, file, staged, backup, FAKE_NAME_MAX, true) ==
-		UI_UPDATE_SWAP_FAIL);
-	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
-	strcpy(file, "apploader.img");
-	strcpy(backup, "apploader.img.bak");
-	CHECK(UIUpdate_Rollback(&ops, file, backup, FAKE_NAME_MAX, false));
-	CHECK(!fakeHas(&fs, "apploader.img", NULL));
-	CHECK(fakeHas(&fs, "ipl.dol", "OLD"));
+	ui_update_slots_t slots = {0};
+	ui_update_manifest_t release = {.buildTime = 200, .commit = "123456789"};
+	CHECK(UIUpdate_InstallSlot(&slots, -1, &release, true) == 0);
+	slots.confirmed[0] = 100;
+	CHECK(UIUpdate_FirstSlot(&slots) == 0);
+	CHECK(UIUpdate_InstallSlot(&slots, 0, &release, true) == 1);
+	strcpy(slots.tried[1], release.commit);
+	CHECK(UIUpdate_InstallSlot(&slots, -1, &release, true) < 0);
+	CHECK(UIUpdate_InstallSlot(&slots, 0, &release, false) == 1);
+	slots.tried[1][0] = 0;
+	slots.confirmed[1] = 200;
+	CHECK(UIUpdate_FirstSlot(&slots) == 1);
+	CHECK(UIUpdate_InstallSlot(&slots, -1, &release, true) < 0);
+	release.buildTime++;
+	CHECK(UIUpdate_InstallSlot(&slots, -1, &release, true) == 0);
+	CHECK(UIUpdate_InstallSlot(&slots, 0, &release, true) == 1);
 }
 
 static void baseIs(const char *text, bool ok, ui_update_base_err_t why,
@@ -580,6 +376,8 @@ static void headIs(const char *text, bool ok, int status,
 
 static void testHttpHead(void)
 {
+	headIs("HTTP/1.1 099 Invalid\r\n\r\n", false, 0, 0, false, false);
+	headIs("HTTP/1.1 2000 Invalid\r\n\r\n", false, 0, 0, false, false);
 	headIs("HTTP/1.1 200 OK\r\nContent-Length: 4500000\r\n\r\n",
 		true, 200, 4500000u, true, false);
 	headIs("HTTP/1.0 200 OK\ncontent-length: 12\n\n",
@@ -635,7 +433,7 @@ int main(void)
 	testSha256();
 	testManifest();
 	testDecide();
-	testSwap();
+	testSlots();
 	testParseBase();
 	testHttpHead();
 	testHexAndNames();

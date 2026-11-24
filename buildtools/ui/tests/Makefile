@@ -127,7 +127,7 @@ test_ui_files.src := $(GUI)/ui_files.c $(GUI)/ui_hint.c $(GUI)/ui_lang.c
 # The console lab's requests and settings, and the log it serves.
 test_ui_lab.src := $(GUI)/ui_lab.c
 # The updater's reading and deciding, and the SHA-256 it checks with.
-test_ui_update.src := $(GUI)/ui_update.c $(GUI)/sha256.c
+test_ui_update.src := $(GUI)/ui_update.c $(GUI)/ui_update_slot.c $(GUI)/sha256.c
 test_indigo_log.src := $(GUI)/indigo_log.c
 
 # A header change rebuilds every test; run_tests.sh builds from clean anyway.

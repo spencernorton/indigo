@@ -215,7 +215,7 @@ typedef struct {
 	char timeZone[64];	// a location or POSIX TZ string; empty keeps the console's offset from UTC
 	int updateChannel;	// 0 = Stable (default), 1 = Release candidate: which releases the updater offers (gui/ui_update.h)
 	char updateServer[64];	// [http://]IPv4[:port][/folder] serving the update files; empty uses UPDATE_DEFAULT_SERVER (gui/update.h)
-	int updateBootFile;	// 0 = Auto (default): the updater looks for ipl.dol, boot.dol, then apps/indigo.dol; else 1 + that list's index
+	bool skipStartupUpdates;	// StartupUpdates=No suppresses the online check
 	bool labServer;	// LabServer: the console lab's port, off by default (gui/ui_lab.h)
 	char logHost[24];	// LogHost: address[:port] that gets each print_debug line over UDP; empty = none
 	int autoBoot;

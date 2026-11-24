@@ -21,10 +21,17 @@ publishes the release with the zip, `SHA256SUMS.txt`, the provenance
 record, those update files, a build provenance attestation and notes from
 `CHANGELOG.md` (`buildtools/release_notes.sh`). To check the pipeline without
 publishing, run the workflow by hand with an existing tag, and read the
-dry run's manifest before tagging for real. After a release, refresh
-whatever mirror serves the update files (the SMB shares people keep need
-no help; the HTTP default waits on a public plain-HTTP host —
-`UPDATE_DEFAULT_SERVER` in `cube/swiss/source/gui/update.h`).
+dry run’s manifest before tagging.
+
+The tag-only `indigo-release-signing` environment supplies the dedicated
+Ed25519 key. The console’s pinned public key is in `update_trust.h`.
+The publish job checks the key, signs the exact manifest bytes and attaches the
+result as `stable.signed` or `rc.signed`. After the release exists, the feed
+job commits the channel and versioned payloads together on `gh-pages`, asks
+Pages to build and checks that the live manifest matches. A retry of the same
+tag must match the assets already published. An older version or timestamp
+cannot move the feed backwards. The feed is served at
+`indigo-updates.norvitech.com/updates/`.
 
 ## A beta
 

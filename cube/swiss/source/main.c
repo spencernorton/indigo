@@ -23,6 +23,7 @@
 #include "reservedarea.h"
 #include "settings.h"
 #include "swiss.h"
+#include "update.h"
 #include "bba.h"
 #include "dvd.h"
 #include "flippy.h"
@@ -365,9 +366,13 @@ int main(int argc, char *argv[])
 	VIDEO_SetAdjustingValues(swissSettings.sramHOffset, 0);
 	updateSRAM(&swissSettings, true);
 	
+	if(!swissSettings.cubebootInvoked)
+		updateStartupBoot(argc, argv);
 	if(swissSettings.initNetworkAtStart |= bba_requires_init()) {
 		// Start up the BBA if it exists
 		init_network_async();
+	} else if(!swissSettings.cubebootInvoked && !swissSettings.skipStartupUpdates && bba_exists(LOC_ANY)) {
+		init_update_network();
 	}
 	
 	DEVICEHANDLER_INTERFACE *device = getDeviceByLocation(LOC_DVD_CONNECTOR);

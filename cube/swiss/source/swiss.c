@@ -30,6 +30,7 @@
 #include <zlib.h>
 
 #include "swiss.h"
+#include "update.h"
 #include "main.h"
 #include "util.h"
 #include "info.h"
@@ -8375,6 +8376,7 @@ void menu_loop()
 				allowedAxes = UI_MENU_INPUT_AXIS_VERTICAL;
 			}
 			while(1) {
+				updateStartupPoll();
 				btns = padsButtonsHeld();
 				analog = padsMenuInputPoll(&homeMenuInput,
 					menuInputElapsedMicroseconds(&homeMenuInputRetrace),

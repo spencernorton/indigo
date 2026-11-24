@@ -268,10 +268,10 @@ The Settings tour above predates the Apps Video Mode row.
 | NTP Server IP | The time server to use. An empty entry uses the default server. |
 | Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
 | Update Channel | Which releases the two update actions offer: **Stable**, the latest finished release, or **Release candidate**, the next release for testing. |
-| Update Server | A computer serving Indigo's update files over plain HTTP: an IPv4 address, with `:port` and `/folder` if it needs them. The console has no DNS and no HTTPS. |
-| Update Boot File | The Indigo file an update replaces. **Auto** looks for `ipl.dol`, `boot.dol`, then `apps/indigo.dol` on the Configuration Device. |
-| Check for updates | Asks the Update Server for a newer Indigo, downloads it beside the file it replaces, checks it, and asks again before installing. |
-| Update from SMB share | The same, with the update files read from `indigo-updates` on the SMB share. |
+| Update Server | Leave empty for Indigo’s official feed. A local mirror can use an IPv4 address, port and folder. |
+| Startup Updates | Checks once per launch. A newer signed release downloads and starts automatically when Home is open. On by default. |
+| Check for updates | Check now and choose whether to install the newer signed release. |
+| Update from SMB share | Read the signed release from the configured SMB share’s `indigo-updates` folder. |
 
 The clock settings appear with a network adapter. When you turn on **Sync
 Clock** with no zone set, Indigo opens **Time Zone**. Enter your location and
@@ -283,47 +283,28 @@ Passwords are saved as plain text in `global.ini`.
 
 #### Updating Indigo over the network
 
-With a network adapter fitted, **Check for updates** and **Update from SMB
-share** can replace Indigo where it sits, without taking the card out.
-Nothing runs in the background: an update starts only when you press one of
-the two rows, asks before it downloads, checks the download against its
-update list, and asks again before it installs. The list and the file come
-from the same place, so that check (its SHA-256) proves the download
-matches its list — it cannot prove who published them. The install
-question shows the start of the SHA-256, the same start the release page
-shows: compare them on a computer before you install. The file it replaced
-stays beside the new one with `.bak` at the end of its name. The update
-settings take effect straight away, whether or not you have saved them yet.
+Install an updater-capable SD download once. Copy its Indigo DOL to the path
+you usually open, including `apps/indigo/default.dol` for a Depot-style install.
+For In-Game Reset, also copy the included `swiss/patches/apploader.img`.
+Existing versions through v3.0.0 require this first copy.
 
-For **Update from SMB share**, put the release's update files (the
-`indigo-….dol`, `apploader-….img` and `stable.txt` — or `rc.txt` — from its
-download page) in a folder named `indigo-updates` at the top of the share
-set above. The share's server must allow SMB 1.0, as it must for browsing.
+With a network adapter, Home checks for a newer release in the background.
+The Stable channel is the default. You can keep using Indigo if the network
+is unavailable. During the download, B cancels. Indigo checks the publisher
+signature and the saved program, then starts that exact program. Two slots in
+`swiss/indigo/updates/` on the Configuration Device hold updates. Reaching Home
+confirms the new slot. If a trial fails to start, power on normally to return
+to the previous working version. Settings can retry a failed download.
 
-For **Check for updates**, serve the same three files as plain static files
-over HTTP — any small file server on your network will do, such as
-`python3 -m http.server` in the folder holding them — and set **Update
-Server** to that computer's IPv4 address, with its `:port` and `/folder`
-if it needs them. Indigo reads `<server>/stable.txt` (or `rc.txt`) and the
-files beside it. There is no HTTPS and no DNS on the console: a name or an
-`https://` address is refused with the reason, and a reply that comes in
-chunks or without its length is too.
+Hold **X + Y while starting Indigo** to use the original installed copy and
+skip the online check for that launch. To remove all downloaded versions,
+delete the `swiss/indigo/updates/` folder on a computer. Your games, settings,
+saves and original Indigo files keep their usual paths.
 
-**Update Boot File** says which file an update replaces. **Auto** looks for
-`ipl.dol`, `boot.dol`, then `apps/indigo.dol` on the Configuration Device —
-the names the [install guide](install.md) uses — and refuses to guess if
-more than one is there. An Indigo that starts from a different card than it
-keeps its settings on still updates from a computer. Losing power while the
-new file takes the old one's place can leave the name empty for a moment;
-if the console then starts something else, put the old Indigo back on a
-computer by renaming `ipl.dol.bak` (or `boot.dol.bak`,
-`apps/indigo.dol.bak`) to its name without the `.bak`, and
-`swiss/patches/apploader.img.bak` the same way. An install that fails
-part-way tries the same rename itself and says whether it landed; if even
-that fails, the screen stays up naming the file that is missing and the
-`.bak` (and any `.new`) still on the card, so the rename above is all
-there is to do. The same two renames are how you go back to the Indigo
-you had, whenever you like.
+To use a local mirror, copy the release’s `stable.signed` or `rc.signed` and
+its `indigo-<tag>.dol` into the same folder. Serve it as ordinary static HTTP
+with Content-Length, or use the `indigo-updates` folder at the top of an SMB
+share. Every source uses the public key built into Indigo.
 
 </details>
 
