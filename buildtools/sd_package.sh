@@ -72,7 +72,11 @@ https://norvitech.com/indigo/guide/install/
    then apps, then indigo.
 
 UPDATING INDIGO
-Back up the card's swiss folder. Rename the new ipl.dol to the name of the
+Home checks your selected channel on startup with a Broadband Adapter and a
+writable Configuration Device. Indigo verifies the signature and download,
+then restarts. Hold X + Y at startup to boot your installed recovery copy.
+For the first install from an older version, or to replace the recovery copy,
+back up the card's swiss folder. Rename the new ipl.dol to the name of the
 Indigo file you start now (ipl.dol, boot.dol, apps/indigo/default.dol or
 apps/indigo.dol) and copy it over that file. Then copy the new
 swiss/patches/apploader.img over the old one.

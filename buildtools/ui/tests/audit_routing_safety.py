@@ -143,6 +143,20 @@ def expected_main(base: str) -> str:
         igr_anchor + "\tswissSettings.igrType = IGR_APPLOADER;\n",
         1,
     )
+    # Check the signed recovery slot before starting the network. CubeBoot's
+    # caller retains control, and a background probe starts no normal services.
+    anchor = '#include "swiss.h"\n'
+    assert base.count(anchor) == 1
+    base = base.replace(anchor, anchor + '#include "update.h"\n', 1)
+    anchor = "\tif(swissSettings.initNetworkAtStart |= bba_requires_init()) {\n"
+    assert base.count(anchor) == 1
+    base = base.replace(anchor, "\tif(!swissSettings.cubebootInvoked)\n"
+                        "\t\tupdateStartupBoot(argc, argv);\n" + anchor, 1)
+    anchor = "\t\tinit_network_async();\n\t}\n"
+    assert base.count(anchor) == 1
+    base = base.replace(anchor, "\t\tinit_network_async();\n"
+                        "\t} else if(!swissSettings.cubebootInvoked && !swissSettings.skipStartupUpdates && bba_exists(LOC_ANY)) {\n"
+                        "\t\tinit_update_network();\n\t}\n", 1)
     # The experiment starts only after normal startup and the Cubeboot return,
     # is absent from ordinary builds, and cannot intercept source discovery.
     anchor = '\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}\n\twhile(1) {'

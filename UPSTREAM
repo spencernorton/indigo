@@ -27,7 +27,7 @@ cube/swiss/source/bba.c                    startup update probes can bring up an
 cube/swiss/source/gcm.c                    every walk of a file table stays inside it (fst_entries, fst_name): a damaged image cannot crash the Library, a launch or a disc opened as a folder
 cube/swiss/source/devices/filemeta.c       evicted metadata returns to meta_mspace, eviction stops if every entry is in view, 7-bit ASCII banner text skips uchardet/iconv, fallback pixels use a shared array declaration, TGC metadata populates diskId, and banner detection uses the SDK's pre-installed libuchardet rather than uchardet-lite
 cube/swiss/source/video.c                  the retrace callback scans the pads through padsScan(), which the menus read; first setVideoMode resets VI_DCR before VIDEO_Init and skips GX_AbortFrame before GX_Init so warm-booted DOLs do not hang in VIDEO_WaitForFlush; allocate the next XFB pair before releasing the old pair; optional UI_540P preserves custom timing geometry and uses a bounded EFB working area
-cube/swiss/source/util.c                   print_debug also keeps each line for the console lab's log and LogHost (gui/lab.c), stamped with the time since the first line
+cube/swiss/source/util.c                   print_debug also keeps each line for the console lab's log and LogHost (gui/lab.c), stamped with the time since the first line; getExternalPath reports allocation failure to its caller
 cube/swiss/source/fatfs/ffunicode.c        the DBCS code-page tables are removed; code page 437 never compiles them
 cube/swiss/source/nkit.c                   Latin-1 bytes in game titles are written as \x escapes; the same bytes compile
 cube/swiss/source/littlefs/                vendored as files, at the commit upstream's submodule names

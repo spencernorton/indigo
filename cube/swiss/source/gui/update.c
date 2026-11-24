@@ -112,6 +112,7 @@ typedef struct {
 	u64 started;
 	u64 lastTick;
 	u32 lastDone;
+	u32 lastDrawMs;
 	int speed;
 } update_progress_t;
 
@@ -137,6 +138,9 @@ static bool updateProgress(update_progress_t *state, uiDrawObj_t *bar,
 		state->lastTick = SYS_GetSystemTime();
 		state->lastDone = done;
 	}
+	if(done < total && elapsed - state->lastDrawMs < 100)
+		return ((padsButtonsHeld() | padsButtonsTaken(BUTTON_B)) & BUTTON_B) == 0;
+	state->lastDrawMs = elapsed;
 	if(state->speed > 0)
 		remain = (int)((total - done) / (uint32_t)state->speed);
 	DrawUpdateProgressBarDetail(bar, total ?
@@ -172,18 +176,6 @@ static bool updateStageWrite(file_handle *target, const void *buffer,
 {
 	return updateDevice()->writeFile(target, buffer, length) ==
 		(s32)length;
-}
-
-/* The copy core's finish: a zero write flushes, then the close is checked. */
-static bool updateStageFinish(file_handle *target)
-{
-	DEVICEHANDLER_INTERFACE *device = updateDevice();
-
-	if(device->writeFile(target, NULL, 0) != 0) {
-		device->closeFile(target);
-		return false;
-	}
-	return device->closeFile(target) == 0;
 }
 
 /* Plain HTTP: one connection per file, bounded reads, no redirects.  */
@@ -431,51 +423,43 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 		return result;
 	target->offset = 0;
 	updateProgressStart(&pace);
-	/* Bytes that arrived with the head count toward the body, never
-	 * past its length (the manifest read clamps the same way). */
-	if(carryLength > (size_t)total)
-		carryLength = (size_t)total;
-	if(carryLength > 0) {
-		if(!updateStageWrite(target, carry, (uint32_t)carryLength)) {
-			net_close(socket);
-			return UPDATE_WRITE_FAIL;
+	/* Fill sector-aligned card writes across short network reads. Bytes
+	 * received with the headers participate in the same first block. */
+	uint32_t buffered = carryLength < total ? (uint32_t)carryLength : total;
+	memcpy(chunk, carry, buffered);
+	done = buffered;
+	for(;;) {
+		if(buffered == UPDATE_CHUNK || done == total) {
+			if(!updateStageWrite(target, chunk, buffered)) {
+				result = UPDATE_WRITE_FAIL;
+				break;
+			}
+			sha256_update(sha, (const uint8_t *)chunk, buffered);
+			buffered = 0;
 		}
-		sha256_update(sha, (const uint8_t *)carry, carryLength);
-		done = (uint32_t)carryLength;
-	}
-	while(done < total) {
-		uint32_t want = total - done;
-		int got;
+		if(done == total)
+			break;
 		if(updateDeadlineHit(pace.started, UPDATE_TRANSFER_SECONDS)) {
-			net_close(socket);
-			return UPDATE_TIMEOUT;
+			result = UPDATE_TIMEOUT;
+			break;
 		}
-		if(want > UPDATE_CHUNK)
-			want = UPDATE_CHUNK;
-		got = httpRecvSome(socket, chunk, want);
-		if(got == -1) {
-			net_close(socket);
-			return UPDATE_TIMEOUT;
-		}
+		uint32_t want = total - done;
+		if(want > UPDATE_CHUNK - buffered)
+			want = UPDATE_CHUNK - buffered;
+		int got = httpRecvSome(socket, chunk + buffered, want);
 		if(got <= 0) {
-			net_close(socket);
-			return UPDATE_SIZE_MISMATCH;
+			result = got == -1 ? UPDATE_TIMEOUT : UPDATE_SIZE_MISMATCH;
+			break;
 		}
-		if(!updateStageWrite(target, chunk, (uint32_t)got)) {
-			net_close(socket);
-			return UPDATE_WRITE_FAIL;
-		}
-		sha256_update(sha, (const uint8_t *)chunk, (size_t)got);
+		buffered += (uint32_t)got;
 		done += (uint32_t)got;
 		if(!updateProgress(&pace, progressBar, done, total)) {
-			net_close(socket);
-			return UPDATE_CANCELLED;
+			result = UPDATE_CANCELLED;
+			break;
 		}
 	}
 	net_close(socket);
-	if(!updateStageFinish(target))
-		return UPDATE_WRITE_FAIL;
-	return UPDATE_OK;
+	return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -585,8 +569,6 @@ static update_result_t smbFetchFile(update_source_state_t *source,
 		}
 	}
 	__device_smb.closeFile(&file);
-	if(!updateStageFinish(target))
-		return UPDATE_WRITE_FAIL;
 	return UPDATE_OK;
 }
 
@@ -839,10 +821,12 @@ static update_result_t installSlot(update_check_t *check, bool automatic)
 	DrawDispose(bar);
 	free(check->source.chunk);
 	check->source.chunk = NULL;
-	if(result != UPDATE_OK) {
-		d->closeFile(&file);
+	if(result == UPDATE_OK && d->writeFile(&file, NULL, 0) != 0)
+		result = UPDATE_WRITE_FAIL;
+	if(d->closeFile(&file) != 0 && result == UPDATE_OK)
+		result = UPDATE_WRITE_FAIL;
+	if(result != UPDATE_OK)
 		goto done;
-	}
 	sha256_final(&sha, hash);
 	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
 		result = UPDATE_HASH_MISMATCH;
@@ -1002,9 +986,8 @@ void updateStartupPoll(void)
 		confirmPending = false;
 		confirmTrial();
 	}
-	if(recoveryBoot || swissSettings.skipStartupUpdates)
-		return;
-	if(!checkStarted && update_network_ready()) {
+	bool enabled = !recoveryBoot && !swissSettings.skipStartupUpdates;
+	if(enabled && !checkStarted && update_network_ready()) {
 		checkStarted = true;
 		pendingCheck = newCheck(UPDATE_SOURCE_HTTP, true);
 		if(pendingCheck && LWP_CreateThread(&checkThread, probeThread, pendingCheck,
@@ -1019,7 +1002,7 @@ void updateStartupPoll(void)
 		update_check_t *check = pendingCheck;
 		pendingCheck = NULL;
 		/* A change made in Settings while the request was out wins. */
-		if(strcmp(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel)) ||
+		if(!enabled || strcmp(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel)) ||
 			strcmp(check->server, swissSettings.updateServer)) {
 			free(check->source.scratch);
 			free(check);
