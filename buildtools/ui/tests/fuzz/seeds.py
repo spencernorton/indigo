@@ -280,9 +280,32 @@ def time_sync(out: Path) -> None:
     (out / "reply").write_bytes(bytes(reply))
 
 
+def update(out: Path) -> None:
+    # A release's update list as update_manifest.py writes it, one by hand
+    # without its apploader, an HTTP head, and Update Server texts.
+    (out / "stable.txt").write_bytes(
+        b"FormatVersion=1\r\nChannel=stable\r\nVersion=v2.10.0\r\n"
+        b"Commit=0123456789abcdef0123456789abcdef01234567\r\n"
+        b"Date=2026-12-01\r\nBuildTime=1796000000\r\n"
+        b"File=indigo-v2.10.0.dol\r\nSize=4500000\r\n"
+        b"SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n"
+        b"ApploaderFile=apploader-v2.10.0.img\r\nApploaderSize=123456\r\n"
+        b"ApploaderSHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n")
+    (out / "dol-only.txt").write_bytes(
+        b"FormatVersion=1\nChannel=stable\nVersion=v2.9.1\n"
+        b"Commit=89abcdef0123456789abcdef0123456789abcdef\n"
+        b"Date=2026-11-20\nBuildTime=1795000000\nFile=indigo.dol\nSize=4456448\n"
+        b"SHA256=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f\n"
+        b"MinVersion=v2.8.0\nMinBuildTime=1790000000\n")
+    (out / "head").write_bytes(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 4500000\r\nContent-Type: application/octet-stream\r\n\r\n")
+    (out / "server").write_bytes(b"192.168.1.10:8080/indigo")
+    (out / "server-name").write_bytes(b"https://example.com/indigo")
+
+
 def main() -> int:
     out = Path(sys.argv[1])
-    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang):
+    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang, update):
         folder = out / target.__name__
         folder.mkdir(parents=True, exist_ok=True)
         target(folder)

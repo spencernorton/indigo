@@ -13,6 +13,16 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Large directories retain the entries that fit when the console runs low on
   memory. The Swiss source update also refreshes disc verification data.
 
+### New
+
+- Indigo checks for a signed release once per launch while Home is open. A newer
+  release downloads to the Configuration Device and starts automatically.
+  Reaching Home confirms it for subsequent starts. The installed launcher and
+  In-Game Reset apploader provide recovery through an interrupted update.
+- Settings › Setup › Network lets you switch off startup checks, choose the
+  release candidate channel, or install a signed release from a local mirror
+  or SMB share. Hold X and Y during launch to open the installed recovery copy.
+
 ## v3.0.0 — Dolphin Depot support and standalone build
 
 ### New

@@ -472,6 +472,12 @@ Indigo.
 
 ## Update Indigo
 
+Starting with the first updater-capable build, Indigo can install signed
+updates from Home. Versions through v3.0.0 need one update from a computer.
+Use the steps below to install that base copy, including its return apploader.
+See [Startup Updates and recovery](settings.md#updating-indigo-over-the-network).
+
+
 1. Download and unzip the new release, and back up the card's `swiss` folder.
    Swiss hides that folder: show hidden folders first (Shift-Command-Period
    in a Mac's Finder; **Hidden items** and **File name extensions** under

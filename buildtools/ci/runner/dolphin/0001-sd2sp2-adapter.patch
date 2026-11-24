@@ -200,7 +200,7 @@ new file mode 100644
 index 0000000..ad71a1e
 --- /dev/null
 +++ b/Source/Core/Core/HW/EXI/EXI_DeviceSDCard.cpp
-@@ -0,0 +1,913 @@
+@@ -0,0 +1,912 @@
 +// Copyright 2025 Dolphin Emulator Project
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +
@@ -249,6 +249,7 @@ index 0000000..ad71a1e
 +};
 +
 +// Data tokens
++constexpr u8 MULTI_WRITE_TOKEN = 0xFC;
 +constexpr u8 DATA_START_TOKEN = 0xFE;
 +constexpr u8 STOP_TRAN_TOKEN = 0xFD;
 +constexpr u8 DATA_ACCEPTED = 0x05;  // xxx0_0101
@@ -788,7 +789,7 @@ index 0000000..ad71a1e
 +
 +  case State::DataWriteToken:
 +    byte = 0xFF;
-+    if (received == DATA_START_TOKEN)
++    if (received == DATA_START_TOKEN || (m_multi_block && received == MULTI_WRITE_TOKEN))
 +    {
 +      m_data_byte_idx = 0;
 +      m_state = State::DataWrite;
@@ -1037,21 +1038,19 @@ index 0000000..ad71a1e
 +
 +  auto& memory = m_system.GetMemory();
 +
-+  // When DMA fires in DataWriteToken state, the 0xFE data start token was
-+  // either not sent separately or was sent via a path we didn't catch.
-+  // Handle the transition here: if we're waiting for the token, accept the
-+  // DMA data directly as write data (the token may have been implicit).
++  // A sector-sized DMA is payload, even when its first byte looks like a
++  // command token. Some clients send the token along with the sector.
 +  if (m_state == State::DataWriteToken)
 +  {
-+    // Check if the first byte is the data start token
-+    u8 first_byte = memory.Read_U8(address);
-+    if (first_byte == DATA_START_TOKEN)
++    if (size == static_cast<u32>(m_data_size + 1) || size == static_cast<u32>(m_data_size + 3))
 +    {
-+      // Token is prepended to the DMA data
-+      address++;
-+      size--;
++      const u8 first = memory.Read_U8(address);
++      if (first == DATA_START_TOKEN || (m_multi_block && first == MULTI_WRITE_TOKEN))
++      {
++        ++address;
++        --size;
++      }
 +    }
-+    // Either way, transition to DataWrite — DMA means "here's the data"
 +    m_data_byte_idx = 0;
 +    m_state = State::DataWrite;
 +  }

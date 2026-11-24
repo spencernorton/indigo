@@ -340,7 +340,12 @@ assert carousel.count(LEGACY_ACTIVATE) == 1
 # The shared actions take the caller's place as flags: only the Library is
 # the Library (".." and B) and shows folder pictures (stopped before Z/START).
 # Swiss's lists, which called them as lists, are gone.
-assert carousel.count("filesHome();") == 1
+# An idle signed update and the controller's B action both return to Home.
+# All other Library actions retain their existing dispatch.
+idle_update = extract_function(carousel, "if(updateStartupPoll(false))")
+back_action = extract_function(carousel, "if(browserButtons & BUTTON_B)")
+assert idle_update.count("filesHome();") == back_action.count("filesHome();") == 1
+assert carousel.count("filesHome();") == 2
 assert carousel.count("filesManage(directory)") == 1
 assert carousel.count("filesRecent(true)") == 1
 assert "useGameflow" not in carousel

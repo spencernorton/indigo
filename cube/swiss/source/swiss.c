@@ -30,6 +30,7 @@
 #include <zlib.h>
 
 #include "swiss.h"
+#include "update.h"
 #include "main.h"
 #include "util.h"
 #include "info.h"
@@ -2501,6 +2502,10 @@ static uiDrawObj_t* renderFileList(file_handle** directory, int num_files, uiDra
 					page != UI_MENU_INPUT_NONE) {
 				break;
 			}
+			if(updateStartupPoll(false)) {
+				filesHome();
+				goto leaveFiles;
+			}
 			VIDEO_WaitVSync();
 			/* Banners arrive: from this thread a row a frame, else from the
 			 * meta thread, looked for four times a second. */
@@ -2739,6 +2744,7 @@ static uiDrawObj_t* renderFileList(file_handle** directory, int num_files, uiDra
 		}
 		(void)filesPublish(directory, &filePanel, true);
 	}
+leaveFiles:
 	meta_thread_stop();
 	DrawDispose(loadingBox);
 	/* Leaving the screen, or its Source: the right listing goes. */
@@ -5043,6 +5049,11 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 					analog != UI_MENU_INPUT_NONE) {
 				break;
 			}
+			if(updateStartupPoll(false)) {
+				DrawGameflowPausePosters();
+				filesHome();
+				goto leaveLibrary;
+			}
 			/* Wake the bounded pack reader, or take its synchronous fallback
 			 * range. A folder picture may advance by another bounded range.
 			 * Check input again as soon as the retrace wait ends. */
@@ -5223,6 +5234,7 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 			VIDEO_WaitVSync();
 		}
 	}
+leaveLibrary:
 	meta_thread_stop();
 	/* The folders' posters stay on screen while the next listing is read. */
 	CardArt_Pause();
@@ -8225,7 +8237,7 @@ void menu_loop()
 	UIScene_Activate();
 	if(gameflowStartupSurfacePending) {
 		gameflowStartupSurfacePending = false;
-		if(UIGameflowLibrary_ShouldStartHome(
+		if(updateStartupTrial() || UIGameflowLibrary_ShouldStartHome(
 			swissSettings.autoload[0] != '\0',
 			swissSettings.recent[0][0] != '\0',
 			swissSettings.recentListLevel > 1)) {
@@ -8375,6 +8387,7 @@ void menu_loop()
 				allowedAxes = UI_MENU_INPUT_AXIS_VERTICAL;
 			}
 			while(1) {
+				updateStartupPoll(true);
 				btns = padsButtonsHeld();
 				analog = padsMenuInputPoll(&homeMenuInput,
 					menuInputElapsedMicroseconds(&homeMenuInputRetrace),

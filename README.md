@@ -225,6 +225,11 @@ Indigo from Swiss. Some PicoBoot and PicoLoader chips have Swiss built in and
 never read `ipl.dol`: the [install guide](docs/guide/install.md) shows how to
 check, and has every step, updating and going back to stock Swiss.
 
+After an updater-capable build is installed, Home checks the selected release
+channel when a Broadband Adapter and writable Configuration Device are available.
+Indigo verifies the signed download and restarts. Hold **X + Y** while starting
+Indigo to use the installed recovery copy. See [updating and recovery](docs/guide/settings.md#updating-indigo-over-the-network).
+
 ### Any platform — from source
 
 The build runs in the same container image the project's CI uses, so no

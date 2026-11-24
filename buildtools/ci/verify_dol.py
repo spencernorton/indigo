@@ -26,14 +26,9 @@ import struct
 import sys
 from pathlib import Path
 
-# A tripwire, not a hardware limit: the uncompressed production DOL stays
-# below 4.25 MiB. Music, supported character encodings and dependency unwind
-# data remain intact. Growth past this remains an explicit decision.
-MAX_DOL_BYTES = 17 * 1024 * 1024 // 4
-
-# The diagnostic build is accounted for separately against its validated
-# normal counterpart. The existing profiler added 3,168 bytes in native CI;
-# a 4 KiB allowance bounds instrumentation without spending production room.
+# The signed updater and its SDK Ed25519 verifier fit in the production
+# budget. Diagnostic instrumentation has its own measured allowance.
+MAX_DOL_BYTES = 4 * 1024 * 1024 + 320 * 1024
 MAX_PERFORMANCE_OVERHEAD_BYTES = 4096
 
 

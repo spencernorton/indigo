@@ -122,6 +122,8 @@ char *getExternalPath(char *path)
 	for (int i = 0; devices[i].internal; i++) {
 		if (!strncmp(path, devices[i].internal, devicePath - path)) {
 			char *newPath = malloc(strlen(devices[i].external) + strlen(devicePath) + 1);
+			if (!newPath)
+				return NULL;
 			return strcat(strcpy(newPath, devices[i].external), devicePath);
 		}
 	}

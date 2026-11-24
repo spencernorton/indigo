@@ -14,10 +14,24 @@ tag.
 Pushing a tag runs `.github/workflows/release.yml`. It checks that the tag
 sits on its branch, builds the DOL from the tagged commit in the pinned
 image, checks that the DOL names that commit, packages the drag-and-drop zip
-(`buildtools/sd_package.sh`), and publishes the release with the zip,
-`SHA256SUMS.txt`, a build provenance attestation and notes from
+(`buildtools/sd_package.sh`), writes the on-console updater's files from
+that zip (`buildtools/update_manifest.py`: `indigo-<tag>.dol`,
+`apploader-<tag>.img` and the channel's `stable.txt` or `rc.txt`), and
+publishes the release with the zip, `SHA256SUMS.txt`, the provenance
+record, those update files, a build provenance attestation and notes from
 `CHANGELOG.md` (`buildtools/release_notes.sh`). To check the pipeline without
-publishing, run the workflow by hand with an existing tag.
+publishing, run the workflow by hand with an existing tag, and read the
+dry run’s manifest before tagging.
+
+The tag-only `indigo-release-signing` environment supplies the dedicated
+Ed25519 key. The console’s pinned public key is in `update_trust.h`.
+The publish job checks the key, signs the exact manifest bytes and attaches the
+result as `stable.signed` or `rc.signed`. After the release exists, the feed
+job commits the channel and versioned payloads together on `gh-pages`, asks
+Pages to build and checks that the live manifest matches. A retry of the same
+tag must match the assets already published. An older version or timestamp
+cannot move the feed backwards. The feed is served at
+`indigo-updates.norvitech.com/updates/`.
 
 ## A beta
 

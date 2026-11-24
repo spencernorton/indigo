@@ -1,0 +1,13 @@
+FormatVersion=1
+Channel=stable
+Version=v2.10.0
+Commit=0123456789abcdef0123456789abcdef01234567
+Date=2026-12-01
+BuildTime=1796000000
+File=indigo-v2.10.0.dol
+Size=4500000
+SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ApploaderFile=apploader-v2.10.0.img
+ApploaderSize=2454656
+ApploaderSHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+NotesURL=https://github.com/spencernorton/indigo/releases/tag/v2.10.0

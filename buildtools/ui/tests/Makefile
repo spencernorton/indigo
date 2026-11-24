@@ -28,7 +28,7 @@ TESTS := test_reallocarr test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_
 	test_gameflow_detail test_ui_game_history test_ui_about \
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual \
-	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim
+	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim test_ui_update
 
 test_ui_cheats.src := $(GUI)/ui_cheats.c
 test_ui_saves.src := $(GUI)/ui_saves.c $(GUI)/ui_lang.c
@@ -126,6 +126,8 @@ test_ui_manual.libs := -lz -lm
 test_ui_files.src := $(GUI)/ui_files.c $(GUI)/ui_hint.c $(GUI)/ui_lang.c
 # The console lab's requests and settings, and the log it serves.
 test_ui_lab.src := $(GUI)/ui_lab.c
+# The updater's reading and deciding, and the SHA-256 it checks with.
+test_ui_update.src := $(GUI)/ui_update.c $(GUI)/ui_update_slot.c $(GUI)/sha256.c
 test_indigo_log.src := $(GUI)/indigo_log.c
 
 # A header change rebuilds every test; run_tests.sh builds from clean anyway.
