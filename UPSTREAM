@@ -11,7 +11,7 @@
 # a pull request of its own.
 
 upstream https://github.com/emukidid/swiss-gc.git
-commit 4c9e30aefb367fc70e3fa55e98003e7bb2955358 (Swiss master, 2026-11-14 intake)
+commit a647fd74880f2cb31c8edbb9b9ba6a9d6e26a2f5
 
 Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling, while keeping the SDK's pre-installed TinySMB and libuchardet; copies the whitespace-normalized docs/licenses/lwip.txt so host packaging checks need no SDK mount
 cube/packer/Makefile                       compresses with xz: the build image has no 7z; links its files in byte order, whatever the locale
@@ -37,3 +37,14 @@ cube/swiss/source/resources/               design sources and Windows tools the 
 # opt-in clock and TinySMB model. Named zones resolve through the upstream table
 # without setting process-wide TZ; no periodic SNTP or automatic RTC clamp.
 # See docs/dev/upstream-intake-2026-11-14.md for every commit and disposition.
+cube/swiss/source/devices/deviceHandler.h  exposes the pinned SDK compatibility helper used by Swiss directory readers
+cube/swiss/source/devices/usbgecko/deviceHandler-usbgecko.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/ftp/deviceHandler-FTP.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/fsp/deviceHandler-FSP.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/flippydrive/deviceHandler-flippydrive.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/qoob/deviceHandler-Qoob.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/wode/deviceHandler-WODE.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/fat/deviceHandler-FAT.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/kunaigc/deviceHandler-KunaiGC.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/dvd/deviceHandler-DVD.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/include/indigo_reallocarr.h       implements the upstream pointer-preserving resize contract for the pinned SDK

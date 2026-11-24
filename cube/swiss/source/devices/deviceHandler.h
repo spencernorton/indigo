@@ -11,6 +11,7 @@
 #include <gctypes.h>
 #include <stdio.h>
 #include <errno.h>
+#include "indigo_reallocarr.h"
 #include "ff.h"
 #include "diskio.h"
 #include "wode/WodeInterface.h"

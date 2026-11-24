@@ -34,15 +34,24 @@ device_info* deviceHandler_Flippy_info(file_handle* file) {
 s32 deviceHandler_Flippy_readDir(file_handle* ffile, file_handle** dir, u32 type) {
 
 	flippydirinfo* dp = memalign(32, sizeof(flippydirinfo));
+	if(!dp) return -1;
 	if((getDeviceFromPath(ffile->name) == &__device_flippyflash ?
 		flippy_flash_opendir(dp, getDevicePath(ffile->name)) :
-		flippy_opendir(dp, getDevicePath(ffile->name))) != FLIPPY_RESULT_OK) return -1;
+		flippy_opendir(dp, getDevicePath(ffile->name))) != FLIPPY_RESULT_OK) {
+		free(dp);
+		return -1;
+	}
 	flippyfilestat entry;
 	flippyfilestat *result;
 	
 	// Set everything up to read
 	int num_entries = 1, i = 1;
 	*dir = calloc(num_entries, sizeof(file_handle));
+	if(!*dir) {
+		flippy_closedir(dp);
+		free(dp);
+		return -1;
+	}
 	concat_path((*dir)[0].name, ffile->name, "..");
 	(*dir)[0].fileType = IS_SPECIAL;
 	(*dir)[0].device   = ffile->device;
@@ -57,7 +66,7 @@ s32 deviceHandler_Flippy_readDir(file_handle* ffile, file_handle** dir, u32 type
 			// Make sure we have room for this one
 			if(num_entries == i) {
 				num_entries *= 2;
-				*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+				if(reallocarr(dir, num_entries, sizeof(file_handle))) break;
 			}
 			memset(&(*dir)[i], 0, sizeof(file_handle));
 			if(concat_path((*dir)[i].name, ffile->name, entry.name) < PATHNAME_MAX && entry.size <= UINT32_MAX) {
@@ -72,7 +81,7 @@ s32 deviceHandler_Flippy_readDir(file_handle* ffile, file_handle** dir, u32 type
 	}
 	if(num_entries != i) {
 		num_entries = i;
-		*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+		reallocarr(dir, num_entries, sizeof(file_handle));
 	}
 	
 	flippy_closedir(dp);

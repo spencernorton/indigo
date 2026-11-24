@@ -103,15 +103,23 @@ device_info* deviceHandler_FAT_info(file_handle* file) {
 
 s32 deviceHandler_FAT_readDir(file_handle* ffile, file_handle** dir, u32 type) {	
 
-	FFDIR* dp = malloc(sizeof(FFDIR));
-	memset(dp, 0, sizeof(FFDIR));
-	if(f_opendir(dp, ffile->name) != FR_OK) return -1;
+	FFDIR* dp = calloc(1, sizeof(*dp));
+	if(!dp) return -1;
+	if(f_opendir(dp, ffile->name) != FR_OK) {
+		free(dp);
+		return -1;
+	}
 	FATFS* fatfs = dp->obj.fs;
 	FILINFO entry;
 	
 	// Set everything up to read
 	int num_entries = 1, i = 1;
 	*dir = calloc(num_entries, sizeof(file_handle));
+	if(!*dir) {
+		f_closedir(dp);
+		free(dp);
+		return -1;
+	}
 	concat_path((*dir)[0].name, ffile->name, "..");
 	(*dir)[0].fileType = IS_SPECIAL;
 	(*dir)[0].device   = ffile->device;
@@ -123,7 +131,7 @@ s32 deviceHandler_FAT_readDir(file_handle* ffile, file_handle** dir, u32 type) {
 			// Make sure we have room for this one
 			if(num_entries == i) {
 				num_entries *= 2;
-				*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+				if(reallocarr(dir, num_entries, sizeof(file_handle))) break;
 			}
 			memset(&(*dir)[i], 0, sizeof(file_handle));
 			if(concat_path((*dir)[i].name, ffile->name, entry.fname) < PATHNAME_MAX && entry.fsize <= UINT32_MAX) {
@@ -139,7 +147,7 @@ s32 deviceHandler_FAT_readDir(file_handle* ffile, file_handle** dir, u32 type) {
 	}
 	if(num_entries != i) {
 		num_entries = i;
-		*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+		reallocarr(dir, num_entries, sizeof(file_handle));
 	}
 	
 	f_closedir(dp);

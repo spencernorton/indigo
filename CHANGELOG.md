@@ -4,6 +4,11 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## Unreleased
+
+- Large directories retain the entries that fit when the console runs low on
+  memory. The Swiss source update also refreshes disc verification data.
+
 ## v3.0.0 — Dolphin Depot support and standalone build
 
 ### New
