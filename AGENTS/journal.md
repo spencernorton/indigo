@@ -1,3 +1,11 @@
+## 2026-11-24 — Retry a damaged startup update once
+
+Startup Updates checks the received bytes against the signed manifest. On
+a mismatch it removes the closed payload from the inactive slot and retries
+the same file once. A good replacement must pass both SHA-256 checks before
+Indigo publishes its trial. Cancellation, storage errors and a second
+mismatch return through the normal error path.
+
 ## 2026-11-24 — Skip banner pixels while listing Depot apps on FAT cards
 
 Apps and Emulators read the header and the text through the selected

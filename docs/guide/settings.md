@@ -299,6 +299,10 @@ or Autoload enabled. Later launches use your usual preference. If a trial
 fails to start, power on normally to return
 to the previous working version. Settings can retry a failed download.
 
+If a startup download fails its SHA-256 check, Indigo discards that copy
+and downloads the same signed release once more. A second failure leaves
+the current launcher running.
+
 Hold **X + Y while starting Indigo** to use the original installed copy and
 skip the online check for that launch. To remove all downloaded versions,
 delete the `swiss/indigo/updates/` folder on a computer. Your games, settings,
