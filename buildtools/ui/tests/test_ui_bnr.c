@@ -125,7 +125,7 @@ static void testMetadataReads(void)
 
 	for(unsigned lang = 0; lang < UI_BNR_LANG_COUNT; ++lang) {
 		char title[] = "App A";
-		title[4] += lang;
+		title[4] = "ABCDEF"[lang];
 		writeDesc(file.data + text + lang * UI_BNR_DESC_BYTES, NULL, NULL,
 			lang == 3u ? "" : title, lang == 3u ? "Local author" : "Author",
 			lang == 3u ? "" : title);
