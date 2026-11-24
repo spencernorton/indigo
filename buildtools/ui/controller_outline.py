@@ -1,50 +1,39 @@
 #!/usr/bin/env python3
 """Regenerate the Library emblem's clockwise GameCube controller silhouette.
 
-The shell is hand-fitted to Nintendo's front-facing original-controller
-product photograph, leaving out the cable and triggers (drawn separately):
+The shell is traced from Nintendo's front-facing original-controller product
+photograph, leaving out the cable and triggers (drawn separately):
 https://www.nintendo.co.jp/ngc/specific/grap/gamecube.jpg
 
-Cubic landmarks preserve the arched shoulder bridge, straight outer grips,
-rounded grip tips and the deep opening between the two lower control lobes.
-Coordinates are in face units. The D-pad and C-stick sit 0.025 units higher
-to fit the original shell; their live input behavior is unchanged.
-Only the simplified table is used on the console; no image or curve sampling
-is kept in the draw path.
+The photograph's indigo body pixels were segmented and their boundary traced,
+then scaled so the stick and A button land on the emblem's u = -/+0.335,
+v = 0.075 with Start on u = 0. The left half is kept and mirrored: the right
+shoulder carries the Z button, and the top centre, where the cable leaves,
+follows the shoulder arch. Coordinates are in face units. Only the simplified
+table is used on the console; no image or curve sampling is kept in the draw
+path.
 """
 import math
 
-# Front-view shell landmarks, scaled around the controller icon. Each row
-# is a cubic's two handles and endpoint; the previous endpoint is its start.
-START = (0.0, 0.378)
-CURVES = (
-    ((0.133, 0.378), (0.303, 0.343), (0.403, 0.285)),
-    ((0.478, 0.245), (0.520, 0.188), (0.528, 0.093)),
-    ((0.533, -0.038), (0.548, -0.250), (0.508, -0.323)),
-    ((0.485, -0.370), (0.433, -0.370), (0.405, -0.335)),
-    ((0.370, -0.288), (0.362, -0.165), (0.333, -0.165)),
-    ((0.304, -0.165), (0.258, -0.285), (0.183, -0.283)),
-    ((0.108, -0.283), (0.048, -0.240), (0.043, -0.173)),
-    ((0.038, -0.100), (0.070, -0.045), (0.113, 0.010)),
-    ((0.053, 0.023), (-0.053, 0.023), (-0.113, 0.008)),
-    ((-0.073, -0.040), (-0.035, -0.103), (-0.038, -0.170)),
-    ((-0.038, -0.233), (-0.093, -0.285), (-0.168, -0.285)),
-    ((-0.250, -0.285), (-0.304, -0.165), (-0.333, -0.165)),
-    ((-0.362, -0.165), (-0.363, -0.280), (-0.405, -0.335)),
-    ((-0.430, -0.368), (-0.483, -0.368), (-0.505, -0.318)),
-    ((-0.543, -0.240), (-0.528, -0.028), (-0.523, 0.090)),
-    ((-0.518, 0.188), (-0.480, 0.248), (-0.405, 0.285)),
-    ((-0.303, 0.345), (-0.135, 0.378), START),
+# Traced left half, from the top centre round the left grip and D-pad lobe to
+# the top of the opening between the lower lobes.
+LEFT_HALF = (
+    (0.000, 0.372), (-0.045, 0.371), (-0.141, 0.359), (-0.183, 0.352),
+    (-0.197, 0.345), (-0.253, 0.331), (-0.279, 0.321), (-0.336, 0.308),
+    (-0.377, 0.287), (-0.394, 0.283), (-0.406, 0.273), (-0.440, 0.256),
+    (-0.504, 0.190), (-0.532, 0.134), (-0.540, 0.091), (-0.540, 0.064),
+    (-0.547, 0.038), (-0.547, -0.063), (-0.550, -0.094), (-0.550, -0.195),
+    (-0.540, -0.281), (-0.532, -0.314), (-0.520, -0.342), (-0.495, -0.371),
+    (-0.469, -0.380), (-0.451, -0.380), (-0.427, -0.370), (-0.402, -0.338),
+    (-0.376, -0.253), (-0.376, -0.232), (-0.365, -0.173), (-0.352, -0.151),
+    (-0.342, -0.154), (-0.323, -0.179), (-0.313, -0.199), (-0.307, -0.223),
+    (-0.291, -0.250), (-0.271, -0.271), (-0.244, -0.289), (-0.211, -0.301),
+    (-0.158, -0.301), (-0.136, -0.296), (-0.095, -0.273), (-0.073, -0.249),
+    (-0.062, -0.233), (-0.054, -0.213), (-0.045, -0.179), (-0.045, -0.141),
+    (-0.059, -0.086), (-0.072, -0.063), (-0.086, -0.047), (-0.122, -0.015),
+    (-0.126, -0.002), (-0.123, 0.002), (-0.105, 0.006), (-0.078, 0.010),
+    (0.000, 0.013),
 )
-
-
-def curve_points(start, handles, steps=24):
-    a, b, end = handles
-    for i in range(1, steps + 1):
-        t = i / steps
-        s = 1 - t
-        yield tuple(s ** 3 * start[k] + 3 * s * s * t * a[k] +
-                    3 * s * t * t * b[k] + t ** 3 * end[k] for k in range(2))
 
 
 def douglas_peucker(points, eps):
@@ -76,10 +65,8 @@ def corner_cut(points):
 
 
 def outline():
-    points = [START]
-    for handles in CURVES:
-        points.extend(curve_points(points[-1], handles))
-    loop = closed_simplify(points[:-1], 0.01)
+    points = list(LEFT_HALF) + [(-u, v) for u, v in reversed(LEFT_HALF[1:-1])]
+    loop = closed_simplify(points, 0.015)
     for _ in range(2):
         loop = corner_cut(loop)
     loop = closed_simplify(loop, 0.005)

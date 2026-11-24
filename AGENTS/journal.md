@@ -1,3 +1,19 @@
+## 2026-11-24 — Trace the controller emblem from Nintendo's photo
+
+The #211 shell was hand-fitted with cubics. Against Nintendo's product
+photograph it was off by 0.015 face units on average and 0.055 at the
+notches between the grips and the lower lobes. `controller_outline.py` now
+keeps a traced left half instead: the photo's indigo body pixels were
+segmented and their boundary traced, scaled so the stick and A button sit at
+u = -/+0.335, v = 0.075 with Start on u = 0, and mirrored, because the
+right shoulder carries the Z button and the cable leaves the top centre.
+The table averages 0.008 off the trace. The first simplification step is
+0.015 rather than 0.01: at 0.01 the sharp grip notches failed the glancing
+pose test. A sweep over yaw 0-88 degrees, five pitches and both raster
+scales drops the band from about 72 degrees, within one degree of #211.
+The outline and stroke tests pass, the DOL builds in the pinned image, and
+a RAM-loaded build drew the new shell on the GameCube in 540p60.
+
 ## 2026-11-24 — 540p glass refraction binds its own copy
 
 In 540p60 the frame's display list replays once per tile, and the glass
