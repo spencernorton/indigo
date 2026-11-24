@@ -599,6 +599,7 @@ typedef struct {
 static int runningSlot = -1;
 static bool recoveryBoot;
 static bool confirmPending;
+static bool trialHome;
 static bool checkStarted;
 static update_check_t *pendingCheck;
 static lwp_t checkThread = LWP_THREAD_NULL;
@@ -721,19 +722,29 @@ static update_result_t startSlot(int slot, u8 *image)
 	return UPDATE_IMAGE_INVALID;
 }
 
+static bool matchesRunningTrial(char *scratch)
+{
+	ui_update_manifest_t trial;
+	return scratch && slotRecord(runningSlot, "trial", scratch, &trial) &&
+		strcmp(trial.commit, INDIGO_BUILD_COMMIT) == 0 && trial.buildTime == GIT_TIMESTAMP;
+}
+
+bool updateStartupTrial(void)
+{
+	return trialHome;
+}
+
 static void confirmTrial(void)
 {
 	if(!mountSlots())
 		return;
 	char *scratch = malloc(UPDATE_ENVELOPE_MAX + 1);
-	ui_update_manifest_t trial;
-	if(scratch && slotRecord(runningSlot, "trial", scratch, &trial) &&
-		strcmp(trial.commit, INDIGO_BUILD_COMMIT) == 0 && trial.buildTime == GIT_TIMESTAMP) {
+	if(matchesRunningTrial(scratch)) {
 		file_handle from, to;
 		slotFile(&from, runningSlot, "trial");
 		slotFile(&to, runningSlot, "good");
 		if(updateDevice()->renameFile && updateDevice()->renameFile(&from, to.name) == 0)
-			print_debug("Update: confirmed %.7s at Home\n", trial.commit);
+			print_debug("Update: confirmed %.7s at Home\n", INDIGO_BUILD_COMMIT);
 	}
 	free(scratch);
 	config_unset_device();
@@ -749,6 +760,15 @@ void updateStartupBoot(int argc, char **argv)
 		if(strcmp(argv[i], "--indigo-slot-a") == 0 || strcmp(argv[i], "--indigo-slot-b") == 0) {
 			runningSlot = argv[i][strlen("--indigo-slot-")] == 'a' ? 0 : 1;
 			confirmPending = true;
+			/* A trial must reach its first Home even when Recent or Autoload
+			 * would normally resume another path. A confirmed slot keeps it. */
+			if((swissSettings.autoload[0] || (swissSettings.recent[0][0] &&
+				swissSettings.recentListLevel > 1)) && mountSlots()) {
+				char *scratch = malloc(UPDATE_ENVELOPE_MAX + 1);
+				trialHome = matchesRunningTrial(scratch);
+				free(scratch);
+				config_unset_device();
+			}
 			return;
 		}
 	}
@@ -993,11 +1013,12 @@ static void *probeThread(void *arg)
 	return NULL;
 }
 
-void updateStartupPoll(void)
+bool updateStartupPoll(bool atHome)
 {
-	if(confirmPending) {
+	if(atHome && confirmPending) {
 		confirmPending = false;
 		confirmTrial();
+		trialHome = false;
 	}
 	bool enabled = !recoveryBoot && !swissSettings.skipStartupUpdates;
 	if(enabled && !checkStarted && update_network_ready()) {
@@ -1011,16 +1032,21 @@ void updateStartupPoll(void)
 		}
 	}
 	if(pendingCheck && atomic_load(&checkFinished)) {
-		LWP_JoinThread(checkThread, NULL);
 		update_check_t *check = pendingCheck;
-		pendingCheck = NULL;
 		/* A change made in Settings while the request was out wins. */
-		if(!enabled || strcmp(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel)) ||
-			strcmp(check->server, swissSettings.updateServer)) {
+		bool selected = enabled && !strcmp(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel)) &&
+			!strcmp(check->server, swissSettings.updateServer);
+		if(!atHome && selected && check->result == UPDATE_OK &&
+			UIUpdate_Decide(&check->manifest, INDIGO_BUILD_COMMIT, GIT_TIMESTAMP) == UI_UPDATE_DECIDE_NEWER)
+			return true; /* The browser releases its readers before Home installs. */
+		LWP_JoinThread(checkThread, NULL);
+		pendingCheck = NULL;
+		if(!selected) {
 			free(check->source.scratch);
 			free(check);
 		} else {
 			finishCheck(check, true);
 		}
 	}
+	return false;
 }

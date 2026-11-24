@@ -9,7 +9,9 @@ time configuration and file-table bounds remain in Indigo's existing code.
 
 ## 2026-11-23 — Authenticate startup updates and retain a bootable recovery copy
 
-Home checks the selected release channel once in the background. Indigo
+Home and idle Files or Library check the selected channel once per launch.
+The browser closes its readers before installation. A signed trial opens Home
+once before Recent or Autoload resumes on the following launch. Indigo
 authenticates the manifest with Ed25519 and hashes the inactive slot on
 download and readback. The signed trial becomes the preferred boot only when
 the new program reaches Home. X + Y starts the installed recovery copy.

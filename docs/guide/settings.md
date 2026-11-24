@@ -269,7 +269,7 @@ The Settings tour above predates the Apps Video Mode row.
 | Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
 | Update Channel | Which releases the two update actions offer: **Stable**, the latest finished release, or **Release candidate**, the next release for testing. |
 | Update Server | Leave empty for Indigo’s official feed. A local mirror can use an IPv4 address, port and folder. |
-| Startup Updates | Checks once per launch. A newer signed release downloads and starts automatically when Home is open. On by default. |
+| Startup Updates | Checks once per launch from Home, Files or Library. Indigo returns to Home to install a newer signed release. On by default. |
 | Check for updates | Check now and choose whether to install the newer signed release. |
 | Update from SMB share | Read the signed release from the configured SMB share’s `indigo-updates` folder. |
 
@@ -288,12 +288,15 @@ you usually open, including `apps/indigo/default.dol` for a Depot-style install.
 For In-Game Reset, also copy the included `swiss/patches/apploader.img`.
 Existing versions through v3.0.0 require this first copy.
 
-With a network adapter, Home checks for a newer release in the background.
+With a network adapter, Indigo checks in the background at Home or while
+Files or Library is idle. A newer release brings you to Home for the update.
 The Stable channel is the default. You can keep using Indigo if the network
 is unavailable. During the download, B cancels. Indigo checks the publisher
 signature and the saved program, then starts that exact program. Two slots in
 `swiss/indigo/updates/` on the Configuration Device hold updates. Reaching Home
-confirms the new slot. If a trial fails to start, power on normally to return
+confirms the new slot. The first updated launch opens Home even with Recent
+or Autoload enabled. Later launches use your usual preference. If a trial
+fails to start, power on normally to return
 to the previous working version. Settings can retry a failed download.
 
 Hold **X + Y while starting Indigo** to use the original installed copy and

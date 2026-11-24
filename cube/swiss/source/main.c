@@ -429,12 +429,12 @@ int main(int argc, char *argv[])
 	}
 	
 	// Check for autoload entry
-	if(swissSettings.autoload[0]) {
+	if(!updateStartupTrial() && swissSettings.autoload[0]) {
 		// Check that the path in the autoload entry points at a device that has been detected
 		print_debug("Autoload entry detected [%s]\n", swissSettings.autoload);
 		find_existing_entry(&swissSettings.autoload[0], true);
 	}
-	else if(swissSettings.recent[0][0] && swissSettings.recentListLevel > 1) {
+	else if(!updateStartupTrial() && swissSettings.recent[0][0] && swissSettings.recentListLevel > 1) {
 		find_existing_entry(&swissSettings.recent[0][0], false);
 	}
 

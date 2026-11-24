@@ -157,6 +157,10 @@ def expected_main(base: str) -> str:
     base = base.replace(anchor, "\t\tinit_network_async();\n"
                         "\t} else if(!swissSettings.cubebootInvoked && !swissSettings.skipStartupUpdates && bba_exists(LOC_ANY)) {\n"
                         "\t\tinit_update_network();\n\t}\n", 1)
+    for condition in ("swissSettings.autoload[0]", "swissSettings.recent[0][0] && swissSettings.recentListLevel > 1"):
+        old = f"if({condition}) {{"
+        assert base.count(old) == 1
+        base = base.replace(old, f"if(!updateStartupTrial() && {condition}) {{", 1)
     # The experiment starts only after normal startup and the Cubeboot return,
     # is absent from ordinary builds, and cannot intercept source discovery.
     anchor = '\tif(swissSettings.cubebootInvoked) {\n\t\treturn 0;\n\t}\n\twhile(1) {'
@@ -198,6 +202,15 @@ def check_runtime(swiss: str, main: str) -> None:
         "static void load_file_with_context(gameflowLaunchContext_t *context)\n{",
     )
     menu = extract_block(swiss, "void menu_loop()")
+    assert "if(updateStartupTrial() || UIGameflowLibrary_ShouldStartHome(" in menu
+    assert menu.count("updateStartupPoll(true);") == 1
+    files = extract_block(swiss, "static uiDrawObj_t* renderFileList(")
+    library = extract_block(swiss, "uiDrawObj_t* renderFileCarousel(")
+    ordered(files, "if(buttons != 0u", "break;", "if(updateStartupPoll(false))",
+            "filesHome();", "goto leaveFiles;", "leaveFiles:", "meta_thread_stop();")
+    ordered(library, "if((browserButtons & waitButtons)", "break;", "if(updateStartupPoll(false))",
+            "DrawGameflowPausePosters();", "filesHome();", "goto leaveLibrary;",
+            "leaveLibrary:", "meta_thread_stop();", "CardArt_Pause();")
 
     assert "UIHomeSafety_SourceMounted(&homeSourceLifecycle" in lifecycle_mounted
     assert "UIHomeSafety_SourceReady(&homeSourceLifecycle" in source_ready
@@ -424,6 +437,13 @@ for label, mutant in helper_mutants:
     expect_rejected(label, check_helper, mutant)
 
 runtime_mutants = [
+    ("trial follows Recent before confirmation", MAIN, SWISS.replace(
+        "if(updateStartupTrial() || UIGameflowLibrary_ShouldStartHome(",
+        "if(UIGameflowLibrary_ShouldStartHome(", 1)),
+    ("Files retains readers before update", MAIN, SWISS.replace(
+        "goto leaveFiles;", "return filePanel;", 1)),
+    ("Library retains readers before update", MAIN, SWISS.replace(
+        "goto leaveLibrary;", "return filePanel;", 1)),
 	("540p experiment enabled in ordinary builds", MAIN.replace(
 		"#if UI_EXPERIMENTAL_540P\n\tUI540_Request(argc, argv);\n#endif",
 		"\tUI540_Request(argc, argv);", 1), SWISS),

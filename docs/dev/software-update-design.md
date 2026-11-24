@@ -16,7 +16,11 @@ An unavailable mirror or a replayed old manifest can delay discovery.
 ## Startup and storage
 
 Each launch checks once after network initialization and applies an available
-update at Home. The worker reads only the bounded signed manifest. GUI input,
+update at Home. An idle Files or Library browser can start the same check.
+When it finds a newer release, it closes its card readers and returns to Home
+before installation. A signed trial starts at Home once even with Recent or
+Autoload enabled. Confirmed builds resume the configured startup path.
+The worker reads only the bounded signed manifest. GUI input,
 card access, download and executable handoff stay on the foreground thread.
 An outbound-only startup check can bring up the interface. Starting ordinary
 network services follows the existing network setting, required adapter
