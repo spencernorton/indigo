@@ -7,6 +7,15 @@ mip level. A host check compares every output byte for four cell sizes
 and three poster levels with the v3.0.0 renderer. Normal video modes also
 skip the 540p watchdog, its 10 ms wakeups and its 512 KiB display-list flush.
 
+## 2026-11-23 — Preserve directory listings under memory pressure
+
+Moved the Swiss pin through a647fd74. The pinned SDK supplies the allocation
+primitive through a small compatibility header. Directory readers keep the
+entries they already assembled when growth fails and release open directory
+resources on an initial allocation failure. Host tests verify initial, grow,
+shrink, free, overflow and forced exhaustion paths. The installed console's
+time configuration and file-table bounds remain in Indigo's existing code.
+
 ## 2026-11-23 — Prepare v3.0.0 for publication
 
 Name the `v3.0.0` changelog section after PR #223 (`28ebb6f`) landed on `beta`
