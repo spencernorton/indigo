@@ -117,10 +117,15 @@ s32 deviceHandler_CARD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 	CARD_SetGameAndCompany();
   
 	memcard_dir = (card_dir*)memalign(32,sizeof(card_dir));
+	if(!memcard_dir) return -1;
 	memset(memcard_dir, 0, sizeof(card_dir));
  	
 	/* Convert the Memory Card "file" data to fileBrowser_files */
 	*dir = calloc(num_entries, sizeof(file_handle));
+	if(!*dir) {
+		free(memcard_dir);
+		return -1;
+	}
 	concat_path((*dir)[0].name, ffile->name, "..");
 	(*dir)[0].fileType = IS_SPECIAL;
 	(*dir)[0].device   = ffile->device;
@@ -131,7 +136,7 @@ s32 deviceHandler_CARD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 		// Make sure we have room for this one
 		if(num_entries == i) {
 			num_entries *= 2;
-			*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+			if(reallocarr(dir, num_entries, sizeof(file_handle))) break;
 		}
 		memset(&(*dir)[i], 0, sizeof(file_handle));
 		concatf_path((*dir)[i].name, ffile->name, "%.*s", CARD_FILENAMELEN, memcard_dir->filename);
@@ -146,7 +151,7 @@ s32 deviceHandler_CARD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 	}
 	if(num_entries != i) {
 		num_entries = i;
-		*dir = reallocarray(*dir, num_entries, sizeof(file_handle));
+		reallocarr(dir, num_entries, sizeof(file_handle));
 	}
 	
 	initial_CARD_info[slot].freeSpace = initial_CARD_info[slot].totalSpace - usedSpace;

@@ -69,6 +69,10 @@ s32 deviceHandler_WODE_readDir(file_handle* ffile, file_handle** dir, u32 type){
    
 	u32 numPartitions = 0, numIsoInPartition = 0, i,j, num_entries = 1;
 	*dir = calloc(num_entries, sizeof(file_handle));
+	if(!*dir) {
+		DrawDispose(msgBox);
+		return -1;
+	}
 	concat_path((*dir)[0].name, ffile->name, "..");
 	(*dir)[0].fileType = IS_SPECIAL;
 	(*dir)[0].device = ffile->device;
@@ -82,7 +86,10 @@ s32 deviceHandler_WODE_readDir(file_handle* ffile, file_handle** dir, u32 type){
 			tmp.iso_partition = i;
 			tmp.iso_number = j;
 			if(tmp.iso_type==1) { //add gamecube only
-				*dir = reallocarray(*dir, num_entries + 1, sizeof(file_handle));
+				if(reallocarr(dir, num_entries+1, sizeof(file_handle))) {
+					DrawDispose(msgBox);
+					return num_entries;
+				}
 				memset(&(*dir)[num_entries], 0, sizeof(file_handle));
 				concatf_path((*dir)[num_entries].name, ffile->name, "%.64s.gcm", &tmp.name[0]);
 				(*dir)[num_entries].size = DISC_SIZE;
