@@ -19,8 +19,9 @@ Each launch checks once after network initialization and applies an available
 update at Home. The worker reads only the bounded signed manifest. GUI input,
 card access, download and executable handoff stay on the foreground thread.
 An outbound-only startup check can bring up the interface. Starting ordinary
-network services follows the existing network setting or an explicit network
-action. A failed probe returns quietly. The transfer buffer is 32 KiB.
+network services follows the existing network setting, required adapter
+initialization or an explicit network action. W5500 and ENC28J60 adapters
+retain their ordinary startup services. A failed probe returns quietly. The transfer buffer is 32 KiB.
 One whole aligned DOL is required to validate and hand off its exact bytes.
 The startup check and the manual HTTP and SMB actions share the verification
 and installation code.
