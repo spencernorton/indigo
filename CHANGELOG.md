@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Large directories retain the entries that fit when the console runs low on
+  memory. The Swiss source update also refreshes disc verification data.
+
 ### New
 
 - Indigo checks for a signed release once per launch while Home is open. A newer

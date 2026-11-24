@@ -1,3 +1,12 @@
+## 2026-11-23 — Preserve directory listings under memory pressure
+
+Moved the Swiss pin through a647fd74. The pinned SDK supplies the allocation
+primitive through a small compatibility header. Directory readers keep the
+entries they already assembled when growth fails and release open directory
+resources on an initial allocation failure. Host tests verify initial, grow,
+shrink, free, overflow and forced exhaustion paths. The installed console's
+time configuration and file-table bounds remain in Indigo's existing code.
+
 ## 2026-11-23 — Authenticate startup updates and retain a bootable recovery copy
 
 Home checks the selected release channel once in the background. Indigo
