@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- In 540p60, the Home cube's glass no longer shows letters and numbers from
+  the menu font in three quarters of the screen.
+
 - Startup Updates downloads the same signed release once more if the first
   transfer fails its SHA-256 check.
 
