@@ -4,7 +4,8 @@ The poster filter now decodes RGB directly into the buffer it smooths.
 The sharpened IPL font reads three scanlines at a time. Together these
 remove 506,368 bytes of static scratch and one full RGB copy per poster
 mip level. A host check compares every output byte for four cell sizes
-and three poster levels with the v3.0.0 renderer.
+and three poster levels with the v3.0.0 renderer. Normal video modes also
+skip the 540p watchdog, its 10 ms wakeups and its 512 KiB display-list flush.
 
 ## 2026-11-23 — Prepare v3.0.0 for publication
 

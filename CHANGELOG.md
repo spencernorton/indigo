@@ -7,7 +7,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 ## Unreleased
 
 - Sharpened posters and fonts use about 495 KiB less permanent memory. Poster
-  preparation also avoids copying every decoded mip level.
+  preparation also avoids copying every decoded mip level. Normal video modes
+  skip the 540p watchdog and its startup display-list cache flush.
 
 ## v3.0.0 — Dolphin Depot support and standalone build
 
