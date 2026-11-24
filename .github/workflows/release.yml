@@ -14,6 +14,10 @@ on:
       tag:
         description: Existing tag to build as a dry run (nothing is published)
         required: true
+      verify_feed:
+        description: Also verify an already published tag against the deployed console feed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -252,11 +256,26 @@ jobs:
             [ "$attempt" -lt 3 ] || exit 1
           done
           gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds" >/dev/null
-          channel=stable
-          case "$TAG" in *-*) channel=rc;; esac
-          for attempt in $(seq 1 24); do
-            if curl -fsS --max-time 8 "http://indigo-updates.norvitech.com/updates/$channel.signed?tag=$TAG" |
-               cmp - "signed/$channel.signed"; then exit 0; fi
-            sleep 10
-          done
-          exit 1
+          buildtools/ci/verify_pages_feed.sh "$TAG" signed
+
+  verify-published:
+    name: Verify an existing console feed release
+    if: github.event_name == 'workflow_dispatch' && inputs.verify_feed
+    needs: build
+    runs-on: [self-hosted, indigo-build]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Match the deployed feed to the published release assets
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir signed \
+            --pattern '*.signed' --pattern '*.txt' --pattern '*.dol' --pattern '*.img'
+          buildtools/ci/verify_pages_feed.sh "$TAG" signed

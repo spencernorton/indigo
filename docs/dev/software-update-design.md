@@ -13,6 +13,12 @@ Only a different, strictly newer build on the selected channel is eligible.
 The publisher enforces increasing semantic version and commit time per channel.
 An unavailable mirror or a replayed old manifest can delay discovery.
 
+The release runner reads GitHub Pages’ latest successful build receipt and
+compares its deployed commit’s channel manifest, signature envelope, DOL and
+apploader with the release assets. Maintainers can repeat this read-only
+check using the Release workflow’s `verify_feed` dry-run input. A normal
+GameCube or an emulated BBA exercises the public HTTP endpoint separately.
+
 ## Startup and storage
 
 Each launch checks once after network initialization and applies an available
