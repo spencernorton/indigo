@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Opening Apps and Emulators on GC Loader and other FAT cards reads only the
+  banner text needed to list Dolphin Depot programs. Banner artwork still
+  loads when its card is displayed.
+
 - Release CI verifies the deployed GameCube update files against the signed release.
 
 - Sharpened posters and fonts use about 495 KiB less permanent memory. Poster

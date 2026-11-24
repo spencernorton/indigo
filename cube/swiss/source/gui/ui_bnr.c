@@ -137,24 +137,13 @@ static void parseDescBlock(const uint8_t *desc, uiBnrInfo_t *out)
 		sizeof(out->description));
 }
 
-bool UIBnr_ParseMeta(const uint8_t *data, size_t size, uint8_t sramLanguage,
-	uiBnrInfo_t *out)
+static uint8_t descriptorLanguage(int kind, uint8_t sramLanguage)
 {
-	int kind;
-	const uint8_t *descs;
-	uint8_t lang = 0u;
+	return kind == 2 && sramLanguage < UI_BNR_LANG_COUNT ? sramLanguage : 0u;
+}
 
-	if(out != NULL) {
-		memset(out, 0, sizeof(*out));
-	}
-	kind = bannerKind(data, size);
-	if(kind == 0 || out == NULL) {
-		return false;
-	}
-	descs = data + UI_BNR_HEADER_BYTES + UI_BNR_PIXEL_BYTES;
-	if(kind == 2 && sramLanguage < UI_BNR_LANG_COUNT) {
-		lang = sramLanguage;
-	}
+static void parseDescriptors(const uint8_t *descs, uint8_t lang, uiBnrInfo_t *out)
+{
 	parseDescBlock(descs + (size_t)lang * UI_BNR_DESC_BYTES, out);
 	if(lang != 0u && out->title[0] == '\0') {
 		uiBnrInfo_t english;
@@ -172,6 +161,33 @@ bool UIBnr_ParseMeta(const uint8_t *data, size_t size, uint8_t sramLanguage,
 				sizeof(out->description));
 		}
 	}
+}
+
+bool UIBnr_ParseMeta(const uint8_t *data, size_t size, uint8_t sramLanguage,
+	uiBnrInfo_t *out)
+{
+	if(out == NULL) return false;
+	memset(out, 0, sizeof(*out));
+	int kind = bannerKind(data, size);
+	if(!kind) return false;
+	parseDescriptors(data + UI_BNR_HEADER_BYTES + UI_BNR_PIXEL_BYTES,
+		descriptorLanguage(kind, sramLanguage), out);
+	return true;
+}
+
+bool UIBnr_ReadMeta(uiBnrReadAt_t readAt, void *file, size_t fileSize,
+	uint8_t sramLanguage, uint8_t scratch[UI_BNR_META_SCRATCH], uiBnrInfo_t *out)
+{
+	if(out == NULL) return false;
+	memset(out, 0, sizeof(*out));
+	if(!readAt || !scratch || fileSize < UI_BNR1_SIZE || fileSize > UI_BNR_MAX_FILE ||
+		!readAt(file, 0u, scratch, UI_BNR_HEADER_BYTES)) return false;
+	int kind = bannerKind(scratch, fileSize);
+	if(!kind) return false;
+	uint8_t lang = descriptorLanguage(kind, sramLanguage);
+	size_t bytes = (lang + 1u) * UI_BNR_DESC_BYTES;
+	if(!readAt(file, UI_BNR_HEADER_BYTES + UI_BNR_PIXEL_BYTES, scratch, bytes)) return false;
+	parseDescriptors(scratch, lang, out);
 	return true;
 }
 
