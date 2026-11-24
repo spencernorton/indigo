@@ -7,7 +7,9 @@ the new program reaches Home. X + Y starts the installed recovery copy.
 The release workflow signs in its tag-only environment and advances the
 GitHub Pages feed after publication. The production DOL size tripwire is
 4 MiB + 320 KiB. Hardware interruption and comparative frame timing require
-native qualification.
+native qualification. A complete test download also caught shifted SD sectors
+in the emulator. The SD2SP2 runner now preserves every possible leading byte
+when a sector arrives by DMA; 2,048 framing cases cover the fix.
 
 ## 2026-11-23 — Prepare v3.0.0 for publication
 

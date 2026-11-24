@@ -33,3 +33,7 @@ boots nothing ("Could not boot the specified file", for any DOL), so the
 image stays on the adapter's own base until that is understood. An SD card
 in Memory Card Slot A works but takes minutes to mount in this emulation;
 the test uses SD2SP2.
+
+SD writes accept the single-block and multi-block start tokens. A sector-sized
+DMA carries all 512 payload bytes, including any leading FC, FD or FE.
+The signed updater reads the complete staged DOL back before launching it.
