@@ -71,10 +71,21 @@ struct update_source_state {
 /* The screen: tell, ask, and show progress. A box holds three lines.  */
 /* ------------------------------------------------------------------ */
 
+/* The next screen reads both current and latched presses. Consume the
+ * dialogue's answering buttons before returning control to it. */
+static void releaseUpdateButtons(void)
+{
+	const u32 mask = BUTTON_A | BUTTON_B;
+	while(padsButtonsHeld() & mask)
+		VIDEO_WaitVSync();
+	(void)padsButtonsTaken(mask);
+}
+
 static void updateTell(int type, const char *message)
 {
 	uiDrawObj_t *box = DrawPublish(DrawMessageBox(type, message));
 	wait_press_A();
+	releaseUpdateButtons();
 	DrawDispose(box);
 }
 
@@ -100,8 +111,7 @@ static bool updateAsk(int type, const char *message, bool *pressedA)
 		}
 		VIDEO_WaitVSync();
 	}
-	while(padsButtonsHeld() & (BUTTON_A | BUTTON_B))
-		VIDEO_WaitVSync();
+	releaseUpdateButtons();
 	DrawDispose(box);
 	return *pressedA;
 }
