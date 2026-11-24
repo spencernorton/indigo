@@ -122,6 +122,18 @@ loader boots.
 TXT
 
 rm -f "$out/Indigo-$version.zip"
-# Directory entries included, so the ZIP shows the card's folders.
-(cd "$card" && zip -qrX "$out/Indigo-$version.zip" Indigo-README.txt ipl.dol swiss)
+# A release retry must reproduce the published ZIP, including its timestamps
+# and member order. Set only the generated staging tree's times.
+epoch=${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}
+python3 - "$card" "$epoch" <<'PYDATE'
+import os
+from pathlib import Path
+import sys
+
+stamp = int(sys.argv[2])
+for member in Path(sys.argv[1]).rglob("*"):
+    os.utime(member, (stamp, stamp))
+PYDATE
+(cd "$card" && find Indigo-README.txt ipl.dol swiss -print | LC_ALL=C sort |
+    TZ=UTC zip -qX "$out/Indigo-$version.zip" -@)
 shasum -a 256 "$out/Indigo-$version.zip"

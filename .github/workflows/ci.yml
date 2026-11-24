@@ -72,6 +72,10 @@ jobs:
           buildtools/sd_package.sh "$version" cube/swiss/swiss.dol dist
           python3 buildtools/ci/check_package.py "dist/Indigo-$version.zip" \
             --dol cube/swiss/swiss.dol --version "$version"
+          # A full release rerun must reproduce its immutable archive.
+          retry=$(mktemp -d)
+          TZ=Pacific/Honolulu buildtools/sd_package.sh "$version" cube/swiss/swiss.dol "$retry"
+          cmp "dist/Indigo-$version.zip" "$retry/Indigo-$version.zip"
           {
             echo "### Build"
             echo "| | bytes | SHA-256 |"
