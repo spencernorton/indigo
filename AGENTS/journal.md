@@ -1,3 +1,16 @@
+## 2026-11-24 — 540p glass refraction binds its own copy
+
+In 540p60 the frame's display list replays once per tile, and the glass
+refraction sampled TEXMAP0 without binding the pre-pass copy inside the
+list. Tile 0 inherited the copy from the pre-pass. Tiles 1-3 inherited
+the last TEXMAP0 the previous replay left, usually the font sheet, so the
+cube showed glyphs. `setupGlassRefractionPipeline` now loads `glassTexObj`
+itself, and `test_glass_light.py` pins that. The DOL builds in the pinned
+image and the related host tests pass. Stock macOS Dolphin 2606 did not
+reach a picture, and CI's Dolphin routes do not cover Indigo's 540p mode,
+so the fix was checked on the GameCube: a RAM-loaded build in 540p60
+showed the cube clean, and Spencer confirmed it on his TV.
+
 ## 2026-11-24 — Retry a damaged startup update once
 
 Startup Updates checks the received bytes against the signed manifest. On

@@ -3244,6 +3244,9 @@ static void setupGlassRefractionPipeline(void)
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_F32, 0);
+	/* 540p replays this pass once per tile; without its own bind, tiles after
+	 * the first sample whatever drew last, such as the font sheet. */
+	GX_LoadTexObj(&glassTexObj, GX_TEXMAP0);
 	GX_SetNumTexGens(3);
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
