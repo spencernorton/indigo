@@ -270,7 +270,6 @@ static bool idCharsValid(const char *id) {
 #ifndef UI_ASSETS_HOST_BUILD
 #define SR_MAX_SRC_W 320
 #define SR_MAX_SRC_H 256
-static u8 srRawRgb[SR_MAX_SRC_W * SR_MAX_SRC_H * 3];
 static u8 srCleanRgb[SR_MAX_SRC_W * SR_MAX_SRC_H * 3];
 
 static inline int srClampInt(int v, int lo, int hi) {
@@ -284,9 +283,9 @@ static inline u8 srClampU8(int v) {
 static inline void putRgb565Tile(u16 *dst, int w, int x, int y, int r, int g, int b) {
 	static const int bayer2x2[4] = {-1, 1, 2, 0};
 	int d = bayer2x2[((y & 1) << 1) | (x & 1)];
-	int r5 = srClampInt(r + (d << 1), 0, 255) >> 3;
+	int r5 = srClampInt(r + (d * 2), 0, 255) >> 3;
 	int g6 = srClampInt(g + d, 0, 255) >> 2;
-	int b5 = srClampInt(b + (d << 1), 0, 255) >> 3;
+	int b5 = srClampInt(b + (d * 2), 0, 255) >> 3;
 	int tile = (y >> 2) * (w >> 2) + (x >> 2);
 	int off = (tile << 4) + ((y & 3) << 2) + (x & 3);
 	dst[off] = (u16)((r5 << 11) | (g6 << 5) | b5);
@@ -337,7 +336,7 @@ static void buildSuperResTexture(const uiAssetsShape_t *shape, const u8 *cmpr, u
 					}
 					for (int py = 0; py < 4; py++) {
 						u8 rowBits = p[4 + py];
-						u8 *dstRow = &srRawRgb[((sby + py) * mipW + sbx) * 3];
+						u8 *dstRow = &srCleanRgb[((sby + py) * mipW + sbx) * 3];
 						for (int px = 0; px < 4; px++) {
 							int idx = (rowBits >> (6 - (px << 1))) & 3;
 							dstRow[px * 3 + 0] = pal[idx][0];
@@ -351,7 +350,6 @@ static void buildSuperResTexture(const uiAssetsShape_t *shape, const u8 *cmpr, u
 		}
 
 		/* Gentle flat-gradient-only 4x4 block-seam smoothing. */
-		memcpy(srCleanRgb, srRawRgb, (size_t)mipW * mipH * 3);
 		for (int y = 0; y < mipH; y++) {
 			for (int bx = 4; bx < activeW - 2; bx += 4) {
 				u8 *p1 = &srCleanRgb[(y * mipW + bx - 2) * 3];

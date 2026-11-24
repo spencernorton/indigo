@@ -28,7 +28,7 @@ static bool cyrillicReady;
 #if UI_EXPERIMENTAL_540P
 #define FONT_I8_L0_BYTES (512 * 512)
 static u8 fontSheetI8[FONT_I8_L0_BYTES] ATTRIBUTE_ALIGN (32);
-static u8 fontFlatScratch[FONT_I8_L0_BYTES];
+static u8 fontRows[3][512];
 static const void *rawFontSheet;
 static bool fontSheetI8Ready;
 static bool fontSheetI8Attempted;
@@ -57,20 +57,23 @@ static void buildSharpenedFontSheetI8(void)
 	int cw = font->cell_width;
 	int ch = font->cell_height;
 
-	for(int y = 0; y < 512; y++) {
-		for(int x = 0; x < 512; x++) {
-			fontFlatScratch[y * 512 + x] = fontTexel(src, x, y);
-		}
-	}
-
+	/* Only the preceding, current and following scanlines enter the
+	 * sharpening filter. Decode each source texel once. */
+	for(int x = 0; x < 512; x++)
+		fontRows[0][x] = fontTexel(src, x, 0);
 	int tilesX = 512 / 8;
 	for(int y = 0; y < 512; y++) {
+		if(y + 1 < 512) {
+			u8 *next = fontRows[(y + 1) % 3];
+			for(int x = 0; x < 512; x++)
+				next[x] = fontTexel(src, x, y + 1);
+		}
 		int cellY0 = (y / ch) * ch;
 		int cellY1 = cellY0 + ch - 1;
 		if(cellY1 >= 512) cellY1 = 511;
-		int ym1 = clampCell(y - 1, cellY0, cellY1) * 512;
-		int y0  = y * 512;
-		int yp1 = clampCell(y + 1, cellY0, cellY1) * 512;
+		const u8 *above = fontRows[clampCell(y - 1, cellY0, cellY1) % 3];
+		const u8 *row = fontRows[y % 3];
+		const u8 *below = fontRows[clampCell(y + 1, cellY0, cellY1) % 3];
 		for(int x = 0; x < 512; x++) {
 			int cellX0 = (x / cw) * cw;
 			int cellX1 = cellX0 + cw - 1;
@@ -78,9 +81,8 @@ static void buildSharpenedFontSheetI8(void)
 			int xm1 = clampCell(x - 1, cellX0, cellX1);
 			int xp1 = clampCell(x + 1, cellX0, cellX1);
 
-			int c = fontFlatScratch[y0 + x];
-			int card = (fontFlatScratch[ym1 + x] + fontFlatScratch[yp1 + x] +
-			            fontFlatScratch[y0 + xm1] + fontFlatScratch[y0 + xp1] + 2) >> 2;
+			int c = row[x];
+			int card = (above[x] + below[x] + row[xm1] + row[xp1] + 2) >> 2;
 			int sharp = c + (((c - card) * 6) >> 3);
 			if(sharp < 0) sharp = 0;
 			if(sharp > 255) sharp = 255;
