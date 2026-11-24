@@ -249,8 +249,8 @@ index 0000000..ad71a1e
 +};
 +
 +// Data tokens
-+constexpr u8 DATA_START_TOKEN = 0xFE;
 +constexpr u8 MULTI_WRITE_TOKEN = 0xFC;
++constexpr u8 DATA_START_TOKEN = 0xFE;
 +constexpr u8 STOP_TRAN_TOKEN = 0xFD;
 +constexpr u8 DATA_ACCEPTED = 0x05;  // xxx0_0101
 +

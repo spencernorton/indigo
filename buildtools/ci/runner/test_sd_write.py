@@ -11,7 +11,7 @@ lines = SOURCE.read_text().split("+++ b/Source/Core/Core/HW/EXI/EXI_DeviceSDCard
 source = "\n".join(line[1:] for line in lines.splitlines() if line.startswith("+"))
 token = source[source.index("  case State::DataWriteToken:"):source.index("  case State::DataWrite:")]
 dma = source[source.index("void CEXISDCard::DMAWrite("):source.index("void CEXISDCard::DoState(")]
-constants = source[source.index("constexpr u8 DATA_START_TOKEN"):source.index("CEXISDCard::CEXISDCard(")]
+constants = source[source.index("// Data tokens"):source.index("CEXISDCard::CEXISDCard(")]
 stub = """
 #include <algorithm>
 #include <array>
