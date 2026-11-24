@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <gccore.h>
 #include "deviceHandler.h"
+#include "deviceHandler-FAT.h"
 #include "FrameBufferMagic.h"
 #include "IPLFontWrite.h"
 #include "swiss.h"
@@ -145,6 +146,15 @@ static bool findAppsFolder(DEVICEHANDLER_INTERFACE *device, const char *name,
 	return found;
 }
 
+static bool readBannerRange(void *handle, size_t offset, void *dst, size_t size)
+{
+	file_handle *file = handle;
+	u32 listedSize = file->size;
+	if(offset && file->device->seekFile(file, offset, DEVICE_HANDLER_SEEK_SET) != (s64)offset)
+		return false;
+	return file->device->readFile(file, dst, size) == (s32)size && file->size == listedSize;
+}
+
 /* The apps in device's folder name, sorted, at most max of them; NULL for
  * none. Reads the folder, then each folder in it until the list is full.
  * With files, also each app's program and picture entries, two an app. */
@@ -190,27 +200,38 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 	 * before sorting so apps order by their real display titles. */
 	if(files != NULL && found > 0u && device->readFile != NULL &&
 		device->closeFile != NULL) {
+		/* FAT seeks in the open file. Network and optical devices keep one
+		 * sequential transfer per banner. */
+		bool ranges = device->readDir == deviceHandler_FAT_readDir &&
+			device->seekFile == deviceHandler_FAT_seekFile;
+		size_t scratchSize = ranges ? UI_BNR_META_SCRATCH : UI_BNR_MAX_FILE;
 		uint8_t *bnrBuf = NULL;
 
 		for(i = 0u; i < found; ++i) {
 			uiBnrInfo_t info;
 			file_handle bnrFile;
-			s32 read;
+			uint8_t language = (uint8_t)swissSettings.sramLanguage;
+			bool parsed;
 
 			if(!list[i].isDefaultDol || list[i].bannerHandle == NULL ||
 				list[i].bannerSize < UI_BNR1_SIZE ||
 				list[i].bannerSize > UI_BNR_MAX_FILE) {
 				continue;
 			}
-			if(bnrBuf == NULL && (bnrBuf = malloc(UI_BNR_MAX_FILE)) == NULL) {
+			if(bnrBuf == NULL && (bnrBuf = memalign(32, scratchSize)) == NULL) {
 				break;
 			}
 			takeEntry(&bnrFile, list[i].bannerHandle);
-			read = device->readFile(&bnrFile, bnrBuf, list[i].bannerSize);
+			if(ranges) {
+				parsed = UIBnr_ReadMeta(readBannerRange, &bnrFile, list[i].bannerSize,
+					language, bnrBuf, &info);
+			} else {
+				s32 read = device->readFile(&bnrFile, bnrBuf, list[i].bannerSize);
+				parsed = read == (s32)list[i].bannerSize &&
+					UIBnr_ParseMeta(bnrBuf, (size_t)read, language, &info);
+			}
 			device->closeFile(&bnrFile);
-			if(read == (s32)list[i].bannerSize &&
-				UIBnr_ParseMeta(bnrBuf, (size_t)read,
-					(uint8_t)swissSettings.sramLanguage, &info)) {
+			if(parsed) {
 				UIApps_ApplyBanner(&list[i], info.title, info.author);
 			}
 		}

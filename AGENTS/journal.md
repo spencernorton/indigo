@@ -1,3 +1,13 @@
+## 2026-11-24 — Skip banner pixels while listing Depot apps on FAT cards
+
+Apps and Emulators read the header and the text through the selected
+language before sorting. English fallback uses the same descriptor parser
+as a complete banner. FAT cards need 1,920 bytes of scratch and transfer
+352 bytes for an English title. Network and optical devices retain their
+single sequential read. The host tests compare all six languages, missing
+translations, padding, short reads and invalid sizes. Both readers returned
+the same sorted metadata in a 256-program GC Loader fixture.
+
 ## 2026-11-23 — Verify the deployed console feed from release CI
 
 The release runner now compares all four signed update files to the exact

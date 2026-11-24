@@ -9,7 +9,7 @@
  * ui_bnr -- GameCube opening.bnr (BNR1 / BNR2) metadata and 96x32 RGB5A3
  * banner decoding, for Apps (/apps/<slug>/default.dol + opening.bnr).
  *
- * Pure: no GX, no I/O, no dynamic allocation. Every file from a card is
+ * No GX, device dependencies or dynamic allocation. Every file from a card is
  * untrusted: magic, length and every field bound are checked before reading.
  */
 
@@ -47,6 +47,14 @@ bool UIBnr_IsBanner(const uint8_t *data, size_t size);
  * Returns false if data is not a valid BNR1/BNR2 banner. */
 bool UIBnr_ParseMeta(const uint8_t *data, size_t size, uint8_t sramLanguage,
 	uiBnrInfo_t *out);
+
+/* On a random-access card, read only the header and the text blocks needed
+ * for the selected language and English fallback. The caller supplies aligned
+ * scratch and a reader that returns true only for a complete range. */
+#define UI_BNR_META_SCRATCH (UI_BNR_LANG_COUNT * UI_BNR_DESC_BYTES)
+typedef bool (*uiBnrReadAt_t)(void *file, size_t offset, void *dst, size_t size);
+bool UIBnr_ReadMeta(uiBnrReadAt_t readAt, void *file, size_t fileSize,
+	uint8_t sramLanguage, uint8_t scratch[UI_BNR_META_SCRATCH], uiBnrInfo_t *out);
 
 /* Decodes the 96x32 GX_TF_RGB5A3 4x4-tiled pixel data of a BNR1/BNR2 buffer
  * into straight RGBA8888 (row-major, top to bottom, UI_BNR_RGBA_BYTES). */
