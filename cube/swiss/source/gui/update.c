@@ -805,6 +805,60 @@ static bool clearSlotFile(int slot, const char *suffix)
 	return file.fileType == IS_FILE && file.device->deleteFile(&file) == 0;
 }
 
+/* Fetch and close one complete payload. A digest failure here precedes
+ * the separate readback of the card and publication of the trial. */
+static update_result_t downloadSlotPayload(update_check_t *check, file_handle *file, bool retry)
+{
+	DEVICEHANDLER_INTERFACE *d = file->device;
+	check->source.chunk = memalign(32, UPDATE_CHUNK);
+	if(!check->source.chunk)
+		return UPDATE_NO_SPACE;
+
+	sha256_ctx sha;
+	uint8_t hash[32];
+	sha256_init(&sha);
+	char message[96];
+	snprintf(message, sizeof(message), retry ? "Retrying Indigo update to %s" : "Updating Indigo to %s",
+		check->manifest.version);
+	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
+	update_result_t result = check->source.fetchFile(&check->source, check->manifest.file, file,
+		check->manifest.size, &sha, bar);
+	DrawDispose(bar);
+	free(check->source.chunk);
+	check->source.chunk = NULL;
+	if(result == UPDATE_OK && d->writeFile(file, NULL, 0) != 0)
+		result = UPDATE_WRITE_FAIL;
+	if(d->closeFile(file) != 0 && result == UPDATE_OK)
+		result = UPDATE_WRITE_FAIL;
+	if(result != UPDATE_OK)
+		return result;
+
+	sha256_final(&sha, hash);
+	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+		print_debug("Update: received data differs from signed digest\n");
+		return UPDATE_HASH_MISMATCH;
+	}
+	return UPDATE_OK;
+}
+
+static update_result_t downloadSlot(update_check_t *check, file_handle *file, int slot, bool automatic)
+{
+	slotFile(file, slot, "dol");
+	update_result_t result = downloadSlotPayload(check, file, false);
+	if(!automatic || result != UPDATE_HASH_MISMATCH)
+		return result;
+
+	/* Keep the authenticated manifest and discard the closed, unconfirmed
+	 * payload before requesting a replacement in the same inactive slot. */
+	if(updateCancelPressed())
+		return UPDATE_CANCELLED;
+	if(file->device->deleteFile(file) != 0)
+		return UPDATE_WRITE_FAIL;
+	slotFile(file, slot, "dol");
+	print_debug("Update: retrying signed download once\n");
+	return downloadSlotPayload(check, file, true);
+}
+
 static update_result_t installSlot(update_check_t *check, bool automatic)
 {
 	DEVICEHANDLER_INTERFACE *d = updateDevice();
@@ -831,40 +885,14 @@ static update_result_t installSlot(update_check_t *check, bool automatic)
 	if(!clearSlotFile(slot, "good") || !clearSlotFile(slot, "trial") || !clearSlotFile(slot, "dol"))
 		goto done;
 
-	slotFile(&file, slot, "dol");
 	device_info *space = d->info ? d->info(d->initial) : NULL;
 	if(space && space->totalSpace && space->freeSpace < (u64)check->manifest.size + check->length) {
 		result = UPDATE_NO_SPACE;
 		goto done;
 	}
-	check->source.chunk = memalign(32, UPDATE_CHUNK);
-	if(!check->source.chunk) {
-		result = UPDATE_NO_SPACE;
-		goto done;
-	}
-	sha256_ctx sha;
-	uint8_t hash[32];
-	sha256_init(&sha);
-	char message[96];
-	snprintf(message, sizeof(message), "Updating Indigo to %s", check->manifest.version);
-	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
-	result = check->source.fetchFile(&check->source, check->manifest.file, &file,
-		check->manifest.size, &sha, bar);
-	DrawDispose(bar);
-	free(check->source.chunk);
-	check->source.chunk = NULL;
-	if(result == UPDATE_OK && d->writeFile(&file, NULL, 0) != 0)
-		result = UPDATE_WRITE_FAIL;
-	if(d->closeFile(&file) != 0 && result == UPDATE_OK)
-		result = UPDATE_WRITE_FAIL;
+	result = downloadSlot(check, &file, slot, automatic);
 	if(result != UPDATE_OK)
 		goto done;
-	sha256_final(&sha, hash);
-	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
-		print_debug("Update: received data differs from signed digest\n");
-		result = UPDATE_HASH_MISMATCH;
-		goto done;
-	}
 	result = slotImage(slot, &check->manifest, &image);
 	if(result != UPDATE_OK)
 		goto done;

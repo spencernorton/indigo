@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Startup Updates downloads the same signed release once more if the first
+  transfer fails its SHA-256 check.
+
 - Opening Apps and Emulators on GC Loader and other FAT cards reads only the
   banner text needed to list Dolphin Depot programs. Banner artwork still
   loads when its card is displayed.
