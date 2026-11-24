@@ -285,8 +285,9 @@ TESTS = r'''
 static unsigned rootEmpty;
 static bool failRead;
 static bool discMultiGame;
+static bool expectDirectoryLookup;
 static int fakeReadDir(file_handle *dir, file_handle **out, unsigned type) {
-    (void)type;
+    if(expectDirectoryLookup) assert(type == IS_DIR);
     if(failRead) { *out=NULL; return 0; }
     static const char *rootNames[] = {"..", "Racing.v1", "Nintendo.GC",
         "Zelda..Collection [GZLE01]", "Racing.v1.png", "readme.txt",
@@ -546,7 +547,9 @@ static void crossDeviceLibraryFallback(void) {
     reset("sdc:/",true,false);
     devices[DEVICE_CUR]=&device;
     deviceAvailable=true;
+    expectDirectoryLookup=true;
     homeApplyStartupSource();
+    expectDirectoryLookup=false;
     assert(devices[DEVICE_CUR]==&device && inits==0);
 
     /* 6b. Started from the disc drive: it isn't read, and nothing mounts. */

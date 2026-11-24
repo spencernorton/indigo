@@ -91,14 +91,14 @@ static void freeFolder(appsFolder_t *folder)
 /* Lists the folder dir names on device; false for one that can't be read.
  * Every entry names device, whether or not the device's listing does. */
 static bool listFolder(DEVICEHANDLER_INTERFACE *device, file_handle *dir,
-	appsFolder_t *out)
+	u32 type, appsFolder_t *out)
 {
 	s32 count;
 	s32 i;
 
 	memset(out, 0, sizeof(*out));
 	dir->device = device;
-	count = device->readDir(dir, &out->files, -1);
+	count = device->readDir(dir, &out->files, type);
 	if(count <= 0 || out->files == NULL ||
 		(out->entries = calloc((size_t)count, sizeof(uiAppsEntry_t))) == NULL) {
 		freeFolder(out);
@@ -132,7 +132,7 @@ static bool findAppsFolder(DEVICEHANDLER_INTERFACE *device, const char *name,
 	size_t i;
 
 	takeEntry(&root, device->initial);
-	if(!listFolder(device, &root, &top)) {
+	if(!listFolder(device, &root, IS_DIR, &top)) {
 		return false;
 	}
 	for(i = 0; i < top.count && !found; ++i) {
@@ -163,7 +163,7 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 	*count = 0u;
 	if(files != NULL) *files = NULL;
 	if(device == NULL || device->initial == NULL || device->readDir == NULL ||
-		!findAppsFolder(device, name, &dir) || !listFolder(device, &dir, &top)) {
+		!findAppsFolder(device, name, &dir) || !listFolder(device, &dir, -1, &top)) {
 		return NULL;
 	}
 	if((list = malloc(max * sizeof(uiApp_t))) == NULL ||
@@ -180,7 +180,7 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 			continue;
 		}
 		takeEntry(&dir, entry->handle);
-		if(listFolder(device, &dir, &folders[folderCount])) {
+		if(listFolder(device, &dir, -1, &folders[folderCount])) {
 			room = UIApps_AddFolder(list, &found, max, entry->name,
 				folders[folderCount].entries, folders[folderCount].count);
 			folderCount++;

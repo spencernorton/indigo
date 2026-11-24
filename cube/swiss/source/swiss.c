@@ -2983,7 +2983,7 @@ static bool gameflowResolveDirOnDevice(DEVICEHANDLER_INTERFACE *device,
 	}
 	for(depth = 0; depth < 8; ++depth) {
 		file_handle *entries = NULL;
-		int count = device->readDir(&current, &entries, -1);
+		int count = device->readDir(&current, &entries, IS_DIR);
 		bool stepped = false;
 		int i;
 

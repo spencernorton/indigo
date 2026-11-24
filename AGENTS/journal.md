@@ -1,3 +1,13 @@
+## 2026-11-23 — Reduce folder lookup work during startup
+
+Library path resolution and the Apps and Emulators root lookups now request
+directory entries. File browsing and app discovery inside the chosen folder
+still read ordinary files. Four alternating Dolphin boots per variant on
+the same 2,048-file SD2SP2 image measured 452.13 ms to the post-configuration
+root listing before both filters and 424.56 ms afterwards. All 2,050 entries
+were present. The host navigation fixture checks the directory request on a
+device that returns mixed entries.
+
 ## 2026-11-23 — Reduce the renderer’s permanent working memory
 
 The poster filter now decodes RGB directly into the buffer it smooths.
