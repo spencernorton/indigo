@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- The Library face's controller emblem is now traced from Nintendo's photo
+  of the original controller, so its grips, lower lobes and the opening
+  under Start follow the real shell.
+
 - In 540p60, the Home cube's glass no longer shows letters and numbers from
   the menu font in three quarters of the screen.
 
