@@ -1,0 +1,13 @@
+FormatVersion=1
+Channel=rc
+Version=v3.1.0-rc.1
+Commit=65956d6cdb1e6dc010289b9d264b153128886dc5
+Date=2026-11-23
+BuildTime=1795487882
+File=indigo-v3.1.0-rc.1.dol
+Size=4511072
+SHA256=5eace3755f40c5dd6923151e7927fd6c237ebf2ab030f2d94973e7e626f07bac
+ApploaderFile=apploader-v3.1.0-rc.1.img
+ApploaderSize=2476544
+ApploaderSHA256=b4e57ba230ce4dbf9c29ace1672d6be6d146da03fc8eaf6bfe4d0e7198305de3
+NotesURL=https://github.com/spencernorton/indigo/releases/tag/v3.1.0-rc.1
