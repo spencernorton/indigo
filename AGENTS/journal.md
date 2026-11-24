@@ -1,3 +1,10 @@
+## 2026-11-23 — Verify the deployed console feed from release CI
+
+The release runner now compares all four signed update files to the exact
+commit GitHub Pages reports as built. It uses the runner’s existing HTTPS
+access to GitHub. An optional read-only release dry run can check an already
+published channel. The console uses its normal public HTTP route.
+
 ## 2026-11-23 — Reduce folder lookup work during startup
 
 Library path resolution and the Apps and Emulators root lookups now request
