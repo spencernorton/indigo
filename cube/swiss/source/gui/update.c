@@ -667,8 +667,10 @@ static update_result_t slotImage(int slot, const ui_update_manifest_t *release, 
 	if(file.device->closeFile(&file) != 0)
 		result = UPDATE_READ_FAIL;
 	sha256_final(&sha, digest);
-	if(result == UPDATE_OK && memcmp(digest, release->sha256, sizeof(digest)))
+	if(result == UPDATE_OK && memcmp(digest, release->sha256, sizeof(digest))) {
+		print_debug("Update: card readback differs from signed digest\n");
 		result = UPDATE_HASH_MISMATCH;
+	}
 	if(result == UPDATE_OK && !wiiload_image_valid(image, release->size, false))
 		result = UPDATE_IMAGE_INVALID;
 	if(result != UPDATE_OK) {
@@ -829,6 +831,7 @@ static update_result_t installSlot(update_check_t *check, bool automatic)
 		goto done;
 	sha256_final(&sha, hash);
 	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+		print_debug("Update: received data differs from signed digest\n");
 		result = UPDATE_HASH_MISMATCH;
 		goto done;
 	}
