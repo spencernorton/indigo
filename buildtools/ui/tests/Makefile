@@ -21,7 +21,7 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 TESTS := test_reallocarr test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_bnr test_ui_png \
 	test_ui_assets test_ui_assets_target_sync test_blank_banner \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
-	test_ui_menu_input test_ui_clock test_ui_hint test_ui_stage \
+	test_ui_menu_input test_ui_menu_sfx test_ui_clock test_ui_hint test_ui_stage \
 	test_ui_home test_ui_cube_motif test_ui_home_safety test_ui_home_layout \
 	test_ui_scene test_ui_command_rail test_ui_presentation \
 	test_gameflow_state test_gameflow_library test_ui_folder test_gameflow_resolver \
@@ -76,6 +76,8 @@ test_ui_anim.src := $(GUI)/ui_anim.c $(GUI)/ui_perf.c
 test_ui_anim.flags = $(GAMEFLOW_CFLAGS) -DUI_PERF_CAPTURE=1 -Ifixtures/gx
 test_ui_anim.libs := -lm
 test_ui_system_info.src := $(GUI)/ui_system_info.c $(GUI)/ui_lang.c
+test_ui_menu_sfx.src := $(GUI)/ui_menu_sfx.c
+test_ui_menu_sfx.libs := -lm
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c
 test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c

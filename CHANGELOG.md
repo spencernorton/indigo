@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Home starts sooner. The menu prepares the same navigation sounds with less
+  processing, and a single storage device skips a redundant Library folder
+  search at startup.
+
 - Settings › Network › Install game content downloads the poster pack, every
   game's cheats and the manuals for the games you browse onto the card, in
   one go. Indigo checks the release signature on the list and the SHA-256 of
