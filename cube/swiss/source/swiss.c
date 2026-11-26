@@ -3529,8 +3529,9 @@ static bool homeLibraryMount(DEVICEHANDLER_INTERFACE *device)
 /* The first device after the Source, in the order Swiss looks for a boot
  * device, with a Library folder: left mounted, with dir its folder. Only
  * storage attached to the console: no network share, WODE or USB Gecko.
- * Each device it looked at without one is let go again. */
-static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir)
+ * Each device it looked at without one is let go again. At startup the
+ * current Source gets first choice once there is another eligible device. */
+static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir, bool preferCurrent)
 {
 	int i;
 
@@ -3542,10 +3543,16 @@ static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir)
 			candidate == &__device_fsp || candidate == &__device_wode ||
 			candidate == &__device_usbgecko ||
 			(devices[DEVICE_CUR] != NULL &&
-				filesClash(candidate, devices[DEVICE_CUR], NULL, 0)) ||
-			!homeLibraryMount(candidate)) {
+				filesClash(candidate, devices[DEVICE_CUR], NULL, 0))) {
 			continue;
 		}
+		if(preferCurrent && devices[DEVICE_CUR] != NULL) {
+			if(homeLibraryOn(devices[DEVICE_CUR], dir))
+				return devices[DEVICE_CUR];
+			preferCurrent = false;
+		}
+		if(!homeLibraryMount(candidate))
+			continue;
 		if(homeLibraryOn(candidate, dir)) {
 			return candidate;
 		}
@@ -3591,12 +3598,11 @@ static void homeApplyStartupSource(void)
 	}
 	/* The boot device stays when it has the Library's folder, or when the
 	 * Library never reads it (the disc drive: no spin-up at startup). */
-	if(devices[DEVICE_CUR] != NULL && (!homeLibraryDevice(devices[DEVICE_CUR]) ||
-		homeLibraryOn(devices[DEVICE_CUR], &dir))) {
+	if(devices[DEVICE_CUR] != NULL && !homeLibraryDevice(devices[DEVICE_CUR])) {
 		return;
 	}
-	target = homeFindLibrary(&dir);
-	if(target != NULL) {
+	target = homeFindLibrary(&dir, true);
+	if(target != NULL && target != devices[DEVICE_CUR]) {
 		homeSwitchSource(target);
 		needsDeviceChange = 0;
 	}
@@ -3614,7 +3620,7 @@ static bool gameflowTryOtherDevicesForLibrary(void)
 		strcmp(curDir.name, previous->initial->name)) {
 		return false;
 	}
-	found = homeFindLibrary(&dir);
+	found = homeFindLibrary(&dir, false);
 	if(found == NULL) {
 		return false;
 	}

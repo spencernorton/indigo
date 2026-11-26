@@ -12,6 +12,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
   times earlier than this build and local times the console cannot store.
   It saves the new time for games and the IPL only after setting the running clock.
 
+- Home starts sooner. The menu prepares the same navigation sounds with less
+  processing, and a single storage device skips a redundant Library folder
+  search at startup.
+
 - Settings › Network › Install game content downloads the poster pack, every
   game's cheats and the manuals for the games you browse onto the card, in
   one go. Indigo checks the release signature on the list and the SHA-256 of

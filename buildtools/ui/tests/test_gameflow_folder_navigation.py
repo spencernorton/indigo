@@ -286,7 +286,9 @@ static unsigned rootEmpty;
 static bool failRead;
 static bool discMultiGame;
 static bool expectDirectoryLookup;
+static int directoryReads;
 static int fakeReadDir(file_handle *dir, file_handle **out, unsigned type) {
+    directoryReads++;
     if(expectDirectoryLookup) assert(type == IS_DIR);
     if(failRead) { *out=NULL; return 0; }
     static const char *rootNames[] = {"..", "Racing.v1", "Nintendo.GC",
@@ -548,16 +550,18 @@ static void crossDeviceLibraryFallback(void) {
     devices[DEVICE_CUR]=&device;
     deviceAvailable=true;
     expectDirectoryLookup=true;
+    directoryReads=0;
     homeApplyStartupSource();
     expectDirectoryLookup=false;
-    assert(devices[DEVICE_CUR]==&device && inits==0);
+    assert(devices[DEVICE_CUR]==&device && inits==0 && directoryReads==1);
 
     /* 6b. Started from the disc drive: it isn't read, and nothing mounts. */
     reset("dvd:/",true,false);
     devices[DEVICE_CUR]=&__device_dvd;
     deviceAvailable=true;
+    directoryReads=0;
     homeApplyStartupSource();
-    assert(devices[DEVICE_CUR]==&__device_dvd && inits==0);
+    assert(devices[DEVICE_CUR]==&__device_dvd && inits==0 && directoryReads==0);
 
     /* 7. The Library Path's card fails to mount (taken out at startup):
      *    gcldr:/ stays the Source, and Library finds nothing else. */
@@ -570,6 +574,13 @@ static void crossDeviceLibraryFallback(void) {
     assert(devices[DEVICE_CUR]==&bootDevice);
     assert(!gameflowEnterLibraryFromHome());
     assert(devices[DEVICE_CUR]==&bootDevice);
+
+    /* With just the current storage, finding /games cannot change the Source. */
+    reset("gcldr:/",true,false);
+    devices[DEVICE_CUR]=&bootDevice;
+    directoryReads=0;
+    homeApplyStartupSource();
+    assert(devices[DEVICE_CUR]==&bootDevice && inits==0 && directoryReads==0);
 
     /* 8. Its card not there at all: gcldr:/ stays, and nothing is mounted. */
     reset("gcldr:/",true,false);
