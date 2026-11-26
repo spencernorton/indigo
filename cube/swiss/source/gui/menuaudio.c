@@ -5,16 +5,11 @@
 #include <mad.h>
 #include <malloc.h>
 #include <string.h>
-#include <math.h>
 #include "swiss.h"
 #include "menuaudio.h"
+#include "ui_menu_sfx.h"
 #include "menu_music_mp3.h"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-#define SR                  32000
 #define VOL_UNITY           256
 
 // The menu music streams. A decoder thread turns the bundled MP3 into blocks
@@ -41,9 +36,7 @@ static bool resumeMusic = false;
 static AESNDPB *musicVoice = NULL;
 static AESNDPB *sfxVoice = NULL;
 static s16 *blipBuf = NULL;
-static u32 blipBytes = 0;
 static s16 *selBuf = NULL;
-static u32 selBytes = 0;
 
 static s16 musicBlocks[MUSIC_BLOCKS][MUSIC_FRAME_SAMPLES * 2] ATTRIBUTE_ALIGN(32);
 static struct mad_stream musicStream;
@@ -55,12 +48,6 @@ static mqbox_t musicFree = MQ_BOX_NULL;
 static mqbox_t musicReady = MQ_BOX_NULL;
 static s16 *musicHeld = NULL;           // the block the voice is copying from
 static volatile bool musicRun = false;
-
-static s16 clamp16(double v) {
-	if(v > 32767.0) return 32767;
-	if(v < -32768.0) return -32768;
-	return (s16)v;
-}
 
 static s16 mf2s16(mad_fixed_t f) {
 	f += (1L << (MAD_F_FRACBITS - 16));
@@ -192,49 +179,6 @@ static void stop_decoder(void) {
 	musicHeld = NULL;
 }
 
-static s16 *synth_tone(double freq, double duration, double decay, double amp, u32 *outBytes) {
-	u32 samples = (u32)(SR * duration);
-	s16 *buf = memalign(32, samples * sizeof(*buf));
-	if(!buf) {
-		*outBytes = 0;
-		return NULL;
-	}
-	double attack = SR * 0.004;
-	for(u32 n = 0; n < samples; n++) {
-		double envelope = exp(-(double)n / (SR * decay));
-		if(n < attack) envelope *= (double)n / attack;
-		double sample = 0.85 * sin(2.0 * M_PI * freq * (double)n / SR) +
-		                0.15 * sin(2.0 * M_PI * 2 * freq * (double)n / SR);
-		buf[n] = clamp16(amp * 32767.0 * envelope * sample);
-	}
-	*outBytes = samples * sizeof(*buf);
-	return buf;
-}
-
-static s16 *synth_chime(u32 *outBytes) {
-	const double duration = 0.18;
-	const double decay = 0.09;
-	const double amp = 0.30;
-	const double f1 = 659.25;
-	const double f2 = 988.0;
-	u32 samples = (u32)(SR * duration);
-	s16 *buf = memalign(32, samples * sizeof(*buf));
-	if(!buf) {
-		*outBytes = 0;
-		return NULL;
-	}
-	double attack = SR * 0.004;
-	for(u32 n = 0; n < samples; n++) {
-		double envelope = exp(-(double)n / (SR * decay));
-		if(n < attack) envelope *= (double)n / attack;
-		double sample = 0.6 * sin(2.0 * M_PI * f1 * (double)n / SR) +
-		                0.4 * sin(2.0 * M_PI * f2 * (double)n / SR);
-		buf[n] = clamp16(amp * 32767.0 * envelope * sample);
-	}
-	*outBytes = samples * sizeof(*buf);
-	return buf;
-}
-
 static void start_music(void) {
 	if(!inited || suspended || musicPlaying || swissSettings.disableMenuMusic) return;
 	if(!musicVoice) {
@@ -272,10 +216,18 @@ void menuaudio_init(void) {
 
 	AESND_Init();
 	inited = true;
-	blipBuf = synth_tone(880.0, 0.05, 0.03, 0.30, &blipBytes);
-	selBuf = synth_chime(&selBytes);
-	if(blipBuf) DCFlushRange(blipBuf, blipBytes);
-	if(selBuf) DCFlushRange(selBuf, selBytes);
+	const size_t blipBytes = UI_MENU_BLIP_SAMPLES * sizeof(*blipBuf);
+	const size_t selectBytes = UI_MENU_SELECT_SAMPLES * sizeof(*selBuf);
+	blipBuf = memalign(32, blipBytes);
+	selBuf = memalign(32, selectBytes);
+	if(blipBuf) {
+		UIMenuSFX_Blip(blipBuf);
+		DCFlushRange(blipBuf, blipBytes);
+	}
+	if(selBuf) {
+		UIMenuSFX_Select(selBuf);
+		DCFlushRange(selBuf, selectBytes);
+	}
 	sfxVoice = AESND_AllocateVoice(NULL);
 	menuaudio_apply_settings();
 }
@@ -317,8 +269,6 @@ bool menuaudio_shutdown(void) {
 	free(selBuf);
 	blipBuf = NULL;
 	selBuf = NULL;
-	blipBytes = 0;
-	selBytes = 0;
 	inited = false;
 	return true;
 }
@@ -326,13 +276,13 @@ bool menuaudio_shutdown(void) {
 static void play_sfx(s16 *buf, u32 bytes) {
 	if(!buf || !sfxVoice || suspended || swissSettings.disableMenuSFX) return;
 	AESND_SetVoiceVolume(sfxVoice, (VOL_UNITY * 17) / 20, (VOL_UNITY * 17) / 20);
-	AESND_PlayVoice(sfxVoice, VOICE_MONO16, buf, bytes, SR, 0, false);
+	AESND_PlayVoice(sfxVoice, VOICE_MONO16, buf, bytes, UI_MENU_SFX_RATE, 0, false);
 }
 
 void menuaudio_blip(void) {
-	play_sfx(blipBuf, blipBytes);
+	play_sfx(blipBuf, UI_MENU_BLIP_SAMPLES * sizeof(*blipBuf));
 }
 
 void menuaudio_select(void) {
-	play_sfx(selBuf, selBytes);
+	play_sfx(selBuf, UI_MENU_SELECT_SAMPLES * sizeof(*selBuf));
 }
