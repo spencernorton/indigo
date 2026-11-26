@@ -2630,24 +2630,19 @@ msgstr ""
 "Анімоване тло (Параметри > Бібліотека) все одно їх\n"
 "зупиняють."
 
-#: cube/swiss/source/gui/settings.c:174
+#: cube/swiss/source/gui/settings.c
 msgid ""
-"Clock:\n"
+"Clock Position:\n"
 "\n"
-"Right - The time sits in the top right corner (default)\n"
-"Left - It sits in the top left corner instead\n"
-"Off - It is not shown\n"
-"\n"
-"Temperature places the temperature dial on its own."
+"Right - Show the time at the top right.\n"
+"Left - Show the time at the top left.\n"
+"Off - Hide the time."
 msgstr ""
-"Годинник:\n"
+"Положення годинника:\n"
 "\n"
-"Праворуч - Час у правому верхньому куті\n"
-"(типово)\n"
-"Ліворуч - Натомість у лівому верхньому куті\n"
-"Вимк. - Не показується\n"
-"\n"
-"Температура розміщує свій індикатор окремо."
+"Праворуч - Показувати час угорі праворуч.\n"
+"Ліворуч - Показувати час угорі ліворуч.\n"
+"Вимк. - Приховати час."
 
 #: cube/swiss/source/gui/settings.c:175
 msgid ""
@@ -2918,62 +2913,47 @@ msgstr ""
 "Так - Адресу, маску й шлюз задає роутер (типово)\n"
 "Ні - Використати адресу, маску й шлюз, задані вище"
 
-#: cube/swiss/source/gui/settings.c:191
+#: cube/swiss/source/gui/settings.c
 msgid ""
-"Sync Clock:\n"
+"Clock Mode:\n"
 "\n"
-"Yes - Set the clock from the NTP server when the network starts\n"
-"No - Leave the clock as it is (default)\n"
+"Manual - Set the date and time yourself, even offline.\n"
+"Auto - Sync with a time server when the network starts.\n"
 "\n"
-"Choose a Time Zone to follow daylight saving time. The IPL and\n"
-"games see the new time too. Init network at startup runs the sync\n"
-"when Indigo starts."
+"Offline, the console keeps time. Left/Right switches modes.\n"
+"Press A for options."
 msgstr ""
-"Синхронізація годинника:\n"
+"Режим годинника:\n"
 "\n"
-"Так - Брати час із NTP-сервера під час запуску мережі\n"
-"Ні - Не змінювати годинник (типово)\n"
+"Вручну - Задайте дату й час самі, навіть без мережі.\n"
+"Авто - Звіряти час із сервером під час запуску мережі.\n"
 "\n"
-"Щоб враховувати літній час, оберіть Часовий пояс. Новий час\n"
-"бачать також IPL та ігри. Мережа при запуску синхронізує\n"
-"годинник під час запуску Indigo."
+"Без мережі годинник іде далі. Ліворуч/праворуч змінює режим.\n"
+"Натисніть A, щоб відкрити параметри."
 
-#: cube/swiss/source/gui/settings.c:192
+#: cube/swiss/source/gui/settings.c
 msgid ""
 "NTP Server IP:\n"
 "\n"
-"Address of the time server Sync Clock asks. Empty asks\n"
-"Cloudflare's, 162.159.200.123 (default). A name won't work: the\n"
-"console has no DNS."
+"Enter the time server's IPv4 address. Leave blank to use\n"
+"Cloudflare (162.159.200.123)."
 msgstr ""
 "IP сервера NTP:\n"
 "\n"
-"Адреса сервера часу для Синхронізації годинника. Якщо\n"
-"порожньо - сервер Cloudflare, 162.159.200.123 (типово).\n"
-"Ім'я не підійде: консоль не має DNS."
+"Введіть IPv4-адресу сервера часу. Залиште поле порожнім для\n"
+"Cloudflare (162.159.200.123)."
 
-#: cube/swiss/source/gui/settings.c:194
+#: cube/swiss/source/gui/settings.c
 msgid ""
 "Time Zone:\n"
 "\n"
-"Choose a location to follow its daylight saving rules.\n"
-"\n"
-"Enter a name such as America/Denver or Europe/London, or a POSIX\n"
-"rule such as MST7MDT,M3.2.0,M11.1.0. The rules apply at each sync.\n"
-"\n"
-"Keep offset (no DST) preserves the console's current UTC offset.\n"
-"Leave the entry empty to use it."
+"Enter a location such as Europe/London or a POSIX TZ rule.\n"
+"Leave blank to keep the current UTC offset without DST."
 msgstr ""
 "Часовий пояс:\n"
 "\n"
-"Оберіть місцевість, щоб діяли її правила літнього часу.\n"
-"\n"
-"Введіть назву, як-от America/Denver чи Europe/London, або\n"
-"правило POSIX, як-от MST7MDT,M3.2.0,M11.1.0. Правила діють\n"
-"під час кожної синхронізації.\n"
-"\n"
-"Зсув консолі (без DST) лишає поточний зсув консолі від UTC.\n"
-"Щоб обрати його, залиште поле порожнім."
+"Введіть місцевість, як-от Europe/London, або правило POSIX TZ.\n"
+"Порожнє поле зберігає поточний зсув від UTC без літнього часу."
 
 #: cube/swiss/source/gui/settings.c:194
 msgid ""
@@ -3918,9 +3898,9 @@ msgstr "Підказки кнопок:"
 msgid "Face Labels:"
 msgstr "Назви граней:"
 
-#: cube/swiss/source/gui/settings.c:1136
-msgid "Clock:"
-msgstr "Годинник:"
+#: cube/swiss/source/gui/settings.c
+msgid "Clock Position:"
+msgstr "Положення годинника:"
 
 #: cube/swiss/source/gui/settings.c:1137
 msgid "Temperature:"
@@ -4002,9 +3982,9 @@ msgstr "Шлюз IPv4:"
 msgid "IPv4 uses DHCP:"
 msgstr "IPv4 через DHCP:"
 
-#: cube/swiss/source/gui/settings.c:1161
-msgid "Sync Clock:"
-msgstr "Синхронізація годинника:"
+#: cube/swiss/source/gui/settings.c
+msgid "Clock Mode:"
+msgstr "Режим годинника:"
 
 #: cube/swiss/source/gui/settings.c:1162
 msgid "NTP Server IP:"
@@ -6661,3 +6641,23 @@ msgstr "Системна дата:\n\nВведіть місцеву дату у 
 
 msgid "System Time:\n\nEnter the local time as HH:MM:SS in 24-hour format.\nThe date stays the same."
 msgstr "Системний час:\n\nВведіть місцевий час у 24-годинному форматі ГГ:ХХ:СС.\nДата збережеться."
+
+#: cube/swiss/source/gui/settings.c
+msgid "Manual"
+msgstr "Вручну"
+
+#: cube/swiss/source/gui/ui_settings_layout.c
+msgid "Manual Clock"
+msgstr "Годинник вручну"
+
+#: cube/swiss/source/gui/ui_settings_layout.c
+msgid "Choose the date or time to edit."
+msgstr "Виберіть дату або час для зміни."
+
+#: cube/swiss/source/gui/ui_settings_layout.c
+msgid "Auto Clock"
+msgstr "Автоматичний годинник"
+
+#: cube/swiss/source/gui/ui_settings_layout.c
+msgid "Choose the time zone and time server."
+msgstr "Виберіть часовий пояс і сервер часу."

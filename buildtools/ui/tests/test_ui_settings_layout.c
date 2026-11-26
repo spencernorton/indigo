@@ -47,11 +47,13 @@ static const struct {
 	{ 21,  1, 22 }, /* Game Defaults: no Vertical Offset, which can't reach a game */
 	{  6,  2,  7 }, /* Setup: one row per section */
 	{ 11,  2, 12 }, /* Display */
-	{ 27,  2, 28 }, /* Console: System Date, System Time, the four sides, Cube, Backdrop and Wave Color, Wave Speed, Clock, Temperature, Waves, Idle Animation, Face Labels, On-screen Controls and Menu Language too */
+	{ 26,  2, 27 }, /* Console, including Clock Mode and Clock Position */
 	{  8,  2,  9 }, /* Storage: its Library Path and Save Folder too */
-	{ 29,  2, 30 }, /* Network: Sync Clock, NTP Server IP, Time Zone, the updater's five rows and Install game content too */
+	{ 26,  2, 27 }, /* Network, including the six updater and content rows */
 	{ 11,  2, 12 }, /* Library: Load at startup, Library Folders and Saves on Details too; no File Browser Types */
 	{  4,  2,  5 }, /* Developer */
+	{  2,  2,  3 }, /* Manual Clock */
+	{  2,  2,  3 }, /* Auto Clock */
 	{ 22, -1, 23 }, /* one game's own settings: no tabs */
 };
 
@@ -497,6 +499,8 @@ static void test_measured_copies_cover_real_extremes(void) {
 		{ "RetroTINK-4K Host IP:", "255.255.255.255" },
 		{ "Hide unknown file types:", "*/games/*/*" },
 		{ "Simulated MRAM Size:", "Serial Port 2" },
+		{ "System Date:", "2026-11-26" },
+		{ "NTP Server IP:", "255.255.255.255" },
 		{ "Emulate Broadband Adapter:", "English (US)" },
 	};
 	/* Every footer the pages draw, button icons included; the game page's
@@ -1004,24 +1008,25 @@ static void test_value_list_geometry(void) {
 
 /* The help card holds the longest tooltip (the audit caps them at 16 lines
  * of 68 characters) inside the safe area. */
-/* Settings › Network hides Sync Clock's rows, its last three, without a
+/* Settings › Network hides its six update and content rows, without a
  * network adapter: the page then lays out, scrolls and exits as if it had
  * only the rows it shows, and every other page keeps all of its own. */
 static void test_hidden_tail_rows(void) {
 	const int network = 6;
+	const int tail = 6;
 	int full = UISetLayout_PageDesc(network)->rowCount;
 	uiSetLayout_t l;
 
 	CHECK(UISetLayout_RowCount(network) == full);
-	UISetLayout_HideTail(network, 3);
-	CHECK(UISetLayout_RowCount(network) == full - 3);
-	CHECK(UISetLayout_DiscardIndex(network) == full - 2);
-	UISetLayout_Compute(network, full - 4, 0, &l);
-	CHECK(l.rowCount == full - 3 && l.selectedRow == full - 4);
-	UISetLayout_Compute(network, full - 3, 0, &l);
+	UISetLayout_HideTail(network, tail);
+	CHECK(UISetLayout_RowCount(network) == full - tail);
+	CHECK(UISetLayout_DiscardIndex(network) == full - tail + 1);
+	UISetLayout_Compute(network, full - tail - 1, 0, &l);
+	CHECK(l.rowCount == full - tail && l.selectedRow == full - tail - 1);
+	UISetLayout_Compute(network, full - tail, 0, &l);
 	CHECK(l.selectedRow == -1 && l.selectedAction == 0);
 	UISetLayout_Compute(network, 999, 0, &l);
-	CHECK(l.option == full - 2 && l.selectedAction == 1);
+	CHECK(l.option == full - tail + 1 && l.selectedAction == 1);
 	for (int p = 0; p < UI_SETLAYOUT_PAGE_COUNT; p++) {
 		if (p != network)
 			CHECK(UISetLayout_RowCount(p) == UISetLayout_PageDesc(p)->rowCount);

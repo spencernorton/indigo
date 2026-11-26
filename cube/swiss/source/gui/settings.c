@@ -41,7 +41,6 @@ _Static_assert(UI_SETLAYOUT_TAB_COUNT == VIEW_SETUP + 1, "tab count drift");
 _Static_assert(UI_SETLAYOUT_TAB_SETUP == VIEW_SETUP, "Setup tab drift");
 /* Game Defaults shows every default but the vertical offset (see gameDefaultsRows). */
 _Static_assert(UI_SETLAYOUT_ROWS_GAME_DEFAULTS == SET_DEFAULT_DEFAULTS, "defaults rows drift");
-_Static_assert(UI_SETLAYOUT_ROWS_NETWORK == SET_CONTENT_INSTALL + 1, "network rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_GAME == SET_DEFAULTS + 1, "game rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_SETUP == VIEW_DEVELOPER - VIEW_DISPLAY + 1, "Setup sections drift");
 _Static_assert((int)UI_SETLAYOUT_MOTION_FULL == (int)UI_MOTION_FULL,
@@ -180,7 +179,7 @@ static char *tooltips_interface[PAGE_INTERFACE_MAX+1] = {
 	[SET_FACE_LABELS] = "Face Labels:\n\nOn - Home names the face in front under the cube (default)\nOff - The cube shows only its icons.",
 	[SET_MENU_LANGUAGE] = "Menu Language:\n\nThe language Indigo's menus are in: English (default) or\nUkrainian. Ukrainian's words come from swiss/indigo/uk.po on\nthe settings device; without that file the menus stay English.\n\nGames, their titles and System Language don't change, and\nthe settings files stay in English.",
 	[SET_WAVE_SPEED] = "Wave Speed:\n\nHow fast the waves behind the cube drift.\nSlow - Half as fast\nNormal - As they always have (default)\nFast - Three times as fast\n\nUI Motion Off or Reduced, or Animated Backdrop off (Setup >\nLibrary), still stops them.",
-	[SET_CLOCK_POSITION] = "Clock:\n\nRight - The time sits in the top right corner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nTemperature places the temperature dial on its own.",
+	[SET_CLOCK_POSITION] = "Clock Position:\n\nRight - Show the time at the top right.\nLeft - Show the time at the top left.\nOff - Hide the time.",
 	[SET_TEMPERATURE_POSITION] = "Temperature:\n\nRight - The CPU temperature dial sits in the top right\ncorner (default)\nLeft - It sits in the top left corner instead\nOff - It is not shown\n\nIn the clock's corner, the dial sits nearer the edge.",
 	[SET_UP_FACE] = "Up Face:\n\nThe menu above Library: Source (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Up to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
 	[SET_LEFT_FACE] = "Left Face:\n\nThe menu left of Library: Settings (default), another\nmenu, or None.\n\nThe menus: Source, Settings, System, Apps, Memory Cards,\nEmulators and File Browser. Classic turns Left to it; Infinite\nturns through the faces above, left, right and below Library,\nin that order. A menu on no side is off the cube. Y on Home\nalways opens Settings, and Apps and Emulators show while the\nsource has a program in /apps or /emulators.",
@@ -197,9 +196,9 @@ static char *tooltips_network[PAGE_NETWORK_MAX+1] = {
 	[SET_BBA_NETMASK] = "IPv4 Netmask:\n\nThe network's prefix length when DHCP is off, such as 24 on a\ntypical home network.",
 	[SET_BBA_GATEWAY] = "IPv4 Gateway:\n\nYour router's address when DHCP is off.",
 	[SET_BBA_DHCP] = "IPv4 uses DHCP:\n\nYes - Your router assigns the address, netmask and gateway (default)\nNo - Use the address, netmask and gateway set above",
-	[SET_NTP_SYNC] = "Sync Clock:\n\nYes - Set the clock from the NTP server when the network starts\nNo - Leave the clock as it is (default)\n\nChoose a Time Zone to follow daylight saving time. The IPL and\ngames see the new time too. Init network at startup runs the sync\nwhen Indigo starts.",
-	[SET_NTP_HOSTIP] = "NTP Server IP:\n\nAddress of the time server Sync Clock asks. Empty asks\nCloudflare's, 162.159.200.123 (default). A name won't work: the\nconsole has no DNS.",
-	[SET_TIME_ZONE] = "Time Zone:\n\nChoose a location to follow its daylight saving rules.\n\nEnter a name such as America/Denver or Europe/London, or a POSIX\nrule such as MST7MDT,M3.2.0,M11.1.0. The rules apply at each sync.\n\nKeep offset (no DST) preserves the console's current UTC offset.\nLeave the entry empty to use it.",
+	[SET_NTP_SYNC] = "Clock Mode:\n\nManual - Set the date and time yourself, even offline.\nAuto - Sync with a time server when the network starts.\n\nOffline, the console keeps time. Left/Right switches modes.\nPress A for options.",
+	[SET_NTP_HOSTIP] = "NTP Server IP:\n\nEnter the time server's IPv4 address. Leave blank to use\nCloudflare (162.159.200.123).",
+	[SET_TIME_ZONE] = "Time Zone:\n\nEnter a location such as Europe/London or a POSIX TZ rule.\nLeave blank to keep the current UTC offset without DST.",
 	[SET_FSP_HOSTIP] = "FSP Host IP:\n\nAddress of the computer running the FSP server with your games.",
 	[SET_FSP_PORT] = "FSP Port:\n\nPort of the FSP server (21 by default).",
 	[SET_FSP_PASS] = "FSP Password:\n\nPassword for the FSP server, if it has one. It is stored as plain\ntext in global.ini.",
@@ -660,6 +659,7 @@ static const settingsRowRef_t consoleRows[] = {
 	{PAGE_INTERFACE, SET_IDLE_ANIMATION},
 	{PAGE_INTERFACE, SET_FACE_LABELS},
 	{PAGE_INTERFACE, SET_HOME_CONTROLS},
+	{PAGE_NETWORK, SET_NTP_SYNC},
 	{PAGE_INTERFACE, SET_CLOCK_POSITION},
 	{PAGE_INTERFACE, SET_TEMPERATURE_POSITION},
 	{PAGE_GLOBAL, SET_SYS_SOUND},
@@ -667,8 +667,16 @@ static const settingsRowRef_t consoleRows[] = {
 	{PAGE_GLOBAL, SET_SYS_BOOTMODE},
 	{PAGE_GLOBAL, SET_DISABLE_RECALIB},
 	{PAGE_GLOBAL, SET_TAU_CALIB},
+};
+
+static const settingsRowRef_t manualClockRows[] = {
 	{PAGE_GLOBAL, SET_SYS_DATE},
 	{PAGE_GLOBAL, SET_SYS_TIME},
+};
+
+static const settingsRowRef_t autoClockRows[] = {
+	{PAGE_NETWORK, SET_TIME_ZONE},
+	{PAGE_NETWORK, SET_NTP_HOSTIP},
 };
 
 static const settingsRowRef_t storageRows[] = {
@@ -703,12 +711,7 @@ static const settingsRowRef_t networkRows[] = {
 	{PAGE_NETWORK, SET_SMB_PASS},
 	{PAGE_NETWORK, SET_RT4K_HOSTIP},
 	{PAGE_NETWORK, SET_RT4K_PORT},
-	/* Sync Clock's and the updater's rows stay last: without a network
-	 * adapter, Settings hides them (SETTINGS_NETWORK_TAIL_ROWS,
-	 * UISetLayout_HideTail). */
-	{PAGE_NETWORK, SET_NTP_SYNC},
-	{PAGE_NETWORK, SET_NTP_HOSTIP},
-	{PAGE_NETWORK, SET_TIME_ZONE},
+	/* Hide the online update and content actions without an adapter. */
 	{PAGE_NETWORK, SET_UPDATE_CHANNEL},
 	{PAGE_NETWORK, SET_UPDATE_SERVER},
 	{PAGE_NETWORK, SET_UPDATE_STARTUP},
@@ -716,7 +719,7 @@ static const settingsRowRef_t networkRows[] = {
 	{PAGE_NETWORK, SET_UPDATE_SMB},
 	{PAGE_NETWORK, SET_CONTENT_INSTALL},
 };
-#define SETTINGS_NETWORK_TAIL_ROWS 9
+#define SETTINGS_NETWORK_TAIL_ROWS 6
 
 /* Whether a network adapter is there, read once as Settings opens. */
 static bool settingsNetAdapter;
@@ -987,6 +990,8 @@ static const struct {
 	[VIEW_NETWORK] = SETTINGS_ROWS(networkRows),
 	[VIEW_LIBRARY] = SETTINGS_ROWS(libraryRows),
 	[VIEW_DEVELOPER] = SETTINGS_ROWS(developerRows),
+	[VIEW_MANUAL_CLOCK] = SETTINGS_ROWS(manualClockRows),
+	[VIEW_AUTO_CLOCK] = SETTINGS_ROWS(autoClockRows),
 	[VIEW_GAME] = SETTINGS_ROWS(gameRows),
 };
 #undef SETTINGS_ROWS
@@ -1000,6 +1005,8 @@ _Static_assert(sizeof(storageRows) / sizeof(storageRows[0]) == UI_SETLAYOUT_ROWS
 _Static_assert(sizeof(networkRows) / sizeof(networkRows[0]) == UI_SETLAYOUT_ROWS_NETWORK, "network rows drift");
 _Static_assert(sizeof(libraryRows) / sizeof(libraryRows[0]) == UI_SETLAYOUT_ROWS_LIBRARY, "library rows drift");
 _Static_assert(sizeof(developerRows) / sizeof(developerRows[0]) == UI_SETLAYOUT_ROWS_DEVELOPER, "developer rows drift");
+_Static_assert(sizeof(manualClockRows) / sizeof(manualClockRows[0]) == UI_SETLAYOUT_ROWS_CLOCK, "manual clock rows drift");
+_Static_assert(sizeof(autoClockRows) / sizeof(autoClockRows[0]) == UI_SETLAYOUT_ROWS_CLOCK, "auto clock rows drift");
 _Static_assert(sizeof(gameRows) / sizeof(gameRows[0]) == UI_SETLAYOUT_ROWS_GAME, "game rows drift");
 
 /* Short summaries shown beside each Setup section; each fits the value
@@ -1182,7 +1189,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_WAVES: rowOnOff(row, "Waves:", !swissSettings.hideWaves, true); break;
 			case SET_HOME_CONTROLS: rowOnOff(row, "On-screen Controls:", !swissSettings.hideHomeControls, true); break;
 			case SET_FACE_LABELS: rowOnOff(row, "Face Labels:", !swissSettings.hideFaceLabels, true); break;
-			case SET_CLOCK_POSITION: rowCycle(row, "Clock:", clockPositionStr[swissSettings.clockPosition], true); break;
+			case SET_CLOCK_POSITION: rowCycle(row, "Clock Position:", clockPositionStr[swissSettings.clockPosition], true); break;
 			case SET_TEMPERATURE_POSITION: rowCycle(row, "Temperature:", clockPositionStr[swissSettings.temperaturePosition], true); break;
 			case SET_WAVE_SPEED: rowCycle(row, "Wave Speed:", waveSpeedStr[swissSettings.waveSpeed], true); break;
 			case SET_PANEL_TRANSPARENCY: rowYesNo(row, "Panel Transparency:", !swissSettings.disablePanelTransparency, true); break;
@@ -1207,10 +1214,10 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_BBA_NETMASK: rowTextNumber(row, "IPv4 Netmask:", swissSettings.bbaNetmask, netEnable); break;
 			case SET_BBA_GATEWAY: rowText(row, "IPv4 Gateway:", swissSettings.bbaGateway, netEnable); break;
 			case SET_BBA_DHCP: rowYesNo(row, "IPv4 uses DHCP:", swissSettings.bbaUseDhcp, netEnable); break;
-			case SET_NTP_SYNC: rowYesNo(row, "Sync Clock:", swissSettings.ntpSync, netEnable); break;
-			case SET_NTP_HOSTIP: rowText(row, "NTP Server IP:", swissSettings.ntpHostIp[0] ? swissSettings.ntpHostIp : TIME_SYNC_DEFAULT_SERVER, netEnable); break;
+			case SET_NTP_SYNC: rowCycle(row, "Clock Mode:", swissSettings.ntpSync ? "Auto" : "Manual", true); break;
+			case SET_NTP_HOSTIP: rowText(row, "NTP Server IP:", swissSettings.ntpHostIp[0] ? swissSettings.ntpHostIp : TIME_SYNC_DEFAULT_SERVER, true); break;
 			case SET_TIME_ZONE: rowText(row, "Time Zone:", UITimeSync_KeepsOffset(swissSettings.timeZone) ?
-				"Keep offset (no DST)" : swissSettings.timeZone, netEnable); break;
+				"Keep offset (no DST)" : swissSettings.timeZone, true); break;
 			case SET_FSP_HOSTIP: rowText(row, "FSP Host IP:", swissSettings.fspHostIp, netEnable); break;
 			case SET_FSP_PORT: rowTextNumber(row, "FSP Port:", swissSettings.fspPort, netEnable); break;
 			case SET_FSP_PASS: rowText(row, "FSP Password:", "*****", netEnable); break;
@@ -1378,6 +1385,11 @@ static void settingsDescribeFocus(uiSetPageSnapshot_t *page, int view,
 					(ref->page == PAGE_NETWORK &&
 					ref->option == SET_CONTENT_INSTALL) ? "A  Install" : "A  Reset";
 			}
+		}
+		else if(ref->page == PAGE_NETWORK && ref->option == SET_NTP_SYNC) {
+			hints[count++] = "A  Open";
+			help = UI_T(help);
+			row.value = UI_T(row.value);
 		}
 		else if(settingsIsLiveVideoRow(ref->page, ref->option)) {
 			/* A only applies a value Left or Right stepped to. */
@@ -1958,9 +1970,6 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 			break;
 			case SET_NTP_SYNC:
 				swissSettings.ntpSync ^= 1;
-				if(swissSettings.ntpSync && UITimeSync_KeepsOffset(swissSettings.timeZone)) {
-					settingsEditTimeZone();
-				}
 			break;
 			case SET_NTP_HOSTIP:
 				DrawGetTextEntry(ENTRYMODE_IP, "NTP Server IP", &swissSettings.ntpHostIp, sizeof(swissSettings.ntpHostIp) - 1);
@@ -2982,7 +2991,6 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 	}
 	if(page == PAGE_NETWORK && (horizontal || activate)) {
 		return in_range(option, SET_BBA_LOCALIP, SET_BBA_GATEWAY) ||
-			(option == SET_NTP_SYNC && UITimeSync_KeepsOffset(swissSettings.timeZone)) ||
 			in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
 			in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT) ||
 			option == SET_UPDATE_SERVER ||
@@ -2999,6 +3007,15 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 	return false;
 }
 
+static int settingsFindRow(int view, int page, int option)
+{
+	for(int row = 0; row < settingsViews[view].count; row++) {
+		const settingsRowRef_t *ref = &settingsViews[view].rows[row];
+		if(ref->page == page && ref->option == option) return row;
+	}
+	return -1;
+}
+
 /* Legacy entry points name a (page, option) setting: open the view that
  * shows it. A game's settings open on their own. */
 int show_settings(int page, int option, ConfigEntry *config) {
@@ -3011,12 +3028,8 @@ int show_settings(int page, int option, ConfigEntry *config) {
 			continue;
 		}
 		/* The whole table: show_settings_view hides what it must. */
-		for(row = 0; row < settingsViews[view].count; row++) {
-			const settingsRowRef_t *ref = &settingsViews[view].rows[row];
-			if(ref->page == page && ref->option == option) {
-				return show_settings_view(view, row, config);
-			}
-		}
+		row = settingsFindRow(view, page, option);
+		if(row >= 0) return show_settings_view(view, row, config);
 	}
 	return show_settings_view(page == PAGE_GAME ? VIEW_GAME : VIEW_QUICK, 0, config);
 }
@@ -3154,7 +3167,12 @@ int show_settings_view(int view, int option, ConfigEntry *config) {
 		// Exit when something changed, otherwise just close. Discard & Exit
 		// stays on the rail to undo.
 		if(btns & BUTTON_B) {
-			if(view > VIEW_SETUP && view < VIEW_GAME) {
+			if(view == VIEW_MANUAL_CLOCK || view == VIEW_AUTO_CLOCK) {
+				view = VIEW_CONSOLE;
+				option = settingsFindRow(view, PAGE_NETWORK, SET_NTP_SYNC);
+				btns &= ~BUTTON_A;
+			}
+			else if(view > VIEW_SETUP && view < VIEW_GAME) {
 				option = view - VIEW_DISPLAY;
 				view = VIEW_SETUP;
 				btns &= ~BUTTON_A;
@@ -3244,6 +3262,10 @@ int show_settings_view(int view, int option, ConfigEntry *config) {
 						settingsConfirmReset()) {
 						settings_toggle(ref->page, ref->option, 0, config);
 					}
+				}
+				else if(ref->page == PAGE_NETWORK && ref->option == SET_NTP_SYNC) {
+					view = swissSettings.ntpSync ? VIEW_AUTO_CLOCK : VIEW_MANUAL_CLOCK;
+					option = 0;
 				}
 				else if(settingsPickerFor(ref->page, ref->option) != NULL) {
 					settingsPick(settingsPickerFor(ref->page, ref->option), config,

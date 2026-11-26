@@ -48,6 +48,7 @@ QUICK = [
     ("PAGE_INTERFACE", "SET_AUTOBOOT"),
 ]
 SECTIONS = ["display", "console", "storage", "network", "library", "developer"]
+CLOCK_VIEWS = ["manualClock", "autoClock"]
 
 
 HEADERS = "\n".join(path.read_text() for path in (ROOT / "cube/swiss").rglob("*.h"))
@@ -107,13 +108,23 @@ class SettingsViewsTest(unittest.TestCase):
 
     def test_every_setting_has_exactly_one_home(self):
         placed = []
-        for name in ["quick", "gameDefaults", *SECTIONS]:
+        for name in ["quick", "gameDefaults", *SECTIONS, *CLOCK_VIEWS]:
             placed += table(name)
         legacy = [(page, row) for page, enum in PAGE_ENUMS.items() if page != "PAGE_GAME"
                   for row in enum_rows(enum)]
         self.assertEqual(len(placed), len(set(placed)), "a setting is listed twice")
         self.assertEqual(set(legacy) - set(placed), DROPPED)
         self.assertEqual(set(placed) - set(legacy), set())
+
+    def test_console_clock_has_one_mode_with_its_own_options(self):
+        self.assertIn(("PAGE_NETWORK", "SET_NTP_SYNC"), table("console"))
+        self.assertEqual(table("manualClock"), [("PAGE_GLOBAL", "SET_SYS_DATE"),
+                                               ("PAGE_GLOBAL", "SET_SYS_TIME")])
+        self.assertEqual(table("autoClock"), [("PAGE_NETWORK", "SET_TIME_ZONE"),
+                                             ("PAGE_NETWORK", "SET_NTP_HOSTIP")])
+        self.assertIn('rowCycle(row, "Clock Mode:", swissSettings.ntpSync ? "Auto" : "Manual", true)', SETTINGS_C)
+        self.assertIn('view = swissSettings.ntpSync ? VIEW_AUTO_CLOCK : VIEW_MANUAL_CLOCK;', SETTINGS_C)
+        self.assertIn('option = settingsFindRow(view, PAGE_NETWORK, SET_NTP_SYNC);', SETTINGS_C)
 
     def test_game_views_share_one_order(self):
         game = table("game")
@@ -161,6 +172,7 @@ class SettingsViewsTest(unittest.TestCase):
     def test_row_counts_match_the_layout(self):
         for name, macro in [("quick", "QUICK"), ("gameDefaults", "GAME_DEFAULTS"),
                             ("setup", "SETUP"), ("game", "GAME"),
+                            *((v, "CLOCK") for v in CLOCK_VIEWS),
                             *[(s, s.upper()) for s in SECTIONS]]:
             count = int(re.search(r"#define UI_SETLAYOUT_ROWS_" + macro + r" (\d+)", LAYOUT_H).group(1))
             self.assertEqual(len(table(name)), count, name)
@@ -204,7 +216,7 @@ class SettingsViewsTest(unittest.TestCase):
         picker = re.findall(r"PICK_(SETTING|GAME)\((?:(PAGE_\w+), )?(SET_\w+), (\w+)\)", table_text)
         self.assertEqual({option for _, _, option, _ in picker}, expected)
         placed = set()
-        for name in ["quick", "gameDefaults", "game", *SECTIONS]:
+        for name in ["quick", "gameDefaults", "game", *SECTIONS, *CLOCK_VIEWS]:
             placed |= set(table(name))
         for kind, page, option, field in picker:
             page = page or "PAGE_GAME"
@@ -237,7 +249,7 @@ class SettingsViewsTest(unittest.TestCase):
             "PAGE_GAME_DEFAULTS": keys("tooltips_game_defaults_video") |
                 {row for i, row in enumerate(defaults_rows) if i > 1 and game_rows[i] in game},
         }
-        for name in ["quick", "gameDefaults", "game", *SECTIONS]:
+        for name in ["quick", "gameDefaults", "game", *SECTIONS, *CLOCK_VIEWS]:
             for page, option in table(name):
                 self.assertIn(option, help_for[page], f"{name}: {option} has no help")
 
@@ -247,7 +259,7 @@ class SettingsViewsTest(unittest.TestCase):
         # case). About 100 characters fit across the page: Cube's Classic
         # line once ran to 121 and lost its end.
         tooltips = {}
-        for table_name in ("tooltips_global", "tooltips_interface"):
+        for table_name in ("tooltips_global", "tooltips_interface", "tooltips_network"):
             body = re.search(r"static char \*" + table_name + r"\[[^\]]*\] = \{(.*?)\n\};",
                              SETTINGS_C, re.S).group(1)
             for option, text in re.findall(r'\[(SET_\w+)\] = ((?:"(?:[^"\\]|\\.)*"\s*)+)', body):
@@ -327,7 +339,8 @@ class SettingsViewsTest(unittest.TestCase):
         # ordered everyday-first, so their index isn't their SET_ value.
         wrapper = SETTINGS_C[SETTINGS_C.index("int show_settings(int page"):
                              SETTINGS_C.index("int show_settings_view(int view")]
-        self.assertIn("ref->page == page && ref->option == option", wrapper)
+        self.assertIn("row = settingsFindRow(view, page, option);", wrapper)
+        self.assertIn("if(ref->page == page && ref->option == option) return row;", SETTINGS_C)
         self.assertNotIn(", option, config)", wrapper)
         # First boot and a cable change open the rows they name.
         self.assertIn("show_settings(PAGE_GLOBAL, SET_CONFIG_DEV, NULL)", MAIN_C)

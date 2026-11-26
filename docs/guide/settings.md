@@ -227,23 +227,35 @@ The Settings tour above predates the Apps Video Mode row.
 | Idle Animation | How the cube moves while Home rests: **Calm**, a slight drift turned a little to the right, or **Sway**, which turns it slowly left and right so the faces beside the one in front peek round its edges. UI Motion Reduced or Off keeps it still. See [Make it yours](personalize.md#motion). |
 | Face Labels | **Off** takes the face's name from under the cube on Home. See [Make it yours](personalize.md#just-the-cube). |
 | On-screen Controls | **Off** takes Home's button hints from under the cube. Other screens, the Library and the File Browser among them, keep theirs. Y on Home always opens Settings. See [Make it yours](personalize.md#just-the-cube). |
-| Clock | Where the time sits: **Right** (the top right corner), **Left**, or **Off** to hide it. |
+| Clock Mode | Choose **Manual** or **Auto** with Left or Right. Press A to open the selected mode. |
+| Clock Position | Where the time sits: **Right** (the top right corner), **Left**, or **Off** to hide it. |
 | Temperature | Where the temperature dial sits, the same way. In the clock's corner it sits nearer the edge, beside the time. |
 | System Sound | The audio output most games use: mono or stereo. |
 | System Language | The language games use, mainly multi-language PAL games. |
 | System Boot Mode | On development hardware, development or production mode. With GC Loader or PicoLoader on a retail console, the default skips the GameCube logo. |
 | Controller Recalibration | Off skips controller recalibration, for controllers that don't follow the standard. |
 | CPU Temperature Calibration | Adjust it on a cold boot so the temperature at the top right reads about room temperature. |
-| System Date | Edit the console's local date as YYYY-MM-DD. The time of day keeps running. |
-| System Time | Edit local time as HH:MM:SS using the 24-hour clock. The current date is preserved. |
 
-Both editors work offline. Use the D-pad and A to enter a character, Y to
-erase and L/R to move the cursor. **Start** sets the console clock immediately
-and saves it for games and the IPL. **B** discards the edit. If Sync Clock is
-enabled, the next network sync can set the clock again.
+**Manual** is the default. Choose **System Date** to enter YYYY-MM-DD or
+**System Time** to enter HH:MM:SS in 24-hour time. Both work offline.
+Use the D-pad and A to enter a character, Y to erase and L/R to move the
+cursor. **Start** sets the console clock immediately for Indigo, games and
+the GameCube main menu. **B** cancels the edit.
+
+**Auto** syncs with a time server when the network starts. The console clock
+keeps running offline. Press A to choose a **Time Zone** such as
+`Europe/London` for local time and daylight saving, or keep the current UTC
+offset. **NTP Server IP** accepts an IPv4 address. An empty entry uses the
+default server. Enable **Init network at startup** under Network to sync on
+launch. **Save & Exit** keeps the mode, server and time zone.
 
 <p align="center">
-  <img alt="System Date keypad showing 2026-01-03 with the 3 selected. The hints show L and R for the cursor, Start to set the clock and B to discard." src="images/settings-date.png" width="640">
+  <img alt="Console settings with Clock Mode set to Manual. The help line says you can set the date and time yourself, even offline." src="images/clock-mode-manual.png" width="460">
+  <img alt="The same row set to Auto. The help line says the clock syncs with a time server when the network starts." src="images/clock-mode-auto.png" width="460">
+</p>
+
+<p align="center">
+  <img alt="System Date keypad opened from Manual Clock. The hints show L and R for the cursor, Start to set the clock and B to discard." src="images/settings-date.png" width="640">
 </p>
 
 </details>
@@ -275,21 +287,12 @@ enabled, the next network sync can set the clock again.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Indigo ignores a reply that predates its build or falls outside the console clock's range in your time zone. Off by default. |
-| NTP Server IP | The time server to use. An empty entry uses the default server. |
-| Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
 | Update Channel | Which releases the two update actions offer: **Stable**, the latest finished release, or **Release candidate**, the next release for testing. |
 | Update Server | Leave empty for Indigo’s official feed. A local mirror can use an IPv4 address, port and folder. |
 | Startup Updates | Checks once per launch from Home, Files or Library. Indigo returns to Home to install a newer signed release. On by default. |
 | Check for updates | Check now and choose whether to install the newer signed release. |
 | Update from SMB share | Read the signed release from the configured SMB share’s `indigo-updates` folder. |
 | Install game content | Download the poster pack, the cheats and the manuals for your games onto the card you browse. See [below](#installing-game-content-over-the-network). |
-
-The clock settings appear with a network adapter. When you turn on **Sync
-Clock** with no zone set, Indigo opens **Time Zone**. Enter your location and
-choose **Save & Exit**. Restart Indigo with **Init network at startup**
-enabled to apply the change. Indigo uses your location's daylight saving rules
-when the clock syncs.
 
 Passwords are saved as plain text in `global.ini`.
 

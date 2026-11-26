@@ -44,6 +44,7 @@ static int64_t buildSeconds, reply;
 static int32_t zoneOffset, timeSyncOffset;
 static int timeSyncServer, timeSyncState, setError, attempts, rtcReads, writes;
 static bool timeSyncClosed, timeSyncOffsetKnown, rtcBusy;
+static struct { bool ntpSync; } swissSettings = { true };
 static char timeSyncZone[] = "test";
 static struct timespec applied;
 static u32 bias;
@@ -91,6 +92,9 @@ int main(void)
     timeSyncClosed = true;
     check(buildSeconds + 1, 0, 0, false);
     timeSyncClosed = false;
+    swissSettings.ntpSync = false;
+    check(buildSeconds + 1, 0, 0, false);
+    swissSettings.ntpSync = true;
     buildSeconds = 0;
     const int64_t first = DIFF_SEC_1970_2000, last = first + UINT32_MAX;
     check(first, -1, 0, false);
@@ -235,7 +239,7 @@ int main(void) {
                            str(path / "clock.c"), "-o", str(path / "clock")], check=True)
             subprocess.run([str(path / "clock")], check=True)
 
-    def test_sync_clock_setup_uses_the_timezone_resolver(self):
+    def test_clock_mode_changes_quietly_and_zone_edits_use_the_resolver(self):
         gui = ROOT / "cube/swiss/source/gui"
         source = (gui / "settings.c").read_text()
         toggle = function(source, "void settings_toggle(")
@@ -293,12 +297,12 @@ int main(void)
         const char *expectedZone;
         int expectedEdits, expectedWarnings;
     } cases[] = {
-        {SET_NTP_SYNC, false, "", "America/Denver", true, "America/Denver", 1, 0},
+        {SET_NTP_SYNC, false, "", "America/Denver", true, "", 0, 0},
         {SET_NTP_SYNC, true, "America/Denver", NULL, false, "America/Denver", 0, 0},
         {SET_NTP_SYNC, false, "Europe/London", NULL, true, "Europe/London", 0, 0},
-        {SET_NTP_SYNC, false, "Etc/Unknown", "Asia/Kolkata", true, "Asia/Kolkata", 1, 0},
-        {SET_NTP_SYNC, false, "Etc/Unknown", NULL, true, "Etc/Unknown", 1, 0},
-        {SET_NTP_SYNC, false, "", NULL, true, "", 1, 0},
+        {SET_NTP_SYNC, false, "Etc/Unknown", "Asia/Kolkata", true, "Etc/Unknown", 0, 0},
+        {SET_NTP_SYNC, false, "Etc/Unknown", NULL, true, "Etc/Unknown", 0, 0},
+        {SET_NTP_SYNC, false, "", NULL, true, "", 0, 0},
         {SET_NTP_SYNC, true, "", NULL, false, "", 0, 0},
         {SET_TIME_ZONE, true, "America/Denver", "America/No_Such_City", true, "America/Denver", 1, 1},
         {SET_TIME_ZONE, true, "America/Denver", "MST7MDT,M3.2.0,M11.1.0", true, "MST7MDT,M3.2.0,M11.1.0", 1, 0},
