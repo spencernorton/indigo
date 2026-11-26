@@ -6,6 +6,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Setup › Console now lets you set the system date and time offline.
+  Start applies the edit to the console clock and B cancels.
 - Packed launchers use Swiss's updated XZ decoder. Sync Clock ignores server
   times earlier than this build and local times the console cannot store.
   It saves the new time for games and the IPL only after setting the running clock.

@@ -3,9 +3,10 @@
 The Swiss pin moves from `a647fd74` to `31796322`. The five XZ decoder
 files and the archived Swiss SNTP source match that revision. Indigo applies
 the clock bounds when a user enables Sync Clock and updates the SRAM bias
-only after setting the running clock succeeds. The settings audit records
-the stock date, time and zone controls. The packer and clock tests exercise
-decoder success and failure, both RTC limits and a failed clock write.
+only after setting the running clock succeeds. Setup › Console accepts local
+dates before the build and validates both calendar and counter limits. B
+cancels the edit and Start sets the running clock and SRAM. The packer and
+clock tests cover decoding failures, invalid dates and failed clock writes.
 The [intake record](../docs/dev/upstream-intake-2026-11-26.md) covers all seven commits.
 
 ## 2026-11-26 — Install game content from Settings

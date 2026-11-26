@@ -7,9 +7,9 @@ Swiss v0.7.0 was tagged at `92e63a8f`. [Upstream comparison](https://github.com/
 | --- | --- |
 | `8bdd31f8` | Apply the build-date floor to opt-in network sync. Check the local time against the unsigned 2000-based counter after applying the zone offset. A failed running-clock write leaves the saved bias alone. |
 | `ed6ab9fd` | Swiss corrects its process-wide zone adjustment. Indigo resolves the local offset for each accepted reply and keeps the console and IPL on local time. |
-| `11a44a41` | Swiss adds manual date and time editors. Indigo keeps its existing Settings controls and records the stock switch arms in the Settings audit. The file rename dialog retains Indigo's text-entry mode. |
+| `11a44a41` | Adopt manual date and time entry under Setup › Console. The native keypad validates the local calendar and counter range before updating the running clock and SRAM. The file rename dialog retains Indigo's text-entry mode. |
 | `96e21433` | The archived Swiss SNTP source uses the server transmit timestamp. Indigo's active client already reads that field and matches the response to its request. |
-| `92e63a8f` | Swiss preserves the wall-clock time when advancing an old RTC on boot. Indigo reads the user's console clock at startup. Sync Clock remains opt-in. |
+| `92e63a8f` | Swiss preserves the wall-clock time when advancing an old RTC on boot. Indigo reads the user's console clock at startup. Network sync and manual edits are explicit choices. |
 | `c6af5ad1` | Swiss suppresses deprecation warnings ahead of an SDK change. Indigo's pinned libogc2 r2500 still supports the SD adapter interfaces in use. |
 | `31796322` | Take all five changed XZ Embedded decoder files verbatim. The executable packer uses them to unpack PowerPC BCJ and LZMA2 streams. |
 

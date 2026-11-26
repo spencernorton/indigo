@@ -317,6 +317,25 @@ static void checkKeptOffset(void)
 	CHECK(UITimeSync_KeptOffset(INT64_C(946684800), utc) == 0);
 }
 
+static void checkManualClock(void)
+{
+	const int64_t first = INT64_C(946684800), last = first + UINT32_MAX;
+	int64_t edited = -1;
+	CHECK(UITimeSync_EditLocal(true, "2000-02-29", first + 61, &edited) && edited == first + 59 * 86400 + 61);
+	CHECK(UITimeSync_EditLocal(false, "23:59:59", first, &edited) && edited == first + 86399);
+	CHECK(UITimeSync_EditLocal(true, "2000-01-01", first, &edited) && edited == first);
+	CHECK(UITimeSync_EditLocal(false, "06:28:15", last, &edited) && edited == last);
+	CHECK(!UITimeSync_EditLocal(false, "06:28:16", last, &edited));
+	const char *badDates[] = {"1900-01-01", "2100-02-29", "2026-02-29", "2026-04-31",
+		"2026-00-01", "2026-13-01", "2026-01-00", "2026-1-02", "2026/01/02", "2026-1x-02", "2200-01-01"};
+	for(size_t i = 0; i < sizeof(badDates) / sizeof(*badDates); i++)
+		CHECK(!UITimeSync_EditLocal(true, badDates[i], first, &edited));
+	const char *badTimes[] = {"24:00:00", "12:60:00", "12:00:60", "12:34", "12.34.56", "01:ab:02"};
+	for(size_t i = 0; i < sizeof(badTimes) / sizeof(*badTimes); i++)
+		CHECK(!UITimeSync_EditLocal(false, badTimes[i], first, &edited));
+	CHECK(edited == last);
+}
+
 int main(void)
 {
 	checkZones();
@@ -324,6 +343,7 @@ int main(void)
 	checkBadZones();
 	checkPackets();
 	checkKeptOffset();
+	checkManualClock();
 	printf("test_ui_time_sync: %lu checks passed\n", checks);
 	return 0;
 }

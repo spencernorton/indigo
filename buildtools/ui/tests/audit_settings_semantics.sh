@@ -274,6 +274,11 @@ normalized = re.sub(
     r"DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\));\n"
     r"\t+break;\n",
     "", normalized, count=1)
+# Indigo opens its validated date/time editor only on an explicit A press.
+normalized = re.sub(
+    r'(?m)^\t+case SET_SYS_DATE:\n\t+case SET_SYS_TIME:\n'
+    r'\t+if\(direction == 0\) settingsEditClock\(option == SET_SYS_DATE\);\n'
+    r'\t+break;\n', "", normalized, count=1)
 # Swiss's stock Settings has manual date/time and a process-wide time zone.
 # Indigo's Network clock controls are checked above. Match the stock arms
 # exactly so a future change still shows up in this comparison.
