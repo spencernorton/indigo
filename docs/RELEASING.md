@@ -49,6 +49,11 @@ The next release carries it. Keep each dated folder until no published
 release names it. The server must answer plain HTTP on that address with a
 Content-Length and no redirect: the console has no TLS and no DNS.
 
+The packs' server is `indigo.norvitech.com`, behind Cloudflare, which answers
+plain HTTP under `/console/` only. `--server` is one of the addresses the name
+resolves to (`dig +short indigo.norvitech.com`). If Cloudflare moves the name
+to other addresses, build the list again for the next release.
+
 ## A beta
 
 1. `beta` is green in CI and `CHANGELOG.md` has the changes under
