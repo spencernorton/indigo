@@ -6656,8 +6656,8 @@ msgstr "Введіть коректний час у форматі ГГ:ХХ:С�
 msgid "Could not set the console clock. Try again."
 msgstr "Не вдалося встановити годинник консолі. Спробуйте ще раз."
 
-msgid "System Date:\n\nEnter the local date as YYYY-MM-DD. The time of day keeps running."
-msgstr "Системна дата:\n\nВведіть місцеву дату у форматі РРРР-ММ-ДД. Час іде далі."
+msgid "System Date:\n\nEnter the local date as YYYY-MM-DD.\nThe time of day keeps running."
+msgstr "Системна дата:\n\nВведіть місцеву дату у форматі РРРР-ММ-ДД.\nЧас іде далі."
 
-msgid "System Time:\n\nEnter the local time as HH:MM:SS in 24-hour format. The date stays the same."
-msgstr "Системний час:\n\nВведіть місцевий час у 24-годинному форматі ГГ:ХХ:СС. Дата збережеться."
+msgid "System Time:\n\nEnter the local time as HH:MM:SS in 24-hour format.\nThe date stays the same."
+msgstr "Системний час:\n\nВведіть місцевий час у 24-годинному форматі ГГ:ХХ:СС.\nДата збережеться."
