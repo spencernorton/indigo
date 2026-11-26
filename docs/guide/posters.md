@@ -31,8 +31,8 @@ its `swiss` folder, so first show hidden folders: press Shift-Command-Period
 in a Mac's Finder, or turn on **Hidden items** under **View** in Windows File
 Explorer. The pack holds `swiss/ui/posters.pak`, with the [gameplay
 stills](#gameplay-stills) and [descriptions](#game-descriptions)
-Spotlight shows and the [disc art](#disc-art) the Jewel Case shows beside
-it. Checksums are in
+Spotlight shows, the [disc art](#disc-art) the Jewel Case shows beside
+it, and the [feature badges](#feature-badges) Game Details shows. Checksums are in
 [SHA256SUMS.txt](https://indigo.norvitech.com/SHA256SUMS.txt), and the
 [Indigo page](https://norvitech.com/indigo/) has the details.
 
@@ -132,6 +132,20 @@ Spotlight shows the description from the game's disc banner.
 It's a text file you can edit: one game per line, its game ID, a space, then
 the description. Add lines for games it doesn't know, such as homebrew or a
 translation. The format is in [PACKS.md](../PACKS.md#game-descriptions).
+
+## Feature badges
+
+[Game details](game-details.md) shows a few badges at the top: how many can
+play, the age rating, and the controllers or accessories the game uses, such
+as Bongos, the Dance Mat, the Microphone or a GBA link cable. They come from
+`/swiss/ui/features.txt`, which the poster pack carries too: player counts
+and ratings from [GameTDB](https://www.gametdb.com/), and the controllers and
+accessories from a list kept with the pack. Without the file, or for a game
+it doesn't list, Game Details shows no badges.
+
+It's a text file you can edit: one game per line, its game ID, a space, then
+its badges separated by `|`, such as `GKGE01 1-4 PLAYERS|ESRB E|BONGOS`. The
+format is in [PACKS.md](../PACKS.md#feature-badges).
 
 ## Where the game ID comes from
 

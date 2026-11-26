@@ -7520,6 +7520,7 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 	file_meta *meta = curFile.meta;
 	char fallbackTitle[65];
 	char facts[UI_GAMEFLOW_DETAIL_FACTS_CAPACITY];
+	char badges[UI_GAMEFLOW_DETAIL_BADGE_LINE];
 	char sizeText[32];
 	const char *company = "";
 	const char *description = "";
@@ -7603,6 +7604,9 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 		(fallbackTitle[0] ? fallbackTitle : getRelativeName(curFile.name));
 	source.company = company;
 	source.facts = facts;
+	DrawGameflowFeatures(devices[DEVICE_CUR], context->gameId, badges,
+		sizeof(badges));
+	source.badges = badges;
 	source.description = description;
 	source.lastPlayedUnixSeconds = config_last_played(context->gameId, 6u,
 		&source.playHistoryAvailable);

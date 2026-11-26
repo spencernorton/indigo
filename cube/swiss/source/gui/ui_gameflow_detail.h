@@ -22,6 +22,13 @@
 #define UI_GAMEFLOW_DETAIL_LAUNCH_LABEL_CAPACITY 48u
 #define UI_GAMEFLOW_DETAIL_ADVANCED_CAPACITY 64u
 #define UI_GAMEFLOW_DETAIL_BANNER_BYTES 6144u
+/* Feature badges, from a swiss/ui/features.txt line such as
+ * "1-4 PLAYERS|ESRB E|BONGOS": the first four, each up to 15 characters. */
+#define UI_GAMEFLOW_DETAIL_BADGES 4u
+#define UI_GAMEFLOW_DETAIL_BADGE_CAPACITY 16u
+/* The most of the line Build reads, its NUL included. A line that fills it
+ * may have been cut, so its last badge is left out. */
+#define UI_GAMEFLOW_DETAIL_BADGE_LINE 128u
 
 typedef enum {
 	UI_GAMEFLOW_DETAIL_VALID = 1u << 0,
@@ -63,6 +70,10 @@ typedef struct {
 	const char *company;
 	const char *facts;
 	const char *description;
+	/* The game's features.txt line, badges separated by '|'. Build trims
+	 * each, skips empty ones and leaves out one too long to fit. NULL or
+	 * empty: no badges. */
+	const char *badges;
 	uint64_t lastPlayedUnixSeconds;
 	bool playHistoryAvailable;
 	uiGameSaveStatus_t saveStatus;
@@ -130,6 +141,8 @@ typedef struct {
 	char savesSummary[UI_GAMEFLOW_DETAIL_PRESENTATION_CAPACITY];
 	char savesUpdated[UI_GAMEFLOW_DETAIL_PRESENTATION_CAPACITY];
 	char facts[UI_GAMEFLOW_DETAIL_FACTS_CAPACITY];
+	/* In the file's order; the first empty one ends them. */
+	char badges[UI_GAMEFLOW_DETAIL_BADGES][UI_GAMEFLOW_DETAIL_BADGE_CAPACITY];
 	char description[UI_GAMEFLOW_DETAIL_DESCRIPTION_LINES]
 		[UI_GAMEFLOW_DETAIL_DESCRIPTION_CAPACITY];
 	char enabledCheatNames[UI_GAMEFLOW_DETAIL_ENABLED_NAMES]

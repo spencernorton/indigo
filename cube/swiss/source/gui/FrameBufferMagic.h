@@ -214,6 +214,10 @@ void DrawGameflowCancelPosters(void);
  * Menu thread only. */
 bool DrawGameflowDescription(DEVICEHANDLER_INTERFACE *device,
 	const char *gameId, char *out, size_t capacity);
+/* Game Details' feature badges for a game, its swiss/ui/features.txt line
+ * ("1-4 PLAYERS|ESRB E"), found and read the same way. */
+bool DrawGameflowFeatures(DEVICEHANDLER_INTERFACE *device,
+	const char *gameId, char *out, size_t capacity);
 void DrawUpdateProgressBar(uiDrawObj_t *evt, int percent);
 void DrawUpdateProgressBarDetail(uiDrawObj_t *evt, int percent, int speed, int timestart, int timeremain);
 void DrawUpdateProgressLoading(uiDrawObj_t *evt, int increment);

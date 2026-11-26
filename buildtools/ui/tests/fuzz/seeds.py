@@ -164,6 +164,12 @@ def about(out: Path) -> None:
         b"GAFE01 Welcome to Animal Crossing, where something happens every day.\n"
         b"GMSE01 Clean up Isle Delfino with FLUDD, a water pack.\n"
         b"GTEE01 Wax your board. This is the sickest ride ever!\n")
+    # Feature badges as the downloads write them, and as a person might.
+    (out / "features.txt").write_bytes(
+        b"# Indigo feature badges\n"
+        b"GKGE01 1-4 PLAYERS|ESRB E|BONGOS\n"
+        b"GMSE01 1 PLAYER|ESRB E\n"
+        b"GTEE01  1-4 PLAYERS | | A BADGE FAR TOO LONG |GBA LINK|\n")
     (out / "hand-written").write_bytes(b"GZLE01\tSail the Great Sea.\r\n\r\ngale01 not an ID\nGALE01 Melee\nGALE01 again")
 
 

@@ -842,6 +842,45 @@ static void testManualRow(void)
 		UI_GAMEFLOW_DETAIL_INPUT_A) == UI_GAMEFLOW_DETAIL_ACTION_MANUAL);
 }
 
+/* swiss/ui/features.txt's line becomes up to four trimmed badges, in order:
+ * empty ones and ones too long for their room are left out, and a line that
+ * fills what Build reads loses its last badge, which may have been cut. */
+static void testFeatureBadges(void)
+{
+	uiGameflowDetailSource_t source = {
+		.gameId = "GKGE01",
+		.title = "Donkey Konga",
+		.badges = " 1-4 PLAYERS |ESRB E||  |A BADGE FAR TOO LONG|BONGOS|MIC|GBA"
+	};
+	uiGameflowDetailSnapshot_t snapshot;
+	char line[UI_GAMEFLOW_DETAIL_BADGE_LINE + 8u];
+
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.badges[0], "1-4 PLAYERS") == 0);
+	CHECK(strcmp(snapshot.badges[1], "ESRB E") == 0);
+	CHECK(strcmp(snapshot.badges[2], "BONGOS") == 0);
+	CHECK(strcmp(snapshot.badges[3], "MIC") == 0);
+
+	source.badges = "123456789012345|1234567890123456";
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.badges[0], "123456789012345") == 0);
+	CHECK(snapshot.badges[1][0] == '\0');
+
+	source.badges = NULL;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(snapshot.badges[0][0] == '\0');
+
+	/* "ESRB E|" then spaces up to what Build reads, then "CUT OFF". */
+	memset(line, ' ', sizeof(line));
+	memcpy(line, "ESRB E|", 7u);
+	memcpy(line + UI_GAMEFLOW_DETAIL_BADGE_LINE - 4u, "CUT OFF", 7u);
+	line[sizeof(line) - 1u] = '\0';
+	source.badges = line;
+	CHECK(UIGameflowDetail_Build(&snapshot, &source));
+	CHECK(strcmp(snapshot.badges[0], "ESRB E") == 0);
+	CHECK(snapshot.badges[1][0] == '\0');
+}
+
 int main(void)
 {
 	testReadOnlySaveCopies();
@@ -859,6 +898,7 @@ int main(void)
 	testInvalidInputResetsSnapshot();
 	testBackToFiles();
 	testManualRow();
+	testFeatureBadges();
 	puts("gameflow detail tests passed");
 	return EXIT_SUCCESS;
 }

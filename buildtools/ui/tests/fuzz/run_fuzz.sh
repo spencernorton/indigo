@@ -41,7 +41,9 @@ echo "== building the fuzzers =="
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/history" "$here/fuzz_history.c" "$gui/ui_game_history.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/saves" "$here/fuzz_saves.c" "$gui/ui_saves.c" "$gui/ui_lang.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/raw_saves" "$here/fuzz_raw_saves.c" "$gui/ui_saves_raw.c" "$gui/ui_saves.c" "$gui/ui_lang.c"
-	$cc $flags -std=c11 -I"$gui" -o "$out/bin/about" "$here/fuzz_about.c" "$gui/ui_about.c"
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/about" "$here/fuzz_about.c" "$gui/ui_about.c" \
+		"$gui/ui_gameflow_detail.c" "$gui/ui_game_history.c" "$gui/ui_saves_metadata.c" \
+		"$gui/ui_saves.c" "$gui/ui_lang.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/lab" "$here/fuzz_lab.c" "$gui/ui_lab.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/lang" "$here/fuzz_lang.c" "$gui/ui_lang.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/update" "$here/fuzz_update.c" "$gui/ui_update.c" "$gui/sha256.c"

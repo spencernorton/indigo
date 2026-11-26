@@ -203,6 +203,13 @@ class Disc(unittest.TestCase):
     def test_posters_differ(self):
         self.assertNotEqual(card.poster(0).tobytes(), card.poster(1).tobytes())
 
+    def test_features_leave_two_games_without_badges(self):
+        games = {game_id for game_id, _ in card.GAMES}
+        self.assertEqual(len(games - set(card.FEATURES)), 2)
+        self.assertTrue(set(card.FEATURES) < games)
+        for line in card.FEATURES.values():
+            self.assertTrue(all(0 < len(badge) <= 15 for badge in line.split("|")), line)
+
     def test_descriptions_leave_one_game_to_its_banner(self):
         games = {game_id for game_id, _ in card.GAMES}
         self.assertEqual(len(games - set(card.DESCRIPTIONS)), 1)

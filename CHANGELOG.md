@@ -6,6 +6,13 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- **Feature badges on Game Details:** the GAME DETAIL line shows up to four
+  badges for the game: how many can play, its age rating, and the
+  controllers or accessories it uses, such as Bongos, Dance Mat, Microphone
+  or GBA link. They come from `swiss/ui/features.txt`, which the poster pack
+  carries; without the file, Game Details looks as before. The format is in
+  [PACKS.md](docs/PACKS.md#feature-badges).
+
 - The Library face's controller emblem is now traced from Nintendo's photo
   of the original controller, so its grips, lower lobes and the opening
   under Start follow the real shell.

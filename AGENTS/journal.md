@@ -1,3 +1,21 @@
+## 2026-11-25 — Feature badges on Game Details (#131)
+
+Game Details reads `swiss/ui/features.txt` through the descriptions file's
+reader (`ui_about.c`), so its format, limits and same-game fallback match
+`descriptions.txt`. The loader in `FrameBufferMagic.c` became one
+`gameflowGameLines_t` per file. `UIGameflowDetail_Build` splits the line on
+`|` into at most four trimmed badges of up to 15 characters each. A line
+that fills the 127 characters Build reads drops its last badge, which may
+be cut. The presentation fits the badges right to left between x = 590 and
+332 on the GAME DETAIL line, so no row moves and the emulator's title box
+is unchanged. Each badge adds one 12-vertex panel to the planes' quad batch;
+the checked GX stream (`test_launch_gx_stream.py`) covers three badges and
+an overflow. The about fuzzer now runs every found line through Build, and
+the demonstration disc carries a `features.txt`. GameTDB has player counts
+and ratings for its GameCube games but few accessories (it lists no Bongos
+games at all), so the pack's builder keeps its own accessory list. The
+issue's Library filter is not part of this change.
+
 ## 2026-11-24 — Trace the controller emblem from Nintendo's photo
 
 The #211 shell was hand-fitted with cubics. Against Nintendo's product

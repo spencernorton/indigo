@@ -124,6 +124,11 @@ static void detail(void)
 		stats.blocks = 2u;
 	}
 	source.saveStats = savesVariant == 0u ? NULL : &stats;
+	/* Feature badges: three that fit, then four of the widest a badge can be,
+	 * of which three fit. */
+	if(savesVariant == 11u) source.badges = "1-4 PLAYERS|ESRB E|BONGOS";
+	else if(savesVariant == 12u)
+		source.badges = "AAAAAAAAAAAAAAA|BBBBBBBBBBBBBBB|CCCCCCCCCCCCCCC|DDDDDDDDDDDDDDD";
 	if(savesVariant == 9u || savesVariant == 10u) {
 		/* Left and Right chose the second of three: a Save Folder copy. */
 		static uint8_t chosen[UI_SAVES_ENTRY_SIZE];
@@ -636,6 +641,34 @@ class LaunchGxStream(unittest.TestCase):
             for c in visible:
                 self.assertEqual(c[(274, 232)], c[(576, 214)])
                 self.assertLessEqual(c[(274, 232)][3], c[(274, 214)][3])
+
+    def test_feature_badges_sit_on_the_header_line(self):
+        # The badges sit on GAME DETAIL's line, right-aligned to the rows'
+        # edge and clear of the header, each centred in a panel of its own
+        # (three quads: glow, fill, edge); four that don't all fit keep the
+        # first three. Nothing else on Detail moves.
+        for wide in (0, 1):
+            plain = self.detail_rest(wide)
+            for variant, names in ((11, ["1-4 PLAYERS", "ESRB E", "BONGOS"]),
+                                   (12, ["AAAAAAAAAAAAAAA", "BBBBBBBBBBBBBBB", "CCCCCCCCCCCCCCC"])):
+                with self.subTest(wide=wide, variant=variant):
+                    rest = self.detail_rest(wide, variant)
+                    drawn = strings(rest)
+                    badges = [(x, t) for x, y, t in drawn if y == 95 and t != "GAME DETAIL"]
+                    self.assertEqual([t for _, t in badges], names)
+                    self.assertEqual([d for d in drawn if d[1] != 95],
+                                     [d for d in strings(plain) if d[1] != 95])
+                    panels = [p["points"][i:i + 4] for p in primitives(rest)
+                              if p["kind"] == "quads" for i in range(0, p["count"], 4)
+                              if p["points"][i][1] == 88.0 and p["points"][i + 2][1] == 102.0]
+                    fills = [q for q in panels if q[1][0] - q[0][0] > 2.0]
+                    self.assertEqual(len(fills), len(names))
+                    self.assertEqual(fills[-1][1][0], 590.0)
+                    self.assertGreaterEqual(fills[0][0][0], 332.0)
+                    for (x, _), fill in zip(badges, fills):
+                        self.assertAlmostEqual(x, (fill[0][0] + fill[1][0]) / 2 + 1, delta=1.0)
+                    self.assertEqual(sum(p["count"] for p in primitives(rest)),
+                                     sum(p["count"] for p in primitives(plain)) + 12 * len(names))
 
     def test_detail_frame_budget(self):
         budget = json.loads((Path(__file__).with_name("detail_frame_budget.json")).read_text())
