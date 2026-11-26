@@ -760,6 +760,22 @@ def manual_memory(log: Path) -> dict[str, int] | None:
             "after": after, "returned": after - before_close}
 
 
+def erase_answer(gray: np.ndarray) -> str | None:
+    """The Yes/No box beside Slot A's first cube, in authored coordinates.
+    Require the title and both answers, then read the bar to their right.
+    A missing box or a bar between rows is never permission to press A."""
+    title = text_mask(gray, (145, 116, 226, 136), 210)
+    yes_text = text_mask(gray, (146, 156, 175, 174), 210)
+    no_text = text_mask(gray, (146, 180, 175, 198), 210)
+    if not has_label(title) or min(yes_text.sum(), no_text.sum()) < 12:
+        return None
+    yes = float(np.median(gray[158:170, 182:225]))
+    no = float(np.median(gray[182:194, 182:225]))
+    if abs(yes - no) < 24:
+        return None
+    return "Yes" if yes > no else "No"
+
+
 def arrow_up(gray: np.ndarray) -> bool:
     """The arrow above Memory Cards' left stack: rows lie above its window."""
     x0, y0, x1, y1 = UP_ARROW_BOX
@@ -1802,7 +1818,9 @@ class Route:
         so a press held into Settings' repeat (two rows) is taken back with UP
         and one the page missed is pressed again."""
         moved, steps = 0, []
-        for _ in range(rows + PRESSES):
+        # A single held press can cross more rows than the requested walk.
+        # Allow one visible page of corrections as well as missed presses.
+        for _ in range(rows + len(SETTINGS_ROW_TOPS) + PRESSES):
             if moved == rows:
                 break
             before = self.settings_rows()
@@ -3240,6 +3258,19 @@ class Route:
         mask, _ = self.press_until("LEFT", like=faces[4])
         self.check("LEFT turns back to Apps", mask is not None)
 
+    def wait_erase_answer(self, expected: str) -> str | None:
+        """Wait for the highlight to settle, or report what is still shown."""
+        deadline = Deadline(self.emulator, 2)
+        previous = stable = None
+        while not deadline.expired():
+            answer = erase_answer(self.gray())
+            stable = answer if answer == previous else None
+            if stable == expected:
+                break
+            previous = answer
+            time.sleep(0.15)
+        return stable
+
     def memory_cards(self) -> None:
         """On the System face, DOWN and A open Memory Cards, with a GCI folder
         memory card in each slot (self.cards: make_test_saves.py's Slot A and
@@ -3334,7 +3365,15 @@ class Route:
         self.save_actions("memory-cards-erase-actions", like=reason)
         self.steps("DOWN DOWN A")
         self.shot("memory-cards-erase", self.emulator.frame())
-        self.steps("UP")
+        answer = self.wait_erase_answer("No")
+        self.check("Erase opens with No selected", answer == "No")
+        for _ in range(PRESSES):
+            if answer != "No":
+                break
+            self.steps("UP")
+            answer = self.wait_erase_answer("Yes")
+        self.check("Yes is selected before confirming Erase", answer == "Yes")
+        self.shot("memory-cards-erase-yes", self.last_rgb)
         self.press("A")
         self.check("Erase, Yes: the maroon box says the save is erased", self.message())
         self.shot("memory-cards-erased", self.last_rgb)

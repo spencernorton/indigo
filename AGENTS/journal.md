@@ -6,6 +6,8 @@ row. Manual edits the console date or time offline. Auto exposes the time
 zone and NTP server, including while offline. The `NTPSync` setting still
 reads and writes `No` for Manual and `Yes` for Auto. The controller route in
 Dolphin covered both option pages and a fresh boot from a saved card.
+The controller tests recover an observed multi-row overshoot and read the
+highlighted Yes before confirming an erase on the disposable card.
 
 ## 2026-11-26 — Follow Swiss through r2176
 

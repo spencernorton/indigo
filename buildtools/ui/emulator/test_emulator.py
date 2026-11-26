@@ -729,6 +729,19 @@ class TextSettling(unittest.TestCase):
 
 
 class SaveActionTransitions(unittest.TestCase):
+    def test_erase_only_confirms_a_visible_highlighted_answer(self):
+        gray = np.zeros((480, 640), np.uint8)
+        for y, width in ((124, 54), (164, 15), (188, 13)):
+            gray[y:y + 3, 148:148 + width] = 255
+        self.assertIsNone(run.erase_answer(gray))
+        gray[182:194, 182:225] = 92
+        self.assertEqual(run.erase_answer(gray), "No")
+        gray[182:194, 182:225] = 31
+        gray[158:170, 182:225] = 92
+        self.assertEqual(run.erase_answer(gray), "Yes")
+        gray[156:174, 146:175] = 0
+        self.assertIsNone(run.erase_answer(gray))
+
     def route(self, *, miss_details=0, miss_actions=False, wrong_footer=False, panel_stays=False):
         from PIL import Image
         root = Path(__file__).parent / "fixtures"
@@ -1908,6 +1921,11 @@ class Screen(unittest.TestCase):
         self.assertEqual(focus[0], 11)
         self.assertEqual(presses, ["DOWN"] * 12 + ["UP"])
         self.assertEqual(route.checks[-1]["odd_steps"], [0, 2])
+        # One tap moved five rows on the six-row Setup page, then two
+        # corrective taps were missed. Keep taking the observed steps back.
+        focus[0], moves = 0, iter([5, 0, 0, 1, 1, 1, 1])
+        route.walk_rows(1, "Recover a held DOWN on Setup")
+        self.assertEqual(focus[0], 1)
         focus[0], moves = 0, iter([1, 10])
         with self.assertRaises(run.Failed):  # a row it can't find among the rows before
             route.walk_rows(2, "DOWNs reach the row")
