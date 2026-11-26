@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Advance one channel in a checkout of the static release feed."""
+"""Advance one channel in a checkout of the static release feed, and the
+feed's game content list when the release carries a newer one."""
 import argparse
 import hashlib
 import re
@@ -54,6 +55,41 @@ def stage(tag: str, source: Path, destination: Path) -> None:
         shutil.copyfile(payload, target)
     shutil.copyfile(manifest, current)
     shutil.copyfile(envelope, destination / envelope.name)
+    stage_content(tag, source, destination)
+
+
+def stage_content(tag: str, source: Path, destination: Path) -> bool:
+    """One content list for every channel: the newest build's stays."""
+    manifest = source / "content.txt"
+    if not manifest.exists():
+        return False
+    raw = manifest.read_bytes()
+    signed = (source / "content.signed").read_bytes()
+    if len(signed) != 64 + len(raw) or signed[64:] != raw:
+        raise ValueError("signature envelope and content manifest differ")
+    release = fields(raw)
+    name = f"content-{tag}.list"
+    listing = (source / name).read_bytes()
+    if (release["Channel"] != "content" or release["Version"] != tag or
+            release["File"] != name or int(release["Size"]) != len(listing) or
+            release["SHA256"] != hashlib.sha256(listing).hexdigest()):
+        raise ValueError("content list differs from the signed manifest")
+    current = destination / manifest.name
+    if current.exists():
+        old = fields(current.read_bytes())
+        if old["Version"] == tag:
+            if (current.read_bytes() != raw or
+                    (destination / "content.signed").read_bytes() != signed):
+                raise ValueError("same tag with different content")
+        elif int(release["BuildTime"]) <= int(old["BuildTime"]):
+            return False
+    target = destination / name
+    if target.exists() and target.read_bytes() != listing:
+        raise ValueError("refusing to replace a versioned content list")
+    shutil.copyfile(source / name, target)
+    shutil.copyfile(manifest, current)
+    shutil.copyfile(source / "content.signed", destination / "content.signed")
+    return True
 
 
 if __name__ == "__main__":

@@ -32,9 +32,10 @@
 # the clock sync arms flip swissSettings.ntpSync and open the zone editor
 # when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
 # server and SET_TIME_ZONE opens the same validated editor. The updater's
-# five Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
-# SET_UPDATE_STARTUP, SET_UPDATE_CHECK, SET_UPDATE_SMB) only step or edit
-# their own settings, or start their update run on A. The three File Browser Type arms
+# six Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
+# SET_UPDATE_STARTUP, SET_UPDATE_CHECK, SET_UPDATE_SMB, SET_CONTENT_INSTALL)
+# only step or edit their own settings, or start their update or content
+# run on A. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
 #
@@ -320,6 +321,12 @@ normalized = re.sub(
     r"(?ms)^\t+case SET_UPDATE_SMB:\n"
     r"\t+if\(direction == 0\)\n"
     r"\t+updateRun\(UPDATE_SOURCE_SMB\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_CONTENT_INSTALL:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateInstallContent\(\);\n"
     r"\t+break;\n",
     "", normalized, count=1)
 # Swiss and Apps Video Mode add 540p60 at index 9.

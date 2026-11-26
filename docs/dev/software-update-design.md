@@ -60,6 +60,30 @@ and the actual bytes it will execute. Hold X + Y through launch to use the
 base directly. Removing the dedicated updates directory clears the slots.
 Independent media failure or filesystem corruption can require a card backup.
 
+## Game content
+
+Settings › Network › Install game content uses the same transport and key.
+A release can carry a game content list (`buildtools/content/content.list`,
+written by `buildtools/content_list.py` from the poster, cheat and manual
+packs): the release job writes it as `content-<tag>.list` beside a
+`content.txt` manifest of the channel manifest’s shape, `Channel=content`,
+naming the list by its length and SHA-256, and signs `content.txt` with the
+channel manifest. The feed keeps the newest build’s list for both channels.
+
+The list names each file by SHA-256, length and card path, and only paths
+Indigo reads content from: `swiss/ui`’s five pack files, `swiss/cheats/<ID>[_name].txt`
+and `swiss/ui/manuals/<ID4 or ID6>.pak`. Its optional `Server` and `Host`
+lines say where the official files are, because the packs are larger than
+the Pages feed should carry and copyrighted art stays off it; a mirror serves
+them beside the list instead. The console reads the list onto the browsed
+card, hashes its readback against the signed digest, and checks every line
+before it downloads anything. Each file is staged as `<path>.part`, hashed
+while it arrives, and renamed into place only after a match, so the Library,
+cheats and manuals never read a partial file. The Library’s pack readers and
+manual close first. A file already on the card with the same length and hash
+is skipped, which also resumes an interrupted run. Manuals are chosen by the
+game IDs in the browsed folder (disc headers and game-folder names).
+
 ## Qualification
 
 Run the host signature, selection, failure and parser tests, the pinned PPC

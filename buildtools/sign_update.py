@@ -38,6 +38,9 @@ def pinned_key() -> bytes:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("manifest", type=Path)
+    parser.add_argument("manifest", type=Path, nargs="+",
+                        help="the channel's manifest, and content.txt with it")
     args = parser.parse_args()
-    sign(args.manifest, os.environ.pop("INDIGO_UPDATE_SIGNING_KEY").encode(), pinned_key())
+    key = os.environ.pop("INDIGO_UPDATE_SIGNING_KEY").encode()
+    for manifest in args.manifest:
+        sign(manifest, key, pinned_key())

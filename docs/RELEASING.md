@@ -33,6 +33,22 @@ tag must match the assets already published. An older version or timestamp
 cannot move the feed backwards. The feed is served at
 `indigo-updates.norvitech.com/updates/`.
 
+When `buildtools/content/content.list` is committed, each release also signs
+it for Settings › Network › Install game content (`content.txt`,
+`content.signed` and `content-<tag>.list`, beside the channel’s files). To
+publish new packs, put their files on the content server under a new dated
+folder, laid out as on a card, then commit the list for them by pull request:
+
+```bash
+python3 buildtools/content_list.py --server <IPv4>/console/<YYYY-MM-DD> \
+  --host <server name> --out buildtools/content/content.list \
+  indigo-posters-all.zip indigo-cheats.zip indigo-manuals-en.zip
+```
+
+The next release carries it. Keep each dated folder until no published
+release names it. The server must answer plain HTTP on that address with a
+Content-Length and no redirect: the console has no TLS and no DNS.
+
 ## A beta
 
 1. `beta` is green in CI and `CHANGELOG.md` has the changes under

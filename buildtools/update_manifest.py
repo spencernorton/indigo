@@ -10,6 +10,11 @@ it under their update names, hashes them, and writes the manifest
 (gui/ui_update.h reads it; docs/dev/software-update-design.md is the
 format).
 
+With --content, the release also vouches for a game content list
+(content_list.py writes one): content-<tag>.list beside a content.txt
+manifest of the same shape, Channel=content, naming it by its hash, for
+Settings > Network > Install game content.
+
 Manifests come only from published tags: vX.Y.Z writes stable.txt,
 vX.Y.Z-beta.N and vX.Y.Z-rc.N write rc.txt (the console's Stable and
 Release candidate channels; beta tags feed the candidate channel, as
@@ -18,6 +23,7 @@ branch build can never publish an update by accident.
 
 usage: update_manifest.py <tag> <commit> <build-time> <date> <zip>
        [--out DIR] [--min-version TAG --min-build-time EPOCH]
+       [--content LIST]
 """
 
 from __future__ import annotations
@@ -28,6 +34,8 @@ import re
 import sys
 import zipfile
 from pathlib import Path
+
+import content_list
 
 REPO = "https://github.com/spencernorton/indigo"
 STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
@@ -68,8 +76,9 @@ def member(archive: zipfile.ZipFile, name: str, limit: int) -> bytes:
 
 def build(tag: str, commit: str, build_time: int, date: str, zip_path: Path,
           out: Path, min_version: str = "", min_build_time: int = 0,
-          repo: str = REPO) -> list[Path]:
-    """Write the three update files for one tag; returns their paths."""
+          repo: str = REPO, content: Path | None = None) -> list[Path]:
+    """Write the three update files for one tag, and the two content files
+    with --content; returns their paths."""
     channel = channel_for(tag)
     if not COMMIT.match(commit):
         raise Refused(f"not a full commit: {commit}")
@@ -112,10 +121,24 @@ def build(tag: str, commit: str, build_time: int, date: str, zip_path: Path,
         raise Refused(f"manifest is {len(manifest)} bytes; the updater "
                       f"reads at most {MANIFEST_MAX}")
 
+    files = [(dol_name, dol), (apploader_name, apploader),
+             (f"{channel}.txt", manifest)]
+    if content is not None:
+        listing = content.read_bytes()
+        try:
+            content_list.check(listing)
+        except content_list.Refused as error:
+            raise Refused(f"{content}: {error}") from None
+        list_name = f"content-{tag}.list"
+        files += [(list_name, listing), ("content.txt", ("\r\n".join([
+            "FormatVersion=1", "Channel=content", f"Version={tag}",
+            f"Commit={commit}", f"Date={date}", f"BuildTime={build_time}",
+            f"File={list_name}", f"Size={len(listing)}",
+            f"SHA256={hashlib.sha256(listing).hexdigest()}"]) + "\r\n").encode())]
+
     out.mkdir(parents=True, exist_ok=True)
     written = []
-    for name, data in ((dol_name, dol), (apploader_name, apploader),
-                       (f"{channel}.txt", manifest)):
+    for name, data in files:
         path = out / name
         path.write_bytes(data)
         written.append(path)
@@ -139,11 +162,13 @@ def main(argv: list[str] | None = None) -> int:
                              "first, with --min-build-time")
     parser.add_argument("--min-build-time", type=int, default=0,
                         help="that release's committer time, epoch seconds")
+    parser.add_argument("--content", type=Path,
+                        help="a game content list to sign with the release")
     args = parser.parse_args(argv)
     try:
         written = build(args.tag, args.commit, args.build_time, args.date,
                         args.zip, args.out, args.min_version,
-                        args.min_build_time)
+                        args.min_build_time, content=args.content)
     except (Refused, OSError, zipfile.BadZipFile) as error:
         print(f"update_manifest: {error}", file=sys.stderr)
         return 1

@@ -272,6 +272,7 @@ The Settings tour above predates the Apps Video Mode row.
 | Startup Updates | Checks once per launch from Home, Files or Library. Indigo returns to Home to install a newer signed release. On by default. |
 | Check for updates | Check now and choose whether to install the newer signed release. |
 | Update from SMB share | Read the signed release from the configured SMB share’s `indigo-updates` folder. |
+| Install game content | Download the poster pack, the cheats and the manuals for your games onto the card you browse. See [below](#installing-game-content-over-the-network). |
 
 The clock settings appear with a network adapter. When you turn on **Sync
 Clock** with no zone set, Indigo opens **Time Zone**. Enter your location and
@@ -312,6 +313,30 @@ To use a local mirror, copy the release’s `stable.signed` or `rc.signed` and
 its `indigo-<tag>.dol` into the same folder. Serve it as ordinary static HTTP
 with Content-Length, or use the `indigo-updates` folder at the top of an SMB
 share. Every source uses the public key built into Indigo.
+
+#### Installing game content over the network
+
+**Install game content** puts on the card, in one go, what you would
+otherwise download and copy from a computer: the [poster pack](posters.md)
+(box art, gameplay stills, disc art and descriptions), the
+[cheat files](cheats.md) for every game, and the [manuals](../MANUALS.md) for
+the games in the folder you browsed last. Open your games in the Library
+first, then choose **Settings › Network › Install game content** and press A.
+
+Indigo reads the content list from the update feed (your Update Server
+mirror, if you set one), checks the release signature on it and the SHA-256
+of every file, and skips the files the card already has. It says how many
+files it will download and their size, and A starts. The files go where a
+copy from a computer would: `swiss/ui/`, `swiss/cheats/` and
+`swiss/ui/manuals/` on the card you browse, which must be writable, such as
+SD. Each file arrives beside its place as `<name>.part` and replaces the old
+one only once it is whole and checked, so B or a lost connection keeps the
+files you had. Press A again to carry on where it stopped.
+
+The poster pack is about 150 MB and the cheats about 6 MB; a manual is about
+13 MB. A mirror serves the release’s `content.signed` and
+`content-<tag>.list` beside its `stable.signed`, with the files in a `swiss`
+folder there, laid out as on a card.
 
 </details>
 

@@ -13,5 +13,8 @@ void updateRun(enum update_source source);
 void updateStartupBoot(int argc, char **argv);
 bool updateStartupTrial(void);
 bool updateStartupPoll(bool atHome);
+/* Settings > Network: install the posters, cheats and manuals the signed
+ * content list names onto the card being browsed. */
+void updateInstallContent(void);
 
 #endif

@@ -20,6 +20,10 @@ poster and banner fallback on the case front.
 
 ## Download the pack
 
+With a network adapter, **Settings › Network › Install game content**
+downloads the pack onto the card for you, with the cheats and your games'
+manuals: see [Installing game content](settings.md#installing-game-content-over-the-network).
+
 The ready-made pack is made from GameTDB's cover art, and one pack covers
 every region:
 

@@ -17,12 +17,16 @@
 #include "bba.h"
 #include "config.h"
 #include "deviceHandler.h"
+#include "filelock.h"
+#include "filemeta.h"
 #include "files.h"
 #include "FrameBufferMagic.h"
 #include "input.h"
 #include "IPLFontWrite.h"
 #include "sha256.h"
 #include "swiss.h"
+#include "ui_content.h"
+#include "ui_gameflow_library.h"
 #include "ui_update.h"
 #include "update.h"
 #include "update_trust.h"
@@ -180,11 +184,12 @@ static bool updateDeadlineHit(u64 started, unsigned int seconds)
 	return diff_msec(started, SYS_GetSystemTime()) > seconds * 1000u;
 }
 
-/* Writes one staged piece at the handle's own offset. */
+/* Writes one staged piece at the handle's own offset, on its own device:
+ * the Configuration Device for a release, the browsed card for content. */
 static bool updateStageWrite(file_handle *target, const void *buffer,
 	uint32_t length)
 {
-	return updateDevice()->writeFile(target, buffer, length) ==
+	return target->device->writeFile(target, buffer, length) ==
 		(s32)length;
 }
 
@@ -1032,6 +1037,300 @@ void updateRun(enum update_source source)
 		DrawDispose(box);
 	}
 	finishCheck(check, false);
+}
+
+/* ------------------------------------------------------------------ */
+/* Game content: posters, cheats and manuals, signed like a release.  */
+/* ------------------------------------------------------------------ */
+
+#define CONTENT_LIST "swiss/indigo/content.list"
+#define CONTENT_GAMES_MAX 2048u
+
+static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
+	const char *path, const char *suffix)
+{
+	memset(file, 0, sizeof(*file));
+	file->device = device;
+	concatf_path(file->name, device->initial->name, "%s%s", path, suffix);
+}
+
+/* Whether the card already holds exactly this file: its size, then its
+ * SHA-256, read through the transfer buffer. */
+static bool contentInstalled(DEVICEHANDLER_INTERFACE *device,
+	const ui_content_file_t *wanted, char *chunk)
+{
+	file_handle file;
+	sha256_ctx sha;
+	uint8_t hash[32];
+	uint32_t done = 0;
+
+	contentFile(&file, device, wanted->path, "");
+	if(device->statFile(&file) != 0 || file.fileType != IS_FILE ||
+		file.size != wanted->size)
+		return false;
+	sha256_init(&sha);
+	while(done < wanted->size) {
+		uint32_t want = wanted->size - done;
+		if(want > UPDATE_CHUNK)
+			want = UPDATE_CHUNK;
+		device->seekFile(&file, (s64)done, DEVICE_HANDLER_SEEK_SET);
+		if(device->readFile(&file, chunk, want) != (s32)want)
+			break;
+		sha256_update(&sha, (const uint8_t *)chunk, want);
+		done += want;
+	}
+	device->closeFile(&file);
+	sha256_final(&sha, hash);
+	return done == wanted->size && !memcmp(hash, wanted->sha256, sizeof(hash));
+}
+
+/* Downloads one file beside its place and checks its SHA-256 before it
+ * replaces the old one: an interrupted copy leaves the previous file. */
+static update_result_t contentFetch(update_check_t *check,
+	DEVICEHANDLER_INTERFACE *device, const char *leaf, const char *path,
+	uint32_t size, const uint8_t sha256[32], const char *message)
+{
+	file_handle part;
+	file_handle target;
+	sha256_ctx sha;
+	uint8_t hash[32];
+
+	contentFile(&part, device, path, ".part");
+	if(device->statFile(&part) == 0 && device->deleteFile(&part) != 0)
+		return UPDATE_WRITE_FAIL;
+	contentFile(&part, device, path, ".part");
+	sha256_init(&sha);
+	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
+	update_result_t result = check->source.fetchFile(&check->source, leaf,
+		&part, size, &sha, bar);
+	DrawDispose(bar);
+	if(result == UPDATE_OK && device->writeFile(&part, NULL, 0) != 0)
+		result = UPDATE_WRITE_FAIL;
+	if(device->closeFile(&part) != 0 && result == UPDATE_OK)
+		result = UPDATE_WRITE_FAIL;
+	sha256_final(&sha, hash);
+	if(result == UPDATE_OK && memcmp(hash, sha256, sizeof(hash)))
+		result = UPDATE_HASH_MISMATCH;
+	if(result == UPDATE_OK) {
+		contentFile(&target, device, path, "");
+		if((device->statFile(&target) == 0 && device->deleteFile(&target) != 0) ||
+			device->renameFile(&part, target.name) != 0)
+			result = UPDATE_WRITE_FAIL;
+	}
+	if(result != UPDATE_OK)
+		device->deleteFile(&part);
+	return result;
+}
+
+/* The games in the folder browsed last: each disc's own ID, or a game
+ * folder's. Known gap: that one folder only; a Library kept in several
+ * folders gets its manuals one folder at a time. */
+static size_t contentGameIds(char (*ids)[7], size_t capacity)
+{
+	file_handle *entries = getCurrentDirEntries();
+	int count = getCurrentDirEntryCount();
+	size_t found = 0;
+
+	for(int i = 0; entries != NULL && i < count && found < capacity; i++) {
+		file_handle *entry = &entries[i];
+		lockFile(entry);
+		if(entry->fileType == IS_DIR) {
+			if(UIGameflowLibrary_ParseGameFolderName(getRelativeName(entry->name),
+				ids[found], NULL, 0))
+				found++;
+		}
+		else {
+			if(entry->meta == NULL)
+				populate_meta(entry);
+			if(entry->meta != NULL && entry->meta->diskId.gamename[0]) {
+				memcpy(ids[found], entry->meta->diskId.gamename, 4);
+				memcpy(ids[found] + 4, entry->meta->diskId.company, 2);
+				ids[found][6] = '\0';
+				found++;
+			}
+		}
+		unlockFile(entry);
+	}
+	return found;
+}
+
+/* The signed list, then every listed file the card lacks or holds a
+ * different copy of. Tells the user itself unless something fails. */
+static update_result_t contentInstall(update_check_t *check,
+	DEVICEHANDLER_INTERFACE *device, uint32_t *done, uint32_t *total)
+{
+	update_result_t result = UPDATE_OK;
+	ui_content_list_t list;
+	ui_content_file_t file;
+	file_handle listFile;
+	sha256_ctx sha;
+	uint8_t hash[32];
+	uint32_t counts[3] = {0, 0, 0};
+	uint32_t length = check->manifest.size;
+	uint32_t at;
+	u64 bytes = 0;
+	size_t games;
+	char message[192];
+	char sizeText[32];
+	bool install;
+	uiDrawObj_t *box;
+	device_info *space;
+	s32 got = -1;
+
+	if(length > UI_CONTENT_LIST_MAX)
+		return UPDATE_MANIFEST_INVALID;
+	char (*ids)[7] = malloc(CONTENT_GAMES_MAX * sizeof(*ids));
+	char *text = malloc(length + 1u);
+	uint8_t *needed = calloc(UI_CONTENT_FILES_MAX / 8u, 1);
+	check->source.chunk = memalign(32, UPDATE_CHUNK);
+	if(!ids || !text || !needed || !check->source.chunk) {
+		result = UPDATE_NO_SPACE;
+		goto done;
+	}
+	/* The Library's packs and manual close before their files change. */
+	DrawGameflowCancelPosters();
+	ensure_path(DEVICE_CUR, "swiss", NULL, true);
+	ensure_path(DEVICE_CUR, "swiss/indigo", NULL, false);
+	ensure_path(DEVICE_CUR, "swiss/ui", NULL, false);
+	ensure_path(DEVICE_CUR, "swiss/ui/manuals", NULL, false);
+	ensure_path(DEVICE_CUR, "swiss/cheats", NULL, false);
+
+	result = contentFetch(check, device, check->manifest.file, CONTENT_LIST,
+		length, check->manifest.sha256, "Reading the game content list");
+	if(result != UPDATE_OK)
+		goto done;
+	contentFile(&listFile, device, CONTENT_LIST, "");
+	if(device->statFile(&listFile) == 0 && listFile.size == length) {
+		device->seekFile(&listFile, 0, DEVICE_HANDLER_SEEK_SET);
+		got = device->readFile(&listFile, text, length);
+	}
+	device->closeFile(&listFile);
+	device->deleteFile(&listFile);
+	if(got != (s32)length) {
+		result = UPDATE_READ_FAIL;
+		goto done;
+	}
+	/* The card read back, hashed again: the list is trusted only as signed. */
+	sha256_init(&sha);
+	sha256_update(&sha, (const uint8_t *)text, length);
+	sha256_final(&sha, hash);
+	text[length] = '\0';
+	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+		result = UPDATE_HASH_MISMATCH;
+		goto done;
+	}
+	if(!UIContent_Open(&list, text, length)) {
+		result = UPDATE_MANIFEST_INVALID;
+		goto done;
+	}
+	/* The official feed names where its files are; a mirror serves its own. */
+	if(list.hasServer && !check->server[0]) {
+		check->source.base = list.server;
+		check->source.hostHeader = list.host;
+	}
+
+	box = DrawPublish(DrawProgressBar(true, 0, "Checking installed game content"));
+	games = contentGameIds(ids, CONTENT_GAMES_MAX);
+	for(at = 0; UIContent_Next(&list, &file); at++) {
+		if(!UIContent_Wanted(&file, (const char (*)[7])ids, games) ||
+			contentInstalled(device, &file, check->source.chunk))
+			continue;
+		needed[at / 8u] |= (uint8_t)(1u << (at % 8u));
+		counts[file.kind]++;
+		bytes += file.size;
+		(*total)++;
+	}
+	DrawDispose(box);
+	if(*total == 0) {
+		updateTell(D_INFO, games ? "Game content is up to date." :
+			"Posters and cheats are up to date.\nBrowse your games first to add their manuals.");
+		goto done;
+	}
+	space = device->info ? device->info(device->initial) : NULL;
+	if(space && space->totalSpace && space->freeSpace < bytes) {
+		result = UPDATE_NO_SPACE;
+		goto done;
+	}
+	formatBytes(sizeText, (off_t)bytes, 0, false);
+	snprintf(message, sizeof(message),
+		"Install %u game content files (%s)?\n%u poster files, %u cheats, %u manuals\nA  INSTALL    B  CANCEL",
+		(unsigned)*total, sizeText, (unsigned)counts[UI_CONTENT_POSTERS],
+		(unsigned)counts[UI_CONTENT_CHEATS], (unsigned)counts[UI_CONTENT_MANUALS]);
+	if(!updateAsk(D_INFO, message, &install))
+		goto done;
+
+	list.cursor = 0;
+	for(at = 0; UIContent_Next(&list, &file); at++) {
+		if(!(needed[at / 8u] & (1u << (at % 8u))))
+			continue;
+		snprintf(message, sizeof(message), "Installing game content: %u of %u",
+			(unsigned)*done + 1u, (unsigned)*total);
+		result = contentFetch(check, device, file.path, file.path, file.size,
+			file.sha256, message);
+		if(result != UPDATE_OK)
+			goto done;
+		(*done)++;
+	}
+	updateTell(D_INFO, "Game content installed. The Library shows\nthe posters and manuals, and Y on a game's\ndetails opens its cheats.");
+done:
+	free(check->source.chunk);
+	check->source.chunk = NULL;
+	free(needed);
+	free(text);
+	free(ids);
+	return result;
+}
+
+static const char *contentFailureText(update_result_t result)
+{
+	switch(result) {
+		case UPDATE_CANCELLED: return "Installation cancelled.";
+		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid game content list.";
+		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
+		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not complete the installation.";
+		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
+		case UPDATE_NO_NETWORK: case UPDATE_NO_SPACE: case UPDATE_BAD_SERVER: return failureText(result);
+		default: return "The update source could not supply game content.";
+	}
+}
+
+void updateInstallContent(void)
+{
+	DEVICEHANDLER_INTERFACE *device = devices[DEVICE_CUR];
+	uint32_t done = 0;
+	uint32_t total = 0;
+
+	if(device == NULL || device->initial == NULL || !(device->features & FEAT_WRITE) ||
+		!device->writeFile || !device->deleteFile || !device->renameFile ||
+		!device->makeDir || !device->statFile || !device->readFile) {
+		updateTell(D_WARN, "Browse a writable card, such as SD, first.");
+		return;
+	}
+	update_check_t *check = newCheck(UPDATE_SOURCE_HTTP, false);
+	if(!check) {
+		updateTell(D_WARN, "Insufficient memory to install game content.");
+		return;
+	}
+	strcpy(check->channel, "content");
+	if(check->result == UPDATE_OK) {
+		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, "Checking for game content"));
+		if(!init_network())
+			check->result = UPDATE_NO_NETWORK;
+		fetchCheck(check);
+		DrawDispose(box);
+	}
+	if(check->result == UPDATE_OK)
+		check->result = contentInstall(check, device, &done, &total);
+	if(check->result != UPDATE_OK) {
+		char message[192];
+		print_debug("Content: %s\n", contentFailureText(check->result));
+		snprintf(message, sizeof(message), done ?
+			"%s\nInstalled %u of %u files; press again to finish." : "%s",
+			contentFailureText(check->result), (unsigned)done, (unsigned)total);
+		updateTell(D_WARN, message);
+	}
+	free(check->source.scratch);
+	free(check);
 }
 
 static void *probeThread(void *arg)

@@ -6,6 +6,12 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Settings › Network › Install game content downloads the poster pack, every
+  game's cheats and the manuals for the games you browse onto the card, in
+  one go. Indigo checks the release signature on the list and the SHA-256 of
+  every file, skips what the card already has, and replaces a file only once
+  its new copy is whole.
+
 - **Feature badges on Game Details:** the GAME DETAIL line shows up to four
   badges for the game: how many can play, its age rating, and the
   controllers or accessories it uses, such as Bongos, Dance Mat, Microphone
