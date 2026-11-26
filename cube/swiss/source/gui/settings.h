@@ -32,6 +32,8 @@ enum SETTINGS_VIEWS {
 	VIEW_NETWORK,
 	VIEW_LIBRARY,
 	VIEW_DEVELOPER,
+	VIEW_MANUAL_CLOCK,
+	VIEW_AUTO_CLOCK,
 	VIEW_GAME           /* one game's own settings, opened from that game */
 };
 

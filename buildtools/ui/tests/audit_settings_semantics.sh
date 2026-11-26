@@ -29,9 +29,8 @@
 # hideDetailSaves and alwaysShowDetailSaves, and the Idle Animation, Waves, On-screen
 # Controls and Face Labels arms (SET_IDLE_ANIMATION, SET_WAVES,
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
-# the clock sync arms flip swissSettings.ntpSync and open the zone editor
-# when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
-# server and SET_TIME_ZONE opens the same validated editor. The updater's
+# Clock Mode flips swissSettings.ntpSync without editing the clock.
+# SET_NTP_HOSTIP edits the server and SET_TIME_ZONE validates the zone. The updater's
 # six Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
 # SET_UPDATE_STARTUP, SET_UPDATE_CHECK, SET_UPDATE_SMB, SET_CONTENT_INSTALL)
 # only step or edit their own settings, or start their update or content
@@ -51,8 +50,8 @@
 # behind it bare; A does nothing on a row another setting owns for now
 # (Flatten directory while Library Folders sets it); Save and Discard sit
 # after the rows a page shows (UISetLayout_RowCount), since Network hides
-# Sync Clock's rows without a network adapter. It is pinned by content
-# hash rather than
+# its online update rows without an adapter. A on Clock Mode opens its
+# options and B returns to the same row. It is pinned by content hash rather than
 # by a base commit, so a rebase cannot break the pin but any further drift
 # still fails until SHOW_ACTIONS_SHA256 is updated deliberately.
 #
@@ -258,13 +257,10 @@ for option, field in (("IDLE_ANIMATION", "idleAnimation"), ("WAVES", "hideWaves"
         r"\t+swissSettings\." + field + r" \^= 1;\n"
         r"\t+break;\n",
         "", normalized, count=1)
-# Accept the original clock arms and the deliberate timezone setup flow.
+# Clock Mode only flips the saved preference. Only the zone row opens its editor.
 normalized = re.sub(
     r"(?ms)^\t+case SET_NTP_SYNC:\n"
     r"\t+swissSettings\.ntpSync \^= 1;\n"
-    r"(?:\t+if\(swissSettings\.ntpSync && UITimeSync_KeepsOffset\(swissSettings\.timeZone\)\) \{\n"
-    r"\t+settingsEditTimeZone\(\);\n"
-    r"\t+\}\n)?"
     r"\t+break;\n"
     r"\t+case SET_NTP_HOSTIP:\n"
     r"\t+DrawGetTextEntry\(ENTRYMODE_IP, \"NTP Server IP\", &swissSettings\.ntpHostIp, sizeof\(swissSettings\.ntpHostIp\) - 1\);\n"
@@ -419,7 +415,7 @@ PY
 }
 
 normalize_show_actions "$FILE" "$TMP/head_show_actions"
-SHOW_ACTIONS_SHA256="f6a20b0fe340fab39be0e83325716450b89cac33fd8cc74c0736fc6c2db57058"
+SHOW_ACTIONS_SHA256="93e0a9e09b81f154f56b4630bab1306e4b05ddecf656b89825c3332ac3d15e57"
 actual_show_actions=$(shasum -a 256 < "$TMP/head_show_actions" | cut -d' ' -f1)
 if [ "$actual_show_actions" = "$SHOW_ACTIONS_SHA256" ]; then
 	echo "  show actions       B/A/L/R/value semantics match the pinned hash"

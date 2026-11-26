@@ -1,3 +1,12 @@
+## 2026-11-26 — Choose how to set the console clock
+
+Setup › Console has a single Clock Mode row. Left or Right switches between
+Manual and Auto. A opens the selected mode and B returns to the Clock Mode
+row. Manual edits the console date or time offline. Auto exposes the time
+zone and NTP server, including while offline. The `NTPSync` setting still
+reads and writes `No` for Manual and `Yes` for Auto. The controller route in
+Dolphin covered both option pages and a fresh boot from a saved card.
+
 ## 2026-11-26 — Follow Swiss through r2176
 
 The Swiss pin moves from `a647fd74` to `31796322`. The five XZ decoder
