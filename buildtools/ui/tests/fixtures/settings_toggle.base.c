@@ -28,8 +28,15 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 				swissSettings.sramLanguage += direction;
 				swissSettings.sramLanguage = ((s8)swissSettings.sramLanguage + SRAM_LANGUAGE_MAX) % SRAM_LANGUAGE_MAX;
 			break;
+			case SET_SYS_DATE:
+				DrawGetTextEntry(ENTRYMODE_DATE, "System Date", getDateFormatString(&swissSettings), 10);
+			break;
+			case SET_SYS_TIME:
+				DrawGetTextEntry(ENTRYMODE_TIME, "System Time", "%T", 8);
+			break;
 			case SET_SYS_TIMEZONE:
-				select_timezone(swissSettings.timeZone);
+				if(!select_timezone(swissSettings.timeZone))
+					updateTZ(swissSettings.timeZone);
 			break;
 			case SET_CONFIG_DEV:
 			{

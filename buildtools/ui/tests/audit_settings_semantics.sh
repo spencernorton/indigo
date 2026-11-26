@@ -274,11 +274,20 @@ normalized = re.sub(
     r"DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\));\n"
     r"\t+break;\n",
     "", normalized, count=1)
-# Swiss's new clock controls map to Indigo's existing Network rows. Match
-# their exact upstream bodies before removing them from this comparison.
+# Swiss's stock Settings has manual date/time and a process-wide time zone.
+# Indigo's Network clock controls are checked above. Match the stock arms
+# exactly so a future change still shows up in this comparison.
+normalized = re.sub(
+    r'(?m)^\t+case SET_SYS_DATE:\n'
+    r'\t+DrawGetTextEntry\(ENTRYMODE_DATE, "System Date", getDateFormatString\(&swissSettings\), 10\);\n'
+    r'\t+break;\n'
+    r'\t+case SET_SYS_TIME:\n'
+    r'\t+DrawGetTextEntry\(ENTRYMODE_TIME, "System Time", "%T", 8\);\n'
+    r'\t+break;\n', "", normalized, count=1)
 normalized = re.sub(
     r"(?ms)^\t+case SET_SYS_TIMEZONE:\n"
-    r"\t+select_timezone\(swissSettings\.timeZone\);\n"
+    r"\t+if\(!select_timezone\(swissSettings\.timeZone\)\)\n"
+    r"\t+updateTZ\(swissSettings\.timeZone\);\n"
     r"\t+break;\n", "", normalized, count=1)
 normalized = re.sub(
     r"(?ms)^\t+case SET_SNTP_HOSTIP:\n"

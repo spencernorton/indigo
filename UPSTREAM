@@ -11,7 +11,7 @@
 # a pull request of its own.
 
 upstream https://github.com/emukidid/swiss-gc.git
-commit a647fd74880f2cb31c8edbb9b9ba6a9d6e26a2f5
+commit 317963226816f2545dfa2842a90acdc881056950
 
 Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling, while keeping the SDK's pre-installed TinySMB and libuchardet; copies the whitespace-normalized docs/licenses/lwip.txt so host packaging checks need no SDK mount
 cube/packer/Makefile                       compresses with xz: the build image has no 7z; links its files in byte order, whatever the locale
@@ -37,7 +37,8 @@ cube/swiss/source/resources/               design sources and Windows tools the 
 # The owned config/UI paths adapt this intake to Indigo's existing local-time,
 # opt-in clock and TinySMB model. Named zones resolve through the upstream table
 # without setting process-wide TZ; no periodic SNTP or automatic RTC clamp.
-# See docs/dev/upstream-intake-2026-11-14.md for every commit and disposition.
+# See docs/dev/upstream-intake-2026-11-14.md and upstream-intake-2026-11-26.md
+# in the same directory for the clock, Settings and packer decisions.
 cube/swiss/source/devices/deviceHandler.h  exposes the pinned SDK compatibility helper used by Swiss directory readers
 cube/swiss/source/devices/usbgecko/deviceHandler-usbgecko.c  returns a valid listing or closes directory resources on insufficient memory
 cube/swiss/source/devices/ftp/deviceHandler-FTP.c  returns a valid listing or closes directory resources on insufficient memory

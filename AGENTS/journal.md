@@ -1,3 +1,13 @@
+## 2026-11-26 — Follow Swiss through r2176
+
+The Swiss pin moves from `a647fd74` to `31796322`. The five XZ decoder
+files and the archived Swiss SNTP source match that revision. Indigo applies
+the clock bounds when a user enables Sync Clock and updates the SRAM bias
+only after setting the running clock succeeds. The settings audit records
+the stock date, time and zone controls. The packer and clock tests exercise
+decoder success and failure, both RTC limits and a failed clock write.
+The [intake record](../docs/dev/upstream-intake-2026-11-26.md) covers all seven commits.
+
 ## 2026-11-26 — Install game content from Settings
 
 Settings › Network › Install game content fetches a list of poster, cheat

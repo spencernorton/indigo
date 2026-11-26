@@ -6,6 +6,10 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Packed launchers use Swiss's updated XZ decoder. Sync Clock ignores server
+  times earlier than this build and local times the console cannot store.
+  It saves the new time for games and the IPL only after setting the running clock.
+
 - Settings › Network › Install game content downloads the poster pack, every
   game's cheats and the manuals for the games you browse onto the card, in
   one go. Indigo checks the release signature on the list and the SHA-256 of

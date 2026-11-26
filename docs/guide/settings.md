@@ -264,7 +264,7 @@ The Settings tour above predates the Apps Video Mode row.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Off by default. |
+| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Indigo ignores a reply that predates its build or falls outside the console clock's range in your time zone. Off by default. |
 | NTP Server IP | The time server to use. An empty entry uses the default server. |
 | Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
 | Update Channel | Which releases the two update actions offer: **Stable**, the latest finished release, or **Release candidate**, the next release for testing. |

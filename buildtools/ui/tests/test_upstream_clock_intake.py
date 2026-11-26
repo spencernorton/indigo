@@ -25,6 +25,86 @@ def function(source, marker):
 
 
 class ClockIntake(unittest.TestCase):
+    def test_network_sync_only_persists_a_representable_accepted_time(self):
+        source = (ROOT / "cube/swiss/source/gui/time_sync.c").read_text()
+        setter = function(source, "static void time_sync_set(void)")
+        driver = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
+typedef uint32_t u32;
+#define DIFF_SEC_1970_2000 946684800U
+#define GIT_TIMESTAMP buildSeconds
+#define TIME_SYNC_STEPPING 2
+#define print_debug(...) ((void)0)
+static int64_t buildSeconds, reply;
+static int32_t zoneOffset, timeSyncOffset;
+static int timeSyncServer, timeSyncState, setError, attempts, rtcReads, writes;
+static bool timeSyncClosed, timeSyncOffsetKnown;
+static char timeSyncZone[] = "test";
+static struct timespec applied;
+static u32 bias;
+static bool time_sync_ask(int server, int64_t *utc)
+{ (void)server; *utc = reply; return true; }
+static bool UITimeSync_KeepsOffset(const char *zone) { (void)zone; return false; }
+static int32_t UITimeSync_KeptOffset(time_t now, int64_t utc)
+{ (void)now; (void)utc; return 0; }
+static bool UITimeSync_ZoneOffset(const char *zone, int64_t utc, int32_t *east)
+{ (void)zone; (void)utc; *east = zoneOffset; return true; }
+static u32 IRQ_Disable(void) { return 0; }
+static void IRQ_Restore(u32 level) { (void)level; }
+#define clock_gettime(id, ts) (*(ts) = (struct timespec){0}, 0)
+#define clock_settime(id, ts) (++attempts, applied = *(ts), setError)
+static bool __SYS_GetRTC(u32 *rtc) { ++rtcReads; *rtc = 99; return true; }
+static void usleep(int duration) { (void)duration; }
+static void SYS_SetCounterBias(u32 value) { ++writes; bias = value; }
+static bool __SYS_SyncSram(void) { return true; }
+/* NETWORK CLOCK SETTER */
+static void check(int64_t utcSeconds, int32_t east, int expectedAttempts, bool persist)
+{
+    attempts = writes = rtcReads = 0;
+    timeSyncState = 0;
+    timeSyncOffsetKnown = false;
+    timeSyncOffset = INT32_MIN;
+    reply = utcSeconds * 1000000 + 123456;
+    zoneOffset = east;
+    time_sync_set();
+    assert(attempts == expectedAttempts && writes == persist && rtcReads == persist);
+    assert(timeSyncOffsetKnown == persist);
+    assert(timeSyncOffset == (persist ? east : INT32_MIN));
+    if (persist) {
+        assert(applied.tv_sec == utcSeconds + east && applied.tv_nsec == 123456000);
+        assert(bias + 99U == (u32)(utcSeconds + east - DIFF_SEC_1970_2000));
+    }
+}
+int main(void)
+{
+    buildSeconds = 1750000000;
+    check(buildSeconds - 1, 3600, 0, false);
+    check(buildSeconds, -3600, 1, true);
+    setError = -1;
+    check(buildSeconds, 0, 1, false);
+    setError = 0;
+    timeSyncClosed = true;
+    check(buildSeconds + 1, 0, 0, false);
+    timeSyncClosed = false;
+    buildSeconds = 0;
+    const int64_t first = DIFF_SEC_1970_2000, last = first + UINT32_MAX;
+    check(first, -1, 0, false);
+    check(first + 1, -1, 1, true);
+    check(last - 1, 1, 1, true);
+    check(last, 1, 0, false);
+}
+'''
+        with tempfile.TemporaryDirectory(prefix="indigo-clock-write-") as directory:
+            path = Path(directory)
+            (path / "write.c").write_text(driver.replace("/* NETWORK CLOCK SETTER */", setter))
+            command = shlex.split(os.environ.get("CC", "cc"))
+            subprocess.run(command + ["-std=c11", "-Wall", "-Wextra", "-Werror",
+                           str(path / "write.c"), "-o", str(path / "write")], check=True)
+            subprocess.run([str(path / "write")], check=True)
+
     def test_real_environment_publisher_holds_lock(self):
         source = (ROOT / "cube/swiss/source/config/config.c").read_text()
         publisher = function(source, "void config_update_environ()")
