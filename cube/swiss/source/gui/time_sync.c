@@ -127,13 +127,13 @@ static void time_sync_set(void)
 		print_debug("Sync Clock: local time is outside the console clock range\n");
 		return;
 	}
-	/* A game's launch that began meanwhile keeps the clock as it is. */
+	/* A game launch or a switch to Manual can retire a pending reply. */
 	u32 level = IRQ_Disable();
-	bool open = !timeSyncClosed;
+	bool open = !timeSyncClosed && swissSettings.ntpSync;
 	if(open) timeSyncState = TIME_SYNC_STEPPING;
 	IRQ_Restore(level);
 	if(!open) {
-		print_debug("Sync Clock: a game started first, so the clock stays\n");
+		print_debug("Sync Clock: sync cancelled before setting the clock\n");
 		return;
 	}
 	struct timespec now = {

@@ -44,6 +44,7 @@ static int64_t buildSeconds, reply;
 static int32_t zoneOffset, timeSyncOffset;
 static int timeSyncServer, timeSyncState, setError, attempts, rtcReads, writes;
 static bool timeSyncClosed, timeSyncOffsetKnown, rtcBusy;
+static struct { bool ntpSync; } swissSettings = { true };
 static char timeSyncZone[] = "test";
 static struct timespec applied;
 static u32 bias;
@@ -91,6 +92,9 @@ int main(void)
     timeSyncClosed = true;
     check(buildSeconds + 1, 0, 0, false);
     timeSyncClosed = false;
+    swissSettings.ntpSync = false;
+    check(buildSeconds + 1, 0, 0, false);
+    swissSettings.ntpSync = true;
     buildSeconds = 0;
     const int64_t first = DIFF_SEC_1970_2000, last = first + UINT32_MAX;
     check(first, -1, 0, false);
