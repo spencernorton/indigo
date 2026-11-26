@@ -8,7 +8,7 @@ left pane of the [File Browser](system.md#file-browser) opens the same
 screen, and **B** there goes back to the File Browser, on the same row.
 
 <p align="center">
-  <img alt="Astral Circuit’s game details: its demonstration cover on the left; Last played says No play recorded, above Settings and Cheats. Launch Game is selected." src="images/game-details.png" width="640">
+  <img alt="Astral Circuit’s game details: its demonstration cover on the left; badges for 1-4 Players, ESRB E and GBA Link on the GAME DETAIL line; Last played says No play recorded, above Settings and Cheats. Launch Game is selected." src="images/game-details.png" width="640">
 </p>
 
 ## What's on the screen
