@@ -49,7 +49,7 @@ static const struct {
 	{ 11,  2, 12 }, /* Display */
 	{ 25,  2, 26 }, /* Console: the four sides, Cube, Backdrop and Wave Color, Wave Speed, Clock, Temperature, Waves, Idle Animation, Face Labels, On-screen Controls and Menu Language too */
 	{  8,  2,  9 }, /* Storage: its Library Path and Save Folder too */
-	{ 28,  2, 29 }, /* Network: Sync Clock, NTP Server IP, Time Zone and the updater's five rows too */
+	{ 29,  2, 30 }, /* Network: Sync Clock, NTP Server IP, Time Zone, the updater's five rows and Install game content too */
 	{ 11,  2, 12 }, /* Library: Load at startup, Library Folders and Saves on Details too; no File Browser Types */
 	{  4,  2,  5 }, /* Developer */
 	{ 22, -1, 23 }, /* one game's own settings: no tabs */

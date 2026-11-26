@@ -309,9 +309,24 @@ def update(out: Path) -> None:
     (out / "server-name").write_bytes(b"https://example.com/indigo")
 
 
+def content(out: Path) -> None:
+    # A game content list as content_list.py writes it, and one whose files
+    # sit beside it.
+    hashes = [bytes([n]) * 32 for n in range(4)]
+    (out / "content.list").write_bytes(
+        b"# Indigo game content\r\nServer=203.0.113.7/console/2026-11-26\r\n"
+        b"Host=content.example.net\r\n" + b"".join(
+            h.hex().encode() + b" %d %s\r\n" % (size, path) for h, size, path in zip(
+                hashes, (8348, 9120, 13401712, 70849024),
+                (b"swiss/cheats/GALE01.txt", b"swiss/cheats/GALE01_v102.txt",
+                 b"swiss/ui/manuals/GALE.pak", b"swiss/ui/posters.pak"))))
+    (out / "beside.list").write_bytes(
+        hashes[0].hex().encode() + b" 295126 swiss/ui/descriptions.txt\n")
+
+
 def main() -> int:
     out = Path(sys.argv[1])
-    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang, update):
+    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang, update, content):
         folder = out / target.__name__
         folder.mkdir(parents=True, exist_ok=True)
         target(folder)

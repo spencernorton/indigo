@@ -4,7 +4,11 @@ A game whose manual is on the card has a **Manual** row at the top of its
 [Game Details](guide/game-details.md). A on it opens the manual: its pages
 at the width of the screen, one at a time.
 
-Indigo comes with no manuals. Convert your own copy on a computer with
+Indigo comes with no manuals. With a network adapter, **Settings › Network ›
+Install game content** downloads the ready-made English manuals for the games
+you browsed last: see
+[Installing game content](guide/settings.md#installing-game-content-over-the-network).
+Or convert your own copy on a computer with
 `buildtools/ui/manual_pack.py`, once per game, and copy the file it makes to
 the card. The GameCube can't read a PDF itself: scanned manuals are often
 JPEG 2000 or JBIG2 inside, and a page decoded on the console wouldn't fit

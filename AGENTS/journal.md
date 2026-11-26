@@ -1,3 +1,26 @@
+## 2026-11-26 — Install game content from Settings
+
+Settings › Network › Install game content fetches a list of poster, cheat
+and manual files and installs what the card lacks. The list's trust reuses
+the updater: the release workflow writes `content.txt`, a `Channel=content`
+manifest whose File, Size and SHA256 name the list, and signs it with the
+release key, so the console checks one signature it already knows how to
+check and then each file's SHA-256 from the list. `ui_content.c` parses the
+list with no console calls (host tests and a fuzzer): paths can only be the
+five `swiss/ui` pack files, `swiss/cheats/<ID6>[_name].txt` and
+`swiss/ui/manuals/<ID4|ID6>.pak`, in strictly increasing order. A list may
+name a plain-HTTP mirror (`Server=` + `Host=`) because the packs must not
+sit on the update feed's GitHub Pages; the Update Server setting, when set,
+wins. Each file downloads to `<path>.part`, is hashed, then renamed over
+the old copy, so a cut connection never leaves a half file, and a second
+press skips everything already whole. Manuals are only for the games in the
+folder browsed last (a known gap for Libraries kept across folders); all
+manuals would be 6.4 GB. `updateStageWrite` now writes through its target's
+device rather than `updateDevice()`. The DOL grew 6,784 bytes to 4,518,784,
+3,200 under the tripwire. Not yet on a console or Dolphin, and nothing is
+published: the release ships no list until `buildtools/content/content.list`
+is committed with a host the console can reach over plain HTTP.
+
 ## 2026-11-25 — Feature badges on Game Details (#131)
 
 Game Details reads `swiss/ui/features.txt` through the descriptions file's

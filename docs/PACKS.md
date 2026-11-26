@@ -141,6 +141,34 @@ texture. A game with no disc in `discs.pak` (or no
 `discs.pak` at all) has the middle of its cover printed on its disc in the
 jewel case, and a game with neither has a bare silver disc.
 
+## Install from the console
+
+**Settings › Network › Install game content** downloads these files (and
+the cheat and manual packs) onto the card: see
+[Installing game content](guide/settings.md#installing-game-content-over-the-network).
+It reads a list of them that a release signs, written by
+`buildtools/content_list.py` from the pack zips:
+
+```text
+# Indigo game content
+Server=203.0.113.7/console/2026-11-26
+Host=content.example.net
+<sha256> 8348 swiss/cheats/GALE01.txt
+<sha256> 13401712 swiss/ui/manuals/GALE.pak
+<sha256> 70849024 swiss/ui/posters.pak
+```
+
+One file a line: its SHA-256 in lower-case hex, its length in bytes (1 to
+128 MiB, no leading zero) and its path on the card, a space apart, in
+strictly increasing byte order, at most 4,096 of them in 512 KiB. A path is
+one of `swiss/ui/posters.pak`, `stills.pak`, `discs.pak`, `descriptions.txt`
+or `features.txt`, `swiss/cheats/<game ID>.txt` or
+`swiss/cheats/<game ID>_<name>.txt`, or `swiss/ui/manuals/<ID4 or ID6>.pak`,
+47 letters at most. `Server` (an IPv4 address with an optional port and
+folder) and `Host` (the name it answers to) come together or not at all;
+without them the files sit beside the list. Lines starting with `#` are
+comments. Indigo refuses the whole list if any line breaks a rule.
+
 ## Game descriptions
 
 `descriptions.txt` is plain text: one game per line, its six-character game

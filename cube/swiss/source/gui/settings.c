@@ -40,7 +40,7 @@ _Static_assert(UI_SETLAYOUT_TAB_COUNT == VIEW_SETUP + 1, "tab count drift");
 _Static_assert(UI_SETLAYOUT_TAB_SETUP == VIEW_SETUP, "Setup tab drift");
 /* Game Defaults shows every default but the vertical offset (see gameDefaultsRows). */
 _Static_assert(UI_SETLAYOUT_ROWS_GAME_DEFAULTS == SET_DEFAULT_DEFAULTS, "defaults rows drift");
-_Static_assert(UI_SETLAYOUT_ROWS_NETWORK == SET_UPDATE_SMB + 1, "network rows drift");
+_Static_assert(UI_SETLAYOUT_ROWS_NETWORK == SET_CONTENT_INSTALL + 1, "network rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_GAME == SET_DEFAULTS + 1, "game rows drift");
 _Static_assert(UI_SETLAYOUT_ROWS_SETUP == VIEW_DEVELOPER - VIEW_DISPLAY + 1, "Setup sections drift");
 _Static_assert((int)UI_SETLAYOUT_MOTION_FULL == (int)UI_MOTION_FULL,
@@ -216,6 +216,7 @@ static char *tooltips_network[PAGE_NETWORK_MAX+1] = {
 	[SET_UPDATE_STARTUP] = "Startup Updates:\n\nCheck once when Home opens. A newer signed release\ninstalls into a recovery slot and restarts Indigo.",
 	[SET_UPDATE_CHECK] = "Check for updates:\n\nFind a signed release and choose whether to install it.",
 	[SET_UPDATE_SMB] = "Update from SMB share:\n\nRead a signed release from indigo-updates on your\nconfigured SMB share.",
+	[SET_CONTENT_INSTALL] = "Install game content:\n\nDownload posters, cheats and the manuals for the games\nyou browsed last onto that card. Indigo signs the list\nand checks every file; files you have are skipped.",
 };
 
 static char *tooltips_game_global[PAGE_GAME_GLOBAL_MAX+1] = {
@@ -708,8 +709,9 @@ static const settingsRowRef_t networkRows[] = {
 	{PAGE_NETWORK, SET_UPDATE_STARTUP},
 	{PAGE_NETWORK, SET_UPDATE_CHECK},
 	{PAGE_NETWORK, SET_UPDATE_SMB},
+	{PAGE_NETWORK, SET_CONTENT_INSTALL},
 };
-#define SETTINGS_NETWORK_TAIL_ROWS 8
+#define SETTINGS_NETWORK_TAIL_ROWS 9
 
 /* Whether a network adapter is there, read once as Settings opens. */
 static bool settingsNetAdapter;
@@ -1210,6 +1212,7 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_UPDATE_STARTUP: rowYesNo(row, "Startup Updates:", !swissSettings.skipStartupUpdates, true); break;
 			case SET_UPDATE_CHECK: rowAction(row, "Check for updates", netEnable); break;
 			case SET_UPDATE_SMB: rowAction(row, "Update from SMB share", netEnable); break;
+			case SET_CONTENT_INSTALL: rowAction(row, "Install game content", netEnable); break;
 		}
 	}
 	else if(page == PAGE_GAME_GLOBAL) {
@@ -1352,7 +1355,9 @@ static void settingsDescribeFocus(uiSetPageSnapshot_t *page, int view,
 				hints[count++] = (ref->page == PAGE_NETWORK &&
 					ref->option == SET_UPDATE_CHECK) ? "A  Check" :
 					(ref->page == PAGE_NETWORK &&
-					ref->option == SET_UPDATE_SMB) ? "A  Update" : "A  Reset";
+					ref->option == SET_UPDATE_SMB) ? "A  Update" :
+					(ref->page == PAGE_NETWORK &&
+					ref->option == SET_CONTENT_INSTALL) ? "A  Install" : "A  Reset";
 			}
 		}
 		else if(settingsIsLiveVideoRow(ref->page, ref->option)) {
@@ -1980,6 +1985,10 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 				if(direction == 0)
 					updateRun(UPDATE_SOURCE_SMB);
 			break;
+			case SET_CONTENT_INSTALL:
+				if(direction == 0)
+					updateInstallContent();
+			break;
 		}
 	}
 	else if(page == PAGE_GAME_GLOBAL) {
@@ -2466,7 +2475,7 @@ static bool settingsRowIsAction(int page, int option)
 				in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
 				in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT) ||
 				option == SET_UPDATE_SERVER ||
-				in_range(option, SET_UPDATE_CHECK, SET_UPDATE_SMB);
+				in_range(option, SET_UPDATE_CHECK, SET_CONTENT_INSTALL);
 		case PAGE_GAME_GLOBAL:
 			return option == SET_GLOBAL_DEFAULTS;
 		case PAGE_GAME_DEFAULTS:
@@ -2930,7 +2939,7 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 			in_range(option, SET_NTP_HOSTIP, SET_FTP_PASS) ||
 			in_range(option, SET_SMB_HOSTIP, SET_RT4K_PORT) ||
 			option == SET_UPDATE_SERVER ||
-			in_range(option, SET_UPDATE_CHECK, SET_UPDATE_SMB);
+			in_range(option, SET_UPDATE_CHECK, SET_CONTENT_INSTALL);
 	}
 	if(page == PAGE_GAME_DEFAULTS && (horizontal || activate)) {
 		return option == SET_DEFAULT_AUDIO_STREAM ||
