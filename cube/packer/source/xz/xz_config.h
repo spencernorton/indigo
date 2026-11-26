@@ -43,7 +43,7 @@
 
 #include "xz.h"
 
-#define kmalloc(size, flags) (NULL)
+#define kmalloc_obj(type) (NULL)
 #define kfree(ptr) 
 #define vmalloc(size) (NULL)
 #define vfree(ptr) 
@@ -55,7 +55,6 @@ void memzero(void *buf, size_t size);
 #ifndef min
 #	define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
-#define min_t(type, x, y) min(x, y)
 
 #ifndef fallthrough
 #	if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311

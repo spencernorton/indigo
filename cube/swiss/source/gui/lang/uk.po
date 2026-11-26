@@ -6631,3 +6631,33 @@ msgstr ""
 "Часовий пояс не розпізнано.\n"
 "Перевірте назву місцевості та великі літери\n"
 "або залиште поле порожнім, щоб лишити поточний зсув."
+
+msgid "System Date:"
+msgstr "Системна дата:"
+
+msgid "System Time:"
+msgstr "Системний час:"
+
+msgid "System Date (YYYY-MM-DD)"
+msgstr "Системна дата (РРРР-ММ-ДД)"
+
+msgid "System Time (HH:MM:SS)"
+msgstr "Системний час (ГГ:ХХ:СС)"
+
+msgid "L/R  Cursor    START  Set clock    B  Discard"
+msgstr "L/R  Курсор    START  Застосувати    B  Скасувати"
+
+msgid "Enter a valid console date as YYYY-MM-DD."
+msgstr "Введіть коректну дату у форматі РРРР-ММ-ДД."
+
+msgid "Enter a valid console time as HH:MM:SS."
+msgstr "Введіть коректний час у форматі ГГ:ХХ:СС."
+
+msgid "Could not set the console clock. Try again."
+msgstr "Не вдалося встановити годинник консолі. Спробуйте ще раз."
+
+msgid "System Date:\n\nEnter the local date as YYYY-MM-DD.\nThe time of day keeps running."
+msgstr "Системна дата:\n\nВведіть місцеву дату у форматі РРРР-ММ-ДД.\nЧас іде далі."
+
+msgid "System Time:\n\nEnter the local time as HH:MM:SS in 24-hour format.\nThe date stays the same."
+msgstr "Системний час:\n\nВведіть місцевий час у 24-годинному форматі ГГ:ХХ:СС.\nДата збережеться."

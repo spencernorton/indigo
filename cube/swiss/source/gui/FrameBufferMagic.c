@@ -8516,18 +8516,17 @@ bool DrawUpdateFilesReading(uiDrawObj_t *page, int which)
 
 void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 	
-	print_debug("DrawGetTextEntry Modes: Alpha [%s] Numeric [%s] IP [%s] Masked [%s] File [%s]\n", mode & ENTRYMODE_ALPHA ? "Y":"N", mode & ENTRYMODE_NUMERIC ? "Y":"N",
-																	mode & ENTRYMODE_IP ? "Y":"N", mode & ENTRYMODE_MASKED ? "Y":"N", mode & ENTRYMODE_FILE ? "Y":"N");
 	char *text = calloc(1, size + 1);
-	if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP)) {
+	if(text == NULL) return;
+	if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME)) {
 		strncpy(text, src, size);
 	}
 	else {
 		u16 *src_int = (u16*)src;
 		itoa(*src_int, text, 10);
 	}
-	print_debug("Text is [%s] size %i\n", text, size);
 	
+	bool clockEntry = mode & (ENTRYMODE_DATE|ENTRYMODE_TIME);
 	int caret = strlen(text);
 	int cur_row = 0;
 	int cur_col = 0;
@@ -8548,44 +8547,27 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 	int cur_txt_mode = 0;
 	char *gridText = NULL;
 	
-	// IP mode
-	if(mode & ENTRYMODE_IP) {
-		// 1  2  3
-		// 4  5  6
-		// 7  8  9
-		//[.] 0  [backspace]
+	/* The numeric keypads share their first three rows. Only the last
+	 * row gains a separator for an IP address, date or time. */
+	bool numberOnly = (mode & ENTRYMODE_NUMERIC) && !(mode & ENTRYMODE_ALPHA);
+	if(numberOnly || (mode & (ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME))) {
 		num_rows = 4;
 		grid_gap = 15;
-		num_per_row[0] = 3;
-		pos_for_row[0] = 240;
-		num_per_row[1] = 3;
-		pos_for_row[1] = 240;
-		num_per_row[2] = 3;
-		pos_for_row[2] = 240;
-		num_per_row[3] = 3;
-		pos_for_row[3] = 240;
-		gridText = ip_mode_chars;
+		for(int row = 0; row < num_rows; row++) {
+			num_per_row[row] = 3;
+			pos_for_row[row] = 240;
+		}
+		if(numberOnly) {
+			num_per_row[3] = 2;
+			gridText = num_mode_chars;
+		} else if(mode & ENTRYMODE_DATE) {
+			gridText = "123456789-0\b";
+		} else if(mode & ENTRYMODE_TIME) {
+			gridText = "123456789:0\b";
+		} else {
+			gridText = ip_mode_chars;
+		}
 	}
-	
-	// Number only
-	if((mode & ENTRYMODE_NUMERIC) && !(mode & ENTRYMODE_ALPHA)) {
-		// 1  2  3
-		// 4  5  6
-		// 7  8  9
-		// 0  [backspace]
-		num_rows = 4;
-		grid_gap = 15;
-		num_per_row[0] = 3;
-		pos_for_row[0] = 240;
-		num_per_row[1] = 3;
-		pos_for_row[1] = 240;
-		num_per_row[2] = 3;
-		pos_for_row[2] = 240;
-		num_per_row[3] = 2;
-		pos_for_row[3] = 240;
-		gridText = num_mode_chars;
-	}
-	
 	// Alpha only
 	else if(!(mode & ENTRYMODE_NUMERIC) && (mode & ENTRYMODE_ALPHA)) {
 		// TODO if we ever have to.
@@ -8662,13 +8644,14 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 		// Double box for extra darkness
 		uiDrawObj_t *newPanel = DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440);
 		DrawAddChild(newPanel, DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440));
-		sprintf(txtbuffer, UI_T("%s - Please enter a value"), UI_T(label));
+		sprintf(txtbuffer, clockEntry ? "%s" : UI_T("%s - Please enter a value"), UI_T(label));
 		DrawAddChild(newPanel, DrawStyledLabel(25, 74, txtbuffer, GetTextScaleToFitInWidth(txtbuffer, getVideoMode()->fbWidth-50), ALIGN_LEFT, defaultColor));
 
 		// Draw the text entry box (TODO: mask chars if the mode says to do so)
 		DrawAddChild(newPanel, DrawEmptyBox(40, 100, getVideoMode()->fbWidth-40, 140));
 		DrawAddChild(newPanel, DrawStyledLabelWithCaret(320, 120, text, GetTextScaleToFitInWidth(text, getVideoMode()->fbWidth-90), ALIGN_CENTER, defaultColor, caret));
-		DrawAddChild(newPanel, DrawHintLabel(320, 160, "L/R  Cursor    START  Accept    B  Discard", 0.75f, ALIGN_CENTER, defaultColor));
+		DrawAddChild(newPanel, DrawHintLabel(320, 160, clockEntry ?
+			"L/R  Cursor    START  Set clock    B  Discard" : "L/R  Cursor    START  Accept    B  Discard", 0.75f, ALIGN_CENTER, defaultColor));
 
 		// Alphanumeric has a little "mode" hint at the bottom (upper/lower case set switching)
 		if(mode & ENTRYMODE_ALPHA) {
@@ -8696,11 +8679,10 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 					sprintf(txtbuffer, "%s", gridText[i] == '\a' ? "Space" : "Y  Back");
 				else
 					sprintf(txtbuffer, "%c", gridText[i]);
-				GXColor keyColor = cur_col == dx && cur_row == dy ? defaultColor : deSelectedColor;
 				if(gridText[i] == '\b')
-					DrawAddChild(newPanel, DrawHintLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, keyColor));
+					DrawAddChild(newPanel, DrawHintLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, defaultColor));
 				else
-					DrawAddChild(newPanel, DrawStyledLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, keyColor));
+					DrawAddChild(newPanel, DrawStyledLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, defaultColor));
 				x += (grid_gap + button_width);
 				i++;
 			}
@@ -8777,7 +8759,7 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 			break;
 		}
 		if(btns & BUTTON_START) {
-			if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP)) {
+			if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME)) {
 				/* The text is size long at most by construction; say so,
 				 * so a longer one can never overrun the setting. */
 				strncpy(src, text, size);

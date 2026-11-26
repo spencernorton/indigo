@@ -173,6 +173,10 @@ most use the same key there.
 | `System Language` | `English`, `German`, `French`, `Spanish`, `Italian`, `Dutch`, `Japanese`, `English (US)` | the console's SRAM | System Language |
 | `Disable PAD Recalibration` | `Yes`, `No`. `Yes` shows as Controller Recalibration › Off. | `No` | Controller Recalibration |
 
+**System Date** and **System Time** edit the console clock directly. Start
+writes the local time and its SRAM counter bias. B discards the edit.
+These controls work without a configuration device or network adapter.
+
 ### Setup › Storage
 
 | Key | Values | Default | On screen |

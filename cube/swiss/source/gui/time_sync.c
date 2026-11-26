@@ -69,6 +69,33 @@ static bool time_sync_ask(struct in_addr server, int64_t *utcMicroseconds)
 	return answered;
 }
 
+/* A card or network adapter can briefly hold EXI while we read the RTC. */
+static bool time_sync_read_rtc(u32 *rtc)
+{
+	for(int i = 0; i < 50; i++) {
+		if(__SYS_GetRTC(rtc)) return true;
+		usleep(2000);
+	}
+	return false;
+}
+
+static void time_sync_save_bias(u32 seconds, u32 rtc)
+{
+	SYS_SetCounterBias(seconds - rtc);
+	while(!__SYS_SyncSram());
+}
+
+bool time_sync_write_local(int64_t localSeconds)
+{
+	u32 rtc;
+	if(localSeconds < DIFF_SEC_1970_2000 ||
+		localSeconds - DIFF_SEC_1970_2000 > UINT32_MAX || !time_sync_read_rtc(&rtc)) return false;
+	struct timespec now = { .tv_sec = (time_t)localSeconds };
+	if(clock_settime(CLOCK_REALTIME, &now) != 0) return false;
+	time_sync_save_bias((u32)(localSeconds - DIFF_SEC_1970_2000), rtc);
+	return true;
+}
+
 /* The console keeps local time with no zone, and so does the IPL: the time base
  * while it runs, and after a restart the RTC's seconds plus the SRAM's counter
  * bias. Both move, so games and the IPL read the new time too. */
@@ -83,11 +110,21 @@ static void time_sync_set(void)
 		return;
 	}
 	int64_t utcSeconds = utc / 1000000;
+	if(utcSeconds < GIT_TIMESTAMP) {
+		print_debug("Sync Clock: server time predates this build\n");
+		return;
+	}
 	if(UITimeSync_KeepsOffset(timeSyncZone)) {
 		east = UITimeSync_KeptOffset(time(NULL), utcSeconds);
 	}
 	else if(!UITimeSync_ZoneOffset(timeSyncZone, utcSeconds, &east)) {
 		print_debug("Sync Clock: Time Zone %s isn't a supported location or POSIX TZ string\n", timeSyncZone);
+		return;
+	}
+	int64_t localSeconds = utcSeconds + east;
+	int64_t rtcSeconds = localSeconds - DIFF_SEC_1970_2000;
+	if(rtcSeconds < 0 || rtcSeconds > UINT32_MAX) {
+		print_debug("Sync Clock: local time is outside the console clock range\n");
 		return;
 	}
 	/* A game's launch that began meanwhile keeps the clock as it is. */
@@ -99,31 +136,25 @@ static void time_sync_set(void)
 		print_debug("Sync Clock: a game started first, so the clock stays\n");
 		return;
 	}
-	int64_t local = utc + (int64_t)east * 1000000;
 	struct timespec now = {
-		.tv_sec = (time_t)(local / 1000000), .tv_nsec = (long)(local % 1000000) * 1000,
+		.tv_sec = (time_t)localSeconds, .tv_nsec = (long)(utc % 1000000) * 1000,
 	};
 	struct timespec was;
-	clock_gettime(CLOCK_REALTIME, &was);
-	if(clock_settime(CLOCK_REALTIME, &now) == 0) {
-		level = IRQ_Disable();
-		timeSyncOffset = east;
-		timeSyncOffsetKnown = true;
-		IRQ_Restore(level);
+	bool havePrevious = clock_gettime(CLOCK_REALTIME, &was) == 0;
+	if(clock_settime(CLOCK_REALTIME, &now) != 0) {
+		print_debug("Sync Clock: could not set the running clock\n");
+		return;
 	}
-	print_debug("Sync Clock: moved the clock %lld ms\n", (long long)(now.tv_sec - was.tv_sec) * 1000 +
-		(now.tv_nsec - was.tv_nsec) / 1000000);
-	/* __SYS_GetRTC gives up while another device holds EXI channel 0 (an
-	 * adapter sending, a card mid-transfer). Try for a moment longer: the
-	 * counter bias is what keeps this time over a power-off. */
-	bool haveRtc = false;
-	for(int i = 0; i < 50 && !(haveRtc = __SYS_GetRTC(&rtc)); i++) {
-		usleep(2000);
+	level = IRQ_Disable();
+	timeSyncOffset = east;
+	timeSyncOffsetKnown = true;
+	IRQ_Restore(level);
+	if(havePrevious) {
+		print_debug("Sync Clock: moved the clock %lld ms\n", (long long)(now.tv_sec - was.tv_sec) * 1000 +
+			(now.tv_nsec - was.tv_nsec) / 1000000);
 	}
-	if(haveRtc) {
-		SYS_SetCounterBias((u32)(now.tv_sec - DIFF_SEC_1970_2000) - rtc);
-		while(!__SYS_SyncSram());
-	}
+	if(time_sync_read_rtc(&rtc))
+		time_sync_save_bias((u32)rtcSeconds, rtc);
 }
 
 static void *time_sync_thread(void *unused)

@@ -234,6 +234,17 @@ The Settings tour above predates the Apps Video Mode row.
 | System Boot Mode | On development hardware, development or production mode. With GC Loader or PicoLoader on a retail console, the default skips the GameCube logo. |
 | Controller Recalibration | Off skips controller recalibration, for controllers that don't follow the standard. |
 | CPU Temperature Calibration | Adjust it on a cold boot so the temperature at the top right reads about room temperature. |
+| System Date | Edit the console's local date as YYYY-MM-DD. The time of day keeps running. |
+| System Time | Edit local time as HH:MM:SS using the 24-hour clock. The current date is preserved. |
+
+Both editors work offline. Use the D-pad and A to enter a character, Y to
+erase and L/R to move the cursor. **Start** sets the console clock immediately
+and saves it for games and the IPL. **B** discards the edit. If Sync Clock is
+enabled, the next network sync can set the clock again.
+
+<p align="center">
+  <img alt="System Date keypad showing 2026-01-03 with the 3 selected. The hints show L and R for the cursor, Start to set the clock and B to discard." src="images/settings-date.png" width="640">
+</p>
 
 </details>
 
@@ -264,7 +275,7 @@ The Settings tour above predates the Apps Video Mode row.
 | FTP Host IP, Port, Username, Password, PASV Mode | An FTP server with your games. Try PASV if listings stall. |
 | SMB Host IP, Share, Username, Password | A computer sharing your games over SMB. |
 | RetroTINK-4K Host IP, Port | A RetroTINK-4K on your network, which Indigo switches to each game's profile. |
-| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Off by default. |
+| Sync Clock | Sets the clock from a time server when the network starts. The IPL and games see the synced time. Indigo ignores a reply that predates its build or falls outside the console clock's range in your time zone. Off by default. |
 | NTP Server IP | The time server to use. An empty entry uses the default server. |
 | Time Zone | Enter a location such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ rule such as `MST7MDT,M3.2.0,M11.1.0` for US Mountain time. **Keep offset (no DST)** applies to an empty entry or `Etc/Unknown` and keeps the console's current UTC offset. |
 | Update Channel | Which releases the two update actions offer: **Stable**, the latest finished release, or **Release candidate**, the next release for testing. |

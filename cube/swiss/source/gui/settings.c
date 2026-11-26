@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <math.h>
 #include <malloc.h>
 #include <gccore.h>
@@ -128,6 +129,8 @@ static char *tooltips_global[PAGE_GLOBAL_MAX+1] = {
 	[SET_SYS_SOUND] = "System Sound:\n\nSets the default audio output type used by most games",
 	[SET_SYS_VIDEO] = "System Video:\n\nIntended to select between NTSC and PAL-M on DOL-002(BRA)",
 	[SET_SCREEN_POS] = "Screen Position:\n\nAdjusts the horizontal screen position in games",
+	[SET_SYS_DATE] = "System Date:\n\nEnter the local date as YYYY-MM-DD.\nThe time of day keeps running.",
+	[SET_SYS_TIME] = "System Time:\n\nEnter the local time as HH:MM:SS in 24-hour format.\nThe date stays the same.",
 	[SET_SYS_LANG] = "System Language:\n\nSystem language used in games, primarily multi-5 PAL games",
 	[SET_CONFIG_DEV] = "Configuration Device:\n\nThe device Indigo loads settings from and saves them to, in\nswiss/settings/global.ini. The choice is stored in SRAM, and it\nchanges only once Save & Exit has written the settings there.\nThe line under the Storage title says whether that file loaded.",
 	[SET_LIBRARY_PATH] = "Library Path:\n\nWhere the Library finds your games. Auto looks for a /games\nfolder on the boot device, then on the other storage connected,\nand starts on the first it finds. Or choose a folder, such as\nsdc:/games: Left and Right step through devices, A opens the\nfolder chooser, where X chooses a folder and Y switches devices.",
@@ -664,6 +667,8 @@ static const settingsRowRef_t consoleRows[] = {
 	{PAGE_GLOBAL, SET_SYS_BOOTMODE},
 	{PAGE_GLOBAL, SET_DISABLE_RECALIB},
 	{PAGE_GLOBAL, SET_TAU_CALIB},
+	{PAGE_GLOBAL, SET_SYS_DATE},
+	{PAGE_GLOBAL, SET_SYS_TIME},
 };
 
 static const settingsRowRef_t storageRows[] = {
@@ -1074,6 +1079,15 @@ static void rowAction(settingRowView_t *row, const char *label, bool enabled)
 	rowShow(row, SET_ROWKIND_ACTION, label, NULL, enabled);
 }
 
+static void settingsClockText(bool date, char *text, size_t size)
+{
+	time_t now = time(NULL);
+	struct tm local;
+	if(now == (time_t)-1 || !gmtime_r(&now, &local) ||
+		!strftime(text, size, date ? "%Y-%m-%d" : "%H:%M:%S", &local))
+		text[0] = '\0';
+}
+
 /* Label, value and enabled state of one setting, as the six legacy pages
  * drew them. */
 static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
@@ -1097,6 +1111,11 @@ static void settingsDescribeRow(int page, int option, ConfigEntry *gameConfig,
 			case SET_SYS_SOUND: rowCycle(row, "System Sound:", swissSettings.sramStereo ? "Stereo" : "Mono", true); break;
 			case SET_SYS_VIDEO: rowCycle(row, "System Video:", sramVideoStr[swissSettings.sramVideo], tvEnable); break;
 			case SET_SCREEN_POS: rowNumber(row, "Screen Position:", "%+i", swissSettings.sramHOffset, true); break;
+			case SET_SYS_DATE:
+			case SET_SYS_TIME:
+				settingsClockText(option == SET_SYS_DATE, row->text, sizeof(row->text));
+				rowText(row, option == SET_SYS_DATE ? "System Date:" : "System Time:", row->text, true);
+			break;
 			case SET_SYS_LANG: rowCycle(row, "System Language:", sramLanguageStr[swissSettings.sramLanguage], true); break;
 			case SET_CONFIG_DEV: rowCycle(row, "Configuration Device:", getConfigDeviceName(&swissSettings), true); break;
 			case SET_LIBRARY_PATH: rowCycle(row, "Library Path:", getLibraryPathName(&swissSettings), true); break;
@@ -1507,6 +1526,29 @@ const char *settings_game_custom_first(ConfigEntry *game)
 	return text;
 }
 
+static void settingsEditClock(bool date)
+{
+	char original[11], entry[sizeof(original)];
+	int64_t local;
+
+	time_sync_wait();
+	settingsClockText(date, original, sizeof(original));
+	strcpy(entry, original);
+	DrawGetTextEntry(date ? ENTRYMODE_DATE : ENTRYMODE_TIME,
+		date ? "System Date (YYYY-MM-DD)" : "System Time (HH:MM:SS)", entry, date ? 10 : 8);
+	if(strcmp(entry, original) == 0) return;
+	const char *error;
+	if(!UITimeSync_EditLocal(date, entry, time(NULL), &local))
+		error = date ? "Enter a valid console date as YYYY-MM-DD." : "Enter a valid console time as HH:MM:SS.";
+	else if(!time_sync_write_local(local))
+		error = "Could not set the console clock. Try again.";
+	else
+		return;
+	uiDrawObj_t *message = DrawPublish(DrawMessageBox(D_WARN, error));
+	wait_press_A();
+	DrawDispose(message);
+}
+
 static void settingsEditTimeZone(void)
 {
 	char zone[sizeof(swissSettings.timeZone)];
@@ -1551,6 +1593,10 @@ void settings_toggle(int page, int option, int direction, ConfigEntry *gameConfi
 					swissSettings.sramHOffset += direction;
 				}
 				VIDEO_SetAdjustingValues(swissSettings.sramHOffset, 0);
+			break;
+			case SET_SYS_DATE:
+			case SET_SYS_TIME:
+				if(direction == 0) settingsEditClock(option == SET_SYS_DATE);
 			break;
 			case SET_SYS_LANG:
 				swissSettings.sramLanguage += direction;
@@ -2467,7 +2513,8 @@ static bool settingsRowIsAction(int page, int option)
 {
 	switch(page) {
 		case PAGE_GLOBAL:
-			return option == SET_SAVE_FOLDER || option == SET_LIBRARY_PATH;
+			return option == SET_SAVE_FOLDER || option == SET_LIBRARY_PATH ||
+				option == SET_SYS_DATE || option == SET_SYS_TIME;
 		case PAGE_INTERFACE:
 			return in_range(option, SET_AUTOLOAD, SET_FLATTEN_DIR);
 		case PAGE_NETWORK:
@@ -2927,7 +2974,7 @@ static bool settingsInputMayBlock(int page, int option, u32 buttons)
 	if(page == PAGE_GLOBAL) {
 		return ((horizontal || activate) && (option == SET_RT4K_OPTIM ||
 			option == SET_SAVE_FOLDER)) ||
-			(activate && option == SET_LIBRARY_PATH) ||
+			(activate && (option == SET_LIBRARY_PATH || option == SET_SYS_DATE || option == SET_SYS_TIME)) ||
 			(activate && settingsIsLiveVideoRow(page, option));
 	}
 	if(page == PAGE_INTERFACE) {
