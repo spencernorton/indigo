@@ -15,6 +15,10 @@ screen, and **B** there goes back to the File Browser, on the same row.
 
 - **The cover**: the game's poster, or its disc banner if you have no
   [poster pack](posters.md).
+- **Badges**, on the GAME DETAIL line at the top: how many can play, the
+  age rating, and the controllers or accessories the game uses, such as
+  **BONGOS** or **GBA LINK**. They come from the
+  [poster pack](posters.md#feature-badges); without it, there are none.
 - **Title and publisher**, from the disc's banner. Under them, notes when
   they apply: **Audio Streaming** for a game that plays music streamed from
   the disc, **Disc 2 Ready** when Indigo has found the game's second disc,

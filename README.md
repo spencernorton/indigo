@@ -316,7 +316,8 @@ skipped and listed.
 The Spotlight layout also shows each game's gameplay still from
 `swiss/ui/stills.pak` and a few sentences about it from
 `swiss/ui/descriptions.txt`, and the Jewel Case layout each game's disc
-from `swiss/ui/discs.pak`; the poster pack carries all three beside the
+from `swiss/ui/discs.pak`, and Game Details each game's feature badges from
+`swiss/ui/features.txt`; the poster pack carries all four beside the
 posters. Copy `discs.pak` to `swiss/ui/discs.pak` on the games card too:
 updating Indigo itself does not install the disc images. Restart Indigo
 after updating the pack. Its covers, descriptions and discs come from

@@ -9,6 +9,7 @@ The Library's pictures and descriptions come from optional files in
 | `stills.pak` | Gameplay stills: a 320×240 screenshot per game. |
 | `discs.pak` | Disc art: a 160×160 picture of each game's disc, for the Jewel Case layout. |
 | `descriptions.txt` | A few sentences about each game, for Spotlight. See [below](#game-descriptions). |
+| `features.txt` | Badges for each game, for Game Details. See [below](#feature-badges). |
 
 The three packs are built with `buildtools/ui/poster_pack.py` and share one format,
 described here. Indigo checks every field below before it uses a pack, and
@@ -161,3 +162,25 @@ For a game the file doesn't list, Spotlight uses the first line for another
 disc of the same game and region (the same first four characters of its ID),
 then its disc banner's own description. Without either, it says the game has
 no description rather than leaving the space blank.
+
+## Feature badges
+
+`features.txt` gives Game Details a few badges for each game: how many can
+play, its age rating, and the controllers and accessories it uses. It is laid
+out as `descriptions.txt` is, above: one game per line, its six-character
+game ID, a space (or a tab), then its badges separated by `|`, in
+Windows-1252. Lines starting with `#` are comments.
+
+```text
+# Feature badges for my card
+GKGE01 1-4 PLAYERS|ESRB E|BONGOS
+GMSE01 1 PLAYER|ESRB E
+```
+
+Game Details shows a game's first four badges on its GAME DETAIL line, in the
+file's order and as written, as many as fit beside the heading. Spaces around
+a badge are dropped, and an empty badge or one longer than 15 characters is
+left out. Indigo reads the first 127 characters of a line; a badge that runs
+past them is left out. The file's size and game limits, and how a game it
+doesn't list takes another disc's line, are those of `descriptions.txt`. A
+game with no line has no badges.

@@ -48,6 +48,43 @@ static void copyText(char *destination, size_t capacity, const char *source)
 	destination[length] = '\0';
 }
 
+/* "1-4 PLAYERS|ESRB E|BONGOS" into badges, in order: each trimmed of spaces,
+ * and an empty one, or one too long for its room, left out. */
+static void splitBadges(
+	char badges[UI_GAMEFLOW_DETAIL_BADGES][UI_GAMEFLOW_DETAIL_BADGE_CAPACITY],
+	const char *line)
+{
+	size_t length = boundedLength(line, UI_GAMEFLOW_DETAIL_BADGE_LINE - 1u);
+	bool cut = length == UI_GAMEFLOW_DETAIL_BADGE_LINE - 1u;
+	size_t start = 0u;
+	size_t count = 0u;
+	size_t i;
+
+	for(i = 0u; i <= length && count < UI_GAMEFLOW_DETAIL_BADGES; ++i) {
+		size_t first = start;
+		size_t last = i;
+
+		if(i < length && line[i] != '|') {
+			continue;
+		}
+		start = i + 1u;
+		if(i == length && cut) {
+			break;
+		}
+		while(first < last && line[first] == ' ') {
+			++first;
+		}
+		while(last > first && line[last - 1u] == ' ') {
+			--last;
+		}
+		if(last > first && last - first < UI_GAMEFLOW_DETAIL_BADGE_CAPACITY) {
+			memcpy(badges[count], line + first, last - first);
+			badges[count][last - first] = '\0';
+			++count;
+		}
+	}
+}
+
 static void appendText(char *destination, size_t capacity, const char *text)
 {
 	size_t length;
@@ -447,6 +484,7 @@ bool UIGameflowDetail_Build(uiGameflowDetailSnapshot_t *snapshot,
 	copyText(snapshot->title, sizeof(snapshot->title), source->title);
 	copyText(snapshot->company, sizeof(snapshot->company), source->company);
 	copyText(snapshot->facts, sizeof(snapshot->facts), source->facts);
+	splitBadges(snapshot->badges, source->badges);
 	copyText(description, sizeof(description), source->description);
 	wrapDescription(snapshot->description, description);
 
