@@ -1898,8 +1898,12 @@ class Screen(unittest.TestCase):
         focus, moves = [0], iter([1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1])
         presses = []
 
+        page_visible = [True]
+
         def gray():
             frame = np.zeros((480, 640), np.uint8)
+            if page_visible[0]:
+                frame[54:58, 45:92] = 255
             first = max(0, focus[0] - 3)
             for slot, top in enumerate(run.SETTINGS_ROW_TOPS):
                 x = 50 + 12 * (first + slot)
@@ -1926,8 +1930,14 @@ class Screen(unittest.TestCase):
         focus[0], moves = 0, iter([5, 0, 0, 1, 1, 1, 1])
         route.walk_rows(1, "Recover a held DOWN on Setup")
         self.assertEqual(focus[0], 1)
+        # In Console the same five-row jump scrolls five labels out of
+        # view. One Up restores enough overlap to measure it.
+        focus[0], moves = 13, iter([5, 1, 1])
+        route.walk_rows(3, "Recover the row after a window scroll")
+        self.assertEqual(focus[0], 16)
+        page_visible[0] = False
         focus[0], moves = 0, iter([1, 10])
-        with self.assertRaises(run.Failed):  # a row it can't find among the rows before
+        with self.assertRaises(run.Failed):  # no known row or page to recover from
             route.walk_rows(2, "DOWNs reach the row")
 
     def test_folder_route_follows_the_public_library_layout_order(self):

@@ -1818,6 +1818,7 @@ class Route:
         so a press held into Settings' repeat (two rows) is taken back with UP
         and one the page missed is pressed again."""
         moved, steps = 0, []
+        title = text_mask(self.gray(), SETTINGS_TITLE_BOX)
         # A single held press can cross more rows than the requested walk.
         # Allow one visible page of corrections as well as missed presses.
         for _ in range(rows + len(SETTINGS_ROW_TOPS) + PRESSES):
@@ -1829,7 +1830,21 @@ class Route:
             self.pause(0.4)
             step = rows_moved(before, self.settings_rows())
             if step is None:
-                break
+                # A whole window may have scrolled away. On the same page,
+                # step back until two of the original labels overlap again.
+                # Count the observed net movement, including that correction.
+                reverse = "UP" if button == "DOWN" else "DOWN"
+                for _ in SETTINGS_ROW_TOPS:
+                    current_title = text_mask(self.gray(), SETTINGS_TITLE_BOX)
+                    if not has_label(title) or not same_text(title, current_title):
+                        break
+                    self.press(reverse)
+                    self.pause(0.4)
+                    step = rows_moved(before, self.settings_rows())
+                    if step is not None:
+                        break
+                if step is None:
+                    break
             steps.append(step)
             moved += step
         corrected = [step for step in steps if abs(step) != 1]
