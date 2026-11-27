@@ -21,7 +21,7 @@ class UpdateButtons(unittest.TestCase):
 #include <stddef.h>
 typedef unsigned u32;
 typedef int uiDrawObj_t;
-enum { BUTTON_A = 1, BUTTON_B = 2, OTHER = 4 };
+enum { BUTTON_A = 1, BUTTON_B = 2, OTHER = 4, D_INFO = 0 };
 static const u32 *frames;
 static size_t frame, count;
 static u32 presses;
@@ -47,10 +47,9 @@ int main(void) {
     const u32 warning[] = {BUTTON_B, 0, BUTTON_A, BUTTON_A, 0};
     const u32 cancel[] = {BUTTON_A, 0, BUTTON_B, 0};
     const u32 install[] = {0, BUTTON_A, BUTTON_A, 0};
-    bool answer = true;
     start(warning, 5); updateTell(0, "cancelled");
-    start(cancel, 4); assert(!updateAsk(0, "install?", &answer) && !answer);
-    start(install, 4); assert(updateAsk(0, "install?", &answer) && answer);
+    start(cancel, 4); assert(!updateAsk("install?"));
+    start(install, 4); assert(updateAsk("install?"));
     return 0;
 }
 '''

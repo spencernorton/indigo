@@ -11,7 +11,7 @@ GUI = Path(__file__).resolve().parents[2] / 'cube/swiss/source/gui'
 class ContentReplace(unittest.TestCase):
     def test_preserve_old_file_or_publish_verified_replacement(self):
         source = (GUI / 'update.c').read_text()
-        functions = source[source.index('static bool contentTarget('):
+        functions = source[source.index('static int contentTarget('):
                            source.index('/* Whether the card already holds')]
         harness = r'''
 #include <assert.h>
@@ -20,14 +20,21 @@ class ContentReplace(unittest.TestCase):
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-typedef struct { char name[64]; } file_handle;
+#include <sys/stat.h>
+enum { IS_FILE, IS_DIR };
+typedef struct { char name[64]; int fileType; } file_handle;
 typedef struct {
     int (*statFile)(file_handle *);
     int (*deleteFile)(file_handle *);
     int (*renameFile)(file_handle *, char *);
 } DEVICEHANDLER_INTERFACE;
 static int fail_publish, fail_rollback;
-static int stat_file(file_handle *file) { return access(file->name, F_OK); }
+static int stat_file(file_handle *file) {
+    struct stat st;
+    if (stat(file->name, &st)) return -1;
+    file->fileType = S_ISDIR(st.st_mode) ? IS_DIR : IS_FILE;
+    return 0;
+}
 static int erase(file_handle *file) { return unlink(file->name); }
 static int move(file_handle *from, char *to) {
     if (access(to, F_OK) == 0) return -1; /* FAT refuses to overwrite. */
@@ -60,7 +67,7 @@ static int read_byte(const char *name) {
         cases = r'''
 int main(void) {
     DEVICEHANDLER_INTERFACE device = { stat_file, erase, move };
-    file_handle part, target, previous;
+    file_handle part, target;
     const char *path = "test", *old = "test.indigo-old";
     contentFile(&part, &device, path, ".part");
     write_byte(part.name, 'a');
@@ -74,7 +81,7 @@ int main(void) {
         assert(!contentPublish(&device, path, &part));
         assert(read_byte(interrupted ? old : path) == 'a');
         fail_publish = fail_rollback = 0;
-        assert(contentTarget(&device, path, &target, &previous));
+        assert(contentTarget(&device, path, &target) == 1);
         assert(read_byte(path) == 'a' && read_byte(old) == EOF);
     }
 
@@ -83,6 +90,12 @@ int main(void) {
     contentFile(&part, &device, path, ".part");
     assert(contentPublish(&device, path, &part));
     assert(read_byte(path) == 'b' && read_byte(old) == EOF);
+    assert(unlink(path) == 0 && mkdir(path, 0700) == 0);
+    contentFile(&part, &device, path, ".part");
+    write_byte(part.name, 'c');
+    assert(!contentPublish(&device, path, &part) && rmdir(path) == 0);
+    assert(mkdir(old, 0700) == 0);
+    assert(!contentPublish(&device, path, &part) && rmdir(old) == 0);
     return 0;
 }
 '''

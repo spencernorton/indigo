@@ -95,29 +95,16 @@ static void updateTell(int type, const char *message)
 
 /* A/B with the choosing press let go first (settingsConfirmReset's rule),
  * and the answering press let go before anything else reads the pad. */
-static bool updateAsk(int type, const char *message, bool *pressedA)
+static bool updateAsk(const char *message)
 {
-	bool released = false;
-	uiDrawObj_t *box = DrawPublish(DrawMessageBox(type, message));
-
-	for(;;) {
-		u32 held = padsButtonsHeld() & (BUTTON_A | BUTTON_B);
-		if(!released) {
-			released = held == 0;
-		}
-		else if(held & BUTTON_A) {
-			*pressedA = true;
-			break;
-		}
-		else if(held & BUTTON_B) {
-			*pressedA = false;
-			break;
-		}
+	u32 held;
+	uiDrawObj_t *box = DrawPublish(DrawMessageBox(D_INFO, message));
+	releaseUpdateButtons();
+	while(!(held = padsButtonsHeld() & (BUTTON_A | BUTTON_B)))
 		VIDEO_WaitVSync();
-	}
 	releaseUpdateButtons();
 	DrawDispose(box);
-	return *pressedA;
+	return (held & BUTTON_A) != 0;
 }
 
 /* Progress with a speed and the time left, refreshed as the copy core
@@ -932,10 +919,10 @@ static const char *failureText(update_result_t result)
 		case UPDATE_NO_NETWORK: return "The network is unavailable.";
 		case UPDATE_NO_SPACE: return "Insufficient free storage or memory.";
 		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid release manifest.";
-		case UPDATE_HASH_MISMATCH: return "The update failed its SHA-256 check.";
+		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
 		case UPDATE_IMAGE_INVALID: return "The new Indigo could not start.";
-		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not complete the update.";
-		case UPDATE_SIZE_MISMATCH: return "The release file has the wrong size.";
+		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not read or write a file.";
+		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
 		default: return "The update source could not supply the release.";
 	}
 }
@@ -1000,10 +987,9 @@ static void finishCheck(update_check_t *check, bool automatic)
 	}
 	if(apply && !automatic) {
 		char message[128];
-		bool answered;
 		snprintf(message, sizeof(message), "Indigo %s is available.\nInstall and restart?\nA  INSTALL    B  CANCEL",
 			check->manifest.version);
-		apply = updateAsk(D_INFO, message, &answered);
+		apply = updateAsk(message);
 	}
 	if(apply) {
 		check->source.quiet = false;
@@ -1059,26 +1045,32 @@ static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
 
 /* FAT cannot rename over a live file. A saved sibling survives a reset
  * between the two renames. Restore it before checking or retrying. */
-static bool contentTarget(DEVICEHANDLER_INTERFACE *device, const char *path,
-	file_handle *target, file_handle *previous)
+static int contentTarget(DEVICEHANDLER_INTERFACE *device, const char *path, file_handle *target)
 {
 	contentFile(target, device, path, "");
-	contentFile(previous, device, path, ".indigo-old");
-	if(device->statFile(target) == 0)
-		return true;
-	return device->statFile(previous) == 0 &&
-		device->renameFile(previous, target->name) == 0 && device->statFile(target) == 0;
+	if(device->statFile(target) != 0) {
+		file_handle previous;
+		contentFile(&previous, device, path, ".indigo-old");
+		if(device->statFile(&previous) != 0)
+			return 0;
+		if(previous.fileType != IS_FILE || device->renameFile(&previous, target->name) != 0 ||
+			device->statFile(target) != 0)
+			return -1;
+	}
+	return target->fileType == IS_FILE ? 1 : -1;
 }
 
 static bool contentPublish(DEVICEHANDLER_INTERFACE *device, const char *path,
 	file_handle *part)
 {
 	file_handle target, previous;
-	bool replace = contentTarget(device, path, &target, &previous);
+	int replace = contentTarget(device, path, &target);
+	if(replace < 0)
+		return false;
 	if(replace) {
-		/* A successful recovery may have changed the previous handle's name. */
 		contentFile(&previous, device, path, ".indigo-old");
-		if(device->statFile(&previous) == 0 && device->deleteFile(&previous) != 0)
+		if(device->statFile(&previous) == 0 &&
+			(previous.fileType != IS_FILE || device->deleteFile(&previous) != 0))
 			return false;
 		if(device->renameFile(&target, previous.name) != 0)
 			return false;
@@ -1099,12 +1091,12 @@ static bool contentPublish(DEVICEHANDLER_INTERFACE *device, const char *path,
 static bool contentInstalled(DEVICEHANDLER_INTERFACE *device,
 	const ui_content_file_t *wanted, char *chunk)
 {
-	file_handle file, previous;
+	file_handle file;
 	sha256_ctx sha;
 	uint8_t hash[32];
 	uint32_t done = 0;
 
-	if(!contentTarget(device, wanted->path, &file, &previous) || file.fileType != IS_FILE ||
+	if(contentTarget(device, wanted->path, &file) != 1 ||
 		file.size != wanted->size)
 		return false;
 	sha256_init(&sha);
@@ -1134,7 +1126,7 @@ static update_result_t contentFetch(update_check_t *check,
 	uint8_t hash[32];
 
 	contentFile(&part, device, path, ".part");
-	if(device->statFile(&part) == 0 && device->deleteFile(&part) != 0)
+	if(device->statFile(&part) == 0 && (part.fileType != IS_FILE || device->deleteFile(&part) != 0))
 		return UPDATE_WRITE_FAIL;
 	contentFile(&part, device, path, ".part");
 	sha256_init(&sha);
@@ -1205,7 +1197,6 @@ static update_result_t contentInstall(update_check_t *check,
 	size_t games;
 	char message[192];
 	char sizeText[32];
-	bool install;
 	uiDrawObj_t *box;
 	device_info *space;
 	s32 got = -1;
@@ -1289,7 +1280,7 @@ static update_result_t contentInstall(update_check_t *check,
 		"Install %u game content files (%s)?\n%u poster files, %u cheats, %u manuals\nA  INSTALL    B  CANCEL",
 		(unsigned)*total, sizeText, (unsigned)counts[UI_CONTENT_POSTERS],
 		(unsigned)counts[UI_CONTENT_CHEATS], (unsigned)counts[UI_CONTENT_MANUALS]);
-	if(!updateAsk(D_INFO, message, &install))
+	if(!updateAsk(message))
 		goto done;
 
 	list.cursor = 0;
@@ -1319,9 +1310,8 @@ static const char *contentFailureText(update_result_t result)
 	switch(result) {
 		case UPDATE_CANCELLED: return "Installation cancelled.";
 		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid game content list.";
-		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
-		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not complete the installation.";
-		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
+		case UPDATE_HASH_MISMATCH: case UPDATE_SIZE_MISMATCH:
+		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL:
 		case UPDATE_NO_NETWORK: case UPDATE_NO_SPACE: case UPDATE_BAD_SERVER: return failureText(result);
 		default: return "The update source could not supply game content.";
 	}
