@@ -47,7 +47,7 @@
  * keep the stack's and the device's own bounds (the design says so). */
 #define UPDATE_HEAD_SECONDS 60       /* an HTTP head, whole */
 #define UPDATE_MANIFEST_SECONDS 60   /* the update list's body */
-#define UPDATE_TRANSFER_SECONDS 600  /* one whole file, either transport */
+#define UPDATE_TRANSFER_SECONDS 600  /* software file or bulk content window */
 #define UPDATE_DIR "swiss/indigo/updates"
 #define UPDATE_SMB_DIR "indigo-updates"
 
@@ -70,6 +70,7 @@ struct update_source_state {
 	char *chunk;
 	char *scratch;
 	bool quiet;
+	bool gameContent;
 };
 
 /* The screen: tell, ask, and show progress. A box holds three lines.  */
@@ -410,6 +411,7 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 		return result;
 	target->offset = 0;
 	updateProgressStart(&pace);
+	u64 windowStart = pace.started;
 	/* Fill sector-aligned card writes across short network reads. Bytes
 	 * received with the headers participate in the same first block. */
 	uint32_t buffered = carryLength < total ? (uint32_t)carryLength : total;
@@ -422,11 +424,13 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 				break;
 			}
 			sha256_update(sha, (const uint8_t *)chunk, buffered);
+			if(UIUpdate_RenewTransfer(source->gameContent, done - buffered, done))
+				windowStart = SYS_GetSystemTime();
 			buffered = 0;
 		}
 		if(done == total)
 			break;
-		if(updateDeadlineHit(pace.started, UPDATE_TRANSFER_SECONDS)) {
+		if(updateDeadlineHit(windowStart, UPDATE_TRANSFER_SECONDS)) {
 			result = UPDATE_TIMEOUT;
 			break;
 		}
@@ -1361,6 +1365,7 @@ void updateInstallContent(void)
 		return;
 	}
 	strcpy(check->channel, "content");
+	check->source.gameContent = true;
 	checkForeground(check, false, "Checking for game content");
 	if(check->result == UPDATE_OK)
 		check->result = contentInstall(check, device, &done, &total);
