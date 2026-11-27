@@ -622,6 +622,13 @@ static void slotInventory(ui_update_slots_t *slots, char *scratch)
 	}
 }
 
+static bool updateHashMatches(sha256_ctx *sha, const uint8_t expected[32])
+{
+	uint8_t digest[32];
+	sha256_final(sha, digest);
+	return memcmp(digest, expected, sizeof(digest)) == 0;
+}
+
 /* Authenticate the exact buffer that sidestep will start. The final 1 KiB
  * is reserved for the loader's command-line area. */
 static update_result_t slotImage(int slot, const ui_update_manifest_t *release, u8 **out)
@@ -635,7 +642,6 @@ static update_result_t slotImage(int slot, const ui_update_manifest_t *release, 
 		return UPDATE_NO_SPACE;
 	update_result_t result = UPDATE_OK;
 	sha256_ctx sha;
-	uint8_t digest[32];
 	sha256_init(&sha);
 	for(uint32_t done = 0; done < release->size;) {
 		uint32_t want = release->size - done;
@@ -650,8 +656,7 @@ static update_result_t slotImage(int slot, const ui_update_manifest_t *release, 
 	}
 	if(file.device->closeFile(&file) != 0)
 		result = UPDATE_READ_FAIL;
-	sha256_final(&sha, digest);
-	if(result == UPDATE_OK && memcmp(digest, release->sha256, sizeof(digest))) {
+	if(result == UPDATE_OK && !updateHashMatches(&sha, release->sha256)) {
 		print_debug("Update: card readback differs from signed digest\n");
 		result = UPDATE_HASH_MISMATCH;
 	}
@@ -795,7 +800,6 @@ static update_result_t fetchPayload(update_check_t *check, const char *name,
 {
 	DEVICEHANDLER_INTERFACE *device = file->device;
 	sha256_ctx sha;
-	uint8_t hash[32];
 	sha256_init(&sha);
 	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
 	update_result_t result = check->source.fetchFile(&check->source, name, file, size, &sha, bar);
@@ -804,8 +808,7 @@ static update_result_t fetchPayload(update_check_t *check, const char *name,
 		result = UPDATE_WRITE_FAIL;
 	if(device->closeFile(file) != 0 && result == UPDATE_OK)
 		result = UPDATE_WRITE_FAIL;
-	sha256_final(&sha, hash);
-	if(result == UPDATE_OK && memcmp(hash, digest, sizeof(hash))) {
+	if(result == UPDATE_OK && !updateHashMatches(&sha, digest)) {
 		print_debug("Update: received data differs from signed digest\n");
 		return UPDATE_HASH_MISMATCH;
 	}
@@ -907,7 +910,7 @@ static const char *failureText(update_result_t result, bool content)
 {
 	switch(result) {
 		case UPDATE_CANCELLED: return content ? "Installation cancelled." : "Update cancelled.";
-		case UPDATE_CONTENT_CONFLICT: return "Protected or conflicting game files.\nCheck the card on a computer.";
+		case UPDATE_CONTENT_CONFLICT: return "Protected or conflicting files.\nCheck the card on a computer.";
 		case UPDATE_NO_CONFIG_DEVICE: return "Choose a writable Configuration Device.";
 		case UPDATE_NOT_CONFIGURED: return "Set the SMB host and share first.";
 		case UPDATE_BAD_SERVER: return "Use an IPv4 address for a custom mirror.";
@@ -1025,7 +1028,7 @@ void updateRun(enum update_source source)
 {
 	update_check_t *check = newCheck(source, false);
 	if(!check) {
-		updateTell(D_WARN, "Insufficient memory to check for updates.");
+		updateTell(D_WARN, "Insufficient memory.");
 		return;
 	}
 	checkForeground(check, source == UPDATE_SOURCE_SMB, "Checking for Indigo updates");
@@ -1109,7 +1112,6 @@ static int contentMatch(file_handle *file, const ui_content_file_t *item, char *
 	if(file->fileType != IS_FILE || file->size != item->size)
 		return 0;
 	sha256_ctx sha;
-	uint8_t hash[32];
 	uint32_t done = 0;
 	file->offset = 0;
 	sha256_init(&sha);
@@ -1124,8 +1126,7 @@ static int contentMatch(file_handle *file, const ui_content_file_t *item, char *
 	}
 	if(file->device->closeFile(file) || done != item->size)
 		return -1;
-	sha256_final(&sha, hash);
-	return !memcmp(hash, item->sha256, sizeof(hash));
+	return updateHashMatches(&sha, item->sha256);
 }
 
 /* Recover leftovers before checking free space, including when the live
@@ -1236,7 +1237,6 @@ static update_result_t contentInstall(update_check_t *check,
 	ui_content_file_t file;
 	size_t received;
 	sha256_ctx sha;
-	uint8_t hash[32];
 	uint32_t counts[3] = {0, 0, 0};
 	uint32_t length = check->manifest.size;
 	uint32_t at;
@@ -1266,8 +1266,7 @@ static update_result_t contentInstall(update_check_t *check,
 	 * touching the card. A retry can reclaim staging on a full card. */
 	sha256_init(&sha);
 	sha256_update(&sha, (const uint8_t *)text, received);
-	sha256_final(&sha, hash);
-	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+	if(!updateHashMatches(&sha, check->manifest.sha256)) {
 		result = UPDATE_HASH_MISMATCH;
 		goto done;
 	}
@@ -1307,7 +1306,7 @@ static update_result_t contentInstall(update_check_t *check,
 		goto done;
 	if(*total == 0) {
 		updateTell(D_INFO, games ? "Game content is up to date." :
-			"Posters and cheats are up to date.\nBrowse your games first to add their manuals.");
+			"Posters and cheats are up to date.\nBrowse your games to add manuals.");
 		goto done;
 	}
 	space = device->info ? device->info(device->initial) : NULL;
@@ -1334,7 +1333,7 @@ static update_result_t contentInstall(update_check_t *check,
 			goto done;
 		(*done)++;
 	}
-	updateTell(D_INFO, "Game content installed. The Library shows\nthe posters and manuals, and Y on a game's\ndetails opens its cheats.");
+	updateTell(D_INFO, "Game content installed.\nFind posters and manuals in the Library.\nPress Y on game details for cheats.");
 done:
 	free(check->source.chunk);
 	check->source.chunk = NULL;
@@ -1358,7 +1357,7 @@ void updateInstallContent(void)
 	}
 	update_check_t *check = newCheck(UPDATE_SOURCE_HTTP, false);
 	if(!check) {
-		updateTell(D_WARN, "Insufficient memory to install game content.");
+		updateTell(D_WARN, "Insufficient memory.");
 		return;
 	}
 	strcpy(check->channel, "content");
