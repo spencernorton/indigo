@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "bba.h"
 #include "config.h"
@@ -218,7 +219,7 @@ static int httpRecvSome(s32 socket, char *buffer, size_t capacity)
  * size, and bytes that arrived with the head are at `*carryOut` (inside
  * the source's scratch, good until the next read). */
 static update_result_t httpOpenBody(update_source_state_t *source,
-	const char *leaf, uint32_t expectedSize, bool manifestWanted,
+	const char *leaf, uint32_t expectedSize,
 	s32 *socketOut, uint32_t *lengthOut, const char **carryOut,
 	size_t *carryLength)
 {
@@ -230,9 +231,6 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 	u64 started;
 	s32 socket;
 
-	*socketOut = -1;
-	*carryLength = 0;
-	*carryOut = head;
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
 	address.sin_port = htons(base->port);
@@ -290,20 +288,8 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 			net_close(socket);
 			return UPDATE_TIMEOUT;
 		}
-		if(UIUpdate_ParseHttpHead(head, headLength, &status,
-			&contentLength, &hasLength, &chunked)) {
-			/* The body starts after the head's blank line. */
-			const char *crlf = strstr(head, "\r\n\r\n");
-			const char *lf = strstr(head, "\n\n");
-			const char *body;
-			if(crlf != NULL && (lf == NULL || crlf < lf))
-				body = crlf + 4;
-			else if(lf != NULL)
-				body = lf + 2;
-			else {
-				net_close(socket);
-				return UPDATE_HTTP_UNSUPPORTED;
-			}
+		size_t body = UIUpdate_ParseHttpHead(head, headLength, &status, &contentLength, &hasLength, &chunked);
+		if(body) {
 			if(chunked || !hasLength) {
 				net_close(socket);
 				return UPDATE_HTTP_UNSUPPORTED;
@@ -312,7 +298,7 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 				net_close(socket);
 				return UPDATE_HTTP_STATUS;
 			}
-			if(manifestWanted) {
+			if(expectedSize == 0) {
 				if(contentLength > UPDATE_ENVELOPE_MAX) {
 					net_close(socket);
 					return UPDATE_MANIFEST_TOO_BIG;
@@ -322,8 +308,8 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 				net_close(socket);
 				return UPDATE_SIZE_MISMATCH;
 			}
-			*carryOut = body;
-			*carryLength = headLength - (size_t)(body - head);
+			*carryOut = head + body;
+			*carryLength = headLength - body;
 			*lengthOut = contentLength;
 			*socketOut = socket;
 			return UPDATE_OK;
@@ -360,7 +346,7 @@ static update_result_t httpReadText(update_source_state_t *source, const char *l
 	s32 socket;
 	update_result_t result;
 
-	result = httpOpenBody(source, leaf, expected, expected == 0, &socket, &total,
+	result = httpOpenBody(source, leaf, expected, &socket, &total,
 		&carry, &carryLength);
 	if(result != UPDATE_OK)
 		return result;
@@ -400,10 +386,8 @@ static update_result_t httpReadText(update_source_state_t *source, const char *l
 }
 
 static update_result_t httpFetchManifest(update_source_state_t *source,
-	const char *channel, char *buffer, size_t capacity, size_t *length)
+	const char *leaf, char *buffer, size_t capacity, size_t *length)
 {
-	char leaf[24];
-	snprintf(leaf, sizeof(leaf), "%s.signed", channel);
 	return httpReadText(source, leaf, 0, buffer, capacity, length);
 }
 
@@ -420,7 +404,7 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 	update_result_t result;
 	char *chunk = source->chunk;
 
-	result = httpOpenBody(source, name, expectedSize, false, &socket,
+	result = httpOpenBody(source, name, expectedSize, &socket,
 		&total, &carry, &carryLength);
 	if(result != UPDATE_OK)
 		return result;
@@ -491,14 +475,12 @@ static void smbLeaf(char out[PATHNAME_MAX], const char *leaf)
 }
 
 static update_result_t smbFetchManifest(update_source_state_t *source,
-	const char *channel, char *buffer, size_t capacity, size_t *length)
+	const char *leaf, char *buffer, size_t capacity, size_t *length)
 {
 	file_handle file;
-	char leaf[24];
 
 	(void)source;
 	memset(&file, 0, sizeof(file));
-	snprintf(leaf, sizeof(leaf), "%s.signed", channel);
 	smbLeaf(file.name, leaf);
 	file.device = &__device_smb;
 	if(__device_smb.statFile(&file) != 0) {
@@ -785,14 +767,24 @@ void updateStartupBoot(int argc, char **argv)
 	config_unset_device();
 }
 
+/* FatFs and FlippyDrive use FRESULT, littlefs uses negative errno,
+ * and the network filesystems use POSIX stat. Clear errno before probing. */
+static bool updateFileMissing(int result)
+{
+	return result == FR_NO_FILE || result == FR_NO_PATH || result == -ENOENT ||
+		(result == -1 && errno == ENOENT);
+}
+
 /* Clear only a file in the inactive slot. A stat error on a readable
  * existing file must not let us overwrite its recovery record. */
 static bool clearSlotFile(int slot, const char *suffix)
 {
 	file_handle file;
 	slotFile(&file, slot, suffix);
-	if(file.device->statFile(&file) != 0)
-		return true;
+	errno = 0;
+	int result = file.device->statFile(&file);
+	if(result)
+		return updateFileMissing(result);
 	return file.fileType == IS_FILE && file.device->deleteFile(&file) == 0;
 }
 
@@ -911,21 +903,22 @@ done:
 	return result;
 }
 
-static const char *failureText(update_result_t result)
+static const char *failureText(update_result_t result, bool content)
 {
 	switch(result) {
-		case UPDATE_CANCELLED: return "Update cancelled.";
+		case UPDATE_CANCELLED: return content ? "Installation cancelled." : "Update cancelled.";
+		case UPDATE_CONTENT_CONFLICT: return "Protected or conflicting game files.\nCheck the card on a computer.";
 		case UPDATE_NO_CONFIG_DEVICE: return "Choose a writable Configuration Device.";
 		case UPDATE_NOT_CONFIGURED: return "Set the SMB host and share first.";
 		case UPDATE_BAD_SERVER: return "Use an IPv4 address for a custom mirror.";
 		case UPDATE_NO_NETWORK: return "The network is unavailable.";
 		case UPDATE_NO_SPACE: return "Insufficient free storage or memory.";
-		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid release manifest.";
+		case UPDATE_MANIFEST_INVALID: return content ? "Untrusted or invalid game content list." : "Untrusted or invalid release manifest.";
 		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
 		case UPDATE_IMAGE_INVALID: return "The new Indigo could not start.";
 		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not read or write a file.";
 		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
-		default: return "The update source could not supply the release.";
+		default: return content ? "The update source could not supply game content." : "The update source could not supply the release.";
 	}
 }
 
@@ -963,9 +956,12 @@ static update_check_t *newCheck(enum update_source source, bool quiet)
 
 static void fetchCheck(update_check_t *check)
 {
-	if(check->result == UPDATE_OK)
-		check->result = check->source.fetchManifest(&check->source, check->channel,
+	if(check->result == UPDATE_OK) {
+		char leaf[sizeof(check->channel) + sizeof(".signed")];
+		snprintf(leaf, sizeof(leaf), "%s.signed", check->channel);
+		check->result = check->source.fetchManifest(&check->source, leaf,
 			check->envelope, sizeof(check->envelope), &check->length);
+	}
 	if(check->result == UPDATE_OK && !updateReadSigned(check->envelope, check->length,
 		check->channel, &check->manifest))
 		check->result = UPDATE_MANIFEST_INVALID;
@@ -1003,12 +999,26 @@ static void finishCheck(update_check_t *check, bool automatic)
 		}
 	}
 	if(check->result != UPDATE_OK) {
-		print_debug("Update: %s\n", failureText(check->result));
+		const char *reason = failureText(check->result, false);
+		print_debug("Update: %s\n", reason);
 		if(!automatic || apply)
-			updateTell(D_WARN, failureText(check->result));
+			updateTell(D_WARN, reason);
 	}
 	free(check->source.scratch);
 	free(check);
+}
+
+static void checkForeground(update_check_t *check, bool smb, const char *label)
+{
+	if(check->result == UPDATE_OK) {
+		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, label));
+		if(!init_network())
+			check->result = UPDATE_NO_NETWORK;
+		else if(smb)
+			check->result = smbStart(&check->source);
+		fetchCheck(check);
+		DrawDispose(box);
+	}
 }
 
 void updateRun(enum update_source source)
@@ -1018,15 +1028,7 @@ void updateRun(enum update_source source)
 		updateTell(D_WARN, "Insufficient memory to check for updates.");
 		return;
 	}
-	if(check->result == UPDATE_OK) {
-		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, "Checking for Indigo updates"));
-		if(!init_network())
-			check->result = UPDATE_NO_NETWORK;
-		else if(source == UPDATE_SOURCE_SMB)
-			check->result = smbStart(&check->source);
-		fetchCheck(check);
-		DrawDispose(box);
-	}
+	checkForeground(check, source == UPDATE_SOURCE_SMB, "Checking for Indigo updates");
 	finishCheck(check, false);
 }
 
@@ -1046,6 +1048,26 @@ static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
 
 enum { CONTENT_LIVE, CONTENT_PART, CONTENT_OLD, CONTENT_PATHS };
 
+/* FlippyDrive's stat-by-open omits attributes. Its directory listing
+ * includes them. Require a positively identified writable regular file
+ * before changing any existing name on that device. */
+static bool contentWritable(file_handle *file)
+{
+	if(file->device != &__device_flippy)
+		return !(file->fileAttrib & ATTRIB_READONLY);
+	file_handle parent = {.device = file->device}, *entries = NULL;
+	getParentPath(file->name, parent.name);
+	int count = file->device->readDir(&parent, &entries, -1);
+	bool writable = false;
+	for(int i = 0; i < count; i++)
+		if(!strcasecmp(entries[i].name, file->name)) {
+			writable = entries[i].fileType == IS_FILE && !(entries[i].fileAttrib & ATTRIB_READONLY);
+			break;
+		}
+	free(entries);
+	return writable;
+}
+
 /* Inspect every name before mutating any of them. FatFs creates the new
  * directory entry before removing the source during a rename. A power cut
  * can therefore leave two names for the same chain; unlinking either would
@@ -1060,20 +1082,23 @@ static update_result_t contentPaths(DEVICEHANDLER_INTERFACE *device, const char 
 		errno = 0;
 		int result = device->statFile(f);
 		if(result) {
-			/* FatFs and FlippyDrive use FRESULT, littlefs uses negative
-			 * errno and the network filesystems use POSIX stat. */
-			if(result != FR_NO_FILE && result != FR_NO_PATH && result != -ENOENT &&
-				!(result == -1 && errno == ENOENT))
+			if(!updateFileMissing(result))
 				return UPDATE_READ_FAIL;
 			f->fileType = IS_SPECIAL;
 			continue;
 		}
-		if(f->fileType != IS_FILE || (i != CONTENT_LIVE && (f->fileAttrib & ATTRIB_READONLY)))
+		if(f->fileType != IS_FILE || (i != CONTENT_LIVE && !contentWritable(f)))
 			return UPDATE_CONTENT_CONFLICT;
-		if(device->statFile == deviceHandler_FAT_statFile && f->fileBase)
-			for(int j = 0; j < i; j++)
-				if(files[j].fileBase == f->fileBase)
-					return UPDATE_CONTENT_CONFLICT;
+		for(int j = 0; j < i; j++) {
+			if(files[j].fileType != IS_FILE)
+				continue;
+			if(f->fileBase && f->fileBase == files[j].fileBase)
+				return UPDATE_CONTENT_CONFLICT;
+			/* FlippyDrive exposes no cluster IDs. After an interruption
+			 * two names cannot safely be distinguished there. */
+			if(device == &__device_flippy)
+				return UPDATE_CONTENT_CONFLICT;
+		}
 	}
 	return UPDATE_OK;
 }
@@ -1122,7 +1147,7 @@ static update_result_t contentPrepare(DEVICEHANDLER_INTERFACE *device,
 	int match = contentMatch(live, item, chunk);
 	if(match < 0)
 		return UPDATE_READ_FAIL;
-	if(!match && ((live->fileAttrib & ATTRIB_READONLY) || old->fileType == IS_FILE))
+	if(!match && ((live->fileType == IS_FILE && !contentWritable(live)) || old->fileType == IS_FILE))
 		return UPDATE_CONTENT_CONFLICT;
 	if(files[CONTENT_PART].fileType == IS_FILE && device->deleteFile(&files[CONTENT_PART]))
 		return UPDATE_WRITE_FAIL;
@@ -1142,13 +1167,19 @@ static update_result_t contentFetch(update_check_t *check, DEVICEHANDLER_INTERFA
 	if(result != UPDATE_OK)
 		return result;
 	file_handle *live = &files[CONTENT_LIVE], *part = &files[CONTENT_PART], *old = &files[CONTENT_OLD];
-	if(part->fileType == IS_FILE || old->fileType == IS_FILE || (live->fileAttrib & ATTRIB_READONLY))
+	if(part->fileType == IS_FILE || old->fileType == IS_FILE ||
+		(live->fileType == IS_FILE && !contentWritable(live)))
 		return UPDATE_CONTENT_CONFLICT;
 	result = fetchPayload(check, item->path, part, item->size, item->sha256, message);
-	if(result != UPDATE_OK)
+	if(result == UPDATE_OK && (device->statFile(part) || contentMatch(part, item, check->source.chunk) != 1))
+		result = UPDATE_READ_FAIL;
+	if(result != UPDATE_OK) {
+		/* This transfer created staging after an absence check. Neither
+		 * rename has run. Only unlink a confirmed regular staging file. */
+		if(device->statFile(part) == 0 && part->fileType == IS_FILE && contentWritable(part))
+			device->deleteFile(part);
 		return result;
-	if(device->statFile(part) || contentMatch(part, item, check->source.chunk) != 1)
-		return UPDATE_READ_FAIL;
+	}
 	bool replace = live->fileType == IS_FILE;
 	if(replace) {
 		if(device->renameFile(live, old->name))
@@ -1313,19 +1344,6 @@ done:
 	return result;
 }
 
-static const char *contentFailureText(update_result_t result)
-{
-	switch(result) {
-		case UPDATE_CANCELLED: return "Installation cancelled.";
-		case UPDATE_CONTENT_CONFLICT: return "Protected or conflicting game files.\nCheck the card on a computer.";
-		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid game content list.";
-		case UPDATE_HASH_MISMATCH: case UPDATE_SIZE_MISMATCH:
-		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL:
-		case UPDATE_NO_NETWORK: case UPDATE_NO_SPACE: case UPDATE_BAD_SERVER: return failureText(result);
-		default: return "The update source could not supply game content.";
-	}
-}
-
 void updateInstallContent(void)
 {
 	DEVICEHANDLER_INTERFACE *device = devices[DEVICE_CUR];
@@ -1344,21 +1362,16 @@ void updateInstallContent(void)
 		return;
 	}
 	strcpy(check->channel, "content");
-	if(check->result == UPDATE_OK) {
-		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, "Checking for game content"));
-		if(!init_network())
-			check->result = UPDATE_NO_NETWORK;
-		fetchCheck(check);
-		DrawDispose(box);
-	}
+	checkForeground(check, false, "Checking for game content");
 	if(check->result == UPDATE_OK)
 		check->result = contentInstall(check, device, &done, &total);
 	if(check->result != UPDATE_OK) {
 		char message[192];
-		print_debug("Content: %s\n", contentFailureText(check->result));
+		const char *reason = failureText(check->result, true);
+		print_debug("Content: %s\n", reason);
 		snprintf(message, sizeof(message), done ?
 			"%s\nInstalled %u of %u files; press again to finish." : "%s",
-			contentFailureText(check->result), (unsigned)done, (unsigned)total);
+			reason, (unsigned)done, (unsigned)total);
 		updateTell(D_WARN, message);
 	}
 	free(check->source.scratch);

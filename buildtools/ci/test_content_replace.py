@@ -13,7 +13,8 @@ class ContentReplace(unittest.TestCase):
     def test_interrupted_installs(self):
         code = (GUI / 'update.c').read_text()
         result = code[code.index('typedef enum {'):code.index('} update_result_t;') + len('} update_result_t;')]
-        transactions = code[code.index('enum { CONTENT_LIVE'):code.index('/* The games in the folder')]
+        missing = code[code.index('static bool updateFileMissing('):code.index('/* Clear only a file')]
+        transactions = missing + code[code.index('enum { CONTENT_LIVE'):code.index('/* The games in the folder')]
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             (temp / 'result.inc').write_text(result)

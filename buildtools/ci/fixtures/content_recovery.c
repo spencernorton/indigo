@@ -6,7 +6,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "sha256.h"
 #include "ui_content.h"
 #include "result.inc"
@@ -27,6 +29,7 @@ struct device {
 	int (*renameFile)(file_handle *, char *);
 	int (*readFile)(file_handle *, void *, uint32_t);
 	int (*closeFile)(file_handle *);
+	int (*readDir)(file_handle *, file_handle **, int);
 };
 typedef struct { struct { char *chunk; } source; } update_check_t;
 
@@ -89,6 +92,31 @@ static int deviceHandler_FAT_statFile(file_handle *f)
 	f->size = chains[e.cluster].size;
 	return 0;
 }
+static DEVICEHANDLER_INTERFACE __device_flippy;
+static void getParentPath(const char *path, char *parent)
+{
+	(void)path;
+	strcpy(parent, "swiss/ui");
+}
+static int flippy_stat(file_handle *f)
+{
+	int result = deviceHandler_FAT_statFile(f);
+	f->fileAttrib = f->fileBase = 0;
+	return result;
+}
+static int flippy_dir(file_handle *parent, file_handle **entries, int type)
+{
+	assert(!strcmp(parent->name, "swiss/ui") && type == -1);
+	*entries = calloc(NAMES, sizeof(**entries));
+	assert(*entries);
+	int count = 0;
+	for(int i = LIVE; i < NAMES; i++) {
+		if(!files[i].present) continue;
+		file_handle *e = &(*entries)[count++];
+		strcpy(e->name, names[i]); e->fileType = files[i].type; e->fileAttrib = files[i].attrs;
+	}
+	return count;
+}
 static int erase(file_handle *f)
 {
 	int idx = slot(f->name);
@@ -141,7 +169,8 @@ static update_result_t fetchPayload(update_check_t *check, const char *name, fil
 
 int main(void)
 {
-	DEVICEHANDLER_INTERFACE d = {deviceHandler_FAT_statFile, erase, move, read_chunk, close_file};
+	DEVICEHANDLER_INTERFACE d = {deviceHandler_FAT_statFile, erase, move, read_chunk, close_file, NULL};
+	__device_flippy = (DEVICEHANDLER_INTERFACE){flippy_stat, erase, move, read_chunk, close_file, flippy_dir};
 	ui_content_file_t item = {.size = 4};
 	strcpy(item.path, names[LIVE]);
 	sha256_ctx sha;
@@ -149,6 +178,11 @@ int main(void)
 	char chunk[UPDATE_CHUNK];
 	update_check_t check = {.source = {.chunk = chunk}};
 	bool installed;
+
+	errno = EIO;
+	assert(!updateFileMissing(-1) && !updateFileMissing(FR_DISK_ERR));
+	errno = ENOENT;
+	assert(updateFileMissing(-1) && updateFileMissing(-ENOENT) && updateFileMissing(FR_NO_PATH));
 
 	/* All three possible cross-links, including the second rename with a
 	 * distinct old copy. Reading the volume must never free any chain. */
@@ -200,7 +234,7 @@ int main(void)
 	/* Failed transfers and card readback never replace the original. */
 	reset(); put(LIVE, 1, 'o', 4); bad_payload = 1;
 	assert(contentFetch(&check, &d, &item, "") == UPDATE_READ_FAIL);
-	assert(files[LIVE].cluster == 1 && files[PART].present && !files[OLD].present);
+	assert(files[LIVE].cluster == 1 && !files[PART].present && !files[OLD].present);
 	assert(contentPrepare(&d, &item, chunk, &installed) == UPDATE_OK && !installed);
 	assert(!files[PART].present);
 
@@ -219,5 +253,18 @@ int main(void)
 		assert(contentPrepare(&d, &item, chunk, &installed) == UPDATE_CONTENT_CONFLICT);
 		assert(mutations == before && chains[1].allocated && chains[4].allocated);
 	}
+	/* Flippy's stat cannot distinguish cluster chains or read-only files.
+	 * Protect ambiguous recovery; allow normal verified replacements. */
+	reset(); put(LIVE, 1, 'o', 4); files[LIVE].attrs = ATTRIB_READONLY;
+	assert(contentPrepare(&__device_flippy, &item, chunk, &installed) == UPDATE_CONTENT_CONFLICT && !mutations);
+	assert(contentFetch(&check, &__device_flippy, &item, "") == UPDATE_CONTENT_CONFLICT && !mutations);
+	reset(); put(LIVE, 1, 'o', 4); files[PART] = files[LIVE];
+	assert(contentPrepare(&__device_flippy, &item, chunk, &installed) == UPDATE_CONTENT_CONFLICT && !mutations);
+	reset(); put(LIVE, 1, 'o', 4); bad_payload = 1;
+	assert(contentFetch(&check, &__device_flippy, &item, "") == UPDATE_READ_FAIL);
+	assert(files[LIVE].cluster == 1 && !files[PART].present);
+	bad_payload = 0;
+	assert(contentFetch(&check, &__device_flippy, &item, "") == UPDATE_OK);
+	assert(files[LIVE].cluster == 4 && !files[OLD].present);
 	return 0;
 }

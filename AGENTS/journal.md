@@ -9,7 +9,10 @@ final rename. A failed rename rolls it back, and the next content check
 recovers a copy left between renames. The catalog stays in RAM. Interrupted
 downloads reclaim their staging space on retry, and replacement files are
 read back from the card before publication. If FAT has two names pointing
-at one cluster chain, the installer preserves both for repair.
+at one cluster chain, the installer preserves both for repair. FlippyDrive
+checks protection in the directory listing and preserves ambiguous siblings.
+A failed FTP listing or a storage I/O error cannot authorize overwriting a
+destination.
 
 ## 2026-11-26 — Choose how to set the console clock
 

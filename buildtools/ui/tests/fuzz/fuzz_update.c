@@ -42,8 +42,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 			abort();
 		(void)UIUpdate_Decide(&manifest, NULL, 0);
 	}
-	if(UIUpdate_ParseHttpHead(text, size, &status, &length, &hasLength,
-		&chunked) && (status < 100 || status > 999))
+	size_t body = UIUpdate_ParseHttpHead(text, size, &status, &length, &hasLength, &chunked);
+	if(body > size || (body && (status < 100 || status > 999)))
 		abort();
 	if(UIUpdate_ParseBase(text, &base, &why) &&
 	   (base.port == 0 || base.host[0] == '\0'))

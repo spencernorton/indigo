@@ -1582,7 +1582,8 @@ loaddir_retry:
 }
 
 //filename - full path, "\doc\file.dat" or "\doc\"
-static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env* env)
+/* A failed parent listing cannot establish that a destination is absent. */
+static int FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env* env)
 {
 	FTPDIRSTATESTRUCT dirlist;
 	char dirname[FTP_MAXPATH];
@@ -1610,7 +1611,7 @@ static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env
 		dentry->size = 0;
 		dentry->isDirectory = true;
 		strcpy(dentry->name,"/");
-		return true;
+		return 0;
 	}
 
 	//delete trailing '/'
@@ -1645,7 +1646,7 @@ static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env
 
 	if (FTP_FindFirst(dirname, &dirlist, env) == false)
 	{
-		return false;
+		return EIO;
 	}
 
 	for (item = dirlist.list; item!=NULL; item=(FTPDIRENTRYLISTITEM*)item->next)
@@ -1654,13 +1655,13 @@ static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env
 		{
 			*dentry = item->item;
 			FTP_FindClose(&dirlist);
-			return true;
+			return 0;
 		}
 	}
 
 	FTP_FindClose(&dirlist);
 
-	return false;
+	return ENOENT;
 }
 
 //filename - full path, no share name, "/doc/file.dat"
@@ -1678,11 +1679,12 @@ static bool FTP_OpenFile( const char* filename, FTPFILESTRUCT* file, ftp_env* en
 	FTP_FixPath( &filename, fixed_path );
 
 
-	if ( FTP_PathInfo( filename, &dentry, env ) == false )
+	int lookup = FTP_PathInfo(filename, &dentry, env);
+	if (lookup != 0)
 	{
 		NET_PRINTF("FTP_OpenFile( fileName='%s' ) - file does not exist\n", filename );
 
-		if( ((flags & 0x03) == O_WRONLY) || ((flags & 0x03) == O_RDWR) )
+		if(lookup == ENOENT && (((flags & O_ACCMODE) == O_WRONLY) || ((flags & O_ACCMODE) == O_RDWR)))
 		{
             file->envIndex = env->envIndex;
             file->offset = 0;
@@ -2638,12 +2640,13 @@ static int __ftp_stat(struct _reent *r, const char *path, struct stat *st)
 
 	_FTP_lock();
 
-	memset(st, 0, sizeof(stat));
+	memset(st, 0, sizeof(*st));
 
-	if ( FTP_PathInfo(path_absolute, &dentry, env) == false )
+	int lookup = FTP_PathInfo(path_absolute, &dentry, env);
+	if (lookup != 0)
 	{
 		_FTP_unlock();
-		r->_errno = ENOENT;
+		r->_errno = lookup;
 		return -1;
 	}
 	_FTP_unlock();

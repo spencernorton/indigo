@@ -41,6 +41,7 @@ cube/swiss/source/resources/               design sources and Windows tools the 
 # in the same directory for the clock, Settings and packer decisions.
 cube/swiss/source/devices/deviceHandler.h  exposes the pinned SDK compatibility helper used by Swiss directory readers
 cube/swiss/source/devices/usbgecko/deviceHandler-usbgecko.c  returns a valid listing or closes directory resources on insufficient memory
+cube/swiss/source/devices/ftp/ftp_devoptab.c  distinguish a failed remote directory listing from a missing file so a transfer cannot replace an unverified destination
 cube/swiss/source/devices/ftp/deviceHandler-FTP.c  returns a valid listing or closes directory resources on insufficient memory
 cube/swiss/source/devices/fsp/deviceHandler-FSP.c  returns a valid listing or closes directory resources on insufficient memory
 cube/swiss/source/devices/flippydrive/deviceHandler-flippydrive.c  returns a valid listing or closes directory resources on insufficient memory
