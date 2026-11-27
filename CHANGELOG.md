@@ -6,6 +6,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Returning from a submenu with B no longer cancels the next manual check
+  for game content or Indigo updates. B still cancels a check in progress.
 - Setup › Console has one Clock Mode setting. Left or Right selects Manual
   or Auto and explains the choice. Press A to set the date and time offline
   in Manual, or choose the time zone and server in Auto.

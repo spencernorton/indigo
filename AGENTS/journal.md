@@ -1,3 +1,11 @@
+## 2026-11-27 — Ignore an earlier Back press when checking for downloads
+
+On a GameCube, returning from Clock Mode with B and opening Install game
+content immediately reported a cancellation. A second attempt reached the
+server. Manual checks now consume the old B edge before starting. A held B
+or a new press can still cancel the request. Background checks preserve input
+for the active menu.
+
 ## 2026-11-26 — Choose how to set the console clock
 
 Setup › Console has a single Clock Mode row. Left or Right switches between

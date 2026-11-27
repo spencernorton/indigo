@@ -945,6 +945,9 @@ static update_check_t *newCheck(enum update_source source, bool quiet)
 	update_check_t *check = calloc(1, sizeof(*check));
 	if(!check)
 		return NULL;
+	/* Settings can leave a B press latched when returning from a submenu. */
+	if(!quiet)
+		(void)padsButtonsTaken(BUTTON_B);
 	update_source_state_t *transport = &check->source;
 	transport->quiet = quiet;
 	strcpy(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel));
