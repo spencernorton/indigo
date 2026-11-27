@@ -4969,10 +4969,11 @@ FRESULT f_findfirst (
 /* API: Get File Status                                                  */
 /*-----------------------------------------------------------------------*/
 
-FRESULT f_stat (
+static FRESULT stat_path (
 	const TCHAR* path,	/* Pointer to the file path */
 	FILINFO* fno,		/* Pointer to file information to return */
-	FATFS** fatfs		/* Pointer to a pointer to return corresponding filesystem object */
+	FATFS** fatfs,		/* Pointer to a pointer to return corresponding filesystem object */
+	int stored_name		/* Retrieve the spelling recorded on the medium */
 )
 {
 	FRESULT res;
@@ -5012,7 +5013,19 @@ FRESULT f_stat (
 #endif
 				}
 			} else {							/* Found an object */
-				if (fno) get_fileinfo(&dj, fno);
+				if (fno) {
+#if FF_USE_LFN
+					/* FAT lookup compares the LFN against the caller's buffer. Read
+					 * the matched entry set to recover the on-disk name, including
+					 * when follow_path matched only the 8.3 alias. exFAT already
+					 * holds the complete entry set in dirbuf. */
+					if (stored_name && fs->fs_type != FS_EXFAT && dj.blk_ofs != 0xFFFFFFFF) {
+						res = dir_sdi(&dj, dj.blk_ofs);
+						if (res == FR_OK) res = DIR_READ_FILE(&dj);
+					}
+#endif
+					if (res == FR_OK) get_fileinfo(&dj, fno);
+				}
 			}
 		}
 		FREE_NAMEBUFF();
@@ -5021,6 +5034,17 @@ FRESULT f_stat (
 	if (fno && res != FR_OK) fno->fname[0] = 0;	/* Invalidate the file information if an error occured */
 	LEAVE_FF(fs, res);
 }
+
+FRESULT f_stat (const TCHAR* path, FILINFO* fno, FATFS** fatfs)
+{
+	return stat_path(path, fno, fatfs, 0);
+}
+
+FRESULT f_stat_stored (const TCHAR* path, FILINFO* fno, FATFS** fatfs)
+{
+	return stat_path(path, fno, fatfs, 1);
+}
+
 
 
 

@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Home finds the Apps and Emulators folders sooner on large FAT cards.
+  Apps and artwork keep the folder spelling stored on the card.
+
 - Large poster and manual downloads can continue past ten minutes while data
   keeps reaching the card.
 

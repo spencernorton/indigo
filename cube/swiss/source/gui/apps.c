@@ -132,6 +132,27 @@ static bool findAppsFolder(DEVICEHANDLER_INTERFACE *device, const char *name,
 	bool found = false;
 	size_t i;
 
+	if(device->readDir == deviceHandler_FAT_readDir) {
+		FILINFO entry;
+		FATFS *fatfs;
+		/* Match the displayed directory name. Keep its stored spelling for
+		 * the program and artwork paths returned to Apps. */
+		memset(out, 0, sizeof(*out));
+		if(concat_path(out->name, device->initial->name, name) >= sizeof(out->name) ||
+			f_stat_stored(out->name, &entry, &fatfs) != FR_OK ||
+			!(entry.fattrib & AM_DIR) || entry.fsize > UINT32_MAX ||
+			strcasecmp(entry.fname, name))
+			return false;
+		strcpy(getRelativeName(out->name), entry.fname);
+		out->fileBase = entry.fclust;
+		out->size = (u32)entry.fsize;
+		out->fileType = IS_DIR;
+		out->fileAttrib = entry.fattrib;
+		out->blockSize = fatfs->ssize;
+		out->device = device;
+		out->thread = LWP_THREAD_NULL;
+		return true;
+	}
 	takeEntry(&root, device->initial);
 	if(!listFolder(device, &root, IS_DIR, &top)) {
 		return false;
