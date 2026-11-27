@@ -169,6 +169,10 @@ folder) and `Host` (the name it answers to) come together or not at all;
 without them the files sit beside the list. Lines starting with `#` are
 comments. Indigo refuses the whole list if any line breaks a rule.
 
+A slow download can run longer than ten minutes. Each 2 MiB written to the
+card starts a fresh ten-minute window. An idle HTTP read times out after
+ten seconds, and B cancels a transfer.
+
 ## Game descriptions
 
 `descriptions.txt` is plain text: one game per line, its six-character game

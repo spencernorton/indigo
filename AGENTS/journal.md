@@ -1,3 +1,12 @@
+## 2026-11-27 — Allow large game content to finish on slower adapters
+
+On an emulated GameCube the published 24 MB Melee manual was receiving
+about 10 KB/s. The shared ten-minute deadline would interrupt the file
+while data was still reaching the card. An HTTP content download now
+renews its window for each 2 MiB successfully staged. A stalled HTTP read
+still times out in ten seconds. Software updates retain their whole-file
+deadline, and the elapsed time shown on screen covers the entire download.
+
 ## 2026-11-27 — Ignore an earlier Back press when checking for downloads
 
 On a GameCube, returning from Clock Mode with B and opening Install game

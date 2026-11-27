@@ -6,6 +6,9 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
+- Large poster and manual downloads can continue past ten minutes while data
+  keeps reaching the card.
+
 - Verify downloaded game content on the card before replacing an existing file.
   Retrying an interrupted install recovers the previous file and reclaims staging space.
 

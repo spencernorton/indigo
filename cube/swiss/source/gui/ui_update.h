@@ -20,6 +20,15 @@
 #define UI_UPDATE_APPLOADER_MAX (8u * 1024u * 1024u) /* a packed DOL: ~2.4 MiB today */
 #define UI_UPDATE_CHANNELS 2           /* Stable, Release candidate */
 
+/* Bulk game content gets a fresh transfer window for each 2 MiB staged
+ * on the card. Software updates keep one deadline for their whole file. */
+static inline bool UIUpdate_RenewTransfer(bool gameContent, uint32_t before,
+	uint32_t after)
+{
+	const uint32_t windowBytes = 2u * 1024u * 1024u;
+	return gameContent && before / windowBytes < after / windowBytes;
+}
+
 typedef struct {
 	char version[24];        /* "v2.10.0": shown, never compared */
 	char commit[41];         /* the release commit, 40 hex */
