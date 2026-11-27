@@ -11,7 +11,7 @@
 # a pull request of its own.
 
 upstream https://github.com/emukidid/swiss-gc.git
-commit 317963226816f2545dfa2842a90acdc881056950
+commit 915d4fa1efc76468084730284cde5e057ae0b2c2
 
 Makefile                                   make dev also builds the packer, for In-Game Reset's apploader.img; verifies and extracts the pinned libiconv-lite overlay before compiling, while keeping the SDK's pre-installed TinySMB and libuchardet; copies the whitespace-normalized docs/licenses/lwip.txt so host packaging checks need no SDK mount
 cube/packer/Makefile                       compresses with xz: the build image has no 7z; links its files in byte order, whatever the locale

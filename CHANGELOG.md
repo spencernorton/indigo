@@ -57,6 +57,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 - Startup uses less memory and time looking for Library, Apps and Emulators
   folders on cards with many files.
+- Games launched in Production boot mode see retail hardware on development
+  GameCubes, matching the latest Swiss loader.
 - Large directories retain the entries that fit when the console runs low on
   memory. The Swiss source update also refreshes disc verification data.
 

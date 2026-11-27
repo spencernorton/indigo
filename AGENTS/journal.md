@@ -14,6 +14,13 @@ checks protection in the directory listing and preserves ambiguous siblings.
 A failed FTP listing or a storage I/O error cannot authorize overwriting a
 destination.
 
+## 2026-11-27 — Follow Swiss production-mode console identification
+
+Swiss now passes the matching retail hardware revision to games when a
+development GameCube or TDEV starts a game in Production boot mode. The
+pin moves from 31796322 to 915d4fa1. The main and Settings audit fixtures
+are identical across these revisions.
+
 ## 2026-11-26 — Choose how to set the console clock
 
 Setup › Console has a single Clock Mode row. Left or Right switches between
