@@ -18,7 +18,7 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 # A test builds <name>.c (or <name>.main) with the sources in <name>.src,
 # the flags in <name>.flags (GAMEFLOW_CFLAGS unless set) and the libraries in
 # <name>.libs: plain as <name>, under ASan/UBSan as <name>_san.
-TESTS := test_reallocarr test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_bnr test_ui_png \
+TESTS := test_reallocarr test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_fatfs_stored_name test_ui_bnr test_ui_png \
 	test_ui_assets test_ui_assets_target_sync test_blank_banner \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
 	test_ui_menu_input test_ui_menu_sfx test_ui_clock test_ui_hint test_ui_stage \
@@ -39,6 +39,10 @@ test_ui_saves_details.src := $(GUI)/ui_saves_details.c
 test_ui_save_cubes.src := $(GUI)/ui_save_cubes.c $(GUI)/ui_motion.c $(GUI)/ui_saves.c $(GUI)/ui_folder.c $(GUI)/ui_lang.c
 test_ui_save_cubes.libs := -lm
 test_ui_apps.src := $(GUI)/ui_apps.c
+FATFS := ../../../cube/swiss/source/fatfs
+test_fatfs_stored_name.src := $(FATFS)/ff.c $(FATFS)/ffunicode.c
+test_fatfs_stored_name.flags := -std=c11 -Wall -Wextra -I$(FATFS)
+test_fatfs_stored_name test_fatfs_stored_name_san: $(FATFS)/ff.h $(FATFS)/ffconf.h $(FATFS)/diskio.h
 test_ui_bnr.src := $(GUI)/ui_bnr.c $(GUI)/ui_png.c
 test_ui_bnr.libs := -lz -lm
 # test_ui_png.py drives these with the pictures it writes. test_ui_png.c

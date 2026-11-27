@@ -7,6 +7,13 @@
 
 #include "ui_apps.h"
 
+#ifdef GEKKO
+/* GameCube newlib runs in the C locale. Its comparisons already fold
+ * precisely ASCII A-Z, including for high-byte filenames. */
+#include <strings.h>
+#define compareFolded strcasecmp
+#define equalPrefixFolded(a, b, count) (strncasecmp((a), (b), (count)) == 0)
+#else
 static int lower(int c)
 {
 	return c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c;
@@ -23,12 +30,18 @@ static int compareFolded(const char *a, const char *b)
 	}
 }
 
-static bool endsFolded(const char *name, size_t length, const char *ending)
+/* Compare up to count bytes using ASCII case folding, stopping at NUL. */
+static bool equalPrefixFolded(const char *a, const char *b, size_t count)
 {
-	size_t tail = strlen(ending);
-
-	return length > tail && compareFolded(name + length - tail, ending) == 0;
+	for(size_t i = 0; i < count; ++i) {
+		if(lower((unsigned char)a[i]) != lower((unsigned char)b[i]))
+			return false;
+		if(!a[i]) return true;
+	}
+	return true;
 }
+
+#endif
 
 /* The program's name without its extension, and the extension's length. */
 static size_t extensionLength(uiAppsType_t type)
@@ -38,23 +51,21 @@ static size_t extensionLength(uiAppsType_t type)
 
 uiAppsType_t UIApps_ProgramType(const char *name)
 {
-	size_t length;
+	const char *extension;
 	uiAppsType_t type;
 
-	if(name == NULL || name[0] == '.' || name[0] == '\0') {
+	if(name == NULL || name[0] == '.') {
 		return UI_APPS_TYPE_NONE;
 	}
-	length = strlen(name);
-	if(endsFolded(name, length, ".dol+cli")) type = UI_APPS_TYPE_DOL_CLI;
-	else if(endsFolded(name, length, ".dol")) type = UI_APPS_TYPE_DOL;
-	else if(endsFolded(name, length, ".elf")) type = UI_APPS_TYPE_ELF;
+	extension = strrchr(name, '.');
+	if(extension == NULL) return UI_APPS_TYPE_NONE;
+	if(compareFolded(extension, ".dol") == 0) type = UI_APPS_TYPE_DOL;
+	else if(compareFolded(extension, ".dol+cli") == 0) type = UI_APPS_TYPE_DOL_CLI;
+	else if(compareFolded(extension, ".elf") == 0) type = UI_APPS_TYPE_ELF;
 	else return UI_APPS_TYPE_NONE;
 	/* boot.* is the Homebrew Channel's: a Wii program. */
-	if(length - extensionLength(type) == 4u &&
-		lower((unsigned char)name[0]) == 'b' &&
-		lower((unsigned char)name[1]) == 'o' &&
-		lower((unsigned char)name[2]) == 'o' &&
-		lower((unsigned char)name[3]) == 't') {
+	if(extension - name == 4 &&
+		equalPrefixFolded(name, "boot", 4u)) {
 		return UI_APPS_TYPE_NONE;
 	}
 	return type;
@@ -84,17 +95,12 @@ static const uiAppsEntry_t *findPicture(const uiAppsEntry_t *entries,
 	for(i = 0u; i < entryCount; ++i) {
 		const char *name = entries[i].name;
 
-		if(entries[i].folder || entries[i].hidden || name == NULL ||
-			strlen(name) != length + 4u || !endsFolded(name, length + 4u, ".png")) {
-			continue;
-		}
-		{
-			size_t k;
-
-			for(k = 0u; k < length &&
-				lower((unsigned char)name[k]) == lower((unsigned char)base[k]); ++k) {
-			}
-			if(k == length) return &entries[i];
+		/* base contains length non-NUL bytes. A shorter name fails the
+		 * prefix match before its suffix is considered. */
+		if(!entries[i].folder && !entries[i].hidden && name != NULL &&
+			equalPrefixFolded(name, base, length) &&
+			compareFolded(name + length, ".png") == 0) {
+			return &entries[i];
 		}
 	}
 	return NULL;
@@ -119,27 +125,15 @@ static const uiAppsEntry_t *findNamedFile(const uiAppsEntry_t *entries,
 
 static bool isDefaultBase(const char *name, size_t base)
 {
-	static const char def[] = "default";
-	size_t k;
-
-	if(base != sizeof(def) - 1u) {
-		return false;
-	}
-	for(k = 0u; k < base; ++k) {
-		if(lower((unsigned char)name[k]) != (unsigned char)def[k]) {
-			return false;
-		}
-	}
-	return true;
+	return base == sizeof("default") - 1u && equalPrefixFolded(name, "default", base);
 }
 
 /* folder/name into out; false when it doesn't fit. */
 static bool joinPath(char out[UI_APPS_PATH_LENGTH], const char *folder,
 	const char *name)
 {
-	int written = folder[0] != '\0' ?
-		snprintf(out, UI_APPS_PATH_LENGTH, "%s/%s", folder, name) :
-		snprintf(out, UI_APPS_PATH_LENGTH, "%s", name);
+	const char *separator = folder[0] ? "/" : "";
+	int written = snprintf(out, UI_APPS_PATH_LENGTH, "%s%s%s", folder, separator, name);
 
 	return written > 0 && (size_t)written < UI_APPS_PATH_LENGTH;
 }
@@ -156,9 +150,7 @@ bool UIApps_AddFolder(uiApp_t *list, size_t *count, size_t max,
 		return true;
 	}
 	if(folder[0] != '\0') {
-		static const char iconName[] = "icon";
-
-		icon = findPicture(entries, entryCount, iconName, sizeof(iconName) - 1u);
+		icon = findNamedFile(entries, entryCount, "icon.png");
 		banner = findNamedFile(entries, entryCount, "opening.bnr");
 	}
 	for(i = 0u; i < entryCount; ++i) {

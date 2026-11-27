@@ -1,3 +1,12 @@
+## 2026-11-27 — Find Apps and Emulators folders on FAT storage
+
+Home used to enumerate the root directory to locate each folder. The FAT
+lookup now reads the matching directory entry and keeps its on-card name,
+attributes and cluster. A mixed-case Apps folder retains the same program
+path and picture names in the menu. A short alias for another long name
+is skipped. The FAT regression formats a memory disk and compares the
+lookup with the directory entry returned by enumeration.
+
 ## 2026-11-27 — Allow large game content to finish on slower adapters
 
 On an emulated GameCube the published 24 MB Melee manual was receiving
