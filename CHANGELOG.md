@@ -6,7 +6,8 @@ tag on `beta`. The newest changes are at the top until their release is named.
 
 ## Unreleased
 
-- Keep the previous game-content file through the final rename when updating a card.
+- Verify downloaded game content on the card before replacing an existing file.
+  Retrying an interrupted install recovers the previous file and reclaims staging space.
 
 - Returning from a submenu with B no longer cancels the next manual check
   for game content or Indigo updates. B still cancels a check in progress.

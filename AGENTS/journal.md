@@ -6,7 +6,10 @@ server. Manual checks now consume the old B edge before starting. A held B
 or a new press can still cancel the request. Background checks preserve input
 for the active menu. A file replacement keeps the previous copy through the
 final rename. A failed rename rolls it back, and the next content check
-recovers a copy left between renames.
+recovers a copy left between renames. The catalog stays in RAM. Interrupted
+downloads reclaim their staging space on retry, and replacement files are
+read back from the card before publication. If FAT has two names pointing
+at one cluster chain, the installer preserves both for repair.
 
 ## 2026-11-26 — Choose how to set the console clock
 

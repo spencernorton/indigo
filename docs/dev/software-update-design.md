@@ -75,11 +75,15 @@ Indigo reads content from: `swiss/ui`’s five pack files, `swiss/cheats/<ID>[_n
 and `swiss/ui/manuals/<ID4 or ID6>.pak`. Its optional `Server` and `Host`
 lines say where the official files are, because the packs are larger than
 the Pages feed should carry and copyrighted art stays off it; a mirror serves
-them beside the list instead. The console reads the list onto the browsed
-card, hashes its readback against the signed digest, and checks every line
-before it downloads anything. Each file is staged as `<path>.part`, hashed
-while it arrives, and renamed into place only after a match, so the Library,
-cheats and manuals never read a partial file. The Library’s pack readers and
+them beside the list instead. The console downloads the bounded list into
+memory, verifies it against the signed digest, and checks every line before
+using its paths. Each payload downloads to `<path>.part`. Both the transfer
+and the closed file on the card must match the signed SHA-256. The installer
+moves an existing file to `<path>.indigo-old` before publishing its replacement.
+On the next check it restores a missing original or verifies the new live
+file before removing the backup. It reclaims abandoned staging before
+checking free space. Conflicting copies, protected files and FAT names
+sharing one allocation chain are preserved for inspection. The Library’s pack readers and
 manual close first. A file already on the card with the same length and hash
 is skipped, which also resumes an interrupted run. Manuals are chosen by the
 game IDs in the browsed folder (disc headers and game-folder names).
