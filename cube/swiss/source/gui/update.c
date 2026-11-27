@@ -1057,18 +1057,54 @@ static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
 	concatf_path(file->name, device->initial->name, "%s%s", path, suffix);
 }
 
+/* FAT cannot rename over a live file. A saved sibling survives a reset
+ * between the two renames. Restore it before checking or retrying. */
+static bool contentTarget(DEVICEHANDLER_INTERFACE *device, const char *path,
+	file_handle *target, file_handle *previous)
+{
+	contentFile(target, device, path, "");
+	contentFile(previous, device, path, ".indigo-old");
+	if(device->statFile(target) == 0)
+		return true;
+	return device->statFile(previous) == 0 &&
+		device->renameFile(previous, target->name) == 0 && device->statFile(target) == 0;
+}
+
+static bool contentPublish(DEVICEHANDLER_INTERFACE *device, const char *path,
+	file_handle *part)
+{
+	file_handle target, previous;
+	bool replace = contentTarget(device, path, &target, &previous);
+	if(replace) {
+		/* A successful recovery may have changed the previous handle's name. */
+		contentFile(&previous, device, path, ".indigo-old");
+		if(device->statFile(&previous) == 0 && device->deleteFile(&previous) != 0)
+			return false;
+		if(device->renameFile(&target, previous.name) != 0)
+			return false;
+		contentFile(&target, device, path, "");
+	}
+	if(device->renameFile(part, target.name) != 0) {
+		if(replace)
+			device->renameFile(&previous, target.name);
+		return false;
+	}
+	if(replace)
+		device->deleteFile(&previous);
+	return true;
+}
+
 /* Whether the card already holds exactly this file: its size, then its
  * SHA-256, read through the transfer buffer. */
 static bool contentInstalled(DEVICEHANDLER_INTERFACE *device,
 	const ui_content_file_t *wanted, char *chunk)
 {
-	file_handle file;
+	file_handle file, previous;
 	sha256_ctx sha;
 	uint8_t hash[32];
 	uint32_t done = 0;
 
-	contentFile(&file, device, wanted->path, "");
-	if(device->statFile(&file) != 0 || file.fileType != IS_FILE ||
+	if(!contentTarget(device, wanted->path, &file, &previous) || file.fileType != IS_FILE ||
 		file.size != wanted->size)
 		return false;
 	sha256_init(&sha);
@@ -1094,7 +1130,6 @@ static update_result_t contentFetch(update_check_t *check,
 	uint32_t size, const uint8_t sha256[32], const char *message)
 {
 	file_handle part;
-	file_handle target;
 	sha256_ctx sha;
 	uint8_t hash[32];
 
@@ -1114,14 +1149,9 @@ static update_result_t contentFetch(update_check_t *check,
 	sha256_final(&sha, hash);
 	if(result == UPDATE_OK && memcmp(hash, sha256, sizeof(hash)))
 		result = UPDATE_HASH_MISMATCH;
-	if(result == UPDATE_OK) {
-		contentFile(&target, device, path, "");
-		if((device->statFile(&target) == 0 && device->deleteFile(&target) != 0) ||
-			device->renameFile(&part, target.name) != 0)
-			result = UPDATE_WRITE_FAIL;
-	}
-	if(result != UPDATE_OK)
-		device->deleteFile(&part);
+	if(result == UPDATE_OK)
+		return contentPublish(device, path, &part) ? UPDATE_OK : UPDATE_WRITE_FAIL;
+	device->deleteFile(&part);
 	return result;
 }
 

@@ -4,7 +4,9 @@ On a GameCube, returning from Clock Mode with B and opening Install game
 content immediately reported a cancellation. A second attempt reached the
 server. Manual checks now consume the old B edge before starting. A held B
 or a new press can still cancel the request. Background checks preserve input
-for the active menu.
+for the active menu. A file replacement keeps the previous copy through the
+final rename. A failed rename rolls it back, and the next content check
+recovers a copy left between renames.
 
 ## 2026-11-26 — Choose how to set the console clock
 
