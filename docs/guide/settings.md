@@ -348,7 +348,14 @@ one only once it is whole and checked, so B or a lost connection keeps the
 files you had. Press A again to carry on where it stopped.
 
 The poster pack is about 150 MB and the cheats about 6 MB; a manual is about
-13 MB. A mirror serves the release’s `content.signed` and
+13 MB. When replacing an existing file, Indigo keeps its old copy beside it
+until the verified replacement is in place. After an interruption, open
+**Install game content** again to recover and finish. If Indigo reports
+protected or conflicting files, keep both copies and check the card on a
+computer before retrying. FlippyDrive cannot identify shared FAT clusters,
+so an interrupted rename that leaves two names needs this check as well.
+
+A mirror serves the release’s `content.signed` and
 `content-<tag>.list` beside its `stable.signed`, with the files in a `swiss`
 folder there, laid out as on a card.
 

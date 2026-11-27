@@ -364,9 +364,12 @@ static void headIs(const char *text, bool ok, int status,
 	bool gotHas = false;
 	bool gotChunked = false;
 
-	CHECK(UIUpdate_ParseHttpHead(text, strlen(text), &gotStatus,
-		&gotLength, &gotHas, &gotChunked) == ok);
+	size_t body = UIUpdate_ParseHttpHead(text, strlen(text), &gotStatus,
+		&gotLength, &gotHas, &gotChunked);
+	CHECK((body != 0) == ok);
 	if(ok) {
+		CHECK(body <= strlen(text));
+		CHECK(text[body] == 0 || !strcmp(text + body, "payload"));
 		CHECK(gotStatus == status);
 		CHECK(gotLength == contentLength);
 		CHECK(gotHas == hasLength);
@@ -376,6 +379,7 @@ static void headIs(const char *text, bool ok, int status,
 
 static void testHttpHead(void)
 {
+	headIs("HTTP/1.0 200 OK\r\nContent-Length: 7\n\r\npayload", true, 200, 7, true, false);
 	headIs("HTTP/1.1 099 Invalid\r\n\r\n", false, 0, 0, false, false);
 	headIs("HTTP/1.1 2000 Invalid\r\n\r\n", false, 0, 0, false, false);
 	headIs("HTTP/1.1 200 OK\r\nContent-Length: 4500000\r\n\r\n",

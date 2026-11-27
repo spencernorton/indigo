@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "bba.h"
 #include "config.h"
@@ -56,7 +57,7 @@ typedef enum {
 	UPDATE_HTTP_UNSUPPORTED, UPDATE_SMB_REFUSED, UPDATE_SMB_NOT_FOUND,
 	UPDATE_MANIFEST_TOO_BIG, UPDATE_MANIFEST_INVALID, UPDATE_NO_CONFIG_DEVICE,
 	UPDATE_NO_SPACE, UPDATE_READ_FAIL, UPDATE_WRITE_FAIL, UPDATE_SIZE_MISMATCH,
-	UPDATE_HASH_MISMATCH, UPDATE_IMAGE_INVALID
+	UPDATE_HASH_MISMATCH, UPDATE_IMAGE_INVALID, UPDATE_CONTENT_CONFLICT
 } update_result_t;
 
 typedef struct update_source_state update_source_state_t;
@@ -68,7 +69,6 @@ struct update_source_state {
 	const char *hostHeader;
 	char *chunk;
 	char *scratch;
-	char detail[128];
 	bool quiet;
 };
 
@@ -95,29 +95,16 @@ static void updateTell(int type, const char *message)
 
 /* A/B with the choosing press let go first (settingsConfirmReset's rule),
  * and the answering press let go before anything else reads the pad. */
-static bool updateAsk(int type, const char *message, bool *pressedA)
+static bool updateAsk(const char *message)
 {
-	bool released = false;
-	uiDrawObj_t *box = DrawPublish(DrawMessageBox(type, message));
-
-	for(;;) {
-		u32 held = padsButtonsHeld() & (BUTTON_A | BUTTON_B);
-		if(!released) {
-			released = held == 0;
-		}
-		else if(held & BUTTON_A) {
-			*pressedA = true;
-			break;
-		}
-		else if(held & BUTTON_B) {
-			*pressedA = false;
-			break;
-		}
+	u32 held;
+	uiDrawObj_t *box = DrawPublish(DrawMessageBox(D_INFO, message));
+	releaseUpdateButtons();
+	while(!(held = padsButtonsHeld() & (BUTTON_A | BUTTON_B)))
 		VIDEO_WaitVSync();
-	}
 	releaseUpdateButtons();
 	DrawDispose(box);
-	return *pressedA;
+	return (held & BUTTON_A) != 0;
 }
 
 /* Progress with a speed and the time left, refreshed as the copy core
@@ -232,7 +219,7 @@ static int httpRecvSome(s32 socket, char *buffer, size_t capacity)
  * size, and bytes that arrived with the head are at `*carryOut` (inside
  * the source's scratch, good until the next read). */
 static update_result_t httpOpenBody(update_source_state_t *source,
-	const char *leaf, uint32_t expectedSize, bool manifestWanted,
+	const char *leaf, uint32_t expectedSize,
 	s32 *socketOut, uint32_t *lengthOut, const char **carryOut,
 	size_t *carryLength)
 {
@@ -244,9 +231,6 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 	u64 started;
 	s32 socket;
 
-	*socketOut = -1;
-	*carryLength = 0;
-	*carryOut = head;
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
 	address.sin_port = htons(base->port);
@@ -304,33 +288,17 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 			net_close(socket);
 			return UPDATE_TIMEOUT;
 		}
-		if(UIUpdate_ParseHttpHead(head, headLength, &status,
-			&contentLength, &hasLength, &chunked)) {
-			/* The body starts after the head's blank line. */
-			const char *crlf = strstr(head, "\r\n\r\n");
-			const char *lf = strstr(head, "\n\n");
-			const char *body;
-			if(crlf != NULL && (lf == NULL || crlf < lf))
-				body = crlf + 4;
-			else if(lf != NULL)
-				body = lf + 2;
-			else {
-				net_close(socket);
-				return UPDATE_HTTP_UNSUPPORTED;
-			}
+		size_t body = UIUpdate_ParseHttpHead(head, headLength, &status, &contentLength, &hasLength, &chunked);
+		if(body) {
 			if(chunked || !hasLength) {
-				snprintf(source->detail, sizeof(source->detail), "%s",
-					chunked ? "a chunked reply" : "no length sent");
 				net_close(socket);
 				return UPDATE_HTTP_UNSUPPORTED;
 			}
 			if(status != 200) {
-				snprintf(source->detail, sizeof(source->detail),
-					"HTTP %d", status);
 				net_close(socket);
 				return UPDATE_HTTP_STATUS;
 			}
-			if(manifestWanted) {
+			if(expectedSize == 0) {
 				if(contentLength > UPDATE_ENVELOPE_MAX) {
 					net_close(socket);
 					return UPDATE_MANIFEST_TOO_BIG;
@@ -340,8 +308,8 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 				net_close(socket);
 				return UPDATE_SIZE_MISMATCH;
 			}
-			*carryOut = body;
-			*carryLength = headLength - (size_t)(body - head);
+			*carryOut = head + body;
+			*carryLength = headLength - body;
 			*lengthOut = contentLength;
 			*socketOut = socket;
 			return UPDATE_OK;
@@ -367,10 +335,9 @@ static update_result_t httpOpenBody(update_source_state_t *source,
 	}
 }
 
-static update_result_t httpFetchManifest(update_source_state_t *source,
-	const char *channel, char *buffer, size_t capacity, size_t *length)
+static update_result_t httpReadText(update_source_state_t *source, const char *leaf,
+	uint32_t expected, char *buffer, size_t capacity, size_t *length)
 {
-	char leaf[24];
 	const char *carry;
 	size_t carryLength;
 	uint32_t total;
@@ -379,8 +346,7 @@ static update_result_t httpFetchManifest(update_source_state_t *source,
 	s32 socket;
 	update_result_t result;
 
-	snprintf(leaf, sizeof(leaf), "%s.signed", channel);
-	result = httpOpenBody(source, leaf, 0, true, &socket, &total,
+	result = httpOpenBody(source, leaf, expected, &socket, &total,
 		&carry, &carryLength);
 	if(result != UPDATE_OK)
 		return result;
@@ -419,6 +385,12 @@ static update_result_t httpFetchManifest(update_source_state_t *source,
 	return UPDATE_OK;
 }
 
+static update_result_t httpFetchManifest(update_source_state_t *source,
+	const char *leaf, char *buffer, size_t capacity, size_t *length)
+{
+	return httpReadText(source, leaf, 0, buffer, capacity, length);
+}
+
 static update_result_t httpFetchFile(update_source_state_t *source,
 	const char *name, file_handle *target, uint32_t expectedSize,
 	sha256_ctx *sha, uiDrawObj_t *progressBar)
@@ -432,7 +404,7 @@ static update_result_t httpFetchFile(update_source_state_t *source,
 	update_result_t result;
 	char *chunk = source->chunk;
 
-	result = httpOpenBody(source, name, expectedSize, false, &socket,
+	result = httpOpenBody(source, name, expectedSize, &socket,
 		&total, &carry, &carryLength);
 	if(result != UPDATE_OK)
 		return result;
@@ -503,18 +475,15 @@ static void smbLeaf(char out[PATHNAME_MAX], const char *leaf)
 }
 
 static update_result_t smbFetchManifest(update_source_state_t *source,
-	const char *channel, char *buffer, size_t capacity, size_t *length)
+	const char *leaf, char *buffer, size_t capacity, size_t *length)
 {
 	file_handle file;
-	char leaf[24];
 
 	(void)source;
 	memset(&file, 0, sizeof(file));
-	snprintf(leaf, sizeof(leaf), "%s.signed", channel);
 	smbLeaf(file.name, leaf);
 	file.device = &__device_smb;
 	if(__device_smb.statFile(&file) != 0) {
-		snprintf(source->detail, sizeof(source->detail), "%s", file.name);
 		return UPDATE_SMB_NOT_FOUND;
 	}
 	if(file.size > UPDATE_ENVELOPE_MAX || (size_t)file.size >= capacity)
@@ -543,7 +512,6 @@ static update_result_t smbFetchFile(update_source_state_t *source,
 	smbLeaf(file.name, name);
 	file.device = &__device_smb;
 	if(__device_smb.statFile(&file) != 0) {
-		snprintf(source->detail, sizeof(source->detail), "%s", file.name);
 		return UPDATE_SMB_NOT_FOUND;
 	}
 	if(file.size != expectedSize)
@@ -654,6 +622,13 @@ static void slotInventory(ui_update_slots_t *slots, char *scratch)
 	}
 }
 
+static bool updateHashMatches(sha256_ctx *sha, const uint8_t expected[32])
+{
+	uint8_t digest[32];
+	sha256_final(sha, digest);
+	return memcmp(digest, expected, sizeof(digest)) == 0;
+}
+
 /* Authenticate the exact buffer that sidestep will start. The final 1 KiB
  * is reserved for the loader's command-line area. */
 static update_result_t slotImage(int slot, const ui_update_manifest_t *release, u8 **out)
@@ -667,7 +642,6 @@ static update_result_t slotImage(int slot, const ui_update_manifest_t *release, 
 		return UPDATE_NO_SPACE;
 	update_result_t result = UPDATE_OK;
 	sha256_ctx sha;
-	uint8_t digest[32];
 	sha256_init(&sha);
 	for(uint32_t done = 0; done < release->size;) {
 		uint32_t want = release->size - done;
@@ -682,8 +656,7 @@ static update_result_t slotImage(int slot, const ui_update_manifest_t *release, 
 	}
 	if(file.device->closeFile(&file) != 0)
 		result = UPDATE_READ_FAIL;
-	sha256_final(&sha, digest);
-	if(result == UPDATE_OK && memcmp(digest, release->sha256, sizeof(digest))) {
+	if(result == UPDATE_OK && !updateHashMatches(&sha, release->sha256)) {
 		print_debug("Update: card readback differs from signed digest\n");
 		result = UPDATE_HASH_MISMATCH;
 	}
@@ -799,51 +772,62 @@ void updateStartupBoot(int argc, char **argv)
 	config_unset_device();
 }
 
+/* FatFs and FlippyDrive use FRESULT, littlefs uses negative errno,
+ * and the network filesystems use POSIX stat. Clear errno before probing. */
+static bool updateFileMissing(int result)
+{
+	return result == FR_NO_FILE || result == FR_NO_PATH || result == -ENOENT ||
+		(result == -1 && errno == ENOENT);
+}
+
 /* Clear only a file in the inactive slot. A stat error on a readable
  * existing file must not let us overwrite its recovery record. */
 static bool clearSlotFile(int slot, const char *suffix)
 {
 	file_handle file;
 	slotFile(&file, slot, suffix);
-	if(file.device->statFile(&file) != 0)
-		return true;
+	errno = 0;
+	int result = file.device->statFile(&file);
+	if(result)
+		return updateFileMissing(result);
 	return file.fileType == IS_FILE && file.device->deleteFile(&file) == 0;
 }
 
 /* Fetch and close one complete payload. A digest failure here precedes
  * the separate readback of the card and publication of the trial. */
-static update_result_t downloadSlotPayload(update_check_t *check, file_handle *file, bool retry)
+static update_result_t fetchPayload(update_check_t *check, const char *name,
+	file_handle *file, uint32_t size, const uint8_t digest[32], const char *message)
 {
-	DEVICEHANDLER_INTERFACE *d = file->device;
-	check->source.chunk = memalign(32, UPDATE_CHUNK);
-	if(!check->source.chunk)
-		return UPDATE_NO_SPACE;
-
+	DEVICEHANDLER_INTERFACE *device = file->device;
 	sha256_ctx sha;
-	uint8_t hash[32];
 	sha256_init(&sha);
-	char message[96];
-	snprintf(message, sizeof(message), retry ? "Retrying Indigo update to %s" : "Updating Indigo to %s",
-		check->manifest.version);
 	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
-	update_result_t result = check->source.fetchFile(&check->source, check->manifest.file, file,
-		check->manifest.size, &sha, bar);
+	update_result_t result = check->source.fetchFile(&check->source, name, file, size, &sha, bar);
 	DrawDispose(bar);
-	free(check->source.chunk);
-	check->source.chunk = NULL;
-	if(result == UPDATE_OK && d->writeFile(file, NULL, 0) != 0)
+	if(result == UPDATE_OK && device->writeFile(file, NULL, 0) != 0)
 		result = UPDATE_WRITE_FAIL;
-	if(d->closeFile(file) != 0 && result == UPDATE_OK)
+	if(device->closeFile(file) != 0 && result == UPDATE_OK)
 		result = UPDATE_WRITE_FAIL;
-	if(result != UPDATE_OK)
-		return result;
-
-	sha256_final(&sha, hash);
-	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+	if(result == UPDATE_OK && !updateHashMatches(&sha, digest)) {
 		print_debug("Update: received data differs from signed digest\n");
 		return UPDATE_HASH_MISMATCH;
 	}
-	return UPDATE_OK;
+	return result;
+}
+
+static update_result_t downloadSlotPayload(update_check_t *check, file_handle *file, bool retry)
+{
+	char message[96];
+	snprintf(message, sizeof(message), retry ? "Retrying Indigo update to %s" : "Updating Indigo to %s",
+		check->manifest.version);
+	check->source.chunk = memalign(32, UPDATE_CHUNK);
+	if(!check->source.chunk)
+		return UPDATE_NO_SPACE;
+	update_result_t result = fetchPayload(check, check->manifest.file, file,
+		check->manifest.size, check->manifest.sha256, message);
+	free(check->source.chunk);
+	check->source.chunk = NULL;
+	return result;
 }
 
 static update_result_t downloadSlot(update_check_t *check, file_handle *file, int slot, bool automatic)
@@ -922,21 +906,22 @@ done:
 	return result;
 }
 
-static const char *failureText(update_result_t result)
+static const char *failureText(update_result_t result, bool content)
 {
 	switch(result) {
-		case UPDATE_CANCELLED: return "Update cancelled.";
+		case UPDATE_CANCELLED: return content ? "Installation cancelled." : "Update cancelled.";
+		case UPDATE_CONTENT_CONFLICT: return "Protected or conflicting files.\nCheck the card on a computer.";
 		case UPDATE_NO_CONFIG_DEVICE: return "Choose a writable Configuration Device.";
 		case UPDATE_NOT_CONFIGURED: return "Set the SMB host and share first.";
 		case UPDATE_BAD_SERVER: return "Use an IPv4 address for a custom mirror.";
 		case UPDATE_NO_NETWORK: return "The network is unavailable.";
 		case UPDATE_NO_SPACE: return "Insufficient free storage or memory.";
-		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid release manifest.";
-		case UPDATE_HASH_MISMATCH: return "The update failed its SHA-256 check.";
+		case UPDATE_MANIFEST_INVALID: return content ? "Untrusted or invalid game content list." : "Untrusted or invalid release manifest.";
+		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
 		case UPDATE_IMAGE_INVALID: return "The new Indigo could not start.";
-		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not complete the update.";
-		case UPDATE_SIZE_MISMATCH: return "The release file has the wrong size.";
-		default: return "The update source could not supply the release.";
+		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not read or write a file.";
+		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
+		default: return content ? "The update source could not supply game content." : "The update source could not supply the release.";
 	}
 }
 
@@ -945,6 +930,9 @@ static update_check_t *newCheck(enum update_source source, bool quiet)
 	update_check_t *check = calloc(1, sizeof(*check));
 	if(!check)
 		return NULL;
+	/* Settings can leave a B press latched when returning from a submenu. */
+	if(!quiet)
+		(void)padsButtonsTaken(BUTTON_B);
 	update_source_state_t *transport = &check->source;
 	transport->quiet = quiet;
 	strcpy(check->channel, UIUpdate_ChannelName(swissSettings.updateChannel));
@@ -971,9 +959,12 @@ static update_check_t *newCheck(enum update_source source, bool quiet)
 
 static void fetchCheck(update_check_t *check)
 {
-	if(check->result == UPDATE_OK)
-		check->result = check->source.fetchManifest(&check->source, check->channel,
+	if(check->result == UPDATE_OK) {
+		char leaf[sizeof(check->channel) + sizeof(".signed")];
+		snprintf(leaf, sizeof(leaf), "%s.signed", check->channel);
+		check->result = check->source.fetchManifest(&check->source, leaf,
 			check->envelope, sizeof(check->envelope), &check->length);
+	}
 	if(check->result == UPDATE_OK && !updateReadSigned(check->envelope, check->length,
 		check->channel, &check->manifest))
 		check->result = UPDATE_MANIFEST_INVALID;
@@ -997,10 +988,9 @@ static void finishCheck(update_check_t *check, bool automatic)
 	}
 	if(apply && !automatic) {
 		char message[128];
-		bool answered;
 		snprintf(message, sizeof(message), "Indigo %s is available.\nInstall and restart?\nA  INSTALL    B  CANCEL",
 			check->manifest.version);
-		apply = updateAsk(D_INFO, message, &answered);
+		apply = updateAsk(message);
 	}
 	if(apply) {
 		check->source.quiet = false;
@@ -1012,30 +1002,36 @@ static void finishCheck(update_check_t *check, bool automatic)
 		}
 	}
 	if(check->result != UPDATE_OK) {
-		print_debug("Update: %s\n", failureText(check->result));
+		const char *reason = failureText(check->result, false);
+		print_debug("Update: %s\n", reason);
 		if(!automatic || apply)
-			updateTell(D_WARN, failureText(check->result));
+			updateTell(D_WARN, reason);
 	}
 	free(check->source.scratch);
 	free(check);
+}
+
+static void checkForeground(update_check_t *check, bool smb, const char *label)
+{
+	if(check->result == UPDATE_OK) {
+		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, label));
+		if(!init_network())
+			check->result = UPDATE_NO_NETWORK;
+		else if(smb)
+			check->result = smbStart(&check->source);
+		fetchCheck(check);
+		DrawDispose(box);
+	}
 }
 
 void updateRun(enum update_source source)
 {
 	update_check_t *check = newCheck(source, false);
 	if(!check) {
-		updateTell(D_WARN, "Insufficient memory to check for updates.");
+		updateTell(D_WARN, "Insufficient memory.");
 		return;
 	}
-	if(check->result == UPDATE_OK) {
-		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, "Checking for Indigo updates"));
-		if(!init_network())
-			check->result = UPDATE_NO_NETWORK;
-		else if(source == UPDATE_SOURCE_SMB)
-			check->result = smbStart(&check->source);
-		fetchCheck(check);
-		DrawDispose(box);
-	}
+	checkForeground(check, source == UPDATE_SOURCE_SMB, "Checking for Indigo updates");
 	finishCheck(check, false);
 }
 
@@ -1043,7 +1039,6 @@ void updateRun(enum update_source source)
 /* Game content: posters, cheats and manuals, signed like a release.  */
 /* ------------------------------------------------------------------ */
 
-#define CONTENT_LIST "swiss/indigo/content.list"
 #define CONTENT_GAMES_MAX 2048u
 
 static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
@@ -1054,72 +1049,150 @@ static void contentFile(file_handle *file, DEVICEHANDLER_INTERFACE *device,
 	concatf_path(file->name, device->initial->name, "%s%s", path, suffix);
 }
 
-/* Whether the card already holds exactly this file: its size, then its
- * SHA-256, read through the transfer buffer. */
-static bool contentInstalled(DEVICEHANDLER_INTERFACE *device,
-	const ui_content_file_t *wanted, char *chunk)
-{
-	file_handle file;
-	sha256_ctx sha;
-	uint8_t hash[32];
-	uint32_t done = 0;
+enum { CONTENT_LIVE, CONTENT_PART, CONTENT_OLD, CONTENT_PATHS };
 
-	contentFile(&file, device, wanted->path, "");
-	if(device->statFile(&file) != 0 || file.fileType != IS_FILE ||
-		file.size != wanted->size)
-		return false;
+/* FlippyDrive's stat-by-open omits attributes. Its directory listing
+ * includes them. Require a positively identified writable regular file
+ * before changing any existing name on that device. */
+static bool contentWritable(file_handle *file)
+{
+	if(file->device != &__device_flippy)
+		return !(file->fileAttrib & ATTRIB_READONLY);
+	file_handle parent = {.device = file->device}, *entries = NULL;
+	getParentPath(file->name, parent.name);
+	int count = file->device->readDir(&parent, &entries, -1);
+	bool writable = false;
+	for(int i = 0; i < count; i++)
+		if(!strcasecmp(entries[i].name, file->name)) {
+			writable = entries[i].fileType == IS_FILE && !(entries[i].fileAttrib & ATTRIB_READONLY);
+			break;
+		}
+	free(entries);
+	return writable;
+}
+
+/* Inspect every name before mutating any of them. FatFs creates the new
+ * directory entry before removing the source during a rename. A power cut
+ * can therefore leave two names for the same chain; unlinking either would
+ * free the other's data. Zero is the unallocated cluster of an empty file. */
+static update_result_t contentPaths(DEVICEHANDLER_INTERFACE *device, const char *path,
+	file_handle files[CONTENT_PATHS])
+{
+	static const char *const suffix[] = {"", ".part", ".indigo-old"};
+	for(int i = 0; i < CONTENT_PATHS; i++) {
+		file_handle *f = &files[i];
+		contentFile(f, device, path, suffix[i]);
+		errno = 0;
+		int result = device->statFile(f);
+		if(result) {
+			if(!updateFileMissing(result))
+				return UPDATE_READ_FAIL;
+			f->fileType = IS_SPECIAL;
+			continue;
+		}
+		if(f->fileType != IS_FILE || (i != CONTENT_LIVE && !contentWritable(f)))
+			return UPDATE_CONTENT_CONFLICT;
+		for(int j = 0; j < i; j++) {
+			if(files[j].fileType != IS_FILE)
+				continue;
+			if(f->fileBase && f->fileBase == files[j].fileBase)
+				return UPDATE_CONTENT_CONFLICT;
+			/* FlippyDrive exposes no cluster IDs. After an interruption
+			 * two names cannot safely be distinguished there. */
+			if(device == &__device_flippy)
+				return UPDATE_CONTENT_CONFLICT;
+		}
+	}
+	return UPDATE_OK;
+}
+
+/* A short read is a media error, not permission to replace a local file. */
+static int contentMatch(file_handle *file, const ui_content_file_t *item, char *chunk)
+{
+	if(file->fileType != IS_FILE || file->size != item->size)
+		return 0;
+	sha256_ctx sha;
+	uint32_t done = 0;
+	file->offset = 0;
 	sha256_init(&sha);
-	while(done < wanted->size) {
-		uint32_t want = wanted->size - done;
+	while(done < item->size) {
+		uint32_t want = item->size - done;
 		if(want > UPDATE_CHUNK)
 			want = UPDATE_CHUNK;
-		device->seekFile(&file, (s64)done, DEVICE_HANDLER_SEEK_SET);
-		if(device->readFile(&file, chunk, want) != (s32)want)
+		if(file->device->readFile(file, chunk, want) != (s32)want)
 			break;
 		sha256_update(&sha, (const uint8_t *)chunk, want);
 		done += want;
 	}
-	device->closeFile(&file);
-	sha256_final(&sha, hash);
-	return done == wanted->size && !memcmp(hash, wanted->sha256, sizeof(hash));
+	if(file->device->closeFile(file) || done != item->size)
+		return -1;
+	return updateHashMatches(&sha, item->sha256);
 }
 
-/* Downloads one file beside its place and checks its SHA-256 before it
- * replaces the old one: an interrupted copy leaves the previous file. */
-static update_result_t contentFetch(update_check_t *check,
-	DEVICEHANDLER_INTERFACE *device, const char *leaf, const char *path,
-	uint32_t size, const uint8_t sha256[32], const char *message)
+/* Recover leftovers before checking free space, including when the live
+ * content already matches. Keep both originals if neither can be identified
+ * as the installed version. */
+static update_result_t contentPrepare(DEVICEHANDLER_INTERFACE *device,
+	const ui_content_file_t *item, char *chunk, bool *installed)
 {
-	file_handle part;
-	file_handle target;
-	sha256_ctx sha;
-	uint8_t hash[32];
-
-	contentFile(&part, device, path, ".part");
-	if(device->statFile(&part) == 0 && device->deleteFile(&part) != 0)
-		return UPDATE_WRITE_FAIL;
-	contentFile(&part, device, path, ".part");
-	sha256_init(&sha);
-	uiDrawObj_t *bar = DrawPublish(DrawProgressBar(false, 0, message));
-	update_result_t result = check->source.fetchFile(&check->source, leaf,
-		&part, size, &sha, bar);
-	DrawDispose(bar);
-	if(result == UPDATE_OK && device->writeFile(&part, NULL, 0) != 0)
-		result = UPDATE_WRITE_FAIL;
-	if(device->closeFile(&part) != 0 && result == UPDATE_OK)
-		result = UPDATE_WRITE_FAIL;
-	sha256_final(&sha, hash);
-	if(result == UPDATE_OK && memcmp(hash, sha256, sizeof(hash)))
-		result = UPDATE_HASH_MISMATCH;
-	if(result == UPDATE_OK) {
-		contentFile(&target, device, path, "");
-		if((device->statFile(&target) == 0 && device->deleteFile(&target) != 0) ||
-			device->renameFile(&part, target.name) != 0)
-			result = UPDATE_WRITE_FAIL;
-	}
+	file_handle files[CONTENT_PATHS];
+	update_result_t result = contentPaths(device, item->path, files);
 	if(result != UPDATE_OK)
-		device->deleteFile(&part);
-	return result;
+		return result;
+	file_handle *live = &files[CONTENT_LIVE], *old = &files[CONTENT_OLD];
+	if(live->fileType != IS_FILE && old->fileType == IS_FILE) {
+		if(device->renameFile(old, live->name) || device->statFile(live))
+			return UPDATE_WRITE_FAIL;
+		old->fileType = IS_SPECIAL;
+	}
+	int match = contentMatch(live, item, chunk);
+	if(match < 0)
+		return UPDATE_READ_FAIL;
+	if(!match && ((live->fileType == IS_FILE && !contentWritable(live)) || old->fileType == IS_FILE))
+		return UPDATE_CONTENT_CONFLICT;
+	if(files[CONTENT_PART].fileType == IS_FILE && device->deleteFile(&files[CONTENT_PART]))
+		return UPDATE_WRITE_FAIL;
+	if(old->fileType == IS_FILE && device->deleteFile(old))
+		return UPDATE_WRITE_FAIL;
+	*installed = match != 0;
+	return UPDATE_OK;
+}
+
+/* The live file stays in place until its staged replacement reads back
+ * correctly. On a rename error re-inspect all names before recovery. */
+static update_result_t contentFetch(update_check_t *check, DEVICEHANDLER_INTERFACE *device,
+	const ui_content_file_t *item, const char *message)
+{
+	file_handle files[CONTENT_PATHS];
+	update_result_t result = contentPaths(device, item->path, files);
+	if(result != UPDATE_OK)
+		return result;
+	file_handle *live = &files[CONTENT_LIVE], *part = &files[CONTENT_PART], *old = &files[CONTENT_OLD];
+	if(part->fileType == IS_FILE || old->fileType == IS_FILE ||
+		(live->fileType == IS_FILE && !contentWritable(live)))
+		return UPDATE_CONTENT_CONFLICT;
+	result = fetchPayload(check, item->path, part, item->size, item->sha256, message);
+	if(result == UPDATE_OK && (device->statFile(part) || contentMatch(part, item, check->source.chunk) != 1))
+		result = UPDATE_READ_FAIL;
+	if(result != UPDATE_OK) {
+		/* This transfer created staging after an absence check. Neither
+		 * rename has run. Only unlink a confirmed regular staging file. */
+		if(device->statFile(part) == 0 && part->fileType == IS_FILE && contentWritable(part))
+			device->deleteFile(part);
+		return result;
+	}
+	bool replace = live->fileType == IS_FILE;
+	if(replace) {
+		if(device->renameFile(live, old->name))
+			return UPDATE_WRITE_FAIL;
+		contentFile(live, device, item->path, "");
+	}
+	if(device->renameFile(part, live->name)) {
+		bool installed;
+		contentPrepare(device, item, check->source.chunk, &installed);
+		return UPDATE_WRITE_FAIL;
+	}
+	return replace && device->deleteFile(old) ? UPDATE_WRITE_FAIL : UPDATE_OK;
 }
 
 /* The games in the folder browsed last: each disc's own ID, or a game
@@ -1162,9 +1235,8 @@ static update_result_t contentInstall(update_check_t *check,
 	update_result_t result = UPDATE_OK;
 	ui_content_list_t list;
 	ui_content_file_t file;
-	file_handle listFile;
+	size_t received;
 	sha256_ctx sha;
-	uint8_t hash[32];
 	uint32_t counts[3] = {0, 0, 0};
 	uint32_t length = check->manifest.size;
 	uint32_t at;
@@ -1172,12 +1244,10 @@ static update_result_t contentInstall(update_check_t *check,
 	size_t games;
 	char message[192];
 	char sizeText[32];
-	bool install;
 	uiDrawObj_t *box;
 	device_info *space;
-	s32 got = -1;
 
-	if(length > UI_CONTENT_LIST_MAX)
+	if(length == 0 || length > UI_CONTENT_LIST_MAX)
 		return UPDATE_MANIFEST_INVALID;
 	char (*ids)[7] = malloc(CONTENT_GAMES_MAX * sizeof(*ids));
 	char *text = malloc(length + 1u);
@@ -1187,39 +1257,20 @@ static update_result_t contentInstall(update_check_t *check,
 		result = UPDATE_NO_SPACE;
 		goto done;
 	}
-	/* The Library's packs and manual close before their files change. */
-	DrawGameflowCancelPosters();
-	ensure_path(DEVICE_CUR, "swiss", NULL, true);
-	ensure_path(DEVICE_CUR, "swiss/indigo", NULL, false);
-	ensure_path(DEVICE_CUR, "swiss/ui", NULL, false);
-	ensure_path(DEVICE_CUR, "swiss/ui/manuals", NULL, false);
-	ensure_path(DEVICE_CUR, "swiss/cheats", NULL, false);
-
-	result = contentFetch(check, device, check->manifest.file, CONTENT_LIST,
-		length, check->manifest.sha256, "Reading the game content list");
+	box = DrawPublish(DrawProgressBar(true, 0, "Reading the game content list"));
+	result = httpReadText(&check->source, check->manifest.file, length, text, length + 1u, &received);
+	DrawDispose(box);
 	if(result != UPDATE_OK)
 		goto done;
-	contentFile(&listFile, device, CONTENT_LIST, "");
-	if(device->statFile(&listFile) == 0 && listFile.size == length) {
-		device->seekFile(&listFile, 0, DEVICE_HANDLER_SEEK_SET);
-		got = device->readFile(&listFile, text, length);
-	}
-	device->closeFile(&listFile);
-	device->deleteFile(&listFile);
-	if(got != (s32)length) {
-		result = UPDATE_READ_FAIL;
-		goto done;
-	}
-	/* The card read back, hashed again: the list is trusted only as signed. */
+	/* Authenticate the list in memory before interpreting any path or
+	 * touching the card. A retry can reclaim staging on a full card. */
 	sha256_init(&sha);
-	sha256_update(&sha, (const uint8_t *)text, length);
-	sha256_final(&sha, hash);
-	text[length] = '\0';
-	if(memcmp(hash, check->manifest.sha256, sizeof(hash))) {
+	sha256_update(&sha, (const uint8_t *)text, received);
+	if(!updateHashMatches(&sha, check->manifest.sha256)) {
 		result = UPDATE_HASH_MISMATCH;
 		goto done;
 	}
-	if(!UIContent_Open(&list, text, length)) {
+	if(!UIContent_Open(&list, text, received)) {
 		result = UPDATE_MANIFEST_INVALID;
 		goto done;
 	}
@@ -1229,11 +1280,21 @@ static update_result_t contentInstall(update_check_t *check,
 		check->source.hostHeader = list.host;
 	}
 
+	DrawGameflowCancelPosters();
+	ensure_path(DEVICE_CUR, "swiss", NULL, true);
+	ensure_path(DEVICE_CUR, "swiss/ui", NULL, false);
+	ensure_path(DEVICE_CUR, "swiss/ui/manuals", NULL, false);
+	ensure_path(DEVICE_CUR, "swiss/cheats", NULL, false);
 	box = DrawPublish(DrawProgressBar(true, 0, "Checking installed game content"));
 	games = contentGameIds(ids, CONTENT_GAMES_MAX);
 	for(at = 0; UIContent_Next(&list, &file); at++) {
-		if(!UIContent_Wanted(&file, (const char (*)[7])ids, games) ||
-			contentInstalled(device, &file, check->source.chunk))
+		bool installed;
+		if(!UIContent_Wanted(&file, (const char (*)[7])ids, games))
+			continue;
+		result = contentPrepare(device, &file, check->source.chunk, &installed);
+		if(result != UPDATE_OK)
+			break;
+		if(installed)
 			continue;
 		needed[at / 8u] |= (uint8_t)(1u << (at % 8u));
 		counts[file.kind]++;
@@ -1241,9 +1302,11 @@ static update_result_t contentInstall(update_check_t *check,
 		(*total)++;
 	}
 	DrawDispose(box);
+	if(result != UPDATE_OK)
+		goto done;
 	if(*total == 0) {
 		updateTell(D_INFO, games ? "Game content is up to date." :
-			"Posters and cheats are up to date.\nBrowse your games first to add their manuals.");
+			"Posters and cheats are up to date.\nBrowse your games to add manuals.");
 		goto done;
 	}
 	space = device->info ? device->info(device->initial) : NULL;
@@ -1256,7 +1319,7 @@ static update_result_t contentInstall(update_check_t *check,
 		"Install %u game content files (%s)?\n%u poster files, %u cheats, %u manuals\nA  INSTALL    B  CANCEL",
 		(unsigned)*total, sizeText, (unsigned)counts[UI_CONTENT_POSTERS],
 		(unsigned)counts[UI_CONTENT_CHEATS], (unsigned)counts[UI_CONTENT_MANUALS]);
-	if(!updateAsk(D_INFO, message, &install))
+	if(!updateAsk(message))
 		goto done;
 
 	list.cursor = 0;
@@ -1265,13 +1328,12 @@ static update_result_t contentInstall(update_check_t *check,
 			continue;
 		snprintf(message, sizeof(message), "Installing game content: %u of %u",
 			(unsigned)*done + 1u, (unsigned)*total);
-		result = contentFetch(check, device, file.path, file.path, file.size,
-			file.sha256, message);
+		result = contentFetch(check, device, &file, message);
 		if(result != UPDATE_OK)
 			goto done;
 		(*done)++;
 	}
-	updateTell(D_INFO, "Game content installed. The Library shows\nthe posters and manuals, and Y on a game's\ndetails opens its cheats.");
+	updateTell(D_INFO, "Game content installed.\nFind posters and manuals in the Library.\nPress Y on game details for cheats.");
 done:
 	free(check->source.chunk);
 	check->source.chunk = NULL;
@@ -1279,19 +1341,6 @@ done:
 	free(text);
 	free(ids);
 	return result;
-}
-
-static const char *contentFailureText(update_result_t result)
-{
-	switch(result) {
-		case UPDATE_CANCELLED: return "Installation cancelled.";
-		case UPDATE_MANIFEST_INVALID: return "Untrusted or invalid game content list.";
-		case UPDATE_HASH_MISMATCH: return "A file failed its SHA-256 check.";
-		case UPDATE_READ_FAIL: case UPDATE_WRITE_FAIL: return "The card could not complete the installation.";
-		case UPDATE_SIZE_MISMATCH: return "A file has the wrong size.";
-		case UPDATE_NO_NETWORK: case UPDATE_NO_SPACE: case UPDATE_BAD_SERVER: return failureText(result);
-		default: return "The update source could not supply game content.";
-	}
 }
 
 void updateInstallContent(void)
@@ -1308,25 +1357,20 @@ void updateInstallContent(void)
 	}
 	update_check_t *check = newCheck(UPDATE_SOURCE_HTTP, false);
 	if(!check) {
-		updateTell(D_WARN, "Insufficient memory to install game content.");
+		updateTell(D_WARN, "Insufficient memory.");
 		return;
 	}
 	strcpy(check->channel, "content");
-	if(check->result == UPDATE_OK) {
-		uiDrawObj_t *box = DrawPublish(DrawProgressBar(true, 0, "Checking for game content"));
-		if(!init_network())
-			check->result = UPDATE_NO_NETWORK;
-		fetchCheck(check);
-		DrawDispose(box);
-	}
+	checkForeground(check, false, "Checking for game content");
 	if(check->result == UPDATE_OK)
 		check->result = contentInstall(check, device, &done, &total);
 	if(check->result != UPDATE_OK) {
 		char message[192];
-		print_debug("Content: %s\n", contentFailureText(check->result));
+		const char *reason = failureText(check->result, true);
+		print_debug("Content: %s\n", reason);
 		snprintf(message, sizeof(message), done ?
 			"%s\nInstalled %u of %u files; press again to finish." : "%s",
-			contentFailureText(check->result), (unsigned)done, (unsigned)total);
+			reason, (unsigned)done, (unsigned)total);
 		updateTell(D_WARN, message);
 	}
 	free(check->source.scratch);

@@ -487,7 +487,7 @@ static bool spanHasWord(const char *text, size_t length, const char *word)
 	return false;
 }
 
-bool UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
+size_t UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
 	uint32_t *contentLength, bool *hasLength, bool *chunked)
 {
 	size_t pos;
@@ -495,33 +495,33 @@ bool UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
 
 	if(head == NULL || status == NULL || contentLength == NULL ||
 		hasLength == NULL || chunked == NULL)
-		return false;
+		return 0;
 	*status = 0;
 	*contentLength = 0;
 	*hasLength = false;
 	*chunked = false;
 	if(length < 12u || memcmp(head, "HTTP/", 5) != 0)
-		return false;
+		return 0;
 	pos = 5;
 	while(pos < length && head[pos] != ' ' && head[pos] != '\r' && head[pos] != '\n')
 		pos++;
 	if(pos + 4u > length || head[pos] != ' ')
-		return false;
+		return 0;
 	pos++;
 	if(head[pos] < '1' || head[pos] > '5' ||
 		head[pos + 1u] < '0' || head[pos + 1u] > '9' ||
 		head[pos + 2u] < '0' || head[pos + 2u] > '9')
-		return false;
+		return 0;
 	*status = (head[pos] - '0') * 100 + (head[pos + 1u] - '0') * 10 +
 		(head[pos + 2u] - '0');
 	pos += 3u;
 	if(pos >= length || (head[pos] != ' ' && head[pos] != '\r' && head[pos] != '\n'))
-		return false;
+		return 0;
 	/* To the end of the status line, then one header per line. */
 	while(pos < length && head[pos] != '\n')
 		pos++;
 	if(pos >= length)
-		return false;
+		return 0;
 	pos++;
 	for(;;) {
 		size_t lineStart = pos;
@@ -530,13 +530,13 @@ bool UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
 		while(pos < length && head[pos] != '\n')
 			pos++;
 		if(pos >= length)
-			return false; /* the blank line never came */
+			return 0; /* the blank line never came */
 		lineEnd = pos;
 		pos++;
 		if(lineEnd > lineStart && head[lineEnd - 1] == '\r')
 			lineEnd--;
 		if(lineEnd == lineStart)
-			return true; /* the blank line: the head is whole */
+			return pos; /* first body byte after the blank line */
 		colon = lineStart;
 		while(colon < lineEnd && head[colon] != ':')
 			colon++;
@@ -548,9 +548,9 @@ bool UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
 			while(value < lineEnd && (head[value] == ' ' || head[value] == '\t'))
 				value++;
 			if(!parseU32(head + value, lineEnd - value, &parsed))
-				return false;
+				return 0;
 			if(*hasLength && parsed != *contentLength)
-				return false;
+				return 0;
 			*contentLength = parsed;
 			*hasLength = true;
 		}

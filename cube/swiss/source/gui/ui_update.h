@@ -101,13 +101,13 @@ typedef enum {
 bool UIUpdate_ParseBase(const char *text, ui_update_base_t *out,
 	ui_update_base_err_t *why);
 
-/* The head of an HTTP reply, up to and including its blank line. False when
- * the head is not finished in these bytes or is not HTTP at all. The status
+/* Returns the offset immediately after the HTTP header, or zero for an
+ * incomplete or invalid header. The status
  * is the reply's code; `contentLength` is its Content-Length (0 and
  * `hasLength` false when it sends none); `chunked` is a chunked
  * Transfer-Encoding, which the updater does not read. A second
  * Content-Length that disagrees is not a head this reader trusts. */
-bool UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
+size_t UIUpdate_ParseHttpHead(const char *head, size_t length, int *status,
 	uint32_t *contentLength, bool *hasLength, bool *chunked);
 
 #endif
