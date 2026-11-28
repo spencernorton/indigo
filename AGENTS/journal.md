@@ -1,3 +1,10 @@
+## 2026-11-28 — Prepare the v3.1.0 release notes
+
+The release notes describe the first installation from v3.0.0 and earlier,
+the subsequent automatic update and the game content installer. The clock
+guide names the default time server. The notes also link to the current
+MemCard PRO GC hardware coverage record.
+
 ## 2026-11-27 — Find Apps and Emulators folders on FAT storage
 
 Home used to enumerate the root directory to locate each folder. The FAT

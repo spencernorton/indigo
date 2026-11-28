@@ -4,7 +4,13 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
-## Unreleased
+## v3.1.0 — Signed updates and downloadable game content
+
+If you use v3.0.0 or earlier, install the two files from the release ZIP once.
+After that, Indigo can check for updates at startup, verify the download and
+restart into the new version. The Stable channel is selected by default.
+Open **Settings › Network › Install game content** to download the poster pack,
+cheats for every game, and manuals for the games you browse. [Update and recovery guide](docs/guide/settings.md#updating-indigo-over-the-network)
 
 - Home finds the Apps and Emulators folders sooner on large FAT cards.
   Apps and artwork keep the folder spelling stored on the card.
@@ -77,6 +83,12 @@ tag on `beta`. The newest changes are at the top until their release is named.
 - Settings › Setup › Network lets you switch off startup checks, choose the
   release candidate channel, or install a signed release from a local mirror
   or SMB share. Hold X and Y during launch to open the installed recovery copy.
+
+### Hardware coverage
+
+Testing on a physical MemCard PRO GC with the current SDK is still pending
+for existing card updates, new card creation and rapid game-ID changes.
+The previous real-card results and setup are in the [hardware record](docs/validation/memcard-pro.json).
 
 ## v3.0.0 — Dolphin Depot support and standalone build
 
