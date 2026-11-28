@@ -1,9 +1,9 @@
 FormatVersion=1
 Channel=content
-Version=v3.1.0-rc.2
-Commit=ae4f5029e50444a5af12380866f29d0ee478b3ef
+Version=v3.1.0-rc.3
+Commit=07b4f98bfacbd4c805f296355db63fde8a4aba73
 Date=2026-11-27
-BuildTime=1795805140
-File=content-v3.1.0-rc.2.list
+BuildTime=1795808952
+File=content-v3.1.0-rc.3.list
 Size=102770
 SHA256=4ca8e1f3c3f5977bb6f31bf188a2b4aecdb7eb17da977010ea50de70de3aae7b
