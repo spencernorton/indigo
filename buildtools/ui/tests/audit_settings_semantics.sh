@@ -29,9 +29,12 @@
 # hideDetailSaves and alwaysShowDetailSaves, and the Idle Animation, Waves, On-screen
 # Controls and Face Labels arms (SET_IDLE_ANIMATION, SET_WAVES,
 # SET_HOME_CONTROLS, SET_FACE_LABELS) each only flip their own setting, and
-# the clock sync arms flip swissSettings.ntpSync and open the zone editor
-# when enabling without a zone (SET_NTP_SYNC). SET_NTP_HOSTIP edits the
-# server and SET_TIME_ZONE opens the same validated editor. The three File Browser Type arms
+# Clock Mode flips swissSettings.ntpSync without editing the clock.
+# SET_NTP_HOSTIP edits the server and SET_TIME_ZONE validates the zone. The updater's
+# six Network arms (SET_UPDATE_CHANNEL, SET_UPDATE_SERVER,
+# SET_UPDATE_STARTUP, SET_UPDATE_CHECK, SET_UPDATE_SMB, SET_CONTENT_INSTALL)
+# only step or edit their own settings, or start their update or content
+# run on A. The three File Browser Type arms
 # (SET_*BROWSER_TYPE) went with Swiss's lists and their rows; the settings
 # file still reads and writes their keys.
 #
@@ -47,8 +50,8 @@
 # behind it bare; A does nothing on a row another setting owns for now
 # (Flatten directory while Library Folders sets it); Save and Discard sit
 # after the rows a page shows (UISetLayout_RowCount), since Network hides
-# Sync Clock's rows without a network adapter. It is pinned by content
-# hash rather than
+# its online update rows without an adapter. A on Clock Mode opens its
+# options and B returns to the same row. It is pinned by content hash rather than
 # by a base commit, so a rebase cannot break the pin but any further drift
 # still fails until SHOW_ACTIONS_SHA256 is updated deliberately.
 #
@@ -254,13 +257,10 @@ for option, field in (("IDLE_ANIMATION", "idleAnimation"), ("WAVES", "hideWaves"
         r"\t+swissSettings\." + field + r" \^= 1;\n"
         r"\t+break;\n",
         "", normalized, count=1)
-# Accept the original clock arms and the deliberate timezone setup flow.
+# Clock Mode only flips the saved preference. Only the zone row opens its editor.
 normalized = re.sub(
     r"(?ms)^\t+case SET_NTP_SYNC:\n"
     r"\t+swissSettings\.ntpSync \^= 1;\n"
-    r"(?:\t+if\(swissSettings\.ntpSync && UITimeSync_KeepsOffset\(swissSettings\.timeZone\)\) \{\n"
-    r"\t+settingsEditTimeZone\(\);\n"
-    r"\t+\}\n)?"
     r"\t+break;\n"
     r"\t+case SET_NTP_HOSTIP:\n"
     r"\t+DrawGetTextEntry\(ENTRYMODE_IP, \"NTP Server IP\", &swissSettings\.ntpHostIp, sizeof\(swissSettings\.ntpHostIp\) - 1\);\n"
@@ -270,11 +270,25 @@ normalized = re.sub(
     r"DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Time Zone\", &swissSettings\.timeZone, sizeof\(swissSettings\.timeZone\) - 1\));\n"
     r"\t+break;\n",
     "", normalized, count=1)
-# Swiss's new clock controls map to Indigo's existing Network rows. Match
-# their exact upstream bodies before removing them from this comparison.
+# Indigo opens its validated date/time editor only on an explicit A press.
+normalized = re.sub(
+    r'(?m)^\t+case SET_SYS_DATE:\n\t+case SET_SYS_TIME:\n'
+    r'\t+if\(direction == 0\) settingsEditClock\(option == SET_SYS_DATE\);\n'
+    r'\t+break;\n', "", normalized, count=1)
+# Swiss's stock Settings has manual date/time and a process-wide time zone.
+# Indigo's Network clock controls are checked above. Match the stock arms
+# exactly so a future change still shows up in this comparison.
+normalized = re.sub(
+    r'(?m)^\t+case SET_SYS_DATE:\n'
+    r'\t+DrawGetTextEntry\(ENTRYMODE_DATE, "System Date", getDateFormatString\(&swissSettings\), 10\);\n'
+    r'\t+break;\n'
+    r'\t+case SET_SYS_TIME:\n'
+    r'\t+DrawGetTextEntry\(ENTRYMODE_TIME, "System Time", "%T", 8\);\n'
+    r'\t+break;\n', "", normalized, count=1)
 normalized = re.sub(
     r"(?ms)^\t+case SET_SYS_TIMEZONE:\n"
-    r"\t+select_timezone\(swissSettings\.timeZone\);\n"
+    r"\t+if\(!select_timezone\(swissSettings\.timeZone\)\)\n"
+    r"\t+updateTZ\(swissSettings\.timeZone\);\n"
     r"\t+break;\n", "", normalized, count=1)
 normalized = re.sub(
     r"(?ms)^\t+case SET_SNTP_HOSTIP:\n"
@@ -288,6 +302,43 @@ normalized, browsers = re.subn(
     r"\t+break;\n",
     lambda arm: "" if arm.group(1).lower() == arm.group(2) else arm.group(0),
     normalized)
+# So are the updater's five Network arms: Channel and Boot File only step
+# their own settings, Server only edits its text, and the two update rows
+# only start their run on A (direction 0).
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_CHANNEL:\n"
+    r"\t+swissSettings\.updateChannel \+= direction;\n"
+    r"\t+swissSettings\.updateChannel = \(swissSettings\.updateChannel \+ 2\) % 2;\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_SERVER:\n"
+    r"\t+DrawGetTextEntry\(ENTRYMODE_NUMERIC\|ENTRYMODE_ALPHA, \"Update Server\", &swissSettings\.updateServer, sizeof\(swissSettings\.updateServer\) - 1\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_STARTUP:\n"
+    r"\t+swissSettings\.skipStartupUpdates \^= 1;\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_CHECK:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateRun\(UPDATE_SOURCE_HTTP\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_UPDATE_SMB:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateRun\(UPDATE_SOURCE_SMB\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
+normalized = re.sub(
+    r"(?ms)^\t+case SET_CONTENT_INSTALL:\n"
+    r"\t+if\(direction == 0\)\n"
+    r"\t+updateInstallContent\(\);\n"
+    r"\t+break;\n",
+    "", normalized, count=1)
 # Swiss and Apps Video Mode add 540p60 at index 9.
 normalized = normalized.replace(
     "swissSettings.uiVMode = (swissSettings.uiVMode + 10) % 10;",
@@ -314,9 +365,9 @@ for fn in settings_toggle; do
 			normalize_intended_changes "$TMP/base_$fn" "$TMP/base_${fn}_normalized"
 			normalize_intended_changes "$TMP/head_$fn" "$TMP/head_${fn}_normalized"
 			if cmp -s "$TMP/base_${fn}_normalized" "$TMP/head_${fn}_normalized"; then
-				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels and clock sync arms, the File Browser Type arms and game reset\n' "$fn"
+				printf '  %-18s unchanged outside motion, color, backdrop and wave color, wave speed, clock, temperature, icon, layout, library folders, save folder, widescreen, language, side, cube, saves on details, idle animation, waves, on-screen controls, face labels, clock sync and update arms, the File Browser Type arms and game reset\n' "$fn"
 			else
-				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_*BROWSER_TYPE and the game reset" >&2
+				echo "AUDIT FAILED: $fn differs outside SET_UI_ANIMS, SET_UI_COLOR, SET_UI_BACKDROP_COLOR, SET_UI_WAVE_COLOR, SET_WAVE_SPEED, SET_CLOCK_POSITION, SET_TEMPERATURE_POSITION, SET_*_ICON, SET_LIBRARY_LAYOUT, SET_LIBRARY_FOLDERS, SET_SAVE_FOLDER, SET_MENU_WIDESCREEN, SET_MENU_LANGUAGE, SET_*_FACE, SET_CUBE, SET_DETAIL_SAVES, SET_IDLE_ANIMATION, SET_WAVES, SET_HOME_CONTROLS, SET_FACE_LABELS, SET_NTP_*, SET_TIME_ZONE, SET_UPDATE_*, SET_*BROWSER_TYPE and the game reset" >&2
 				diff -u "$TMP/base_${fn}_normalized" \
 					"$TMP/head_${fn}_normalized" | head -40 >&2 || true
 				fail=1
@@ -364,7 +415,7 @@ PY
 }
 
 normalize_show_actions "$FILE" "$TMP/head_show_actions"
-SHOW_ACTIONS_SHA256="f6a20b0fe340fab39be0e83325716450b89cac33fd8cc74c0736fc6c2db57058"
+SHOW_ACTIONS_SHA256="93e0a9e09b81f154f56b4630bab1306e4b05ddecf656b89825c3332ac3d15e57"
 actual_show_actions=$(shasum -a 256 < "$TMP/head_show_actions" | cut -d' ' -f1)
 if [ "$actual_show_actions" = "$SHOW_ACTIONS_SHA256" ]; then
 	echo "  show actions       B/A/L/R/value semantics match the pinned hash"

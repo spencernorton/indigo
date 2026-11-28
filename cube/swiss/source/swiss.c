@@ -30,6 +30,7 @@
 #include <zlib.h>
 
 #include "swiss.h"
+#include "update.h"
 #include "main.h"
 #include "util.h"
 #include "info.h"
@@ -2501,6 +2502,10 @@ static uiDrawObj_t* renderFileList(file_handle** directory, int num_files, uiDra
 					page != UI_MENU_INPUT_NONE) {
 				break;
 			}
+			if(updateStartupPoll(false)) {
+				filesHome();
+				goto leaveFiles;
+			}
 			VIDEO_WaitVSync();
 			/* Banners arrive: from this thread a row a frame, else from the
 			 * meta thread, looked for four times a second. */
@@ -2739,6 +2744,7 @@ static uiDrawObj_t* renderFileList(file_handle** directory, int num_files, uiDra
 		}
 		(void)filesPublish(directory, &filePanel, true);
 	}
+leaveFiles:
 	meta_thread_stop();
 	DrawDispose(loadingBox);
 	/* Leaving the screen, or its Source: the right listing goes. */
@@ -2977,7 +2983,7 @@ static bool gameflowResolveDirOnDevice(DEVICEHANDLER_INTERFACE *device,
 	}
 	for(depth = 0; depth < 8; ++depth) {
 		file_handle *entries = NULL;
-		int count = device->readDir(&current, &entries, -1);
+		int count = device->readDir(&current, &entries, IS_DIR);
 		bool stepped = false;
 		int i;
 
@@ -3523,8 +3529,9 @@ static bool homeLibraryMount(DEVICEHANDLER_INTERFACE *device)
 /* The first device after the Source, in the order Swiss looks for a boot
  * device, with a Library folder: left mounted, with dir its folder. Only
  * storage attached to the console: no network share, WODE or USB Gecko.
- * Each device it looked at without one is let go again. */
-static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir)
+ * Each device it looked at without one is let go again. At startup the
+ * current Source gets first choice once there is another eligible device. */
+static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir, bool preferCurrent)
 {
 	int i;
 
@@ -3536,10 +3543,16 @@ static DEVICEHANDLER_INTERFACE *homeFindLibrary(file_handle *dir)
 			candidate == &__device_fsp || candidate == &__device_wode ||
 			candidate == &__device_usbgecko ||
 			(devices[DEVICE_CUR] != NULL &&
-				filesClash(candidate, devices[DEVICE_CUR], NULL, 0)) ||
-			!homeLibraryMount(candidate)) {
+				filesClash(candidate, devices[DEVICE_CUR], NULL, 0))) {
 			continue;
 		}
+		if(preferCurrent && devices[DEVICE_CUR] != NULL) {
+			if(homeLibraryOn(devices[DEVICE_CUR], dir))
+				return devices[DEVICE_CUR];
+			preferCurrent = false;
+		}
+		if(!homeLibraryMount(candidate))
+			continue;
 		if(homeLibraryOn(candidate, dir)) {
 			return candidate;
 		}
@@ -3585,12 +3598,11 @@ static void homeApplyStartupSource(void)
 	}
 	/* The boot device stays when it has the Library's folder, or when the
 	 * Library never reads it (the disc drive: no spin-up at startup). */
-	if(devices[DEVICE_CUR] != NULL && (!homeLibraryDevice(devices[DEVICE_CUR]) ||
-		homeLibraryOn(devices[DEVICE_CUR], &dir))) {
+	if(devices[DEVICE_CUR] != NULL && !homeLibraryDevice(devices[DEVICE_CUR])) {
 		return;
 	}
-	target = homeFindLibrary(&dir);
-	if(target != NULL) {
+	target = homeFindLibrary(&dir, true);
+	if(target != NULL && target != devices[DEVICE_CUR]) {
 		homeSwitchSource(target);
 		needsDeviceChange = 0;
 	}
@@ -3608,7 +3620,7 @@ static bool gameflowTryOtherDevicesForLibrary(void)
 		strcmp(curDir.name, previous->initial->name)) {
 		return false;
 	}
-	found = homeFindLibrary(&dir);
+	found = homeFindLibrary(&dir, false);
 	if(found == NULL) {
 		return false;
 	}
@@ -5043,6 +5055,11 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 					analog != UI_MENU_INPUT_NONE) {
 				break;
 			}
+			if(updateStartupPoll(false)) {
+				DrawGameflowPausePosters();
+				filesHome();
+				goto leaveLibrary;
+			}
 			/* Wake the bounded pack reader, or take its synchronous fallback
 			 * range. A folder picture may advance by another bounded range.
 			 * Check input again as soon as the retrace wait ends. */
@@ -5223,6 +5240,7 @@ uiDrawObj_t* renderFileCarousel(file_handle** directory, int num_files, uiDrawOb
 			VIDEO_WaitVSync();
 		}
 	}
+leaveLibrary:
 	meta_thread_stop();
 	/* The folders' posters stay on screen while the next listing is read. */
 	CardArt_Pause();
@@ -7508,6 +7526,7 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 	file_meta *meta = curFile.meta;
 	char fallbackTitle[65];
 	char facts[UI_GAMEFLOW_DETAIL_FACTS_CAPACITY];
+	char badges[UI_GAMEFLOW_DETAIL_BADGE_LINE];
 	char sizeText[32];
 	const char *company = "";
 	const char *description = "";
@@ -7591,6 +7610,9 @@ static bool gameflowPublishDetail(ConfigEntry *config,
 		(fallbackTitle[0] ? fallbackTitle : getRelativeName(curFile.name));
 	source.company = company;
 	source.facts = facts;
+	DrawGameflowFeatures(devices[DEVICE_CUR], context->gameId, badges,
+		sizeof(badges));
+	source.badges = badges;
 	source.description = description;
 	source.lastPlayedUnixSeconds = config_last_played(context->gameId, 6u,
 		&source.playHistoryAvailable);
@@ -8225,7 +8247,7 @@ void menu_loop()
 	UIScene_Activate();
 	if(gameflowStartupSurfacePending) {
 		gameflowStartupSurfacePending = false;
-		if(UIGameflowLibrary_ShouldStartHome(
+		if(updateStartupTrial() || UIGameflowLibrary_ShouldStartHome(
 			swissSettings.autoload[0] != '\0',
 			swissSettings.recent[0][0] != '\0',
 			swissSettings.recentListLevel > 1)) {
@@ -8375,6 +8397,7 @@ void menu_loop()
 				allowedAxes = UI_MENU_INPUT_AXIS_VERTICAL;
 			}
 			while(1) {
+				updateStartupPoll(true);
 				btns = padsButtonsHeld();
 				analog = padsMenuInputPoll(&homeMenuInput,
 					menuInputElapsedMicroseconds(&homeMenuInputRetrace),

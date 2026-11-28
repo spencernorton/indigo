@@ -72,7 +72,11 @@ https://norvitech.com/indigo/guide/install/
    then apps, then indigo.
 
 UPDATING INDIGO
-Back up the card's swiss folder. Rename the new ipl.dol to the name of the
+Home checks your selected channel on startup with a Broadband Adapter and a
+writable Configuration Device. Indigo verifies the signature and download,
+then restarts. Hold X + Y at startup to boot your installed recovery copy.
+For the first install from an older version, or to replace the recovery copy,
+back up the card's swiss folder. Rename the new ipl.dol to the name of the
 Indigo file you start now (ipl.dol, boot.dol, apps/indigo/default.dol or
 apps/indigo.dol) and copy it over that file. Then copy the new
 swiss/patches/apploader.img over the old one.
@@ -118,6 +122,18 @@ loader boots.
 TXT
 
 rm -f "$out/Indigo-$version.zip"
-# Directory entries included, so the ZIP shows the card's folders.
-(cd "$card" && zip -qrX "$out/Indigo-$version.zip" Indigo-README.txt ipl.dol swiss)
+# A release retry must reproduce the published ZIP, including its timestamps
+# and member order. Set only the generated staging tree's times.
+epoch=${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}
+python3 - "$card" "$epoch" <<'PYDATE'
+import os
+from pathlib import Path
+import sys
+
+stamp = int(sys.argv[2])
+for member in Path(sys.argv[1]).rglob("*"):
+    os.utime(member, (stamp, stamp))
+PYDATE
+(cd "$card" && find Indigo-README.txt ipl.dol swiss -print | LC_ALL=C sort |
+    TZ=UTC zip -qX "$out/Indigo-$version.zip" -@)
 shasum -a 256 "$out/Indigo-$version.zip"

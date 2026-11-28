@@ -576,6 +576,8 @@ class GlassLightTests(unittest.TestCase):
         self.assertIn("GX_SetNumTexGens(3);", refract)
         self.assertIn("GX_SetNumTevStages(4);", refract)
         self.assertIn("GX_CS_SCALE_2", refract)
+        self.assertIn("GX_LoadTexObj(&glassTexObj, GX_TEXMAP0);", refract,
+            "540p tiles replay the refraction; it must bind its own copy, not the font sheet")
         self.assertEqual(attributes(restore), {"GX_VA_POS", "GX_VA_CLR0"})
         self.assertIn("GX_SetNumTexGens(0);", restore)
         self.assertIn("GX_SetNumTevStages(1);", restore)

@@ -14,10 +14,45 @@ tag.
 Pushing a tag runs `.github/workflows/release.yml`. It checks that the tag
 sits on its branch, builds the DOL from the tagged commit in the pinned
 image, checks that the DOL names that commit, packages the drag-and-drop zip
-(`buildtools/sd_package.sh`), and publishes the release with the zip,
-`SHA256SUMS.txt`, a build provenance attestation and notes from
+(`buildtools/sd_package.sh`), writes the on-console updater's files from
+that zip (`buildtools/update_manifest.py`: `indigo-<tag>.dol`,
+`apploader-<tag>.img` and the channel's `stable.txt` or `rc.txt`), and
+publishes the release with the zip, `SHA256SUMS.txt`, the provenance
+record, those update files, a build provenance attestation and notes from
 `CHANGELOG.md` (`buildtools/release_notes.sh`). To check the pipeline without
-publishing, run the workflow by hand with an existing tag.
+publishing, run the workflow by hand with an existing tag, and read the
+dry run’s manifest before tagging.
+
+The tag-only `indigo-release-signing` environment supplies the dedicated
+Ed25519 key. The console’s pinned public key is in `update_trust.h`.
+The publish job checks the key, signs the exact manifest bytes and attaches the
+result as `stable.signed` or `rc.signed`. After the release exists, the feed
+job commits the channel and versioned payloads together on `gh-pages`, asks
+Pages to build and checks that the live manifest matches. A retry of the same
+tag must match the assets already published. An older version or timestamp
+cannot move the feed backwards. The feed is served at
+`indigo-updates.norvitech.com/updates/`.
+
+When `buildtools/content/content.list` is committed, each release also signs
+it for Settings › Network › Install game content (`content.txt`,
+`content.signed` and `content-<tag>.list`, beside the channel’s files). To
+publish new packs, put their files on the content server under a new dated
+folder, laid out as on a card, then commit the list for them by pull request:
+
+```bash
+python3 buildtools/content_list.py --server <IPv4>/console/<YYYY-MM-DD> \
+  --host <server name> --out buildtools/content/content.list \
+  indigo-posters-all.zip indigo-cheats.zip indigo-manuals-en.zip
+```
+
+The next release carries it. Keep each dated folder until no published
+release names it. The server must answer plain HTTP on that address with a
+Content-Length and no redirect: the console has no TLS and no DNS.
+
+The packs' server is `indigo.norvitech.com`, behind Cloudflare, which answers
+plain HTTP under `/console/` only. `--server` is one of the addresses the name
+resolves to (`dig +short indigo.norvitech.com`). If Cloudflare moves the name
+to other addresses, build the list again for the next release.
 
 ## A beta
 

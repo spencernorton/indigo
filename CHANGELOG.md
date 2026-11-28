@@ -4,6 +4,92 @@ Versions follow [semantic versioning](https://semver.org/). Each release is a
 `vX.Y.Z` tag on `main`, and a release candidate before it is a `vX.Y.Z-rc.N`
 tag on `beta`. The newest changes are at the top until their release is named.
 
+## v3.1.0 — Signed updates and downloadable game content
+
+If you use v3.0.0 or earlier, install the two files from the release ZIP once.
+After that, Indigo can check for updates at startup, verify the download and
+restart into the new version. The Stable channel is selected by default.
+Open **Settings › Network › Install game content** to download the poster pack,
+cheats for every game, and manuals for the games you browse. [Update and recovery guide](docs/guide/settings.md#updating-indigo-over-the-network)
+
+- Home finds the Apps and Emulators folders sooner on large FAT cards.
+  Apps and artwork keep the folder spelling stored on the card.
+
+- Large poster and manual downloads can continue past ten minutes while data
+  keeps reaching the card.
+
+- Verify downloaded game content on the card before replacing an existing file.
+  Retrying an interrupted install recovers the previous file and reclaims staging space.
+
+- Returning from a submenu with B no longer cancels the next manual check
+  for game content or Indigo updates. B still cancels a check in progress.
+- Setup › Console has one Clock Mode setting. Left or Right selects Manual
+  or Auto and explains the choice. Press A to set the date and time offline
+  in Manual, or choose the time zone and server in Auto.
+- Packed launchers use Swiss's updated XZ decoder. Auto clock sync ignores server
+  times earlier than this build and local times the console cannot store.
+  It saves the new time for games and the IPL only after setting the running clock.
+
+- Home starts sooner. The menu prepares the same navigation sounds with less
+  processing, and a single storage device skips a redundant Library folder
+  search at startup.
+
+- Settings › Network › Install game content downloads the poster pack, every
+  game's cheats and the manuals for the games you browse onto the card, in
+  one go. Indigo checks the release signature on the list and the SHA-256 of
+  every file, skips what the card already has, and replaces a file only once
+  its new copy is whole.
+
+- **Feature badges on Game Details:** the GAME DETAIL line shows up to four
+  badges for the game: how many can play, its age rating, and the
+  controllers or accessories it uses, such as Bongos, Dance Mat, Microphone
+  or GBA link. They come from `swiss/ui/features.txt`, which the poster pack
+  carries; without the file, Game Details looks as before. The format is in
+  [PACKS.md](docs/PACKS.md#feature-badges).
+
+- The Library face's controller emblem is now traced from Nintendo's photo
+  of the original controller, so its grips, lower lobes and the opening
+  under Start follow the real shell.
+
+- In 540p60, the Home cube's glass no longer shows letters and numbers from
+  the menu font in three quarters of the screen.
+
+- Startup Updates downloads the same signed release once more if the first
+  transfer fails its SHA-256 check.
+
+- Opening Apps and Emulators on GC Loader and other FAT cards reads only the
+  banner text needed to list Dolphin Depot programs. Banner artwork still
+  loads when its card is displayed.
+
+- Release CI verifies the deployed GameCube update files against the signed release.
+
+- Sharpened posters and fonts use about 495 KiB less permanent memory. Poster
+  preparation also avoids copying every decoded mip level. Normal video modes
+  skip the 540p watchdog and its startup display-list cache flush.
+
+- Startup uses less memory and time looking for Library, Apps and Emulators
+  folders on cards with many files.
+- Games launched in Production boot mode see retail hardware on development
+  GameCubes, matching the latest Swiss loader.
+- Large directories retain the entries that fit when the console runs low on
+  memory. The Swiss source update also refreshes disc verification data.
+
+### New
+
+- Indigo checks for a signed release once per launch while Home is open. A newer
+  release downloads to the Configuration Device and starts automatically.
+  Reaching Home confirms it for subsequent starts. The installed launcher and
+  In-Game Reset apploader provide recovery through an interrupted update.
+- Settings › Setup › Network lets you switch off startup checks, choose the
+  release candidate channel, or install a signed release from a local mirror
+  or SMB share. Hold X and Y during launch to open the installed recovery copy.
+
+### Hardware coverage
+
+Testing on a physical MemCard PRO GC with the current SDK is still pending
+for existing card updates, new card creation and rapid game-ID changes.
+The previous real-card results and setup are in the [hardware record](docs/validation/memcard-pro.json).
+
 ## v3.0.0 — Dolphin Depot support and standalone build
 
 ### New

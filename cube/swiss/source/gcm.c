@@ -782,14 +782,23 @@ int read_fst(file_handle *file, file_handle** dir, u64 *usedSpace) {
 	if(!diskHeader) return -1;
 	
 	char *FST = get_fst(file, diskHeader->FSTOffset, diskHeader->FSTSize);
-	if(!FST) return -1;
+	if(!FST) {
+		free(diskHeader);
+		return -1;
+	}
 	
+	*dir = calloc(numFiles, sizeof(file_handle));
+	if(!*dir) {
+		free(FST);
+		free(diskHeader);
+		return -1;
+	}
+
 	// Get the space taken up by this disc
 	if(usedSpace) *usedSpace = calc_fst_entries_size(FST, diskHeader->FSTSize);
 	
 	if(isRoot) {
 		// Add the disc itself as a "file"
-		*dir = calloc(numFiles, sizeof(file_handle));
 		concatf_path((*dir)[idx].name, file->name, "%.64s [%.6s].gcm", stripInvalidChars(diskHeader->GameName), diskHeader);
 		(*dir)[idx].fileBase = 0;
 		(*dir)[idx].offset = 0;
@@ -814,7 +823,6 @@ int read_fst(file_handle *file, file_handle** dir, u64 *usedSpace) {
 	
 	if(!isRoot) {
 		// Add a special ".." dir which will take us back up a dir
-		*dir = calloc(numFiles, sizeof(file_handle));
 		concat_path((*dir)[idx].name, file->name, "..");
 		(*dir)[idx].fileBase = *(u32*)&FST[(parent_dir_offset*0x0C)+4];
 		(*dir)[idx].offset = 0;
@@ -845,7 +853,7 @@ int read_fst(file_handle *file, file_handle** dir, u64 *usedSpace) {
 				//print_debug("Adding: [%03i]%s:%s offset %08X length %08X\n",i,!FST[offset] ? "File" : "Dir",filename,file_offset,size);
 				if(numFiles == idx) {
 					numFiles *= 2;
-					*dir = reallocarray(*dir, numFiles, sizeof(file_handle));
+					if(reallocarr(dir, numFiles, sizeof(file_handle))) break;
 				}
 				memset(&(*dir)[idx], 0, sizeof(file_handle));
 				strcpy((*dir)[idx].name, filename);
@@ -866,7 +874,7 @@ int read_fst(file_handle *file, file_handle** dir, u64 *usedSpace) {
 			//print_debug("Adding: [%03i]%s:%s offset %08X length %08X\n",i,!FST[offset] ? "File" : "Dir",filename,file_offset,size);
 			if(numFiles == idx) {
 				numFiles *= 2;
-				*dir = reallocarray(*dir, numFiles, sizeof(file_handle));
+				if(reallocarr(dir, numFiles, sizeof(file_handle))) break;
 			}
 			memset(&(*dir)[idx], 0, sizeof(file_handle));
 			strcpy((*dir)[idx].name, filename);
@@ -881,7 +889,7 @@ int read_fst(file_handle *file, file_handle** dir, u64 *usedSpace) {
 	}
 	if(numFiles != idx) {
 		numFiles = idx;
-		*dir = reallocarray(*dir, numFiles, sizeof(file_handle));
+		reallocarr(dir, numFiles, sizeof(file_handle));
 	}
 	
 	free(FST);

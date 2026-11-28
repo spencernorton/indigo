@@ -173,6 +173,16 @@ int install_code(int final)
 	
 	if (final) {
 		if (!top_addr) {
+			if (swissSettings.sramBoot == SYS_BOOT_PRODUCTION) {
+				switch (SYS_GetConsoleType() & SYS_CONSOLE_MASK) {
+					case SYS_CONSOLE_DEVELOPMENT:
+						*(u32 *)0x8000002C += SYS_CONSOLE_RETAIL_HW1 - SYS_CONSOLE_DEVELOPMENT_HW1;
+						break;
+					case SYS_CONSOLE_TDEV:
+						*(u32 *)0x8000002C += SYS_CONSOLE_RETAIL_HW1 - SYS_CONSOLE_TDEV_HW1;
+						break;
+				}
+			}
 			u32 size = simulatedMemSizeInt[swissSettings.simulatedMemSize] ? : SYS_GetPhysicalMemSize();
 			*(u32 *)0x80000034 = (u32)MEM_PHYSICAL_TO_K0(size);
 			*(u32 *)0x800000CC = VIDEO_GetCurrentTvMode();

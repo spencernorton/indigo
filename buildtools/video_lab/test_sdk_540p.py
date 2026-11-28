@@ -18,6 +18,17 @@ class TimingTests(unittest.TestCase):
         provenance = json.loads((HERE / 'sdk/provenance.json').read_text())
         self.assertEqual(hashlib.sha256(source.encode()).hexdigest(), provenance['source_sha256'])
 
+    def test_watchdog_starts_only_for_540p(self):
+        source = (HERE.parent.parent / 'cube/swiss/source/gui/ui_540p.c').read_text()
+        request = source.split('void UI540_Request(', 1)[1].split('bool UI540_Active(', 1)[0]
+        frame = source.split('void UI540_BeginFrame(', 1)[1].split('void UI540_RecordBegin(', 1)[0]
+        self.assertNotIn('ensure_watchdog()', request)
+        self.assertEqual(source.count('ensure_watchdog();'), 2)
+        requested = frame.split('if(state == REQUESTED) {', 1)[1].split('setVideoMode(&high_mode)', 1)[0]
+        self.assertLess(requested.index('ensure_watchdog();'), requested.index('if(!watchdog_started)'))
+        saved = frame.split('if(!active && UI540_Active()) {', 1)[1].split('active = true;', 1)[0]
+        self.assertIn('ensure_watchdog();', saved)
+
     def test_raster_has_blanking_and_near_sixty_hz(self):
         source = (HERE / 'sdk/video_540_driver.c').read_text()
         initializer = source.split('indigo540Timing = {', 1)[1].split('};', 1)[0]

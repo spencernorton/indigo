@@ -1,0 +1,20 @@
+#ifndef UPDATE_H
+#define UPDATE_H
+
+#include <stdbool.h>
+
+/* GitHub Pages publishes these IPv4 addresses. The publisher signature
+ * authenticates every response, including files from a user-supplied mirror. */
+#define UPDATE_DEFAULT_SERVER "185.199.108.153/updates/"
+#define UPDATE_DEFAULT_HOST "indigo-updates.norvitech.com"
+
+enum update_source { UPDATE_SOURCE_HTTP, UPDATE_SOURCE_SMB };
+void updateRun(enum update_source source);
+void updateStartupBoot(int argc, char **argv);
+bool updateStartupTrial(void);
+bool updateStartupPoll(bool atHome);
+/* Settings > Network: install the posters, cheats and manuals the signed
+ * content list names onto the card being browsed. */
+void updateInstallContent(void);
+
+#endif

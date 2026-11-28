@@ -157,6 +157,8 @@ typedef struct kbBtn_ {
 #define ENTRYMODE_IP	 	(1<<2)
 #define ENTRYMODE_MASKED 	(1<<3)
 #define ENTRYMODE_FILE	 	(1<<4)
+#define ENTRYMODE_DATE          (1<<5)
+#define ENTRYMODE_TIME          (1<<6)
 
 uiDrawObj_t* DrawImage(int textureId, int x, int y, int width, int height, int depth, float s1, float s2, float t1, float t2, int centered);
 uiDrawObj_t* DrawTexObj(GXTexObj *texObj, int x, int y, int width, int height, int depth, float s1, float s2, float t1, float t2, int centered);
@@ -213,6 +215,10 @@ void DrawGameflowCancelPosters(void);
  * DrawGameflowCancelPosters. False, with out empty, when there is none.
  * Menu thread only. */
 bool DrawGameflowDescription(DEVICEHANDLER_INTERFACE *device,
+	const char *gameId, char *out, size_t capacity);
+/* Game Details' feature badges for a game, its swiss/ui/features.txt line
+ * ("1-4 PLAYERS|ESRB E"), found and read the same way. */
+bool DrawGameflowFeatures(DEVICEHANDLER_INTERFACE *device,
 	const char *gameId, char *out, size_t capacity);
 void DrawUpdateProgressBar(uiDrawObj_t *evt, int percent);
 void DrawUpdateProgressBarDetail(uiDrawObj_t *evt, int percent, int speed, int timestart, int timeremain);

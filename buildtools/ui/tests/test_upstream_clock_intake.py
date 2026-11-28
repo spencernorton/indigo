@@ -25,6 +25,163 @@ def function(source, marker):
 
 
 class ClockIntake(unittest.TestCase):
+    def test_network_sync_only_persists_a_representable_accepted_time(self):
+        source = (ROOT / "cube/swiss/source/gui/time_sync.c").read_text()
+        setter = "\n".join(function(source, marker) for marker in (
+            "static bool time_sync_read_rtc(", "static void time_sync_save_bias(",
+            "bool time_sync_write_local(", "static void time_sync_set(void)"))
+        driver = r'''
+#include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
+typedef uint32_t u32;
+#define DIFF_SEC_1970_2000 946684800U
+#define GIT_TIMESTAMP buildSeconds
+#define TIME_SYNC_STEPPING 2
+#define print_debug(...) ((void)0)
+static int64_t buildSeconds, reply;
+static int32_t zoneOffset, timeSyncOffset;
+static int timeSyncServer, timeSyncState, setError, attempts, rtcReads, writes;
+static bool timeSyncClosed, timeSyncOffsetKnown, rtcBusy;
+static struct { bool ntpSync; } swissSettings = { true };
+static char timeSyncZone[] = "test";
+static struct timespec applied;
+static u32 bias;
+static bool time_sync_ask(int server, int64_t *utc)
+{ (void)server; *utc = reply; return true; }
+static bool UITimeSync_KeepsOffset(const char *zone) { (void)zone; return false; }
+static int32_t UITimeSync_KeptOffset(time_t now, int64_t utc)
+{ (void)now; (void)utc; return 0; }
+static bool UITimeSync_ZoneOffset(const char *zone, int64_t utc, int32_t *east)
+{ (void)zone; (void)utc; *east = zoneOffset; return true; }
+static u32 IRQ_Disable(void) { return 0; }
+static void IRQ_Restore(u32 level) { (void)level; }
+#define clock_gettime(id, ts) (*(ts) = (struct timespec){0}, 0)
+#define clock_settime(id, ts) (++attempts, applied = *(ts), setError)
+static bool __SYS_GetRTC(u32 *rtc) { ++rtcReads; *rtc = 99; return !rtcBusy; }
+static void usleep(int duration) { (void)duration; }
+static void SYS_SetCounterBias(u32 value) { ++writes; bias = value; }
+static bool __SYS_SyncSram(void) { return true; }
+/* NETWORK CLOCK SETTER */
+static void check(int64_t utcSeconds, int32_t east, int expectedAttempts, bool persist)
+{
+    attempts = writes = rtcReads = 0;
+    timeSyncState = 0;
+    timeSyncOffsetKnown = false;
+    timeSyncOffset = INT32_MIN;
+    reply = utcSeconds * 1000000 + 123456;
+    zoneOffset = east;
+    time_sync_set();
+    assert(attempts == expectedAttempts && writes == persist && rtcReads == persist);
+    assert(timeSyncOffsetKnown == persist);
+    assert(timeSyncOffset == (persist ? east : INT32_MIN));
+    if (persist) {
+        assert(applied.tv_sec == utcSeconds + east && applied.tv_nsec == 123456000);
+        assert(bias + 99U == (u32)(utcSeconds + east - DIFF_SEC_1970_2000));
+    }
+}
+int main(void)
+{
+    buildSeconds = 1750000000;
+    check(buildSeconds - 1, 3600, 0, false);
+    check(buildSeconds, -3600, 1, true);
+    setError = -1;
+    check(buildSeconds, 0, 1, false);
+    setError = 0;
+    timeSyncClosed = true;
+    check(buildSeconds + 1, 0, 0, false);
+    timeSyncClosed = false;
+    swissSettings.ntpSync = false;
+    check(buildSeconds + 1, 0, 0, false);
+    swissSettings.ntpSync = true;
+    buildSeconds = 0;
+    const int64_t first = DIFF_SEC_1970_2000, last = first + UINT32_MAX;
+    check(first, -1, 0, false);
+    check(first + 1, -1, 1, true);
+    check(last - 1, 1, 1, true);
+    check(last, 1, 0, false);
+    attempts = rtcReads = writes = 0;
+    assert(!time_sync_write_local(first - 1) && !time_sync_write_local(last + 1));
+    assert(!attempts && !rtcReads && !writes);
+    rtcBusy = true;
+    assert(!time_sync_write_local(first) && rtcReads == 50 && !attempts && !writes);
+    rtcBusy = false;
+    setError = -1;
+    assert(!time_sync_write_local(first) && attempts == 1 && !writes);
+    setError = 0;
+    assert(time_sync_write_local(first) && writes == 1 && bias + 99U == 0);
+    assert(time_sync_write_local(last) && writes == 2 && bias + 99U == UINT32_MAX);
+}
+'''
+        with tempfile.TemporaryDirectory(prefix="indigo-clock-write-") as directory:
+            path = Path(directory)
+            (path / "write.c").write_text(driver.replace("/* NETWORK CLOCK SETTER */", setter))
+            command = shlex.split(os.environ.get("CC", "cc"))
+            subprocess.run(command + ["-std=c11", "-Wall", "-Wextra", "-Werror",
+                           str(path / "write.c"), "-o", str(path / "write")], check=True)
+            subprocess.run([str(path / "write")], check=True)
+
+    def test_manual_editor_applies_only_changed_valid_input(self):
+        gui = ROOT / "cube/swiss/source/gui"
+        editor = function((gui / "settings.c").read_text(), "static void settingsEditClock(")
+        driver = r'''
+#include <assert.h>
+#include <string.h>
+#include "ui_time_sync.h"
+enum { ENTRYMODE_DATE = 32, ENTRYMODE_TIME = 64, D_WARN };
+typedef int uiDrawObj_t;
+static const char *input;
+static bool dateMode, writable;
+static int waits, writes, warnings;
+static int64_t applied;
+static uiDrawObj_t dialog;
+/* Re-read at confirmation. The date case keeps 00:01:01. */
+#define time(unused) INT64_C(946684861)
+static void time_sync_wait(void) { ++waits; }
+static void settingsClockText(bool date, char *buf, size_t size)
+{ assert(size >= 11 && date == dateMode); strcpy(buf, date ? "2000-01-01" : "00:01:00"); }
+static void DrawGetTextEntry(int mode, const char *label, char *buf, int length)
+{
+    assert(label && mode == (dateMode ? ENTRYMODE_DATE : ENTRYMODE_TIME));
+    assert(length == (dateMode ? 10 : 8));
+    if(input) strcpy(buf, input);
+}
+static bool time_sync_write_local(int64_t local) { ++writes; applied = local; return writable; }
+static uiDrawObj_t *DrawMessageBox(int kind, const char *msg)
+{ assert(kind == D_WARN && msg); return &dialog; }
+static uiDrawObj_t *DrawPublish(uiDrawObj_t *box) { return box; }
+static void wait_press_A(void) { ++warnings; }
+static void DrawDispose(uiDrawObj_t *box) { assert(box == &dialog); }
+/* EDITOR */
+int main(void)
+{
+    dateMode = writable = true;
+    settingsEditClock(true);
+    input = "2000-01-01"; settingsEditClock(true);
+    assert(writes == 0 && warnings == 0);
+    input = "2000-02-30"; settingsEditClock(true);
+    assert(writes == 0 && warnings == 1);
+    input = "2000-01-02"; settingsEditClock(true);
+    assert(writes == 1 && applied == 946684861 + 86400 && warnings == 1);
+    dateMode = false;
+    input = "03:00:00"; settingsEditClock(false);
+    assert(writes == 2 && applied == 946684800 + 3 * 3600 && warnings == 1);
+    writable = false; settingsEditClock(false);
+    assert(writes == 3 && warnings == 2 && waits == 6);
+}
+'''
+        with tempfile.TemporaryDirectory(prefix="indigo-manual-clock-") as directory:
+            path = Path(directory)
+            (path / "editor.c").write_text(driver.replace("/* EDITOR */", editor))
+            command = shlex.split(os.environ.get("CC", "cc"))
+            subprocess.run(command + ["-std=c11", "-Wall", "-Wextra", "-Werror",
+                           "-I", str(gui), "-I", str(gui.parent.parent / "include"),
+                           str(path / "editor.c"), str(gui / "ui_time_sync.c"),
+                           str(Path(__file__).with_name("tzdata_host.c")),
+                           "-o", str(path / "editor")], check=True)
+            subprocess.run([str(path / "editor")], check=True)
+
     def test_real_environment_publisher_holds_lock(self):
         source = (ROOT / "cube/swiss/source/config/config.c").read_text()
         publisher = function(source, "void config_update_environ()")
@@ -82,7 +239,7 @@ int main(void) {
                            str(path / "clock.c"), "-o", str(path / "clock")], check=True)
             subprocess.run([str(path / "clock")], check=True)
 
-    def test_sync_clock_setup_uses_the_timezone_resolver(self):
+    def test_clock_mode_changes_quietly_and_zone_edits_use_the_resolver(self):
         gui = ROOT / "cube/swiss/source/gui"
         source = (gui / "settings.c").read_text()
         toggle = function(source, "void settings_toggle(")
@@ -140,12 +297,12 @@ int main(void)
         const char *expectedZone;
         int expectedEdits, expectedWarnings;
     } cases[] = {
-        {SET_NTP_SYNC, false, "", "America/Denver", true, "America/Denver", 1, 0},
+        {SET_NTP_SYNC, false, "", "America/Denver", true, "", 0, 0},
         {SET_NTP_SYNC, true, "America/Denver", NULL, false, "America/Denver", 0, 0},
         {SET_NTP_SYNC, false, "Europe/London", NULL, true, "Europe/London", 0, 0},
-        {SET_NTP_SYNC, false, "Etc/Unknown", "Asia/Kolkata", true, "Asia/Kolkata", 1, 0},
-        {SET_NTP_SYNC, false, "Etc/Unknown", NULL, true, "Etc/Unknown", 1, 0},
-        {SET_NTP_SYNC, false, "", NULL, true, "", 1, 0},
+        {SET_NTP_SYNC, false, "Etc/Unknown", "Asia/Kolkata", true, "Etc/Unknown", 0, 0},
+        {SET_NTP_SYNC, false, "Etc/Unknown", NULL, true, "Etc/Unknown", 0, 0},
+        {SET_NTP_SYNC, false, "", NULL, true, "", 0, 0},
         {SET_NTP_SYNC, true, "", NULL, false, "", 0, 0},
         {SET_TIME_ZONE, true, "America/Denver", "America/No_Such_City", true, "America/Denver", 1, 1},
         {SET_TIME_ZONE, true, "America/Denver", "MST7MDT,M3.2.0,M11.1.0", true, "MST7MDT,M3.2.0,M11.1.0", 1, 0},

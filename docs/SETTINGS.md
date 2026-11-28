@@ -158,7 +158,7 @@ most use the same key there.
 | `Settings Icon` | `Sliders`, `Gear`, `Toggles`, `Dial`. The picture on the Settings face, from its own four icons. | `Sliders` | Settings Icon |
 | `System Icon` | `Clock`, `Info`, `Power`, `Chip`. The picture on the System face, from its own four icons. | `Clock` | System Icon |
 | `Wave Speed` | `Normal`, `Fast`, `Slow`. How fast the waves drift: `Fast` three times as fast, `Slow` half as fast. | `Normal` | Wave Speed |
-| `Clock` | `Right`, `Left`, `Off`. Where the time sits: the top right or top left corner, or neither. | `Right` | Clock |
+| `Clock` | `Right`, `Left`, `Off`. Where the time sits: the top right or top left corner, or neither. | `Right` | Clock Position |
 | `Temperature` | `Right`, `Left`, `Off`. Where the temperature dial sits, the same way. Without this line, the dial follows `Clock`. | `Right` | Temperature |
 | `Up Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu above Library on the Home cube; `None` leaves that side empty. A face named for two sides keeps the first, in the order Up, Left, Right, Down. Apps shows only while `/apps` has a program, and Emulators while `/emulators` has one. | `Source` | Up Face |
 | `Left Face` | `None`, `Source`, `Settings`, `System`, `Apps`, `Memory Cards`, `Emulators`, `File Browser`. The menu left of Library, the same way. | `Settings` | Left Face |
@@ -172,6 +172,16 @@ most use the same key there.
 | `System Sound` | `Mono`, `Stereo`. Any other value means `Mono`. | the console's SRAM | System Sound |
 | `System Language` | `English`, `German`, `French`, `Spanish`, `Italian`, `Dutch`, `Japanese`, `English (US)` | the console's SRAM | System Language |
 | `Disable PAD Recalibration` | `Yes`, `No`. `Yes` shows as Controller Recalibration › Off. | `No` | Controller Recalibration |
+| `NTPSync` | `No` selects Manual. `Yes` selects Auto and syncs when the network starts. | `No` | Clock Mode |
+| `SNTPHostIP` | Swiss alias of `NTPHostIP`, read on import. Saving uses `NTPHostIP`. Clock Mode is set independently. | | NTP Server IP |
+| `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
+| `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
+| `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Auto syncs. Empty or `Etc/Unknown` keeps the current UTC offset, rounded to the nearest offset a real zone uses, without applying daylight saving rules. | empty | Time Zone |
+
+**Clock Mode › Manual** opens **System Date** and **System Time**. Start
+writes the local time and its SRAM counter bias. B discards the edit.
+These editors work offline without a configuration device. In **Auto**, A opens
+**Time Zone** and **NTP Server IP**. Saving a mode preserves those values for the next sync.
 
 ### Setup › Storage
 
@@ -194,11 +204,9 @@ most use the same key there.
 | `BBALocalIP` | An IPv4 address. | empty | IPv4 Address |
 | `BBANetmask` | The prefix length, such as `24`. | `0` | IPv4 Netmask |
 | `BBAGateway` | An IPv4 address. | empty | IPv4 Gateway |
-| `NTPSync` | `Yes`, `No` | `No` | Sync Clock |
-| `SNTPHostIP` | Swiss alias of `NTPHostIP`, read on import. Saving uses `NTPHostIP`. It does not enable Sync Clock. | | NTP Server IP |
-| `NTPHostIP` | An IPv4 address. Names don't work: the console has no DNS. Empty means `162.159.200.123` (Cloudflare). | empty | NTP Server IP |
-| `System Time Zone` | Swiss alias of `TimeZone`, read on import. Saving uses `TimeZone`. | | Time Zone |
-| `TimeZone` | A location from the bundled Swiss table, such as `America/Denver`, `Europe/London` or `Asia/Kolkata`, or a POSIX TZ string such as `MST7MDT,M3.2.0,M11.1.0` or `IST-5:30`. Daylight time needs both rules in the `Mm.w.d` form. Rules choose the offset when Sync Clock runs. Empty or `Etc/Unknown` keeps the current UTC offset, rounded to the nearest offset a real zone uses, without applying daylight saving rules. | empty | Time Zone |
+| `UpdateChannel` | `Stable` or `Release candidate`. Selects the signed online feed. | `Stable` | Update Channel |
+| `UpdateServer` | Optional IPv4 address with port and folder for a mirror serving the signed feed. Empty selects Indigo’s official GitHub-hosted feed. | empty | Update Server |
+| `StartupUpdates` | `Yes` or `No`. Checks for a new release once per launch when Home opens. | `Yes` | Startup Updates |
 | `FSPHostIP` | An IPv4 address. | empty | FSP Host IP |
 | `FSPPort` | A port number. | `21` | FSP Port |
 | `FSPPassword` | Text, stored as written. | empty | FSP Password |
@@ -314,7 +322,7 @@ file still overrides the fix.
 
 Swiss configuration imports may also use `System Time Zone` and `SNTPHostIP`;
 Indigo reads these as aliases of `TimeZone` and `NTPHostIP`. Saving writes the
-Indigo keys. Importing a server or zone does not turn on Sync Clock.
+Indigo keys. Clock Mode keeps its saved value when importing a server or zone.
 `Etc/Unknown` keeps the console's existing offset, like an empty Time Zone.
 The bundled names provide the upstream table's current recurring rules, not
 a complete historical timezone database.

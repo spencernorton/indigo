@@ -96,6 +96,81 @@ static void testBnr2Language(void)
 	CHECK(strcmp(info.title, "English Title") == 0);
 }
 
+typedef struct {
+	uint8_t data[UI_BNR_MAX_FILE];
+	size_t available;
+	size_t count;
+	size_t offset[2];
+	size_t size[2];
+} bannerReader_t;
+
+static bool readRange(void *handle, size_t offset, void *dst, size_t size)
+{
+	bannerReader_t *file = handle;
+	CHECK(file->count < 2u);
+	file->offset[file->count] = offset;
+	file->size[file->count++] = size;
+	if(offset > file->available || size > file->available - offset) return false;
+	memcpy(dst, file->data + offset, size);
+	return true;
+}
+
+static void testMetadataReads(void)
+{
+	const size_t text = UI_BNR_HEADER_BYTES + UI_BNR_PIXEL_BYTES;
+	bannerReader_t file = {.available = UI_BNR_MAX_FILE};
+	uint8_t scratch[UI_BNR_META_SCRATCH];
+	uiBnrInfo_t whole, parts;
+	const uint8_t languages[] = {0, 1, 2, 3, 4, 5, 6, 99};
+
+	for(unsigned lang = 0; lang < UI_BNR_LANG_COUNT; ++lang) {
+		char title[] = "App A";
+		title[4] = "ABCDEF"[lang];
+		writeDesc(file.data + text + lang * UI_BNR_DESC_BYTES, NULL, NULL,
+			lang == 3u ? "" : title, lang == 3u ? "Local author" : "Author",
+			lang == 3u ? "" : title);
+	}
+	for(unsigned kind = 1; kind <= 2u; ++kind) {
+		memcpy(file.data, kind == 1u ? "BNR1" : "BNR2", 4u);
+		for(size_t i = 0; i < sizeof(languages); ++i) {
+			uint8_t lang = languages[i];
+			file.count = 0u;
+			CHECK(UIBnr_ParseMeta(file.data, file.available, lang, &whole));
+			CHECK(UIBnr_ReadMeta(readRange, &file, file.available, lang, scratch, &parts));
+			CHECK(memcmp(&whole, &parts, sizeof(whole)) == 0);
+			CHECK(file.count == 2u && file.offset[0] == 0u && file.size[0] == UI_BNR_HEADER_BYTES);
+			CHECK(file.offset[1] == text);
+			unsigned last = kind == 2u && lang < UI_BNR_LANG_COUNT ? lang : 0u;
+			CHECK(file.size[1] == (last + 1u) * UI_BNR_DESC_BYTES);
+			if(kind == 2u && lang == 3u) {
+				CHECK(strcmp(parts.title, "App A") == 0);
+				CHECK(strcmp(parts.author, "Local author") == 0);
+				CHECK(strcmp(parts.description, "App A") == 0);
+			}
+		}
+	}
+
+	file.count = 0u;
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR1_SIZE - 1u, 0u, scratch, &parts));
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR_MAX_FILE + 1u, 0u, scratch, &parts));
+	CHECK(file.count == 0u);
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR2_SIZE - 1u, 0u, scratch, &parts));
+	CHECK(file.count == 1u);
+	file.count = 0u;
+	file.available = UI_BNR_HEADER_BYTES - 1u;
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR2_SIZE, 0u, scratch, &parts));
+	CHECK(file.count == 1u);
+	file.count = 0u;
+	file.available = UI_BNR2_SIZE - 1u;
+	memset(&parts, 'x', sizeof(parts));
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR2_SIZE, 5u, scratch, &parts));
+	CHECK(file.count == 2u && !parts.title[0] && !parts.author[0] && !parts.description[0]);
+	file.count = 0u;
+	file.data[3] = '9';
+	CHECK(!UIBnr_ReadMeta(readRange, &file, UI_BNR2_SIZE, 0u, scratch, &parts));
+	CHECK(file.count == 1u);
+}
+
 static void testDecodeAndPoster(void)
 {
 	uint8_t bnr[UI_BNR1_SIZE];
@@ -171,6 +246,7 @@ int main(void)
 {
 	testBnr1Meta();
 	testBnr2Language();
+	testMetadataReads();
 	testDecodeAndPoster();
 	testInvalid();
 	printf("test_ui_bnr: %u checks passed\n", checks);

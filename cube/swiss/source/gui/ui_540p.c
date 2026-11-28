@@ -77,7 +77,6 @@ void UI540_Request(int argc, char **argv)
 {
 	bool arg_request = false;
 	trial_mode = false;
-	ensure_watchdog();
 	for(int i = 1; i < argc; i++) {
 		if(!strcmp(argv[i], "Experimental540p=No")) {
 			if(swissSettings.uiVMode == 9) swissSettings.uiVMode = 0;
@@ -97,7 +96,6 @@ void UI540_Request(int argc, char **argv)
 		print_debug("Experimental 540p: digital progressive output required\n");
 		return;
 	}
-	if(!watchdog_started) return;
 	state = REQUESTED;
 }
 
@@ -114,6 +112,9 @@ void UI540_BeginFrame(void)
 {
 	GX_SetCurrentGXThread();
 	if(state == REQUESTED) {
+		/* The renderer owns watchdog startup for requested and saved modes. */
+		ensure_watchdog();
+		if(!watchdog_started) { state = FAILED; return; }
 		UI540_VideoMode();
 		started_ms = now_ms();
 		state = trial_mode ? TRIAL : KEPT;

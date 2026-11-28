@@ -13,6 +13,8 @@ extern s32 (*bba_exi_speed)(s32 chan, s32 dev);
 void wait_network();
 bool init_network();
 void init_network_async();
+void init_update_network(void);
+bool update_network_ready(void);
 u32 bba_exists(u32 location);
 bool bba_requires_init();
 const char *bba_address_str();

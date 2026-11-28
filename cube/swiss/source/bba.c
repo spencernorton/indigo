@@ -1,3 +1,4 @@
+#include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
 #include <malloc.h>
@@ -27,6 +28,24 @@ u32 bba_location = LOC_UNK;
 s32 (*bba_exi_speed)(s32 chan, s32 dev) = NULL;
 
 static lwp_t net_thread = LWP_THREAD_NULL;
+
+static atomic_bool interfaceReady, servicesRequested, servicesStarted;
+
+bool update_network_ready(void)
+{
+	return atomic_load(&interfaceReady);
+}
+
+static void startRequestedServices(void)
+{
+	if(!atomic_load(&servicesRequested) || !update_network_ready() ||
+		atomic_exchange(&servicesStarted, true))
+		return;
+	init_httpd_thread();
+	init_wiiload_tcp_thread();
+	rt4k_init();
+	time_sync_network();
+}
 
 static void *net_thread_func(void *arg)
 {
@@ -96,18 +115,23 @@ static void *net_thread_func(void *arg)
 	deviceHandler_setDeviceAvailable(&__device_ftp, deviceHandler_FTP_test());
 	deviceHandler_setDeviceAvailable(&__device_fsp, deviceHandler_FSP_test());
 
-	init_httpd_thread();
-	init_wiiload_tcp_thread();
-	rt4k_init();
-	time_sync_network();
+	atomic_store(&interfaceReady, true);
+	startRequestedServices();
 	return NULL;
 }
 
 // Init the GC net interface (bba)
-void init_network_async(void)
+void init_update_network(void)
 {
 	if (!net_initialized && net_thread == LWP_THREAD_NULL)
 		LWP_CreateThread(&net_thread, net_thread_func, NULL, NULL, 0, LWP_PRIO_LOWEST);
+}
+
+void init_network_async(void)
+{
+	atomic_store(&servicesRequested, true);
+	init_update_network();
+	startRequestedServices();
 }
 
 bool init_network(void)

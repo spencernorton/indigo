@@ -75,6 +75,11 @@ Third-party components redistributed in this tree:
     The DBCS conversion tables are removed; see the note in
     cube/swiss/source/fatfs/ffunicode.c.
 
+  SHA-256 — by Brad Conte, dedicated to the public domain (2014).
+    Recast with stdint types as cube/swiss/source/gui/sha256.c for the
+    updater's download checks; its known-answer tests pin every constant
+    (buildtools/ui/tests/test_ui_update.c).
+
   Noto Sans — https://github.com/notofonts/latin-greek-cyrillic
     Copyright 2022 The Noto Project Authors. SIL Open Font License 1.1; see
     docs/licenses/noto-sans-ofl.txt. Menu Language's Ukrainian letters are
@@ -119,3 +124,24 @@ Copyright (C) 2004 - 2026
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+libsodium (Ed25519 release verification), from the pinned SDK:
+
+/*
+ * ISC License
+ *
+ * Copyright (c) 2013-2026
+ * Frank Denis <j at pureftpd dot org>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */

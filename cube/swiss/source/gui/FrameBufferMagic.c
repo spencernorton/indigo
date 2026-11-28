@@ -160,14 +160,21 @@ static bool stillsPackAttempted;
 static file_handle discsPackFile;
 static bool discsPackFileOwned;
 static bool discsPackAttempted;
-/* Spotlight's game descriptions: swiss/ui/descriptions.txt on the browsed
- * device, read whole the first time Spotlight asks there. The menu thread's
- * alone; the video thread only ever sees a snapshot's copy. */
-static DEVICEHANDLER_INTERFACE *descriptionsDevice;
-static bool descriptionsAttempted;
-static char *descriptionsText;
-static uiAboutEntry_t *descriptionsIndex;
-static uiAbout_t descriptions;
+/* A file of game lines (ui_about.h) on the browsed device, read whole the
+ * first time it is asked for there. The menu thread's alone; the video
+ * thread only ever sees a snapshot's copy. */
+typedef struct {
+	const char *path;
+	DEVICEHANDLER_INTERFACE *device;
+	bool attempted;
+	char *text;
+	uiAboutEntry_t *index;
+	uiAbout_t lines;
+} gameflowGameLines_t;
+
+/* Spotlight's game descriptions, and Game Details' feature badges. */
+static gameflowGameLines_t descriptions = {"swiss/ui/descriptions.txt"};
+static gameflowGameLines_t features = {"swiss/ui/features.txt"};
 static bool gameflowResetRegistered;
 static s32 _GameflowOnReset(s32 final);
 static bool _LaunchTakesBar(bool indeterminate);
@@ -369,6 +376,10 @@ typedef struct drawGameflowDetailPresentation {
 	float primaryActionsScale;
 	float advancedLineOneScale;
 	float advancedLineTwoScale;
+	/* The feature badges that fit on the header line, left to right. */
+	int badgeCount;
+	int badgeX[UI_GAMEFLOW_DETAIL_BADGES];
+	int badgeWidth[UI_GAMEFLOW_DETAIL_BADGES];
 	GXColor accent;
 } drawGameflowDetailPresentation_t;
 
@@ -3493,6 +3504,45 @@ static void _GameflowPrepareSnapshot(const uiGameflowRenderSnapshot_t *snapshot,
 	_GameflowPrepareSpotlight(snapshot, presentation->spotlightLines);
 }
 
+/* The feature badges sit on the GAME DETAIL line, right-aligned to the rows'
+ * edge, clear of LAUNCHING: as many as fit, in the file's order. */
+#define GAMEFLOW_BADGE_LEFT 332
+#define GAMEFLOW_BADGE_RIGHT 590
+#define GAMEFLOW_BADGE_GAP 6
+#define GAMEFLOW_BADGE_PAD 7
+#define GAMEFLOW_BADGE_SCALE 0.38f
+#define GAMEFLOW_BADGE_Y 95
+#define GAMEFLOW_BADGE_HEIGHT 14
+
+static void _GameflowPrepareDetailBadges(
+	const uiGameflowDetailSnapshot_t *detail,
+	drawGameflowDetailPresentation_t *presentation)
+{
+	int used = 0;
+	int x;
+	int i;
+
+	presentation->badgeCount = 0;
+	for(i = 0; i < (int)UI_GAMEFLOW_DETAIL_BADGES &&
+		detail->badges[i][0] != '\0'; ++i) {
+		int width = 2 * GAMEFLOW_BADGE_PAD + (int)ceilf(
+			(float)GetTextSizeInPixels(detail->badges[i]) * GAMEFLOW_BADGE_SCALE);
+		int needed = used + (i > 0 ? GAMEFLOW_BADGE_GAP : 0) + width;
+
+		if(needed > GAMEFLOW_BADGE_RIGHT - GAMEFLOW_BADGE_LEFT) {
+			break;
+		}
+		presentation->badgeWidth[i] = width;
+		presentation->badgeCount = i + 1;
+		used = needed;
+	}
+	x = GAMEFLOW_BADGE_RIGHT - used;
+	for(i = 0; i < presentation->badgeCount; ++i) {
+		presentation->badgeX[i] = x;
+		x += presentation->badgeWidth[i] + GAMEFLOW_BADGE_GAP;
+	}
+}
+
 static void _GameflowPrepareDetailPresentation(drawGameflowEvent_t *data)
 {
 	drawGameflowDetailPresentation_t *presentation;
@@ -3571,6 +3621,7 @@ static void _GameflowPrepareDetailPresentation(drawGameflowEvent_t *data)
 	presentation->advancedLineTwoScale = _GameflowPrepareDetailText(
 		data->detail.advancedLineTwo, sizeof(data->detail.advancedLineTwo),
 		164, 0.42f, 0.42f);
+	_GameflowPrepareDetailBadges(&data->detail, presentation);
 }
 
 static void _GameflowPutDetailPanel(int x, int y, int width, int height,
@@ -3688,7 +3739,7 @@ static void _GameflowDrawDetailPlanes(
 	bool hasSettings = detail->settingsSummary[0] != '\0';
 	u16 panelCount = (u16)(3u + (hasSaves ? 1u : 0u) +
 		(hasAdvanced ? 1u : 0u) + (hasSettings ? 1u : 0u) +
-		(hasManual ? 1u : 0u));
+		(hasManual ? 1u : 0u) + (u32)presentation->badgeCount);
 
 	for(row = 0; row < 4; ++row) {
 		rowTop[row] = layout->row[row].top;
@@ -3753,6 +3804,12 @@ static void _GameflowDrawDetailPlanes(
 			_GameflowPutDetailPanel(48, 350, 180, 52, 2,
 				insetGlow, insetFill, insetEdge);
 		}
+		for(row = 0; row < presentation->badgeCount; ++row) {
+			_GameflowPutDetailPanel(presentation->badgeX[row],
+				GAMEFLOW_BADGE_Y - GAMEFLOW_BADGE_HEIGHT / 2,
+				presentation->badgeWidth[row], GAMEFLOW_BADGE_HEIGHT, 2,
+				insetGlow, insetFill, insetEdge);
+		}
 	GX_End();
 	drawInit();
 }
@@ -3789,6 +3846,12 @@ static void _GameflowDrawDetailDashboard(
 
 	drawStringMedium(264, 95, frame->launchProgress > 0.02f ?
 		"LAUNCHING" : "GAME DETAIL", 0.42f, ALIGN_LEFT, secondary);
+	for(int badge = 0; badge < presentation->badgeCount; ++badge) {
+		drawStringMedium(presentation->badgeX[badge] + 1 +
+			presentation->badgeWidth[badge] / 2, GAMEFLOW_BADGE_Y,
+			detail->badges[badge], GAMEFLOW_BADGE_SCALE, ALIGN_CENTER,
+			secondary);
+	}
 	drawStringMedium(264, layout->title, detail->title,
 		presentation->titleScale, ALIGN_LEFT, primary);
 	if(detail->company[0] != '\0') {
@@ -5414,19 +5477,20 @@ static void _GameflowCloseDiscsPackFile(void)
 	discsPackFileOwned = false;
 }
 
-static void _GameflowDropDescriptions(void)
+static void _GameflowDropGameLines(gameflowGameLines_t *file)
 {
-	free(descriptionsText);
-	free(descriptionsIndex);
-	descriptionsText = NULL;
-	descriptionsIndex = NULL;
-	memset(&descriptions, 0, sizeof(descriptions));
-	descriptionsDevice = NULL;
+	free(file->text);
+	free(file->index);
+	file->text = NULL;
+	file->index = NULL;
+	memset(&file->lines, 0, sizeof(file->lines));
+	file->device = NULL;
 }
 
-/* Read swiss/ui/descriptions.txt whole and index it. A missing, empty or
- * oversized file, or one that cannot be read, leaves no descriptions. */
-static void _GameflowLoadDescriptions(DEVICEHANDLER_INTERFACE *device)
+/* Read the file whole and index it. A missing, empty or oversized file, or
+ * one that cannot be read, leaves no lines. */
+static void _GameflowLoadGameLines(gameflowGameLines_t *lines,
+	DEVICEHANDLER_INTERFACE *device)
 {
 	file_handle file;
 	size_t size;
@@ -5434,8 +5498,7 @@ static void _GameflowLoadDescriptions(DEVICEHANDLER_INTERFACE *device)
 	size_t i;
 
 	memset(&file, 0, sizeof(file));
-	concat_path(file.name, device->initial->name,
-		"swiss/ui/descriptions.txt");
+	concat_path(file.name, device->initial->name, lines->path);
 	file.device = device;
 	if(device->statFile == NULL || device->seekFile == NULL ||
 		device->readFile == NULL || device->statFile(&file) != 0 ||
@@ -5443,22 +5506,21 @@ static void _GameflowLoadDescriptions(DEVICEHANDLER_INTERFACE *device)
 		goto done;
 	}
 	size = (size_t)file.size;
-	descriptionsText = malloc(size);
-	if(descriptionsText == NULL ||
+	lines->text = malloc(size);
+	if(lines->text == NULL ||
 		device->seekFile(&file, 0, DEVICE_HANDLER_SEEK_SET) != 0 ||
-		device->readFile(&file, descriptionsText, (u32)size) != (s32)size) {
+		device->readFile(&file, lines->text, (u32)size) != (s32)size) {
 		goto done;
 	}
 	for(i = 0u; i < size; ++i) {
-		games += descriptionsText[i] == '\n';
+		games += lines->text[i] == '\n';
 	}
 	if(games > UI_ABOUT_MAX_GAMES) {
 		games = UI_ABOUT_MAX_GAMES;
 	}
-	descriptionsIndex = malloc(games * sizeof(*descriptionsIndex));
-	if(descriptionsIndex != NULL) {
-		UIAbout_Index(&descriptions, descriptionsText, size,
-			descriptionsIndex, games);
+	lines->index = malloc(games * sizeof(*lines->index));
+	if(lines->index != NULL) {
+		UIAbout_Index(&lines->lines, lines->text, size, lines->index, games);
 	}
 done:
 	if(device->closeFile != NULL) {
@@ -5466,8 +5528,9 @@ done:
 	}
 }
 
-bool DrawGameflowDescription(DEVICEHANDLER_INTERFACE *device,
-	const char *gameId, char *out, size_t capacity)
+static bool _GameflowFindGameLine(gameflowGameLines_t *lines,
+	DEVICEHANDLER_INTERFACE *device, const char *gameId, char *out,
+	size_t capacity)
 {
 	if(out != NULL && capacity > 0u) {
 		out[0] = '\0';
@@ -5475,21 +5538,35 @@ bool DrawGameflowDescription(DEVICEHANDLER_INTERFACE *device,
 	if(device == NULL || device->initial == NULL) {
 		return false;
 	}
-	if(!descriptionsAttempted || descriptionsDevice != device) {
-		_GameflowDropDescriptions();
-		descriptionsAttempted = true;
-		descriptionsDevice = device;
-		_GameflowLoadDescriptions(device);
+	if(!lines->attempted || lines->device != device) {
+		_GameflowDropGameLines(lines);
+		lines->attempted = true;
+		lines->device = device;
+		_GameflowLoadGameLines(lines, device);
 	}
-	return UIAbout_Find(&descriptions, gameId, out, capacity);
+	return UIAbout_Find(&lines->lines, gameId, out, capacity);
+}
+
+bool DrawGameflowDescription(DEVICEHANDLER_INTERFACE *device,
+	const char *gameId, char *out, size_t capacity)
+{
+	return _GameflowFindGameLine(&descriptions, device, gameId, out,
+		capacity);
+}
+
+bool DrawGameflowFeatures(DEVICEHANDLER_INTERFACE *device,
+	const char *gameId, char *out, size_t capacity)
+{
+	return _GameflowFindGameLine(&features, device, gameId, out, capacity);
 }
 
 void DrawGameflowCancelPosters(void)
 {
-	/* The descriptions are the menu thread's: this can run from the reset
-	 * callback, so it only marks them stale, and the next lookup reads the
-	 * file again. */
-	descriptionsAttempted = false;
+	/* The descriptions and features are the menu thread's: this can run
+	 * from the reset callback, so it only marks them stale, and the next
+	 * lookup reads the file again. */
+	descriptions.attempted = false;
+	features.attempted = false;
 	Manual_Forget();
 	if(!posterPackAttempted && !posterPackFileOwned &&
 		!stillsPackFileOwned && !stillsPackAttempted &&
@@ -8439,18 +8516,17 @@ bool DrawUpdateFilesReading(uiDrawObj_t *page, int which)
 
 void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 	
-	print_debug("DrawGetTextEntry Modes: Alpha [%s] Numeric [%s] IP [%s] Masked [%s] File [%s]\n", mode & ENTRYMODE_ALPHA ? "Y":"N", mode & ENTRYMODE_NUMERIC ? "Y":"N",
-																	mode & ENTRYMODE_IP ? "Y":"N", mode & ENTRYMODE_MASKED ? "Y":"N", mode & ENTRYMODE_FILE ? "Y":"N");
 	char *text = calloc(1, size + 1);
-	if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP)) {
+	if(text == NULL) return;
+	if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME)) {
 		strncpy(text, src, size);
 	}
 	else {
 		u16 *src_int = (u16*)src;
 		itoa(*src_int, text, 10);
 	}
-	print_debug("Text is [%s] size %i\n", text, size);
 	
+	bool clockEntry = mode & (ENTRYMODE_DATE|ENTRYMODE_TIME);
 	int caret = strlen(text);
 	int cur_row = 0;
 	int cur_col = 0;
@@ -8471,44 +8547,27 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 	int cur_txt_mode = 0;
 	char *gridText = NULL;
 	
-	// IP mode
-	if(mode & ENTRYMODE_IP) {
-		// 1  2  3
-		// 4  5  6
-		// 7  8  9
-		//[.] 0  [backspace]
+	/* The numeric keypads share their first three rows. Only the last
+	 * row gains a separator for an IP address, date or time. */
+	bool numberOnly = (mode & ENTRYMODE_NUMERIC) && !(mode & ENTRYMODE_ALPHA);
+	if(numberOnly || (mode & (ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME))) {
 		num_rows = 4;
 		grid_gap = 15;
-		num_per_row[0] = 3;
-		pos_for_row[0] = 240;
-		num_per_row[1] = 3;
-		pos_for_row[1] = 240;
-		num_per_row[2] = 3;
-		pos_for_row[2] = 240;
-		num_per_row[3] = 3;
-		pos_for_row[3] = 240;
-		gridText = ip_mode_chars;
+		for(int row = 0; row < num_rows; row++) {
+			num_per_row[row] = 3;
+			pos_for_row[row] = 240;
+		}
+		if(numberOnly) {
+			num_per_row[3] = 2;
+			gridText = num_mode_chars;
+		} else if(mode & ENTRYMODE_DATE) {
+			gridText = "123456789-0\b";
+		} else if(mode & ENTRYMODE_TIME) {
+			gridText = "123456789:0\b";
+		} else {
+			gridText = ip_mode_chars;
+		}
 	}
-	
-	// Number only
-	if((mode & ENTRYMODE_NUMERIC) && !(mode & ENTRYMODE_ALPHA)) {
-		// 1  2  3
-		// 4  5  6
-		// 7  8  9
-		// 0  [backspace]
-		num_rows = 4;
-		grid_gap = 15;
-		num_per_row[0] = 3;
-		pos_for_row[0] = 240;
-		num_per_row[1] = 3;
-		pos_for_row[1] = 240;
-		num_per_row[2] = 3;
-		pos_for_row[2] = 240;
-		num_per_row[3] = 2;
-		pos_for_row[3] = 240;
-		gridText = num_mode_chars;
-	}
-	
 	// Alpha only
 	else if(!(mode & ENTRYMODE_NUMERIC) && (mode & ENTRYMODE_ALPHA)) {
 		// TODO if we ever have to.
@@ -8585,13 +8644,14 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 		// Double box for extra darkness
 		uiDrawObj_t *newPanel = DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440);
 		DrawAddChild(newPanel, DrawEmptyBox(20,60, getVideoMode()->fbWidth-20, 440));
-		sprintf(txtbuffer, UI_T("%s - Please enter a value"), UI_T(label));
+		sprintf(txtbuffer, clockEntry ? "%s" : UI_T("%s - Please enter a value"), UI_T(label));
 		DrawAddChild(newPanel, DrawStyledLabel(25, 74, txtbuffer, GetTextScaleToFitInWidth(txtbuffer, getVideoMode()->fbWidth-50), ALIGN_LEFT, defaultColor));
 
 		// Draw the text entry box (TODO: mask chars if the mode says to do so)
 		DrawAddChild(newPanel, DrawEmptyBox(40, 100, getVideoMode()->fbWidth-40, 140));
 		DrawAddChild(newPanel, DrawStyledLabelWithCaret(320, 120, text, GetTextScaleToFitInWidth(text, getVideoMode()->fbWidth-90), ALIGN_CENTER, defaultColor, caret));
-		DrawAddChild(newPanel, DrawHintLabel(320, 160, "L/R  Cursor    START  Accept    B  Discard", 0.75f, ALIGN_CENTER, defaultColor));
+		DrawAddChild(newPanel, DrawHintLabel(320, 160, clockEntry ?
+			"L/R  Cursor    START  Set clock    B  Discard" : "L/R  Cursor    START  Accept    B  Discard", 0.75f, ALIGN_CENTER, defaultColor));
 
 		// Alphanumeric has a little "mode" hint at the bottom (upper/lower case set switching)
 		if(mode & ENTRYMODE_ALPHA) {
@@ -8619,11 +8679,10 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 					sprintf(txtbuffer, "%s", gridText[i] == '\a' ? "Space" : "Y  Back");
 				else
 					sprintf(txtbuffer, "%c", gridText[i]);
-				GXColor keyColor = cur_col == dx && cur_row == dy ? defaultColor : deSelectedColor;
 				if(gridText[i] == '\b')
-					DrawAddChild(newPanel, DrawHintLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, keyColor));
+					DrawAddChild(newPanel, DrawHintLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, defaultColor));
 				else
-					DrawAddChild(newPanel, DrawStyledLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, keyColor));
+					DrawAddChild(newPanel, DrawStyledLabel(x+(button_width/2), y+(button_height/2), txtbuffer, fontSize, ALIGN_CENTER, defaultColor));
 				x += (grid_gap + button_width);
 				i++;
 			}
@@ -8700,8 +8759,11 @@ void DrawGetTextEntry(int mode, const char *label, void *src, int size) {
 			break;
 		}
 		if(btns & BUTTON_START) {
-			if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP)) {
-				strcpy(src, text);
+			if(mode & (ENTRYMODE_ALPHA|ENTRYMODE_IP|ENTRYMODE_DATE|ENTRYMODE_TIME)) {
+				/* The text is size long at most by construction; say so,
+				 * so a longer one can never overrun the setting. */
+				strncpy(src, text, size);
+				((char *)src)[size] = '\0';
 			}
 			else {
 				// TODO fix this stuff at some point, we're checking based on text size rather than max val of the data type.

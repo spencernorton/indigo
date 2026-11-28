@@ -3,7 +3,8 @@
 # stills packs, game descriptions, its play history, save files, settings files,
 # the file table of every disc image the Library lists, the pictures of the
 # programs in /apps, games' cheats files and manuals, Menu Language's file, and the Time Zone and NTP
-# server reply the clock sync reads. Each target is built with libFuzzer, AddressSanitizer and
+# server reply the clock sync reads, and the update list, server address,
+# HTTP reply head and game content list the updater reads. Each target is built with libFuzzer, AddressSanitizer and
 # UBSan and runs for SECONDS, starting from seeds.py's real files. A crash, a sanitizer finding or a broken invariant
 # fails the run and leaves the input that caused it in OUT/crashes/<target>/.
 #
@@ -20,7 +21,7 @@ if [ "${1:-}" = --build-only ]; then
 	shift
 	set -- 0 "${1:-fuzz-out}"
 fi
-targets="history saves raw_saves posters manual about settings fst png bnr cheats wiiload time_sync lab lang"
+targets="history saves raw_saves posters manual about settings fst png bnr cheats wiiload time_sync lab lang update content"
 seconds=${1:-30}
 case $seconds in
 total:*) seconds=$(( ${seconds#total:} / $(echo "$targets" | wc -w) )) ;;
@@ -40,9 +41,13 @@ echo "== building the fuzzers =="
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/history" "$here/fuzz_history.c" "$gui/ui_game_history.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/saves" "$here/fuzz_saves.c" "$gui/ui_saves.c" "$gui/ui_lang.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/raw_saves" "$here/fuzz_raw_saves.c" "$gui/ui_saves_raw.c" "$gui/ui_saves.c" "$gui/ui_lang.c"
-	$cc $flags -std=c11 -I"$gui" -o "$out/bin/about" "$here/fuzz_about.c" "$gui/ui_about.c"
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/about" "$here/fuzz_about.c" "$gui/ui_about.c" \
+		"$gui/ui_gameflow_detail.c" "$gui/ui_game_history.c" "$gui/ui_saves_metadata.c" \
+		"$gui/ui_saves.c" "$gui/ui_lang.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/lab" "$here/fuzz_lab.c" "$gui/ui_lab.c"
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/lang" "$here/fuzz_lang.c" "$gui/ui_lang.c"
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/update" "$here/fuzz_update.c" "$gui/ui_update.c" "$gui/sha256.c"
+	$cc $flags -std=c11 -I"$gui" -o "$out/bin/content" "$here/fuzz_content.c" "$gui/ui_content.c" "$gui/ui_update.c"
 	$cc $flags -std=c11 -DUI_ASSETS_HOST_BUILD -I"$gui" -o "$out/bin/posters" \
 		"$here/fuzz_posters.c" "$gui/ui_assets.c" -lz
 	$cc $flags -std=c11 -I"$gui" -o "$out/bin/png" "$here/fuzz_png.c" "$gui/ui_png.c" -lz -lm

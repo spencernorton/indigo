@@ -381,10 +381,11 @@ SD card
         ├── posters.pak      box art for the Library
         ├── stills.pak       pictures for Spotlight
         ├── descriptions.txt  descriptions for Spotlight
+        ├── features.txt     badges for Game Details
         └── discs.pak        disc art for Jewel Case
 ```
 
-- **`ipl.dol`, `boot.dol` or `apps/indigo/default.dol`:** Indigo itself. Step 3 of your
+- **`ipl.dol`, `boot.dol`, `indigo.dol` or `apps/indigo/default.dol`:** Indigo itself. Step 3 of your
   setup says which name it has and where it goes (or install via [Dolphin Depot](https://dolphindepot.org/)).
 - **`boot.iso`:** On a GC Loader card, the disc image that starts Swiss.
   Leave it as it is.
@@ -400,6 +401,9 @@ SD card
   folder, one file per game, such as `GMSE01.txt`. Unzip the pack on your
   computer and copy the files in its `swiss/cheats` folder into this one;
   make it if it isn't there.
+- **`swiss/indigo`:** Licence and notice files plus the Ukrainian language file
+  (`uk.po`) from the download (also installed by Dolphin Depot). Optional on
+  the card unless you use Ukrainian menus.
 - **`apploader.img`:** From the download (and included in Dolphin Depot installs).
   It makes leaving a game return to Indigo out of the box; copy it to every card
   you use with Swiss. See [Leaving a game](#leaving-a-game).
@@ -407,8 +411,9 @@ SD card
   into `saves`, and your settings are in `settings/global.ini`.
 - **`ui`:** The [poster pack](posters.md#download-the-pack) goes here:
   `posters.pak` for box art, `stills.pak` and `descriptions.txt` for
-  Spotlight, and `discs.pak` for Jewel Case. Unzip the pack on your computer
-  and copy all four files from its `swiss/ui` folder into this one on the
+  Spotlight, `discs.pak` for Jewel Case, and `features.txt` for Game Details'
+  badges. Unzip the pack on your computer
+  and copy all five files from its `swiss/ui` folder into this one on the
   card holding your games; make the folder if it isn't there. Restart
   Indigo after updating artwork packs.
 
@@ -468,6 +473,12 @@ which Indigo version you have, what starts your GameCube, and where you copied
 Indigo.
 
 ## Update Indigo
+
+Starting with the first updater-capable build, Indigo can install signed
+updates from Home. Versions through v3.0.0 need one update from a computer.
+Use the steps below to install that base copy, including its return apploader.
+See [Startup Updates and recovery](settings.md#updating-indigo-over-the-network).
+
 
 1. Download and unzip the new release, and back up the card's `swiss` folder.
    Swiss hides that folder: show hidden folders first (Shift-Command-Period

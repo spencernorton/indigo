@@ -13,8 +13,12 @@ remembers your choice.
 ## Get cheat files
 
 Indigo reads one file per game, `/swiss/cheats/<game ID>.txt`, such as
-`/swiss/cheats/GALE01.txt` for Super Smash Bros. Melee. The quickest way to
-get them is the ready-made pack, which covers every region:
+`/swiss/cheats/GALE01.txt` for Super Smash Bros. Melee. With a network
+adapter, **Settings › Network › Install game content** puts every game's
+file on the card for you: see
+[Installing game content](settings.md#installing-game-content-over-the-network).
+Otherwise, the quickest way to get them is the ready-made pack, which covers
+every region:
 
 - [Download the cheat pack](https://indigo.norvitech.com/indigo-cheats.zip)
   and unzip it on your computer. Copy the files in its `swiss/cheats`

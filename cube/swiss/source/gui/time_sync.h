@@ -16,6 +16,9 @@ void time_sync_network(void);
  * has the clock stepped under its timeouts. */
 void time_sync_wait(void);
 
+/* Sets the running local clock and its power-off SRAM bias after an explicit edit. */
+bool time_sync_write_local(int64_t localSeconds);
+
 /* A game's launch, before it times anything or hands the game the clock:
  * Sync Clock no longer steps it this session (a step under way finishes). */
 void time_sync_close(void);

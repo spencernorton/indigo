@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <gccore.h>
 #include "deviceHandler.h"
+#include "deviceHandler-FAT.h"
 #include "FrameBufferMagic.h"
 #include "IPLFontWrite.h"
 #include "swiss.h"
@@ -91,14 +92,14 @@ static void freeFolder(appsFolder_t *folder)
 /* Lists the folder dir names on device; false for one that can't be read.
  * Every entry names device, whether or not the device's listing does. */
 static bool listFolder(DEVICEHANDLER_INTERFACE *device, file_handle *dir,
-	appsFolder_t *out)
+	u32 type, appsFolder_t *out)
 {
 	s32 count;
 	s32 i;
 
 	memset(out, 0, sizeof(*out));
 	dir->device = device;
-	count = device->readDir(dir, &out->files, -1);
+	count = device->readDir(dir, &out->files, type);
 	if(count <= 0 || out->files == NULL ||
 		(out->entries = calloc((size_t)count, sizeof(uiAppsEntry_t))) == NULL) {
 		freeFolder(out);
@@ -131,8 +132,29 @@ static bool findAppsFolder(DEVICEHANDLER_INTERFACE *device, const char *name,
 	bool found = false;
 	size_t i;
 
+	if(device->readDir == deviceHandler_FAT_readDir) {
+		FILINFO entry;
+		FATFS *fatfs;
+		/* Match the displayed directory name. Keep its stored spelling for
+		 * the program and artwork paths returned to Apps. */
+		memset(out, 0, sizeof(*out));
+		if(concat_path(out->name, device->initial->name, name) >= sizeof(out->name) ||
+			f_stat_stored(out->name, &entry, &fatfs) != FR_OK ||
+			!(entry.fattrib & AM_DIR) || entry.fsize > UINT32_MAX ||
+			strcasecmp(entry.fname, name))
+			return false;
+		strcpy(getRelativeName(out->name), entry.fname);
+		out->fileBase = entry.fclust;
+		out->size = (u32)entry.fsize;
+		out->fileType = IS_DIR;
+		out->fileAttrib = entry.fattrib;
+		out->blockSize = fatfs->ssize;
+		out->device = device;
+		out->thread = LWP_THREAD_NULL;
+		return true;
+	}
 	takeEntry(&root, device->initial);
-	if(!listFolder(device, &root, &top)) {
+	if(!listFolder(device, &root, IS_DIR, &top)) {
 		return false;
 	}
 	for(i = 0; i < top.count && !found; ++i) {
@@ -143,6 +165,15 @@ static bool findAppsFolder(DEVICEHANDLER_INTERFACE *device, const char *name,
 	}
 	freeFolder(&top);
 	return found;
+}
+
+static bool readBannerRange(void *handle, size_t offset, void *dst, size_t size)
+{
+	file_handle *file = handle;
+	u32 listedSize = file->size;
+	if(offset && file->device->seekFile(file, offset, DEVICE_HANDLER_SEEK_SET) != (s64)offset)
+		return false;
+	return file->device->readFile(file, dst, size) == (s32)size && file->size == listedSize;
 }
 
 /* The apps in device's folder name, sorted, at most max of them; NULL for
@@ -163,7 +194,7 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 	*count = 0u;
 	if(files != NULL) *files = NULL;
 	if(device == NULL || device->initial == NULL || device->readDir == NULL ||
-		!findAppsFolder(device, name, &dir) || !listFolder(device, &dir, &top)) {
+		!findAppsFolder(device, name, &dir) || !listFolder(device, &dir, -1, &top)) {
 		return NULL;
 	}
 	if((list = malloc(max * sizeof(uiApp_t))) == NULL ||
@@ -180,7 +211,7 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 			continue;
 		}
 		takeEntry(&dir, entry->handle);
-		if(listFolder(device, &dir, &folders[folderCount])) {
+		if(listFolder(device, &dir, -1, &folders[folderCount])) {
 			room = UIApps_AddFolder(list, &found, max, entry->name,
 				folders[folderCount].entries, folders[folderCount].count);
 			folderCount++;
@@ -190,27 +221,38 @@ static uiApp_t *scanApps(DEVICEHANDLER_INTERFACE *device, const char *name,
 	 * before sorting so apps order by their real display titles. */
 	if(files != NULL && found > 0u && device->readFile != NULL &&
 		device->closeFile != NULL) {
+		/* FAT seeks in the open file. Network and optical devices keep one
+		 * sequential transfer per banner. */
+		bool ranges = device->readDir == deviceHandler_FAT_readDir &&
+			device->seekFile == deviceHandler_FAT_seekFile;
+		size_t scratchSize = ranges ? UI_BNR_META_SCRATCH : UI_BNR_MAX_FILE;
 		uint8_t *bnrBuf = NULL;
 
 		for(i = 0u; i < found; ++i) {
 			uiBnrInfo_t info;
 			file_handle bnrFile;
-			s32 read;
+			uint8_t language = (uint8_t)swissSettings.sramLanguage;
+			bool parsed;
 
 			if(!list[i].isDefaultDol || list[i].bannerHandle == NULL ||
 				list[i].bannerSize < UI_BNR1_SIZE ||
 				list[i].bannerSize > UI_BNR_MAX_FILE) {
 				continue;
 			}
-			if(bnrBuf == NULL && (bnrBuf = malloc(UI_BNR_MAX_FILE)) == NULL) {
+			if(bnrBuf == NULL && (bnrBuf = memalign(32, scratchSize)) == NULL) {
 				break;
 			}
 			takeEntry(&bnrFile, list[i].bannerHandle);
-			read = device->readFile(&bnrFile, bnrBuf, list[i].bannerSize);
+			if(ranges) {
+				parsed = UIBnr_ReadMeta(readBannerRange, &bnrFile, list[i].bannerSize,
+					language, bnrBuf, &info);
+			} else {
+				s32 read = device->readFile(&bnrFile, bnrBuf, list[i].bannerSize);
+				parsed = read == (s32)list[i].bannerSize &&
+					UIBnr_ParseMeta(bnrBuf, (size_t)read, language, &info);
+			}
 			device->closeFile(&bnrFile);
-			if(read == (s32)list[i].bannerSize &&
-				UIBnr_ParseMeta(bnrBuf, (size_t)read,
-					(uint8_t)swissSettings.sramLanguage, &info)) {
+			if(parsed) {
 				UIApps_ApplyBanner(&list[i], info.title, info.author);
 			}
 		}

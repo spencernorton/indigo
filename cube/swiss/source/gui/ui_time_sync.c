@@ -76,6 +76,39 @@ static int64_t daysFromCivil(int64_t year, int month, int day)
 		dayOfYear - 719468;
 }
 
+static int decimalField(const char *text, unsigned width)
+{
+	int n = 0;
+	for(unsigned i = 0; i < width; ++i) {
+		if(text[i] < '0' || text[i] > '9') return -1;
+		n = 10 * n + text[i] - '0';
+	}
+	return n;
+}
+
+bool UITimeSync_EditLocal(bool date, const char *text, int64_t now, int64_t *edited)
+{
+	if(text == NULL || edited == NULL || now < 0) return false;
+	int64_t local;
+	if(date) {
+		if(strlen(text) != 10 || text[4] != '-' || text[7] != '-') return false;
+		int y = decimalField(text, 4), m = decimalField(text + 5, 2), d = decimalField(text + 8, 2);
+		if(y < 2000 || m < 1 || m > 12 || d < 1) return false;
+		int64_t day = daysFromCivil(y, m, d);
+		if(day >= daysFromCivil(y + (m == 12), m % 12 + 1, 1)) return false;
+		local = day * DAY + now % DAY;
+	} else {
+		if(strlen(text) != 8 || text[2] != ':' || text[5] != ':') return false;
+		int h = decimalField(text, 2), m = decimalField(text + 3, 2), s = decimalField(text + 6, 2);
+		if(h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59 ||
+			now / DAY > (UNIX_2000 + UINT32_MAX) / DAY) return false;
+		local = now - now % DAY + h * HOUR + m * 60 + s;
+	}
+	if(local < UNIX_2000 || local > UNIX_2000 + UINT32_MAX) return false;
+	*edited = local;
+	return true;
+}
+
 static int64_t yearFromDays(int64_t days)
 {
 	days += 719468;

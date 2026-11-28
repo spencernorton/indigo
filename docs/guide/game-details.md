@@ -8,13 +8,17 @@ left pane of the [File Browser](system.md#file-browser) opens the same
 screen, and **B** there goes back to the File Browser, on the same row.
 
 <p align="center">
-  <img alt="Astral Circuit’s game details: its demonstration cover on the left; Last played says No play recorded, above Settings and Cheats. Launch Game is selected." src="images/game-details.png" width="640">
+  <img alt="Astral Circuit’s game details: its demonstration cover on the left; badges for 1-4 Players, ESRB E and GBA Link on the GAME DETAIL line; Last played says No play recorded, above Settings and Cheats. Launch Game is selected." src="images/game-details.png" width="640">
 </p>
 
 ## What's on the screen
 
 - **The cover**: the game's poster, or its disc banner if you have no
   [poster pack](posters.md).
+- **Badges**, on the GAME DETAIL line at the top: how many can play, the
+  age rating, and the controllers or accessories the game uses, such as
+  **BONGOS** or **GBA LINK**. They come from the
+  [poster pack](posters.md#feature-badges); without it, there are none.
 - **Title and publisher**, from the disc's banner. Under them, notes when
   they apply: **Audio Streaming** for a game that plays music streamed from
   the disc, **Disc 2 Ready** when Indigo has found the game's second disc,

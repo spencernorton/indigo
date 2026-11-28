@@ -24,6 +24,10 @@ void UITimeSync_Request(uint8_t packet[UI_TIME_SYNC_PACKET], uint64_t cookie);
 bool UITimeSync_Reply(const uint8_t *packet, size_t length, uint64_t cookie,
 	int64_t *utcMicroseconds);
 
+/* Replace only the local date (YYYY-MM-DD) or time (HH:MM:SS), within
+ * the GameCube's unsigned seconds since 2000. */
+bool UITimeSync_EditLocal(bool date, const char *text, int64_t now, int64_t *edited);
+
 /* Seconds east of UTC that a location name (America/Denver) or POSIX TZ
  * string `zone` gives at `utcSeconds`,
  * such as "MST7MDT,M3.2.0,M11.1.0" (US Mountain) or "IST-5:30" (India).

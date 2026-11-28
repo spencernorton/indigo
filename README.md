@@ -225,6 +225,11 @@ Indigo from Swiss. Some PicoBoot and PicoLoader chips have Swiss built in and
 never read `ipl.dol`: the [install guide](docs/guide/install.md) shows how to
 check, and has every step, updating and going back to stock Swiss.
 
+After an updater-capable build is installed, Home checks the selected release
+channel when a Broadband Adapter and writable Configuration Device are available.
+Indigo verifies the signed download and restarts. Hold **X + Y** while starting
+Indigo to use the installed recovery copy. See [updating and recovery](docs/guide/settings.md#updating-indigo-over-the-network).
+
 ### Any platform — from source
 
 The build runs in the same container image the project's CI uses, so no
@@ -311,7 +316,8 @@ skipped and listed.
 The Spotlight layout also shows each game's gameplay still from
 `swiss/ui/stills.pak` and a few sentences about it from
 `swiss/ui/descriptions.txt`, and the Jewel Case layout each game's disc
-from `swiss/ui/discs.pak`; the poster pack carries all three beside the
+from `swiss/ui/discs.pak`, and Game Details each game's feature badges from
+`swiss/ui/features.txt`; the poster pack carries all four beside the
 posters. Copy `discs.pak` to `swiss/ui/discs.pak` on the games card too:
 updating Indigo itself does not install the disc images. Restart Indigo
 after updating the pack. Its covers, descriptions and discs come from

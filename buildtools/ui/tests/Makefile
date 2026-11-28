@@ -18,17 +18,17 @@ GAMEFLOW_CFLAGS := -std=c11 -Wall -Wextra -Werror -Wconversion \
 # A test builds <name>.c (or <name>.main) with the sources in <name>.src,
 # the flags in <name>.flags (GAMEFLOW_CFLAGS unless set) and the libraries in
 # <name>.libs: plain as <name>, under ASan/UBSan as <name>_san.
-TESTS := test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_ui_bnr test_ui_png \
+TESTS := test_reallocarr test_ui_cheats test_ui_saves test_ui_saves_raw test_ui_saves_metadata test_ui_saves_details test_ui_save_cubes test_ui_apps test_fatfs_stored_name test_ui_bnr test_ui_png \
 	test_ui_assets test_ui_assets_target_sync test_blank_banner \
 	test_ui_settings_layout test_ui_settings_focus test_ui_system_info \
-	test_ui_menu_input test_ui_clock test_ui_hint test_ui_stage \
+	test_ui_menu_input test_ui_menu_sfx test_ui_clock test_ui_hint test_ui_stage \
 	test_ui_home test_ui_cube_motif test_ui_home_safety test_ui_home_layout \
 	test_ui_scene test_ui_command_rail test_ui_presentation \
 	test_gameflow_state test_gameflow_library test_ui_folder test_gameflow_resolver \
 	test_gameflow_detail test_ui_game_history test_ui_about \
 	test_gameflow_ownership test_cheat_policy test_ui_launch test_ui_files \
 	test_ui_card_slots test_ui_hint_geometry test_ui_time_sync test_ui_lab test_indigo_log test_ui_manual \
-	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim
+	test_ui_lang test_ui_box_case test_ui_perf test_ui_perf_disabled test_ui_anim test_ui_update test_ui_transfer test_ui_content
 
 test_ui_cheats.src := $(GUI)/ui_cheats.c
 test_ui_saves.src := $(GUI)/ui_saves.c $(GUI)/ui_lang.c
@@ -39,6 +39,10 @@ test_ui_saves_details.src := $(GUI)/ui_saves_details.c
 test_ui_save_cubes.src := $(GUI)/ui_save_cubes.c $(GUI)/ui_motion.c $(GUI)/ui_saves.c $(GUI)/ui_folder.c $(GUI)/ui_lang.c
 test_ui_save_cubes.libs := -lm
 test_ui_apps.src := $(GUI)/ui_apps.c
+FATFS := ../../../cube/swiss/source/fatfs
+test_fatfs_stored_name.src := $(FATFS)/ff.c $(FATFS)/ffunicode.c
+test_fatfs_stored_name.flags := -std=c11 -Wall -Wextra -I$(FATFS)
+test_fatfs_stored_name test_fatfs_stored_name_san: $(FATFS)/ff.h $(FATFS)/ffconf.h $(FATFS)/diskio.h
 test_ui_bnr.src := $(GUI)/ui_bnr.c $(GUI)/ui_png.c
 test_ui_bnr.libs := -lz -lm
 # test_ui_png.py drives these with the pictures it writes. test_ui_png.c
@@ -76,6 +80,8 @@ test_ui_anim.src := $(GUI)/ui_anim.c $(GUI)/ui_perf.c
 test_ui_anim.flags = $(GAMEFLOW_CFLAGS) -DUI_PERF_CAPTURE=1 -Ifixtures/gx
 test_ui_anim.libs := -lm
 test_ui_system_info.src := $(GUI)/ui_system_info.c $(GUI)/ui_lang.c
+test_ui_menu_sfx.src := $(GUI)/ui_menu_sfx.c
+test_ui_menu_sfx.libs := -lm
 test_ui_menu_input.src := $(GUI)/ui_menu_input.c
 test_ui_clock.src := $(GUI)/ui_clock.c
 test_ui_time_sync.src := $(GUI)/ui_time_sync.c tzdata_host.c
@@ -126,6 +132,10 @@ test_ui_manual.libs := -lz -lm
 test_ui_files.src := $(GUI)/ui_files.c $(GUI)/ui_hint.c $(GUI)/ui_lang.c
 # The console lab's requests and settings, and the log it serves.
 test_ui_lab.src := $(GUI)/ui_lab.c
+# The updater's reading and deciding, and the SHA-256 it checks with.
+test_ui_update.src := $(GUI)/ui_update.c $(GUI)/ui_update_slot.c $(GUI)/sha256.c
+# The game content list the same updater installs from.
+test_ui_content.src := $(GUI)/ui_content.c $(GUI)/ui_update.c
 test_indigo_log.src := $(GUI)/indigo_log.c
 
 # A header change rebuilds every test; run_tests.sh builds from clean anyway.

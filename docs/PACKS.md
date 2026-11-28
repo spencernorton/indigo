@@ -9,6 +9,7 @@ The Library's pictures and descriptions come from optional files in
 | `stills.pak` | Gameplay stills: a 320×240 screenshot per game. |
 | `discs.pak` | Disc art: a 160×160 picture of each game's disc, for the Jewel Case layout. |
 | `descriptions.txt` | A few sentences about each game, for Spotlight. See [below](#game-descriptions). |
+| `features.txt` | Badges for each game, for Game Details. See [below](#feature-badges). |
 
 The three packs are built with `buildtools/ui/poster_pack.py` and share one format,
 described here. Indigo checks every field below before it uses a pack, and
@@ -140,6 +141,38 @@ texture. A game with no disc in `discs.pak` (or no
 `discs.pak` at all) has the middle of its cover printed on its disc in the
 jewel case, and a game with neither has a bare silver disc.
 
+## Install from the console
+
+**Settings › Network › Install game content** downloads these files (and
+the cheat and manual packs) onto the card: see
+[Installing game content](guide/settings.md#installing-game-content-over-the-network).
+It reads a list of them that a release signs, written by
+`buildtools/content_list.py` from the pack zips:
+
+```text
+# Indigo game content
+Server=203.0.113.7/console/2026-11-26
+Host=content.example.net
+<sha256> 8348 swiss/cheats/GALE01.txt
+<sha256> 13401712 swiss/ui/manuals/GALE.pak
+<sha256> 70849024 swiss/ui/posters.pak
+```
+
+One file a line: its SHA-256 in lower-case hex, its length in bytes (1 to
+128 MiB, no leading zero) and its path on the card, a space apart, in
+strictly increasing byte order, at most 4,096 of them in 512 KiB. A path is
+one of `swiss/ui/posters.pak`, `stills.pak`, `discs.pak`, `descriptions.txt`
+or `features.txt`, `swiss/cheats/<game ID>.txt` or
+`swiss/cheats/<game ID>_<name>.txt`, or `swiss/ui/manuals/<ID4 or ID6>.pak`,
+47 letters at most. `Server` (an IPv4 address with an optional port and
+folder) and `Host` (the name it answers to) come together or not at all;
+without them the files sit beside the list. Lines starting with `#` are
+comments. Indigo refuses the whole list if any line breaks a rule.
+
+A slow download can run longer than ten minutes. Each 2 MiB written to the
+card starts a fresh ten-minute window. An idle HTTP read times out after
+ten seconds, and B cancels a transfer.
+
 ## Game descriptions
 
 `descriptions.txt` is plain text: one game per line, its six-character game
@@ -161,3 +194,25 @@ For a game the file doesn't list, Spotlight uses the first line for another
 disc of the same game and region (the same first four characters of its ID),
 then its disc banner's own description. Without either, it says the game has
 no description rather than leaving the space blank.
+
+## Feature badges
+
+`features.txt` gives Game Details a few badges for each game: how many can
+play, its age rating, and the controllers and accessories it uses. It is laid
+out as `descriptions.txt` is, above: one game per line, its six-character
+game ID, a space (or a tab), then its badges separated by `|`, in
+Windows-1252. Lines starting with `#` are comments.
+
+```text
+# Feature badges for my card
+GKGE01 1-4 PLAYERS|ESRB E|BONGOS
+GMSE01 1 PLAYER|ESRB E
+```
+
+Game Details shows a game's first four badges on its GAME DETAIL line, in the
+file's order and as written, as many as fit beside the heading. Spaces around
+a badge are dropped, and an empty badge or one longer than 15 characters is
+left out. Indigo reads the first 127 characters of a line; a badge that runs
+past them is left out. The file's size and game limits, and how a game it
+doesn't list takes another disc's line, are those of `descriptions.txt`. A
+game with no line has no badges.

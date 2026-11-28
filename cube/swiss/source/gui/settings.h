@@ -32,6 +32,8 @@ enum SETTINGS_VIEWS {
 	VIEW_NETWORK,
 	VIEW_LIBRARY,
 	VIEW_DEVELOPER,
+	VIEW_MANUAL_CLOCK,
+	VIEW_AUTO_CLOCK,
 	VIEW_GAME           /* one game's own settings, opened from that game */
 };
 
@@ -59,6 +61,8 @@ enum SETTINGS_GLOBAL {
 	SET_SIMMEMSIZE,
 	SET_TAU_CALIB,
 	SET_SAVE_FOLDER,
+	SET_SYS_DATE,
+	SET_SYS_TIME,
 	SET_PAGE_1_NEXT,
 	SET_PAGE_1_SAVE,
 	SET_PAGE_1_CANCEL
@@ -133,6 +137,12 @@ enum SETTINGS_NETWORK {
 	SET_SMB_PASS,
 	SET_RT4K_HOSTIP,
 	SET_RT4K_PORT,
+	SET_UPDATE_CHANNEL,
+	SET_UPDATE_SERVER,
+	SET_UPDATE_STARTUP,
+	SET_UPDATE_CHECK,
+	SET_UPDATE_SMB,
+	SET_CONTENT_INSTALL,
 	SET_PAGE_3_BACK,
 	SET_PAGE_3_NEXT,
 	SET_PAGE_3_SAVE,
@@ -258,6 +268,7 @@ extern char *leftFaceStr[];
 extern char *rightFaceStr[];
 extern char *downFaceStr[];
 extern char *libraryLayoutStr[];
+extern char *updateChannelStr[];
 
 int show_settings(int page, int option, ConfigEntry *config);
 int show_settings_view(int view, int option, ConfigEntry *config);

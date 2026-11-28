@@ -270,6 +270,11 @@ s32 deviceHandler_DVD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 		//Read in the whole table of offsets
 		tmpTable = (unsigned int*)memalign(32,MAX_MULTIGAME*4);
 		tmpName = (char*)memalign(32,64);
+		if(!tmpTable || !tmpName) {
+			free(tmpTable);
+			free(tmpName);
+			return -1;
+		}
 		memset(tmpTable,0,MAX_MULTIGAME*4);
 		memset(tmpName,0,64);
 		DVD_Read(&tmpTable[0],MULTIGAME_TABLE_OFFSET,MAX_MULTIGAME*4);
@@ -283,10 +288,19 @@ s32 deviceHandler_DVD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 		}
 		print_debug("%i entries found\n", num_entries);
 
-		if(num_entries <= 0) { return num_entries; }
+		if(num_entries <= 0) {
+			free(tmpTable);
+			free(tmpName);
+			return num_entries;
+		}
 		// malloc the directory structure
 		*dir = calloc(num_entries, sizeof(file_handle));
 		
+		if(!*dir) {
+			free(tmpTable);
+			free(tmpName);
+			return -1;
+		}
 		// parse entries
 		for(i = 0; i < num_entries; i++) {
 			tmpOffset = (dvdDiscTypeInt == GCOSD9_MULTIGAME_DISC) ? (tmpTable[i]<<2):(tmpTable[i]);
@@ -322,6 +336,11 @@ s32 deviceHandler_DVD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 		if(num_entries <= 0) return -1;
 		// Convert the DVD "file" data to fileBrowser_files
 		*dir = calloc(num_entries, sizeof(file_handle));
+		if(!*dir) {
+			free(DVDToc);
+			DVDToc = NULL;
+			return -1;
+		}
 		int i;
 		for(i=0; i<num_entries; ++i){
 			concat_path((*dir)[i].name, ffile->name, DVDToc->file[i].name);
@@ -348,9 +367,12 @@ s32 deviceHandler_DVD_readDir(file_handle* ffile, file_handle** dir, u32 type){
 		}
 		else if(dvdDiscTypeInt == ISO9660_GAMECUBE_DISC) {
 			DiskHeader *diskHeader = get_gcm_header(ffile);
-			if(!diskHeader) return -1;
+			if(!diskHeader) return num_entries;
 
-			*dir = reallocarray(*dir, num_entries + 1, sizeof(file_handle));
+			if(reallocarr(dir, num_entries+1, sizeof(file_handle))) {
+				free(diskHeader);
+				return num_entries;
+			}
 			memset(&(*dir)[num_entries], 0, sizeof(file_handle));
 			concatf_path((*dir)[num_entries].name, ffile->name, "%.64s [%.6s].gcm", stripInvalidChars(diskHeader->GameName), diskHeader);
 			(*dir)[num_entries].fileBase = 0;

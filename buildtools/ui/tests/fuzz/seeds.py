@@ -164,6 +164,12 @@ def about(out: Path) -> None:
         b"GAFE01 Welcome to Animal Crossing, where something happens every day.\n"
         b"GMSE01 Clean up Isle Delfino with FLUDD, a water pack.\n"
         b"GTEE01 Wax your board. This is the sickest ride ever!\n")
+    # Feature badges as the downloads write them, and as a person might.
+    (out / "features.txt").write_bytes(
+        b"# Indigo feature badges\n"
+        b"GKGE01 1-4 PLAYERS|ESRB E|BONGOS\n"
+        b"GMSE01 1 PLAYER|ESRB E\n"
+        b"GTEE01  1-4 PLAYERS | | A BADGE FAR TOO LONG |GBA LINK|\n")
     (out / "hand-written").write_bytes(b"GZLE01\tSail the Great Sea.\r\n\r\ngale01 not an ID\nGALE01 Melee\nGALE01 again")
 
 
@@ -280,9 +286,47 @@ def time_sync(out: Path) -> None:
     (out / "reply").write_bytes(bytes(reply))
 
 
+def update(out: Path) -> None:
+    # A release's update list as update_manifest.py writes it, one by hand
+    # without its apploader, an HTTP head, and Update Server texts.
+    (out / "stable.txt").write_bytes(
+        b"FormatVersion=1\r\nChannel=stable\r\nVersion=v2.10.0\r\n"
+        b"Commit=0123456789abcdef0123456789abcdef01234567\r\n"
+        b"Date=2026-12-01\r\nBuildTime=1796000000\r\n"
+        b"File=indigo-v2.10.0.dol\r\nSize=4500000\r\n"
+        b"SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n"
+        b"ApploaderFile=apploader-v2.10.0.img\r\nApploaderSize=123456\r\n"
+        b"ApploaderSHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n")
+    (out / "dol-only.txt").write_bytes(
+        b"FormatVersion=1\nChannel=stable\nVersion=v2.9.1\n"
+        b"Commit=89abcdef0123456789abcdef0123456789abcdef\n"
+        b"Date=2026-11-20\nBuildTime=1795000000\nFile=indigo.dol\nSize=4456448\n"
+        b"SHA256=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f\n"
+        b"MinVersion=v2.8.0\nMinBuildTime=1790000000\n")
+    (out / "head").write_bytes(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 4500000\r\nContent-Type: application/octet-stream\r\n\r\n")
+    (out / "server").write_bytes(b"192.168.1.10:8080/indigo")
+    (out / "server-name").write_bytes(b"https://example.com/indigo")
+
+
+def content(out: Path) -> None:
+    # A game content list as content_list.py writes it, and one whose files
+    # sit beside it.
+    hashes = [bytes([n]) * 32 for n in range(4)]
+    (out / "content.list").write_bytes(
+        b"# Indigo game content\r\nServer=203.0.113.7/console/2026-11-26\r\n"
+        b"Host=content.example.net\r\n" + b"".join(
+            h.hex().encode() + b" %d %s\r\n" % (size, path) for h, size, path in zip(
+                hashes, (8348, 9120, 13401712, 70849024),
+                (b"swiss/cheats/GALE01.txt", b"swiss/cheats/GALE01_v102.txt",
+                 b"swiss/ui/manuals/GALE.pak", b"swiss/ui/posters.pak"))))
+    (out / "beside.list").write_bytes(
+        hashes[0].hex().encode() + b" 295126 swiss/ui/descriptions.txt\n")
+
+
 def main() -> int:
     out = Path(sys.argv[1])
-    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang):
+    for target in (history, saves, raw_saves, posters, manual, about, lab, settings, fst, png, bnr, cheats, wiiload, time_sync, lang, update, content):
         folder = out / target.__name__
         folder.mkdir(parents=True, exist_ok=True)
         target(folder)

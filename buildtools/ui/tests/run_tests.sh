@@ -189,6 +189,7 @@ run_contracts() {
 	python3 ./test_cube_render_pose.py
 	python3 ./test_library_cube_bounds.py
 	echo "== frame budget: what one frame of each scene costs the console =="
+	python3 ./test_render_scratch.py
 	python3 ./test_frame_budget.py
 	python3 ./test_jewel_lighting.py
 	python3 ./test_jewel_disc_texgen.py

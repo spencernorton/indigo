@@ -70,7 +70,8 @@ class Dol(unittest.TestCase):
 
 
     def test_the_normal_cap_stays_exact(self):
-        self.assertEqual(verify_dol.MAX_DOL_BYTES, 17 * 1024 * 1024 // 4)
+        # Keep the signed updater inside the measured production budget.
+        self.assertEqual(verify_dol.MAX_DOL_BYTES, 4_521_984)
         at_cap = dol() + bytes(verify_dol.MAX_DOL_BYTES - len(dol()))
         self.assertEqual(verify_dol.check(at_cap, SHORT)["sections"], 1)
         with self.assertRaises(verify_dol.Invalid):

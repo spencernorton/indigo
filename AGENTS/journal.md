@@ -1,3 +1,223 @@
+## 2026-11-28 — Prepare the v3.1.0 release notes
+
+The release notes describe the first installation from v3.0.0 and earlier,
+the subsequent automatic update and the game content installer. The clock
+guide names the default time server. The notes also link to the current
+MemCard PRO GC hardware coverage record.
+
+## 2026-11-27 — Find Apps and Emulators folders on FAT storage
+
+Home used to enumerate the root directory to locate each folder. The FAT
+lookup now reads the matching directory entry and keeps its on-card name,
+attributes and cluster. A mixed-case Apps folder retains the same program
+path and picture names in the menu. A short alias for another long name
+is skipped. The FAT regression formats a memory disk and compares the
+lookup with the directory entry returned by enumeration.
+
+## 2026-11-27 — Allow large game content to finish on slower adapters
+
+On an emulated GameCube the published 24 MB Melee manual was receiving
+about 10 KB/s. The shared ten-minute deadline would interrupt the file
+while data was still reaching the card. An HTTP content download now
+renews its window for each 2 MiB successfully staged. A stalled HTTP read
+still times out in ten seconds. Software updates retain their whole-file
+deadline, and the elapsed time shown on screen covers the entire download.
+
+## 2026-11-27 — Ignore an earlier Back press when checking for downloads
+
+On a GameCube, returning from Clock Mode with B and opening Install game
+content immediately reported a cancellation. A second attempt reached the
+server. Manual checks now consume the old B edge before starting. A held B
+or a new press can still cancel the request. Background checks preserve input
+for the active menu. A file replacement keeps the previous copy through the
+final rename. A failed rename rolls it back, and the next content check
+recovers a copy left between renames. The catalog stays in RAM. Interrupted
+downloads reclaim their staging space on retry, and replacement files are
+read back from the card before publication. If FAT has two names pointing
+at one cluster chain, the installer preserves both for repair. FlippyDrive
+checks protection in the directory listing and preserves ambiguous siblings.
+A failed FTP listing or a storage I/O error cannot authorize overwriting a
+destination.
+
+## 2026-11-27 — Follow Swiss production-mode console identification
+
+Swiss now passes the matching retail hardware revision to games when a
+development GameCube or TDEV starts a game in Production boot mode. The
+pin moves from 31796322 to 915d4fa1. The main and Settings audit fixtures
+are identical across these revisions.
+
+## 2026-11-26 — Choose how to set the console clock
+
+Setup › Console has a single Clock Mode row. Left or Right switches between
+Manual and Auto. A opens the selected mode and B returns to the Clock Mode
+row. Manual edits the console date or time offline. Auto exposes the time
+zone and NTP server, including while offline. The `NTPSync` setting still
+reads and writes `No` for Manual and `Yes` for Auto. The controller route in
+Dolphin covered both option pages and a fresh boot from a saved card.
+The controller tests recover an observed multi-row overshoot and read the
+highlighted Yes before confirming an erase on the disposable card.
+
+## 2026-11-26 — Follow Swiss through r2176
+
+The Swiss pin moves from `a647fd74` to `31796322`. The five XZ decoder
+files and the archived Swiss SNTP source match that revision. Indigo applies
+the clock bounds when a user enables Sync Clock and updates the SRAM bias
+only after setting the running clock succeeds. Setup › Console accepts local
+dates before the build and validates both calendar and counter limits. B
+cancels the edit and Start sets the running clock and SRAM. The packer and
+clock tests cover decoding failures, invalid dates and failed clock writes.
+The [intake record](../docs/dev/upstream-intake-2026-11-26.md) covers all seven commits.
+
+## 2026-11-26 — Reduce work before Home opens
+
+The menu now generates its two tones with the sine recurrence and a running
+decay envelope. A host test compares all 1,600 blip and 5,760 select samples
+against the original formulas. A devkitPPC build of both implementations also
+returned identical 16-bit PCM in Dolphin. The buffers are still ready before
+Home accepts a button. When no other eligible storage device is attached,
+startup can keep the current Source without reading its root to look for the
+Library. With another eligible device, the current Source still gets first
+choice. The folder navigation test checks both paths, including the root
+read count for a single device.
+
+## 2026-11-26 — Install game content from Settings
+
+Settings › Network › Install game content fetches a list of poster, cheat
+and manual files and installs what the card lacks. The list's trust reuses
+the updater: the release workflow writes `content.txt`, a `Channel=content`
+manifest whose File, Size and SHA256 name the list, and signs it with the
+release key, so the console checks one signature it already knows how to
+check and then each file's SHA-256 from the list. `ui_content.c` parses the
+list with no console calls (host tests and a fuzzer): paths can only be the
+five `swiss/ui` pack files, `swiss/cheats/<ID6>[_name].txt` and
+`swiss/ui/manuals/<ID4|ID6>.pak`, in strictly increasing order. A list may
+name a plain-HTTP mirror (`Server=` + `Host=`) because the packs must not
+sit on the update feed's GitHub Pages; the Update Server setting, when set,
+wins. Each file downloads to `<path>.part`, is hashed, then renamed over
+the old copy, so a cut connection never leaves a half file, and a second
+press skips everything already whole. Manuals are only for the games in the
+folder browsed last (a known gap for Libraries kept across folders); all
+manuals would be 6.4 GB. `updateStageWrite` now writes through its target's
+device rather than `updateDevice()`. The DOL grew 6,784 bytes to 4,518,784,
+3,200 under the tripwire. Not yet on a console or Dolphin, and nothing is
+published: the release ships no list until `buildtools/content/content.list`
+is committed with a host the console can reach over plain HTTP.
+
+## 2026-11-25 — Feature badges on Game Details (#131)
+
+Game Details reads `swiss/ui/features.txt` through the descriptions file's
+reader (`ui_about.c`), so its format, limits and same-game fallback match
+`descriptions.txt`. The loader in `FrameBufferMagic.c` became one
+`gameflowGameLines_t` per file. `UIGameflowDetail_Build` splits the line on
+`|` into at most four trimmed badges of up to 15 characters each. A line
+that fills the 127 characters Build reads drops its last badge, which may
+be cut. The presentation fits the badges right to left between x = 590 and
+332 on the GAME DETAIL line, so no row moves and the emulator's title box
+is unchanged. Each badge adds one 12-vertex panel to the planes' quad batch;
+the checked GX stream (`test_launch_gx_stream.py`) covers three badges and
+an overflow. The about fuzzer now runs every found line through Build, and
+the demonstration disc carries a `features.txt`. GameTDB has player counts
+and ratings for its GameCube games but few accessories (it lists no Bongos
+games at all), so the pack's builder keeps its own accessory list. The
+issue's Library filter is not part of this change.
+
+## 2026-11-24 — Trace the controller emblem from Nintendo's photo
+
+The #211 shell was hand-fitted with cubics. Against Nintendo's product
+photograph it was off by 0.015 face units on average and 0.055 at the
+notches between the grips and the lower lobes. `controller_outline.py` now
+keeps a traced left half instead: the photo's indigo body pixels were
+segmented and their boundary traced, scaled so the stick and A button sit at
+u = -/+0.335, v = 0.075 with Start on u = 0, and mirrored, because the
+right shoulder carries the Z button and the cable leaves the top centre.
+The table averages 0.008 off the trace. The first simplification step is
+0.015 rather than 0.01: at 0.01 the sharp grip notches failed the glancing
+pose test. A sweep over yaw 0-88 degrees, five pitches and both raster
+scales drops the band from about 72 degrees, within one degree of #211.
+The outline and stroke tests pass, the DOL builds in the pinned image, and
+a RAM-loaded build drew the new shell on the GameCube in 540p60.
+
+## 2026-11-24 — 540p glass refraction binds its own copy
+
+In 540p60 the frame's display list replays once per tile, and the glass
+refraction sampled TEXMAP0 without binding the pre-pass copy inside the
+list. Tile 0 inherited the copy from the pre-pass. Tiles 1-3 inherited
+the last TEXMAP0 the previous replay left, usually the font sheet, so the
+cube showed glyphs. `setupGlassRefractionPipeline` now loads `glassTexObj`
+itself, and `test_glass_light.py` pins that. The DOL builds in the pinned
+image and the related host tests pass. Stock macOS Dolphin 2606 did not
+reach a picture, and CI's Dolphin routes do not cover Indigo's 540p mode,
+so the fix was checked on the GameCube: a RAM-loaded build in 540p60
+showed the cube clean, and Spencer confirmed it on his TV.
+
+## 2026-11-24 — Retry a damaged startup update once
+
+Startup Updates checks the received bytes against the signed manifest. On
+a mismatch it removes the closed payload from the inactive slot and retries
+the same file once. A good replacement must pass both SHA-256 checks before
+Indigo publishes its trial. Cancellation, storage errors and a second
+mismatch return through the normal error path.
+
+## 2026-11-24 — Skip banner pixels while listing Depot apps on FAT cards
+
+Apps and Emulators read the header and the text through the selected
+language before sorting. English fallback uses the same descriptor parser
+as a complete banner. FAT cards need 1,920 bytes of scratch and transfer
+352 bytes for an English title. Network and optical devices retain their
+single sequential read. The host tests compare all six languages, missing
+translations, padding, short reads and invalid sizes. Both readers returned
+the same sorted metadata in a 256-program GC Loader fixture.
+
+## 2026-11-23 — Verify the deployed console feed from release CI
+
+The release runner now compares all four signed update files to the exact
+commit GitHub Pages reports as built. It uses the runner’s existing HTTPS
+access to GitHub. An optional read-only release dry run can check an already
+published channel. The console uses its normal public HTTP route.
+
+## 2026-11-23 — Reduce folder lookup work during startup
+
+Library path resolution and the Apps and Emulators root lookups now request
+directory entries. File browsing and app discovery inside the chosen folder
+still read ordinary files. Four alternating Dolphin boots per variant on
+the same 2,048-file SD2SP2 image measured 452.13 ms to the post-configuration
+root listing before both filters and 424.56 ms afterwards. All 2,050 entries
+were present. The host navigation fixture checks the directory request on a
+device that returns mixed entries.
+
+## 2026-11-23 — Reduce the renderer’s permanent working memory
+
+The poster filter now decodes RGB directly into the buffer it smooths.
+The sharpened IPL font reads three scanlines at a time. Together these
+remove 506,368 bytes of static scratch and one full RGB copy per poster
+mip level. A host check compares every output byte for four cell sizes
+and three poster levels with the v3.0.0 renderer. Normal video modes also
+skip the 540p watchdog, its 10 ms wakeups and its 512 KiB display-list flush.
+
+## 2026-11-23 — Preserve directory listings under memory pressure
+
+Moved the Swiss pin through a647fd74. The pinned SDK supplies the allocation
+primitive through a small compatibility header. Directory readers keep the
+entries they already assembled when growth fails and release open directory
+resources on an initial allocation failure. Host tests verify initial, grow,
+shrink, free, overflow and forced exhaustion paths. The installed console's
+time configuration and file-table bounds remain in Indigo's existing code.
+
+## 2026-11-23 — Authenticate startup updates and retain a bootable recovery copy
+
+Home and idle Files or Library check the selected channel once per launch.
+The browser closes its readers before installation. A signed trial opens Home
+once before Recent or Autoload resumes on the following launch. Indigo
+authenticates the manifest with Ed25519 and hashes the inactive slot on
+download and readback. The signed trial becomes the preferred boot only when
+the new program reaches Home. X + Y starts the installed recovery copy.
+The release workflow signs in its tag-only environment and advances the
+GitHub Pages feed after publication. The production DOL size tripwire is
+4 MiB + 320 KiB. Hardware interruption and comparative frame timing require
+native qualification. A complete test download also caught shifted SD sectors
+in the emulator. The SD2SP2 runner now preserves every possible leading byte
+when a sector arrives by DMA; 2,048 framing cases cover the fix.
+
 ## 2026-11-23 — Prepare v3.0.0 for publication
 
 Name the `v3.0.0` changelog section after PR #223 (`28ebb6f`) landed on `beta`
@@ -51,6 +271,91 @@ and `v2.9.0` with the padded file follows the identical trace after the
 launch. Dolphin cannot run GBI further, even booted directly. The maintainer
 released on that basis: #218's reporter ran the padded file on a GameCube
 through the same loader, and this build loads the unpadded file the same way.
+
+## 2026-11-19 — Pair rollback takes a first apploader back off
+
+Adversarial re-review caught the pair travelling apart in one corner:
+with no previous apploader (`present` false, so its swap leaves no
+`.bak`), a boot-file swap that then failed and restored itself left the
+fresh apploader in place — `UIUpdate_Rollback` treated "nothing moved
+aside" as a silent no-op — while the failure screen claimed "Nothing
+was changed" over the mismatched pair. Rollback of a not-present file
+now deletes the freshly installed file (that is what "put back" means
+when there was no old one), and `test_ui_update` carries the whole pair
+sequence against the shipped swap: first apploader in, boot-file
+rename failed and restored, pair rollback, old boot file alone again.
+The manual-recovery screen for a boot file stuck after the apploader
+already swapped now names both files (rename the apploader's `.bak`
+back over it, or delete a first apploader), and the swap-failure screen
+only tells the user to rename a `.bak` it has probed present.
+
+## 2026-11-19 — Harden the updater's swap, waits and wording
+
+Fix the on-console updater's install swap never landing: the FAT,
+KunaiGC and FlippyDrive `renameFile`s copy the new name into the source
+handle, so reading `file.name` after renaming it aside yielded the
+`.bak` name — the second rename failed onto itself and the rollback
+renamed `.bak` to itself while the screen claimed nothing changed. The
+sequence now lives in the pure core (`UIUpdate_Swap`/`UIUpdate_Rollback`
+over a file-ops vtable, `gui/ui_update.c`): all three names are
+snapshotted before any rename, each handle is refilled from its
+snapshot before every call and restored on the way out, and
+`gui/update.c` passes real device ops through fresh throwaway handles.
+`test_ui_update` drives the shipped swap against a fake device that
+mutates handles that same way, refuses renames onto existing names and
+fails any chosen rename (success, fresh install, fail at each rename,
+rollback landing, rollback failing to manual). A failed install now
+names the file it stopped on and which of its `.bak`/`.new` provably
+remain, and only claims "Nothing was changed" of a boot file re-probed
+present; a swap failure's verified `.new` is discarded. Also: overall
+deadlines and B-cancel in the HTTP head/manifest waits and a whole-file
+deadline on both transports (was: idle timeout alone, so a dribbling
+server could wait forever); the head-carry bytes clamped to the
+Content-Length; a full card (`freeSpace` 0 of a known total) refused as
+full instead of unknown; `GIT_TIMESTAMP` gets a Makefile fallback of 0
+so a git-less build compiles, with `UIUpdate_Decide` treating 0 as
+unknown — never "newer", offered as older/different, and unable to
+prove a stepping-stone floor (host-tested); the missing
+`SET_UPDATE_BOOTFILE` picker row and the five updater arms in the
+settings-semantics audit allowlist; and the copy tightened to the
+truth throughout — v1 integrity is a SHA-256 from the same channel as
+the file plus two confirmations, not authentication, and rollback is
+attempted, never guaranteed (design §4.2/§5.2, guide, changelog).
+
+## 2026-11-19 — On-console software updates over HTTP and the SMB share
+
+Add the software updater (`docs/dev/software-update-design.md`, now in-tree):
+Settings › Setup › Network gains Update Channel, Update Server, Update Boot
+File, **Check for updates** and **Update from SMB share** as its last five
+rows (hidden with Sync Clock's trio when no adapter is fitted). Both actions
+run one synchronous pipeline in new `gui/update.c` over the pure core in
+`gui/ui_update.c` (manifest reader, newer/older decision by commit and
+build time, IPv4 channel-base grammar, HTTP head reader) and a vendored
+public-domain SHA-256 (`gui/sha256.c`): stage beside the target on the
+Configuration Device, verify the streamed hash, read back whole and prove
+hash plus `wiiload_image_valid`, then swap with `.bak` kept, apploader
+first and the boot DOL last. HTTP is plain, one connection per file, 10 s
+idle reads, HTTP/1.0, Content-Length required; SMB reuses `__device_smb`
+at fixed `smb:/indigo-updates/` paths and never lists a directory. The
+boot file resolves by probing `ipl.dol`, `boot.dol`, `apps/indigo.dol`
+(Auto) or the row's named one. Includes the `strncpy` bound on
+`DrawGetTextEntry`'s accept path (`FrameBufferMagic.c`), three
+`global.ini` keys, host tests (`test_ui_update`, settings round-trips) and
+the `update` fuzz target. `UPDATE_DEFAULT_SERVER` ships empty: no public
+plain-HTTP host exists yet, so HTTP users name their own mirror.
+
+Release side: `buildtools/update_manifest.py` writes `indigo-<tag>.dol`,
+`apploader-<tag>.img` and `stable.txt`/`rc.txt` out of the release zip for
+published tags only (with `buildtools/ci/test_update_manifest.py`);
+`release.yml` generates them after `check_package.py` and attaches them,
+plus `dist/provenance.json`, to the GitHub Release. The DOL size tripwire
+rises 4.25 → 4.5 MiB as the explicit decision its comment anticipates:
+`beta` already measured 4,456,928 B in the pinned image (480 B past the
+old line) before the updater's own share. No upstream file is touched;
+the Swiss pin-move (design §1 PR-0) stays a separate follow-up. Nothing
+here has run on hardware: the design's §12 checklist is the qualification
+path, and the download page's stale Settings pictures are noted for the
+pull request.
 
 ## 2026-11-15 — Fix GBI DOL validation (#215) and harden the CI/release gates
 

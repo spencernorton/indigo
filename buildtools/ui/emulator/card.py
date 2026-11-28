@@ -21,7 +21,7 @@ Spotlight shows a still, a cover and a banner card, /swiss/ui/discs.pak disc
 art drawn the same way for all but three, so the Jewel Case shows a disc of
 its own, the middle of a cover and a bare disc, and
 /swiss/ui/descriptions.txt a line about all but one, which keeps its
-banner's. /swiss/ui/manuals holds a manual for one game, made with
+banner's, and /swiss/ui/features.txt Game Details' badges for all but two. /swiss/ui/manuals holds a manual for one game, made with
 manual_pack.py from pages laid out here of Indigo's own guide pictures
 (MANUAL_GAME), and a damaged one for another. /apps holds stand-in programs for Apps, beside pictures drawn here
 in each shape Indigo fits to a card, one in a Homebrew Channel folder whose
@@ -82,6 +82,18 @@ DESCRIPTIONS = {
     "GNTZ01": "Dive among the glowing tidepools of a city that sank long ago, and bring its lights back to the surface one by one.",
     "GPLZ01": "Carry a paper lantern through a town of folded houses, where every door opens onto another story.",
     "GSSZ01": "Salvage what fell from the sky cities, then decide whether to sell it, keep it, or send it back up.",
+}
+# Game Details' feature badges (swiss/ui/features.txt) for all but two of the
+# games, so Detail shows them and goes without; Astral Circuit's are as many
+# as fit beside GAME DETAIL.
+FEATURES = {
+    "GACZ01": "1-4 PLAYERS|ESRB E|GBA LINK",
+    "GCHZ01": "1-2 PLAYERS|ESRB E10+",
+    "GDRZ01": "1-4 PLAYERS|ESRB E|MICROPHONE",
+    "GEIZ01": "1-2 PLAYERS|ESRB E",
+    "GGPZ01": "1 PLAYER|ESRB T",
+    "GNTZ01": "1 PLAYER|ESRB E|BONGOS",
+    "GRZZ01": "1-4 PLAYERS|ESRB E|DANCE MAT",
 }
 # Cobalt Harrier's manual: two of Indigo's guide pictures a page, on paper,
 # under a band of a colour of the page's own, which run.py finds the page by.
@@ -528,6 +540,9 @@ def populate(root: Path, work: Path, posters: bool = True, probe: Path | None = 
     (root / "swiss/ui/descriptions.txt").write_text(
         "# Descriptions of the demonstration disc's fictitious games\n" +
         "".join(f"{game_id} {text}\n" for game_id, text in sorted(DESCRIPTIONS.items())))
+    (root / "swiss/ui/features.txt").write_text(
+        "# Feature badges for the demonstration disc's fictitious games\n" +
+        "".join(f"{game_id} {text}\n" for game_id, text in sorted(FEATURES.items())))
     manual = build_manuals(root / "swiss/ui/manuals")
     apps = build_apps(root / "apps")
     if probe:
