@@ -245,9 +245,10 @@ the GameCube main menu. **B** cancels the edit.
 **Auto** syncs with a time server when the network starts. The console clock
 keeps running offline. Press A to choose a **Time Zone** such as
 `Europe/London` for local time and daylight saving, or keep the current UTC
-offset. **NTP Server IP** accepts an IPv4 address. An empty entry uses the
-default server. Enable **Init network at startup** under Network to sync on
-launch. **Save & Exit** keeps the mode, server and time zone.
+offset. **NTP Server IP** accepts an IPv4 address. An empty entry uses
+Cloudflare’s time server. Indigo shows its IPv4 address in the setting.
+Enable **Init network at startup** under Network to sync on launch.
+**Save & Exit** keeps the mode, server and time zone.
 
 <p align="center">
   <img alt="Console settings with Clock Mode set to Manual. The help line says you can set the date and time yourself, even offline." src="images/clock-mode-manual.png" width="460">
